@@ -69,3 +69,20 @@ test('HUD choices persist independently and recover from invalid storage',()=>{
  writeHudPreferences({...hud,map:true},storage);assert.equal(readHudPreferences(storage).map,true);
  value='broken';assert.equal(readHudPreferences(storage).details,true);
 });
+
+test('holding defend maintains a pose beyond its short tap, releases instantly and never survives a jump',()=>{
+ const m=createGameplayMotion();
+ assert.equal(m.start('guard'),true);
+ assert.equal(m.setGuardHeld(true),true);
+ for(let i=0;i<12;i++)assert.equal(m.update(.18).guard,1,'defense stays raised while held');
+ assert.equal(m.start('strike'),true,'other actions remain bound to their own cooldowns');
+ assert.equal(m.update(.10).guard,0,'a new attack naturally replaces guard');
+ m.reset();
+ assert.equal(m.start('guard'),true);m.setGuardHeld(true);assert.equal(m.update(1).guard,1);
+ assert.equal(m.setGuardHeld(false),false);
+ assert.equal(m.update(0).guard,0,'lifting the finger immediately lowers the shield');
+ for(let i=0;i<3;i++)m.update(.25);assert.equal(m.start('guard'),true);
+ m.setGuardHeld(true);assert.equal(m.start('jump'),true);
+ assert.equal(m.update(.04).guard,0,'leaping cancels a ground defense hold');
+ m.reset();assert.equal(m.update(0).guard,0,'pausing or leaving clears any held guard');
+});

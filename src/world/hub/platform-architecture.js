@@ -62,7 +62,9 @@ export function addPlatformArchitecture({mesh,geo,box,cylinder,sphere,materials,
  for(const b of buildings){
   const x=b.buildingX,z=b.buildingZ,w=b.width,d=b.depth,h=b.height,rear=z-d/2-4;
   const {height,profile,style}=identity(b),shaftW=w*.72,shaftD=4;
-  mesh(geo(civicShaftGeometry(shaftW,shaftD,height,profile)),dark,x,h,rear);
+  // Stone normal/roughness texture already owned by the Hub: more solid
+  // readable civic towers with no extra draw call, network asset or collision.
+  mesh(geo(civicShaftGeometry(shaftW,shaftD,height,profile)),stone,x,h,rear);
   // Three luminous glazing bands keep the inhabited reading; one structural
   // belt carries the silhouette and removes repeated hidden geometry.
   const floorCount=Math.max(2,Math.min(3,Math.round(height/10)));
@@ -105,7 +107,7 @@ export function addPlatformArchitecture({mesh,geo,box,cylinder,sphere,materials,
   const a=(i+.5)*Math.PI/4,x=Math.cos(a)*132,z=Math.sin(a)*132,h=16+(i%3)*7;
   for(const side of [-1,1]){
    const tx=x+Math.cos(a+Math.PI/2)*side*10,tz=z+Math.sin(a+Math.PI/2)*side*10,profile=i%2?[[0,1],[.56,1],[.78,.88],[1,.71]]:[[0,1],[.68,1],[.68,.82],[1,.82]];
-   mesh(geo(civicShaftGeometry(8,9,h,profile)),dark,tx,0,tz);collisions.push({x:tx,z:tz,width:8,depth:9});cameraSolids.push({id:`residence-solid-${i}-${side}`,x:tx,z:tz,width:8,depth:9,bottom:0,top:h+7});
+   mesh(geo(civicShaftGeometry(8,9,h,profile)),i%3===0?stone:dark,tx,0,tz);collisions.push({x:tx,z:tz,width:8,depth:9});cameraSolids.push({id:`residence-solid-${i}-${side}`,x:tx,z:tz,width:8,depth:9,bottom:0,top:h+7});
    const floorCount=3;
    for(let f=0;f<floorCount;f++){
     const y=2+f*Math.max(1,h-4)/(floorCount-1),s=scaleAt(profile,y/h);

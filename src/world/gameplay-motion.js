@@ -13,10 +13,11 @@ export function battleAnimation(action,airborne=false){
 
 // Local movement and presentation only. Damage and rewards remain in the engine.
 export function createGameplayMotion(){
- let clock=0,jumpUntil=0,action=null,actionUntil=0,heading=0;
+ let clock=0,jumpUntil=0,action=null,actionUntil=0,heading=0,guardHeld=false;
  const cooldowns={};
  return {
   get airborne(){return clock<jumpUntil;},
+  setGuardHeld(held){guardHeld=!!held&&action==='guard';if(!guardHeld&&action==='guard')actionUntil=clock;return guardHeld;},
   start(kind,direction=0){
    const rule=PLAY_ACTIONS[kind];if(!rule||clock<(cooldowns[kind]||0))return false;
    // Voluntary upper-body actions have their own animation mask and cooldown.
@@ -25,17 +26,17 @@ export function createGameplayMotion(){
    if(kind!=='jump'&&clock<actionUntil&&action!=='guard')return false;
    if(kind==='jump'&&clock<jumpUntil)return false;
    cooldowns[kind]=clock+rule.cooldown;
-   if(kind==='jump'){jumpUntil=clock+rule.duration;action=null;actionUntil=0;}
+   if(kind==='jump'){jumpUntil=clock+rule.duration;action=null;actionUntil=0;guardHeld=false;}
    else{action=kind;actionUntil=clock+rule.duration;heading=direction;}
    return true;
   },
   update(seconds=0){
    const dt=Math.max(0,Math.min(Number.isFinite(seconds)?seconds:0,.25));clock+=dt;
    const airborne=clock<jumpUntil,progress=airborne?1-(jumpUntil-clock)/PLAY_ACTIONS.jump.duration:1;
-   const active=clock<actionUntil?action:null,landed=jumpUntil>0&&!airborne;
+   const active=guardHeld&&action==='guard'?'guard':clock<actionUntil?action:null,landed=jumpUntil>0&&!airborne;
    if(landed)jumpUntil=0;
    return {lift:airborne?Math.sin(Math.PI*progress)*2.25:0,airborne,landed,action:active,guard:active==='guard'?1:0,dodge:active==='dodge'?{x:Math.sin(heading),z:-Math.cos(heading),speed:22}:null};
   },
-  reset(){clock=0;jumpUntil=actionUntil=0;action=null;for(const key of Object.keys(cooldowns))delete cooldowns[key];},
+  reset(){clock=0;jumpUntil=actionUntil=0;action=null;guardHeld=false;for(const key of Object.keys(cooldowns))delete cooldowns[key];},
  };
 }

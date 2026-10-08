@@ -29,16 +29,16 @@ function annularSectorGeometry(THREE,{innerRadius,outerRadius,startDeg,lengthDeg
 function makeStoneMaterials(THREE,texture,variant='stone'){
   const menu=variant==='menu';
   const tones=menu
-    ? [0xd2a94f,0x6f5934,0x9c9588,0x3d4342]
+    ? [0xd5c6a5,0x7f7c73,0xa99a7d,0x4b5150]
     : [0xc5c2b7,0xaaa9a2,0x8d918e,0xb5b0a4];
   return tones.map((color,index)=>new THREE.MeshPhysicalMaterial({
     color,
     map:texture,
     bumpMap:texture,
-    bumpScale:menu ? .032 : .045,
-    roughness:menu ? (index===0 ? .48 : .67) : .94,
-    metalness:menu ? (index===0 ? .34 : .16) : .015,
-    clearcoat:menu ? .22 : .025,
+    bumpScale:menu ? .070 : .045,
+    roughness:menu ? (index===0 ? .70 : .84) : .94,
+    metalness:menu ? (index===0 ? .10 : .035) : .015,
+    clearcoat:menu ? .075 : .025,
     clearcoatRoughness:menu ? .48 : .96,
   }));
 }
@@ -246,7 +246,7 @@ export default function BrokenCircle3D({variant='stone'}){
       if(disposed)return;
 
       scene=new THREE.Scene();
-      camera=new THREE.PerspectiveCamera(29,1,.1,100);
+      camera=new THREE.PerspectiveCamera(menuMode?37:29,1,.1,100);
       camera.position.set(0,.02,8.55);
       camera.lookAt(0,.06,0);
 
@@ -326,6 +326,29 @@ export default function BrokenCircle3D({variant='stone'}){
       rotor.add(outerHalo);
 
       if(menuMode){
+        // A quiet miniature stone city is visible through and behind the
+        // monument; one instanced draw, no additional downloads or animation
+        // loop, so the welcome screen stays light on Android.
+        const districtGeometry=new THREE.BoxGeometry(1,1,1);
+        const districtMaterial=new THREE.MeshStandardMaterial({color:0x8a8172,roughness:.92,metalness:0});
+        const skyline=new THREE.InstancedMesh(districtGeometry,districtMaterial,26);
+        skyline.name='Cité des Huit Héritages · panorama lointain';
+        skyline.castShadow=false;skyline.receiveShadow=false;
+        const tower=new THREE.Object3D();
+        const palette=[0x8a8172,0x77776b,0xa39a85,0x53646a,0x9d907b].map(color=>new THREE.Color(color));
+        for(let i=0;i<26;i++){
+          const lane=i<13?-1:1,index=i%13;
+          const x=lane*(1.2+index*.27),height=.44+((index*7+3)%9)*.22;
+          tower.position.set(x,-3.18+height/2,-3.2-index*.105);
+          tower.scale.set(.24+(index%3)*.13,height,.48+(index%4)*.12);
+          tower.rotation.set(0,lane*.09,0);tower.updateMatrix();
+          skyline.setMatrixAt(i,tower.matrix);skyline.setColorAt(i,palette[(index+lane+6)%palette.length]);
+        }
+        skyline.instanceMatrix.needsUpdate=true;
+        skyline.instanceColor.needsUpdate=true;
+        skyline.computeBoundingSphere();
+        scene.add(skyline);
+
         ambientRig=new THREE.Group();
         ambientRig.position.z=-.45;
         scene.add(ambientRig);
@@ -420,7 +443,7 @@ export default function BrokenCircle3D({variant='stone'}){
         renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,mobile?1.28:1.7));
         renderer.setSize(width,height,false);
         camera.aspect=width/height;
-        camera.position.z=menuMode?(mobile?8.02:8.28):(mobile?8.85:8.45);
+        camera.position.z=menuMode?(mobile?11.45:11.70):(mobile?8.85:8.45);
         camera.updateProjectionMatrix();
         renderer.render(scene,camera);
       };

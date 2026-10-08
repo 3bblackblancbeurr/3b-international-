@@ -504,8 +504,8 @@ function hubNpcAvatar(item){
   }
   onGameplay?.(kind==='strike'?'attack':kind);onActivity();needsRender=true;report=0;return true;
  }
- function keydown(e){if(e.defaultPrevented||e.target.isContentEditable||(([' ','Enter'].includes(e.key))&&e.target.closest?.('button,a,[role=button]')))return;if(paused||transportRide||contextTraversal||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;const key=e.key.toLowerCase(),handled=['moveForward','moveBackward','moveLeft','moveRight','interact','sprint','cameraToggle',...Object.keys(PLAY_ACTIONS)].some(action=>controlMatches(controls,action,key));if(!handled)return;const playKind=Object.keys(PLAY_ACTIONS).find(action=>controlMatches(controls,action,key));if(playKind){if(presentation==='encounter'&&playKind!=='jump')return;e.preventDefault();if(!e.repeat)gameplayAction(playKind);return;}e.preventDefault();if(controlMatches(controls,'cameraToggle',key)){if(!e.repeat)toggleCamera();return;}if(['moveForward','moveBackward','moveLeft','moveRight'].some(action=>controlMatches(controls,action,key)))endLifeInteraction();cancelRoutePlan();keys.add(key);target=null;route=[];onActivity();if(controlMatches(controls,'interact',key)&&!e.repeat)interact();}
- function keyup(e){keys.delete(e.key.toLowerCase());}
+ function keydown(e){if(e.defaultPrevented||e.target.isContentEditable||(([' ','Enter'].includes(e.key))&&e.target.closest?.('button,a,[role=button]')))return;if(paused||transportRide||contextTraversal||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;const key=e.key.toLowerCase(),handled=['moveForward','moveBackward','moveLeft','moveRight','interact','sprint','cameraToggle',...Object.keys(PLAY_ACTIONS)].some(action=>controlMatches(controls,action,key));if(!handled)return;const playKind=Object.keys(PLAY_ACTIONS).find(action=>controlMatches(controls,action,key));if(playKind){if(presentation==='encounter'&&playKind!=='jump')return;e.preventDefault();if(!e.repeat){const accepted=gameplayAction(playKind);if(accepted&&playKind==='guard')gameplay.setGuardHeld(true);}return;}e.preventDefault();if(controlMatches(controls,'cameraToggle',key)){if(!e.repeat)toggleCamera();return;}if(['moveForward','moveBackward','moveLeft','moveRight'].some(action=>controlMatches(controls,action,key)))endLifeInteraction();cancelRoutePlan();keys.add(key);target=null;route=[];onActivity();if(controlMatches(controls,'interact',key)&&!e.repeat)interact();}
+ function keyup(e){keys.delete(e.key.toLowerCase());if(controlMatches(controls,'guard',e.key.toLowerCase()))gameplay.setGuardHeld(false);}
  function interact(){if(paused||transportRide||contextTraversal)return;const closest=nearestInteraction(position,interactionItems());if(closest){clearInput();battleTarget=closest;onActivity();onInteract(closest);}}
  const hidden=()=>{clearInput();last=performance.now();frameTime=frames=0;needsRender=true;};
  const lost=e=>{e.preventDefault();paused=true;onError('Le rendu 3D a été interrompu. Recharge le monde pour reprendre ta sauvegarde.');};
@@ -566,7 +566,7 @@ function hubNpcAvatar(item){
    }
   const y=transportRide?.pose?.y??groundY(position.x,position.z)+traversalLift,age=elapsed-feedbackAt,impact=age<.28&&!reducedMotion?Math.sin(age/.28*Math.PI):0,retaliation=age>.3&&age<.62&&!reducedMotion?Math.sin((age-.3)/.32*Math.PI):0;
   const lifePose=lifeInteraction.sample(elapsed),poseLift=lifePose?.pose==='Sit'?(hero.poseRootOffset?.(lifePose.seatHeight)||0)*lifePose.blend:0;
-  avatar.position.set(position.x,y+poseLift+(playFrame.lift||0),position.z);hero.setCombat(fieldCombat?{}:{guard:playFrame.guard||0});hero.update(dt,transportRide?0:dx,transportRide?0:dz,transportRide?0:travelled);
+  avatar.position.set(position.x,y+poseLift+(playFrame.lift||0)+(transportRide?.transport==='boat'?.46:0),position.z);hero.setCombat(fieldCombat?{}:{guard:playFrame.guard||0});hero.update(dt,transportRide?0:dx,transportRide?0:dz,transportRide?0:travelled);
   if(region==='hub'&&!landscape?.towerFloor){
    const stream=streamingProfile(qualityMode,typeof navigator!=='undefined'?navigator.deviceMemory:undefined,region);
    if(now-lastNpcUpdateAt>=1000/stream.npcUpdateHz){
@@ -649,7 +649,12 @@ function hubNpcAvatar(item){
     while(trail.length>65)trail.shift();while(trail.length>3&&Math.hypot(trail[0].x-p.x,trail[0].z-p.z)<1.3)trail.shift();
     const goal=trail.length>3?trail[0]:null,old={x:p.x,z:p.z};
     if(goal&&!paused&&!shot){const journey=realmTraversal(region,position,{combat:fieldCombat}),result=advanceMotion({position:old,target:goal,route:[]},{x:0,z:0},dt,Math.max(11,10.5*stats.speed*1.6)*journey.speedMultiplier,obstacles,worldRadius);p.set(result.position.x,groundY(result.position.x,result.position.z),result.position.z);}
-    escort.update(dt,p.x-old.x,p.z-old.z,Math.hypot(p.x-old.x,p.z-old.z));if(Math.hypot(p.x-position.x,p.z-position.z)>40){p.set(position.x,y,position.z);trail=[];}
+    // Fix follow glitches: teleport recovery must happen before gait sampling,
+    // and a dropped/long mobile frame must not accelerate the leg cycle.
+    const recovered=Math.hypot(p.x-position.x,p.z-position.z)>40;
+    if(recovered){p.set(position.x,y,position.z);trail=[];}
+    const mx=recovered?0:p.x-old.x,mz=recovered?0:p.z-old.z;
+    escort.update(dt,mx,mz,Math.min(Math.hypot(mx,mz),Math.max(0,dt)*9.5));
    }
   }
   const wide=cameraMode===1,portrait=camera.aspect<.85;
@@ -724,6 +729,7 @@ function hubNpcAvatar(item){
   setPeers(peers){latestPeers=peers;partyActors?.setPeers(peers);needsRender=true;},
   setParty(party){partyState=party;landscape?.setParty(party);},
   gameplayAction,
+  setGuardHeld(value){if(paused||shot||transportRide||contextTraversal){gameplay.setGuardHeld(false);return false;}const held=gameplay.setGuardHeld(value);needsRender=true;return held;},
   setMoveInput(value){if(paused||transportRide||contextTraversal)return;cancelRoutePlan();endLifeInteraction();stick={x:Number(value?.x)||0,z:Number(value?.z)||0};target=null;route=[];onActivity();needsRender=true;},
   combatAction,
   canBattle(action){return !['strike','power','wait'].includes(action)||combatDistance<=(action==='power'?22:action==='wait'?8:7.5);},

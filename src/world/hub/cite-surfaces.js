@@ -18,7 +18,7 @@ export function createCiteSurfaces(owned){
  const glass=new THREE.MeshPhysicalMaterial({color:'#173c52',roughness:.2,metalness:.18,clearcoat:1,clearcoatRoughness:.08,envMapIntensity:.4});
  const stone=new THREE.MeshStandardMaterial({color:'#8c989b',roughness:.85,metalness:.03,map:paving,normalMap:normal,normalScale:new THREE.Vector2(.55,.55),roughnessMap:rough});
  const cliff=new THREE.MeshStandardMaterial({color:'#43515a',roughness:.94,metalness:.04});
- const deck=new THREE.MeshStandardMaterial({color:'#8b929a',roughness:.88,metalness:.02,map:paving,normalMap:normal,normalScale:new THREE.Vector2(.65,.65),roughnessMap:rough});
+ const deck=new THREE.MeshStandardMaterial({color:'#8b929a',roughness:.88,metalness:.02,map:paving,normalMap:normal,normalScale:new THREE.Vector2(.65,.65),roughnessMap:rough,polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1});
  function surfaceShader(m,kind){m.onBeforeCompile=shader=>{
   shader.uniforms.citeDay=day;shader.uniforms.citeWet=wet;
   shader.vertexShader='varying vec3 citeP;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvec4 citeLocal=vec4(position,1.);\n#ifdef USE_INSTANCING\nciteLocal=instanceMatrix*citeLocal;\n#endif\nciteP=(modelMatrix*citeLocal).xyz;');
