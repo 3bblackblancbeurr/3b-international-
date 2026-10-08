@@ -70,3 +70,18 @@
 @media(max-width:650px){.hub-map-legend-ground,.hub-map-legend-networks{gap:10px 13px}.world-dialog .hub-map-legend-networks>button{min-height:44px}.hub-map-legend-ground>span,.hub-map-legend-networks>span{font-size:10px}}
 
 .world-shell .hub-minimap .minimap-open.gm-button:hover,.world-shell .hub-minimap .minimap-open.gm-button:active{transform:none}
+
+
+/* Atlas landscape touch ergonomics: independent scroll region and visible zoom slider. */
+.hub-map-zoom-slider{display:inline-flex;align-items:center;gap:7px;color:#e6d3ac;font-size:11px}
+.hub-map-zoom-slider input{width:clamp(95px,13vw,160px);min-height:34px;accent-color:#e6c58a;touch-action:pan-x}
+.world-dialog .hub-map-destinations{overflow-y:auto;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;scrollbar-width:thin}
+@media(max-height:550px) and (orientation:landscape){
+ .world-dialog .hub-map-layout{grid-template-columns:minmax(0,1fr) minmax(220px,35%);gap:10px;align-items:stretch}
+ .world-dialog .hub-map-viewport>svg{max-height:65svh;width:100%;aspect-ratio:auto}
+ .world-dialog .hub-map-destinations{max-height:69svh;padding:10px;overflow-y:auto}
+ .world-dialog .hub-map-destination-list{max-height:none;overflow:visible}
+ .hub-map-toolbar{margin-bottom:9px}
+ .hub-map-zoom{gap:4px;flex-wrap:wrap}
+}
+@media(max-width:650px) and (orientation:portrait){.world-dialog .hub-map-layout{display:flex;flex-direction:column}.world-dialog .hub-map-destinations{max-height:53svh}}
