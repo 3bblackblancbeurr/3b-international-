@@ -130,3 +130,14 @@
 }
 @keyframes world-rotate-hint{0%,100%{transform:rotate(-20deg)}50%{transform:rotate(70deg)}}
 @media (prefers-reduced-motion:reduce){.world-rotate-device svg{animation:none}}
+
+
+/* Scroll surfaces remain draggable from any noninteractive menu area on Android. */
+.world-dialog{overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;scroll-padding-top:80px}
+.world-dialog :is(.hub-settings,.hub-settings-section,.hub-settings-intro,.hub-map-destinations,.world-control-grid){touch-action:pan-y}
+.world-dialog .hub-settings-section summary{padding:13px 5px;min-height:46px;touch-action:manipulation}
+.world-dialog .hub-settings-section{scroll-margin-top:90px}
+.world-dialog .world-touch-settings{margin:12px 0;padding:15px;border:1px solid #d6b46a47;background:#0a2935;border-radius:14px}
+.world-dialog .world-touch-settings h4{margin:0;color:#f2d6a2;font-size:14px}
+.world-dialog .world-touch-settings p{margin:8px 0 13px}
+@media(max-height:550px) and (orientation:landscape){.world-dialog{max-height:calc(100svh - 10px);padding:0 14px 16px}.world-dialog>header{padding:9px 0;min-height:54px;margin-bottom:10px}.world-dialog h2{font-size:22px}}
