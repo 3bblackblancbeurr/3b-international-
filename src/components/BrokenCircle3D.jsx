@@ -247,7 +247,7 @@ export default function BrokenCircle3D({variant='stone'}){
 
       scene=new THREE.Scene();
       if(menuMode)scene.fog=new THREE.Fog(0x02070d,12.8,20.5);
-      camera=new THREE.PerspectiveCamera(menuMode?36:29,1,.1,100);
+      camera=new THREE.PerspectiveCamera(menuMode?37:29,1,.1,100);
       camera.position.set(0,.02,8.55);
       camera.lookAt(0,.06,0);
 
