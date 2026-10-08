@@ -58,6 +58,24 @@ export function civilianRoutePoint(route,t,offset=0){
  return{x:route.from.x+dx*t-dz/len*offset,z:route.from.z+dz*t+dx/len*offset,dx:dx/len,dz:dz/len};
 }
 
+/** Rank already collision-checked public paths by proximity to the visitor.
+ * Reuse the existing paths; never introduce shortcuts through houses, rails or water.
+ * A bounded pool can therefore follow the active quarter without spawning meshes. */
+export function nearbyCivilianRoutes(routes=[],position={x:0,z:0},radius=210,limit=48){
+ const x=Number.isFinite(position.x)?position.x:0,z=Number.isFinite(position.z)?position.z:0;
+ const max=Math.max(12,Number.isFinite(radius)?radius:210),take=Math.max(1,Math.min(192,Math.floor(limit)||1));
+ const ranked=routes.map((route,index)=>{
+  // Sampling handles straight roads and circular promenades with one stable
+  // distance contract, even when the nearest part is at the end of an arc.
+  const distance=Math.min(...[0,.25,.5,.75,1].map(t=>{const p=civilianRoutePoint(route,t);return Math.hypot(p.x-x,p.z-z);}));
+  return {route,index,distance};
+ }).sort((a,b)=>a.distance-b.distance||a.index-b.index);
+ // A visitor at a gate must still see nearby walkers even if all walks
+ // are farther than the soft radius. Do not move the pedestrian paths.
+ const nearby=ranked.filter(row=>row.distance<=max+18);
+ return (nearby.length?nearby:ranked).slice(0,take).map(row=>row.route);
+}
+
 /** Independent civilian rhythm: a walk, a short look around, the return trip.
  * No mission IDs, interaction bubbles, saved progression or skeleton per person. */
 export function civilianRoutine(agent,time,moving=true){
