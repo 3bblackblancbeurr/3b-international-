@@ -56,15 +56,22 @@ export function createAmbientCrowd(root,items,options={}){
   // A territory reuses its bounded human pool in nearby villages. Reassignment
   // only happens after an agent leaves the visible radius, so residents already
   // on screen keep their path, gait phase and identity through sector changes.
-  const localCandidates=nearbyCivilianRoutes(routes,player,budget.maxDistance+36,Math.max(budget.count,Math.min(routes.length,budget.count*2)));
+  const localCandidates=localRoutes
+   ?routes.filter(r=>Math.hypot((r.from.x+r.to.x)/2-(player.x||0),(r.from.z+r.to.z)/2-(player.z||0))<budget.maxDistance+36)
+    .sort((a,b)=>Math.hypot((a.from.x+a.to.x)/2-player.x,(a.from.z+a.to.z)/2-player.z)-Math.hypot((b.from.x+b.to.x)/2-player.x,(b.from.z+b.to.z)/2-player.z))
+   :nearbyCivilianRoutes(routes,player,budget.maxDistance+36,Math.max(budget.count,Math.min(routes.length,budget.count*2)));
   for(let index=0;index<budget.count;index++){
    if(!models.length)break;
    const agent=agents[index];
    if(localCandidates.length){
     const mid=civilianRoutePoint(agent.route,.5),distance=Math.hypot(mid.x-(player.x||0),mid.z-(player.z||0));
-    // Preserve an on-screen pedestrian. Only recycle people who were already
-    // offscreen in the old quarter; never teleport a visible resident.
-    if(!agent.routeReady||(!agent.visible&&distance>budget.maxDistance+36)){
+    if(localRoutes){
+     // Realm relay travel teleports the player across many kilometres. Reassign
+     // the old invisible territory pool immediately, including reduced-motion
+     // mode, instead of waiting another frame for visibility hysteresis.
+     if(distance>budget.maxDistance+48){agent.route=localCandidates[index%localCandidates.length];agent.visible=false;}
+    }else if(!agent.routeReady||(!agent.visible&&distance>budget.maxDistance+36)){
+     // Hub walking keeps visible citizens fixed; only offscreen actors relocate.
      agent.route=localCandidates[index%localCandidates.length];agent.routeReady=true;agent.visible=false;
     }
    }
