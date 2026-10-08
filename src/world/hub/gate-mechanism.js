@@ -39,6 +39,8 @@ export function addGateMechanism(group,{accent='#5abce5'}={}){
   piece(box,light,side*.22,3.35,.53,.05,4.2,.04);
   for(const [material,list] of parts){const merged=g(mergeGeometries(list));list.forEach(p=>p.dispose());const mesh=new THREE.Mesh(merged,material);mesh.castShadow=mesh.receiveShadow=true;leaf.add(mesh);}
  }
+ // Both approaches receive actual paired sliding leaves. The reverse uses shared geometry and material.
+ const reverseLeaves=leaves.map((leaf,index)=>{const mirror=leaf.clone(true);mirror.name='Porte arrière coulissante · '+(index?'droite':'gauche');mirror.scale.z=-1;group.add(mirror);return mirror;});
  // Rails and the exposed rack share one fixed draw; paired wheels share one instance draw.
  const railGeo=g(new THREE.BoxGeometry(12.2,.12,.22));railGeo.translate(0,4.4,.66);
  const teeth=[];
@@ -50,8 +52,8 @@ export function addGateMechanism(group,{accent='#5abce5'}={}){
  function poseWheels(eased){for(const [i,wheel] of wheels.entries()){wheel.rotation.z=wheel.side*eased*5;wheelDummy.position.set(wheel.side*3.65,4.3,.81);wheelDummy.rotation.set(0,0,wheel.rotation.z);wheelDummy.updateMatrix();wheelBatch.setMatrixAt(i,wheelDummy.matrix);}wheelBatch.instanceMatrix.needsUpdate=true;}
  poseWheels(0);wheelBatch.computeBoundingSphere();
  let openness=0,disposed=false;
- return {leaves,wheels,get openness(){return openness;},
-  tick(distance,dt,options){openness=gateOpening(openness,distance,dt,options);const eased=openness*openness*(3-2*openness);leaves.forEach((leaf,i)=>{leaf.position.x=(i?1:-1)*3.05*eased;});poseWheels(eased);},
-  dispose(){if(disposed)return;disposed=true;leaves.forEach(leaf=>leaf.removeFromParent());rail.removeFromParent();wheelBatch.removeFromParent();owned.forEach(asset=>asset.dispose());},
+ return {leaves,reverseLeaves,wheels,get openness(){return openness;},
+  tick(distance,dt,options){openness=gateOpening(openness,distance,dt,options);const eased=openness*openness*(3-2*openness);leaves.forEach((leaf,i)=>{leaf.position.x=(i?1:-1)*3.05*eased;reverseLeaves[i].position.x=leaf.position.x;});poseWheels(eased);},
+  dispose(){if(disposed)return;disposed=true;leaves.forEach(leaf=>leaf.removeFromParent());reverseLeaves.forEach(leaf=>leaf.removeFromParent());rail.removeFromParent();wheelBatch.removeFromParent();owned.forEach(asset=>asset.dispose());},
  };
 }
