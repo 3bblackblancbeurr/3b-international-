@@ -326,6 +326,29 @@ export default function BrokenCircle3D({variant='stone'}){
       rotor.add(outerHalo);
 
       if(menuMode){
+        // A quiet miniature stone city is visible through and behind the
+        // monument; one instanced draw, no additional downloads or animation
+        // loop, so the welcome screen stays light on Android.
+        const districtGeometry=new THREE.BoxGeometry(1,1,1);
+        const districtMaterial=new THREE.MeshStandardMaterial({color:0x8a8172,roughness:.92,metalness:0});
+        const skyline=new THREE.InstancedMesh(districtGeometry,districtMaterial,26);
+        skyline.name='Cité des Huit Héritages · panorama lointain';
+        skyline.castShadow=false;skyline.receiveShadow=false;
+        const tower=new THREE.Object3D();
+        const palette=[0x8a8172,0x77776b,0xa39a85,0x53646a,0x9d907b].map(color=>new THREE.Color(color));
+        for(let i=0;i<26;i++){
+          const lane=i<13?-1:1,index=i%13;
+          const x=lane*(1.2+index*.27),height=.44+((index*7+3)%9)*.22;
+          tower.position.set(x,-3.18+height/2,-3.2-index*.105);
+          tower.scale.set(.24+(index%3)*.13,height,.48+(index%4)*.12);
+          tower.rotation.set(0,lane*.09,0);tower.updateMatrix();
+          skyline.setMatrixAt(i,tower.matrix);skyline.setColorAt(i,palette[(index+lane+6)%palette.length]);
+        }
+        skyline.instanceMatrix.needsUpdate=true;
+        skyline.instanceColor.needsUpdate=true;
+        skyline.computeBoundingSphere();
+        scene.add(skyline);
+
         ambientRig=new THREE.Group();
         ambientRig.position.z=-.45;
         scene.add(ambientRig);
