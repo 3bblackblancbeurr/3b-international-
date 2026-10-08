@@ -14,10 +14,11 @@ function fixture(transport){
 const near=(actual,expected,label)=>assert.ok(Math.abs(actual-expected)<1e-6,label+': '+actual+' vs '+expected);
 const envelopes={train:[.92,-.445,.71,2.45],boat:[.825,-.225,.73,1.65],telepheric:[.99,-.41,1.38,.81]};
 
-for(const transport of ['train','boat','telepheric'])test(transport+' is an attached assembly with visible glazing inside its existing envelope',()=>{
+for(const transport of ['train','boat','telepheric'])test(transport+' is a safe attached assembly with visible glazing inside its intended full-scale envelope',()=>{
  const f=fixture(transport);
  try{
-  const bounds=new THREE.Box3().setFromObject(f.vehicle),[halfWidth,bottom,top,halfLength]=envelopes[transport];
+  const bounds=new THREE.Box3().setFromObject(f.vehicle),visualScale={train:1,boat:1.55,telepheric:1.35}[transport],[halfWidth,bottom,top,halfLength]=envelopes[transport].map(value=>value*visualScale);
+  near(f.vehicle.scale.x,visualScale,'display-scale matches authored craft');
   assert.ok(bounds.min.x>=-halfWidth-1e-6&&bounds.max.x<=halfWidth+1e-6);
   assert.ok(bounds.min.z>=-halfLength-1e-6&&bounds.max.z<=halfLength+1e-6);
   assert.ok(bounds.min.y>=bottom-1e-6&&bounds.max.y<=top+1e-6);
@@ -36,10 +37,10 @@ for(const transport of ['train','boat','telepheric'])test(transport+' is an atta
     const box=new THREE.Box3().setFromObject(wheel);near(Math.abs(wheel.position.x),.82,'wheel matches track gauge');near(box.min.y+trackHeight,.12+.055,'wheel meets the existing rail top');
    }
   }else if(transport==='boat'){
-   const hull=f.boxes[0].getSize(new THREE.Vector3());near(hull.x,1.65,'hull width');near(hull.y,.35,'hull height');near(hull.z,3.3,'hull length');
+   const hull=f.boxes[0].getSize(new THREE.Vector3());near(hull.x,1.65*visualScale,'hull width');near(hull.y,.35*visualScale,'hull height');near(hull.z,3.3*visualScale,'hull length');
    assert.ok(f.boxes[0].intersectsBox(f.boxes[1]),'cabin rests on hull');assert.ok(f.boxes[0].intersectsBox(f.boxes[2]),'bow plate meets hull');
   }else{
-   const cableRay=new THREE.Raycaster(new THREE.Vector3(0,1.22,2),new THREE.Vector3(0,0,-1));
+   const cableRay=new THREE.Raycaster(new THREE.Vector3(0,1.22*visualScale,2*visualScale),new THREE.Vector3(0,0,-1));
    for(const pulley of f.vehicle.children.filter(mesh=>mesh.geometry.type==='CylinderGeometry'))assert.ok(cableRay.intersectObject(pulley).length>0,'pulley meets the existing central cable');
   }
  }finally{f.dispose();}
