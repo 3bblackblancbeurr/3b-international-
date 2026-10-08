@@ -10,10 +10,15 @@ export function artLighting(region,time={},weather={}){
  const visibility=clamp(weather.visibility??1,.35,1),dusk=time.phase==='sunset'||time.phase==='dawn';
  const hour=Number.isFinite(time.hour)?time.hour:12;
  const warmth=dusk?Math.sin(Math.PI*clamp((hour-(time.phase==='dawn'?5:18))/3,0,1))*.8:0;
+ // Soft reflected moon/city light restores facade readability on mobile.
+ // No extra lights, textures, post-processing passes or daytime tint changes.
+ const civicNight=region==='hub'?Math.pow(1-day,1.25):0;
  return {palette,day,dusk,sunColor:palette.sun,sunWarmth:warmth,
   sunIntensity:(region==='hub'?2.65:2.9)*sun*(.68+.32*visibility),
-  skyIntensity:.24+.64*day,fillIntensity:.10+.16*day,environmentIntensity:.18+.45*day,
-  exposure:.87+.13*day,fogNear:(region==='hub'?480:190)*visibility*(time.fog??1),
+  skyIntensity:.24+.64*day+civicNight*.09,
+  fillIntensity:.10+.16*day+civicNight*.06,
+  environmentIntensity:.18+.45*day+civicNight*.08,
+  exposure:.87+.13*day+civicNight*.05,fogNear:(region==='hub'?480:190)*visibility*(time.fog??1),
   fogFar:(region==='hub'?2050:820)*visibility*(time.fog??1),
  };
 }
