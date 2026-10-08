@@ -15,10 +15,10 @@ export default function WorldPortalCard({goTo}){
   finally{setBusy(false);}
  };
  return <section className="world-portal home-world-entry" aria-labelledby="world-portal-title">
-  <div className="home-world-atmosphere" aria-hidden="true"><div className="home-world-horizon"/><div className="home-world-skyline"/><span className="home-world-ray ray-1"/><span className="home-world-ray ray-2"/><span className="home-world-ray ray-3"/></div>
+  <div className="home-world-atmosphere" aria-hidden="true"><div className="home-world-horizon"/><span className="home-world-ray ray-1"/><span className="home-world-ray ray-2"/><span className="home-world-ray ray-3"/></div>
   <BrokenCircle3D variant="menu"/>
   <div className="world-portal-copy">
-   <p className="eyebrow">3B INTERNATIONAL <span className="home-world-live">· UNIVERS PERSISTANT</span></p>
+   <p className="eyebrow">3B INTERNATIONAL <span className="home-world-live">· MONDE VIVANT EN TEMPS RÉEL</span></p>
    <h2 id="world-portal-title">Huit portes.<br/><em>Une légende.</em></h2>
    <p>Traverse la Cité des Huit Héritages. Explore, rencontre les Gardiens et fais évoluer un monde vivant.</p>
    <div className="world-portal-actions">
