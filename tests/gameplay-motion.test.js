@@ -81,7 +81,7 @@ test('holding defend maintains a pose beyond its short tap, releases instantly a
  assert.equal(m.start('guard'),true);m.setGuardHeld(true);assert.equal(m.update(1).guard,1);
  assert.equal(m.setGuardHeld(false),false);
  assert.equal(m.update(0).guard,0,'lifting the finger immediately lowers the shield');
- m.update(.75);assert.equal(m.start('guard'),true);
+ for(let i=0;i<3;i++)m.update(.25);assert.equal(m.start('guard'),true);
  m.setGuardHeld(true);assert.equal(m.start('jump'),true);
  assert.equal(m.update(.04).guard,0,'leaping cancels a ground defense hold');
  m.reset();assert.equal(m.update(0).guard,0,'pausing or leaving clears any held guard');
