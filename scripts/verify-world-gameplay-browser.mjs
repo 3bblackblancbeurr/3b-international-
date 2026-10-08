@@ -70,7 +70,10 @@ try{
    await page.waitForFunction(()=>{const state=qa.scene.qaPlayState();return state.ready&&!state.paused&&!state.hidden&&!state.playFrame.airborne&&!state.playFrame.action;},undefined,{timeout:90000,polling:100});
    console.log(device.id+': action '+kind+' '+JSON.stringify(await page.evaluate(()=>({played:qa.played,state:qa.scene.qaPlayState()}))));const started=await page.evaluate(()=>qa.scene.qaPlayState().elapsed);
    const acceptedBefore=await page.evaluate(action=>qa.played?.filter(value=>value===action).length||0,kind);
-   await page.getByRole('button',{name,exact:true}).click();await page.waitForFunction(({action,count})=>qa.played?.filter(value=>value===action).length>count,{action:kind,count:acceptedBefore},{polling:100});
+   // Freeze the software renderer only for the real native DOM click. On CI,
+   // SwiftShader can otherwise starve Playwright's two stable-paint frames.
+   await staticHud(page,()=>page.getByRole('button',{name,exact:true}).click());
+   await page.waitForFunction(({action,count})=>qa.played?.filter(value=>value===action).length>count,{action:kind,count:acceptedBefore},{polling:100});
    await page.waitForFunction(at=>qa.scene.qaPlayState().elapsed>=at+.8,started,{timeout:90000,polling:100});
   }
   await staticHud(page,async()=>{
