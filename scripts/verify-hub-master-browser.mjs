@@ -53,7 +53,7 @@ function injectCaptureHooks(code){
  const marker='return{\n  refreshHubSchedule:';assert.ok(code.includes(marker),'Scene capture fixture matches the real API');
  return code.replace(marker,`let qaCaptureFrozen=false;return{
   qaHoldRender(){if(!qaCaptureFrozen){cancelAnimationFrame(raf);qaCaptureFrozen=true;}return elapsed;},
-  qaGuidanceState(){return {renderHeld:qaCaptureFrozen,elapsed,waypoint:waypoint?.id||null,routeLength:target?route.length+1:0,planning:routePlanner.status().pending};},
+  qaGuidanceState(){return {renderHeld:qaCaptureFrozen,paused,elapsed,waypoint:waypoint?.id||null,routeLength:target?route.length+1:0,planning:routePlanner.status().pending};},
   qaFreezeCapture(){if(!qaCaptureFrozen){cancelAnimationFrame(raf);qaCaptureFrozen=true;}post.render(0);return canvas.toDataURL('image/png');},
   qaResumeCapture(){if(!qaCaptureFrozen)return;qaCaptureFrozen=false;last=performance.now();raf=requestAnimationFrame(tick);},
   refreshHubSchedule:`);
@@ -115,6 +115,7 @@ try{
     await dialog.getByRole('button',{name:'Personnaliser la position des touches'}).click();
     const editor=page.locator('.world-play-controls.editing');await editor.waitFor({state:'visible',timeout:30000});
     assert.equal(await dialog.count(),0,'the settings dialog closes while editing touch positions');
+    assert.equal(await page.evaluate(()=>qa.scene.qaGuidanceState().paused),true,'the 3D simulation pauses while editing touch controls');
     const action=page.getByRole('button',{name:'Sauter',exact:true});
     const old=await action.boundingBox();assert.ok(old?.width>30&&old?.height>30);
     const start={x:old.x+old.width/2,y:old.y+old.height/2};
@@ -123,6 +124,7 @@ try{
     const moved=await action.boundingBox();assert.ok(moved.x<old.x-35&&moved.y<old.y-16,'jump control moves freely on mobile');
     await editor.getByRole('button',{name:'Enregistrer et jouer'}).click();
     await editor.waitFor({state:'hidden'});
+    await page.waitForFunction(()=>qa.scene.qaGuidanceState().paused===false,null,{timeout:25000});
     const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('3b-world-touch-layout-v1')));
     assert.ok(saved.jump.x<90&&saved.jump.y<65,'touch customization is saved on this device');
     await page.getByRole('button',{name:'Pause et options',exact:true}).click();await dialog.waitFor();
