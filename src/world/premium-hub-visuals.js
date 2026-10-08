@@ -290,7 +290,7 @@ function transitHullGeometry(geometry){
  for(const [x,z] of [[.60,-1.65],[.78,-1.5],[.825,-.95],[.78,.95],[.53,1.4],[0,1.65],[-.53,1.4],[-.78,.95],[-.825,-.95],[-.78,-1.5]])shape.lineTo(x,z);
  shape.closePath();
  const hull=new THREE.ExtrudeGeometry(shape,{depth:.35,bevelEnabled:true,bevelThickness:.035,bevelSize:.065,bevelSegments:1,steps:1,curveSegments:4});
- hull.rotateX(Math.PI/2);hull.center();hull.computeBoundingBox();const size=hull.boundingBox.getSize(new THREE.Vector3());hull.scale(1.65/size.x,.35/size.y,3.3/size.z);hull.translate(0,-.05,0);
+ hull.rotateX(Math.PI/2);hull.center();hull.computeBoundingBox();const size=hull.boundingBox.getSize(new THREE.Vector3());hull.scale(1.65/size.x,.65/size.y,3.3/size.z);hull.translate(0,-.18,0);
  geometry.hubTransitBoatHull=hull;return hull;
 }
 
@@ -325,8 +325,8 @@ export function createPremiumTransitVehicle(spec,start,{root,geometry,material,g
   add({y:.645,z:-.35,sx:1.25,sy:.07,sz:1.83},rounded);
   // Elevated open passenger canopy: the avatar can stand under it instead
   // of protruding through a tiny low cab; all parts remain in one shared draw.
-  add({y:1.42,z:.18,sx:1.40,sy:.055,sz:2.25},rounded);
-  for(const side of [-1,1])for(const z of [-.68,1.04])add({x:side*.64,y:.86,z,sx:.058,sy:1.08,sz:.058});
+  add({y:1.73,z:.18,sx:1.40,sy:.055,sz:2.25},rounded);
+  for(const side of [-1,1])for(const z of [-.68,1.04])add({x:side*.64,y:1.02,z,sx:.058,sy:1.43,sz:.058});
   add({y:.70,z:-.54,sx:.28,sy:.045,sz:.35},rounded);
   for(const side of [-1,1]){
    for(const z of [-1.13,-.45,.42])add({x:side*.558,y:.37,z,sx:.035,sy:.49,sz:.042});
