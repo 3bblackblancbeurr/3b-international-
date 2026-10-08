@@ -119,7 +119,8 @@ try{
   const errors=[],context=await browser.newContext({viewport:{width:Number(process.env.WORLD_ART_WIDTH)||800,height:Number(process.env.WORLD_ART_HEIGHT)||500},deviceScaleFactor:1});
   await context.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());
   await context.addInitScript(({dateString})=>{const NativeDate=Date;window.Date=class extends NativeDate{constructor(...args){super(...(args.length?args:[dateString]));}static now(){return new NativeDate(dateString).getTime();}};localStorage.setItem('3b-world-camera',JSON.stringify({version:2,yaw:.12,pitch:.21,distance:24}));},{dateString:'2026-10-02T'+(process.env.WORLD_ART_CLOCK||'16:20:00')});
-  const page=await context.newPage();page.on('pageerror',e=>{errors.push(e.message);console.log('PAGEERROR',e.message);});page.on('console',m=>{if(m.text().startsWith('QA'))console.log(region,m.text());if(m.type()==='error'&&/WebGL|THREE|shader/i.test(m.text()))errors.push(m.text());});
+  const watchPage=page=>{page.on('pageerror',e=>{errors.push(e.message);console.log('PAGEERROR',e.message);});page.on('console',m=>{if(m.text().startsWith('QA'))console.log(region,m.text());if(m.type()==='error'&&/WebGL|THREE|shader/i.test(m.text()))errors.push(m.text());});};
+  let page=await context.newPage();watchPage(page);
   console.log('LOAD',region);
   await page.goto('http://127.0.0.1:5197/__world-art-qa?region='+region+'&quality='+(process.env.WORLD_ART_QUALITY||'fluid'),{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>window.qa?.ready&&qa.snapshot?.drawCalls>0,{},{timeout:180000});
@@ -214,6 +215,9 @@ try{
    await writeFile(out+'/cartography-fixture.json',JSON.stringify(fixture,null,2));
    assert.ok(fixture.route.length>1,'The map receives a real detour route from the playable navigator');
    await page.evaluate(()=>game.destroy());
+   // Release the long-lived WebGL document before exercising the DOM atlas.
+   // The same physical fixture, viewport, clock and request policy are retained.
+   await page.close();page=await context.newPage();watchPage(page);
    await page.goto('http://127.0.0.1:5197/__cartography-qa',{waitUntil:'domcontentloaded',timeout:120000});
    await page.waitForFunction(()=>typeof window.cartographyQA?.mount==='function',{},{timeout:60000});
    await page.evaluate(fixture=>cartographyQA.mount(fixture),fixture);

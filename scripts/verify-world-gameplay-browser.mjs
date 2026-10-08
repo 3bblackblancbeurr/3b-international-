@@ -65,9 +65,13 @@ try{
   await page.evaluate(()=>{const portal=qa.snapshot.mapItems.find(item=>item.type==='portal');qa.scene.waypoint(portal,true);qa.scene.setMoveInput({x:0,z:0});});await page.waitForTimeout(200);const cancelled=await page.evaluate(()=>qa.scene.qaPlayState().path);assert.equal(cancelled.planning,false);assert.equal(cancelled.target,null);assert.equal(cancelled.points,0);await page.evaluate(()=>qa.scene.cancelWaypoint());
   await page.waitForFunction(()=>!qa.scene.qaPlayState().playFrame.airborne);
   for(const [name,kind] of [['Frapper','attack'],['Défendre','guard'],['Esquiver','dodge'],['Pouvoir','power']]){
+   // Real actions must finish before the next native click. Software WebGL can
+   // need many wall-clock seconds for these few simulation frames.
+   await page.waitForFunction(()=>{const state=qa.scene.qaPlayState();return state.ready&&!state.paused&&!state.hidden&&!state.playFrame.airborne&&!state.playFrame.action;},undefined,{timeout:90000,polling:100});
    console.log(device.id+': action '+kind+' '+JSON.stringify(await page.evaluate(()=>({played:qa.played,state:qa.scene.qaPlayState()}))));const started=await page.evaluate(()=>qa.scene.qaPlayState().elapsed);
-   await page.getByRole('button',{name,exact:true}).click();await page.waitForFunction(action=>qa.played?.includes(action),kind);
-   await page.waitForFunction(at=>qa.scene.qaPlayState().elapsed>=at+.8,started);
+   const acceptedBefore=await page.evaluate(action=>qa.played?.filter(value=>value===action).length||0,kind);
+   await page.getByRole('button',{name,exact:true}).click();await page.waitForFunction(({action,count})=>qa.played?.filter(value=>value===action).length>count,{action:kind,count:acceptedBefore},{polling:100});
+   await page.waitForFunction(at=>qa.scene.qaPlayState().elapsed>=at+.8,started,{timeout:90000,polling:100});
   }
   await staticHud(page,async()=>{
    await page.getByRole('button',{name:'Affichage du jeu',exact:true}).focus();await page.keyboard.press('Space');assert.equal(await page.locator('.hud-layout-menu').count(),1,'Space activates the focused UI');
