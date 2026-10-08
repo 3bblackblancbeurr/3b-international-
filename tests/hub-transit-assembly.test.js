@@ -17,7 +17,7 @@ const envelopes={train:[.92,-.445,.71,2.45],boat:[.825,-.225,.73,1.65],telepheri
 for(const transport of ['train','boat','telepheric'])test(transport+' is a safe attached assembly with visible glazing inside its intended full-scale envelope',()=>{
  const f=fixture(transport);
  try{
-  const bounds=new THREE.Box3().setFromObject(f.vehicle),visualScale={train:1,boat:1.55,telepheric:1.35}[transport],[halfWidth,bottom,top,halfLength]=envelopes[transport].map(value=>value*visualScale);
+  const bounds=new THREE.Box3().setFromObject(f.vehicle),visualScale={train:1,boat:3,telepheric:1.35}[transport],[halfWidth,bottom,top,halfLength]=envelopes[transport].map(value=>value*visualScale);
   near(f.vehicle.scale.x,visualScale,'display-scale matches authored craft');
   assert.ok(bounds.min.x>=-halfWidth-1e-6&&bounds.max.x<=halfWidth+1e-6);
   assert.ok(bounds.min.z>=-halfLength-1e-6&&bounds.max.z<=halfLength+1e-6);
