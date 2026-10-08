@@ -19,3 +19,10 @@
 @media(max-width:700px){.hub-settings-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))}.hub-settings-toggles{grid-template-columns:1fr}.hub-settings-primary{flex-wrap:wrap}.world-shell>.hub-save-card-compact{max-width:58vw;right:10px;bottom:62px;padding:10px}.world-shell>.hub-save-card-compact p{display:none}}
 @media(max-height:540px) and (orientation:landscape){.world-shell .world-notice{bottom:10px;max-width:56%;padding:8px 12px}.world-shell>.hub-save-card-compact{bottom:58px;max-width:34vw;padding:10px}.world-shell>.hub-save-card-compact p{display:none}.hub-settings-shortcuts{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-height:550px) and (orientation:landscape){.world-shell[data-region=hub]>.play-party{right:max(12px,env(safe-area-inset-right));bottom:max(14px,env(safe-area-inset-bottom))}.world-shell[data-region=hub]>.party-online{right:max(12px,env(safe-area-inset-right));bottom:max(64px,env(safe-area-inset-bottom))}.world-shell[data-region=hub] .hub-hud .play-interaction-cluster{right:calc(max(12px,env(safe-area-inset-right)) + 56px);max-width:calc(100% - 356px)}}
+
+
+/* Non-blocking account warning: players can close the HUD overlay, but the
+   pending journal and full sync tools remain visible under Pause. */
+.world-shell>.hub-save-card-compact{position:absolute;padding-right:43px;pointer-events:auto}
+.world-shell .hub-save-card-compact .hub-save-dismiss{position:absolute;top:6px;right:6px;display:grid;place-items:center;width:32px;height:32px;min-height:32px!important;padding:0;border-radius:50%;border:1px solid #d8c18966;background:#11252ef0;color:#f7e4c8;font-size:20px!important;line-height:1;z-index:3;touch-action:manipulation}
+.world-shell .hub-save-card-compact .hub-save-dismiss:focus-visible{outline:2px solid #f1d58b;outline-offset:2px}
