@@ -57,7 +57,7 @@ test('save status overlay has a dismiss target and leaves the settings journal i
  const warning=read('src/world/WorldSaveStatus.jsx'),css=read('src/world/hub/hub-master.css');
  assert.match(warning,/hub-save-dismiss/);
  assert.match(warning,/if\(compact&&/);
- assert.match(warning,/onSync\(\)/);
+ assert.match(warning,/onClick=\{onSync\}/);
  assert.match(css,/\.hub-save-dismiss:focus-visible/);
 });
 
