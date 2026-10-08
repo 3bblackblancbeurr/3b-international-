@@ -38,27 +38,45 @@ jobs:
         run: node scripts/verify-hub-master-browser.mjs
         env:
           HUB_MASTER_OUT: artifacts/hub-interface/master-ui
-      - name: Check audio, gestures, movement and dismissible HUD
-        run: node scripts/verify-world-gameplay-browser.mjs
-        env:
-          GAMEPLAY_OUT: artifacts/hub-interface/gameplay
-      - name: Check realm travel, choices, journal and atlas on desktop and touch
-        run: node scripts/verify-realm-journey-browser.mjs
-        env:
-          REALM_UI_OUT: artifacts/hub-interface/realm-journey
-      - name: Check background route parity and cancellation in a native worker
-        run: node scripts/verify-route-planner-browser.mjs
-        env:
-          ROUTE_PLANNER_OUT: artifacts/hub-interface/routes
-      - name: Check real WebAudio touch unlock, silence and resume
-        run: node scripts/verify-world-audio-browser.mjs
-        env:
-          AUDIO_OUT: artifacts/hub-interface/audio
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
         with:
           name: playable-hub-interface
           path: artifacts/hub-interface
+          if-no-files-found: warn
+  realm-gameplay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm install --no-save --package-lock=false playwright@1.62.1
+      - run: npx --no-install playwright install --with-deps chromium
+      - name: Check audio, gestures, movement and dismissible HUD
+        run: node scripts/verify-world-gameplay-browser.mjs
+        env:
+          GAMEPLAY_OUT: artifacts/realm-gameplay/gameplay
+      - name: Check realm travel, choices, journal and atlas on desktop and touch
+        run: node scripts/verify-realm-journey-browser.mjs
+        env:
+          REALM_UI_OUT: artifacts/realm-gameplay/realm-journey
+      - name: Check background route parity and cancellation in a native worker
+        run: node scripts/verify-route-planner-browser.mjs
+        env:
+          ROUTE_PLANNER_OUT: artifacts/realm-gameplay/routes
+      - name: Check real WebAudio touch unlock, silence and resume
+        run: node scripts/verify-world-audio-browser.mjs
+        env:
+          AUDIO_OUT: artifacts/realm-gameplay/audio
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: playable-realm-gameplay
+          path: artifacts/realm-gameplay
           if-no-files-found: warn
   eight-realms:
     runs-on: ubuntu-latest

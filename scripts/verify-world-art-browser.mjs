@@ -205,7 +205,12 @@ try{
    results.at(-1).life={poses:['seat','read','examine'],movementCancels:true,towerDeckMetres:63,groundReturn:true,verticalNavigation:['hall-items-hidden-upstairs','active-exhibit-stays-upstairs','named-hall-destination-returns-ground','hall-items-restored']};
   }
   if(region==='hub'){
-   const fixture=await page.evaluate(()=>{const initial=game.mapQaFixture(),gate=initial.items.find(i=>i.type==='portal'&&i.id==='france');game.waypoint(gate,true);const fixture=JSON.parse(JSON.stringify(game.mapQaFixture()));game.setPaused(true);return fixture;});
+   const gate=await page.evaluate(()=>game.mapQaFixture().items.find(i=>i.type==='portal'&&i.id==='france'));assert.ok(gate,'The playable scene contains the France gate');
+   await page.evaluate(gate=>game.waypoint(gate,true),gate);
+   // The module worker returns after waypoint(). Wait for its accepted route
+   // and the scene snapshot before pausing; pause intentionally cancels work.
+   await page.waitForFunction(id=>qa.snapshot.waypoint?.id===id&&qa.snapshot.routePlanning===false&&qa.snapshot.route.length>1&&game.mapQaFixture().route.length>1,gate.id,{timeout:90000});
+   const fixture=await page.evaluate(()=>{const fixture=JSON.parse(JSON.stringify(game.mapQaFixture()));game.setPaused(true);return fixture;});
    await writeFile(out+'/cartography-fixture.json',JSON.stringify(fixture,null,2));
    assert.ok(fixture.route.length>1,'The map receives a real detour route from the playable navigator');
    await page.evaluate(()=>game.destroy());

@@ -34,7 +34,16 @@ export function createRealmTileGeometry(field,x,z,segments=16){
  for(let row=0;row<segments;row++)for(let col=0;col<segments;col++){const a=row*(segments+1)+col,b=a+1,c=a+segments+1,d=c+1;indices.push(a,c,b,b,c,d);}
  const borders=[Array.from({length:segments+1},(_,i)=>i),Array.from({length:segments+1},(_,i)=>i*(segments+1)+segments),Array.from({length:segments+1},(_,i)=>segments*(segments+1)+segments-i),Array.from({length:segments+1},(_,i)=>(segments-i)*(segments+1))];
  for(const border of borders){let previous=null;for(const top of border){const lower=vertex(vertices[top*3],vertices[top*3+2],4);if(previous)indices.push(previous.top,previous.lower,top,top,previous.lower,lower);previous={top,lower};}}
- const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(normal,3));g.setAttribute('color',new THREE.Float32BufferAttribute(color,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(indices);g.computeBoundingBox();g.computeBoundingSphere();return g;
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(normal,3));g.setAttribute('color',new THREE.Float32BufferAttribute(color,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(indices);g.computeBoundingBox();g.computeBoundingSphere();
+ g.userData.realmSegments=segments;g.userData.realmSurfaceIndexCount=segments*segments*6;g.userData.realmSkirtIndices=g.index.array.slice(g.userData.realmSurfaceIndexCount);g.userData.realmSkirtMask=15;g.setDrawRange(0,g.index.count);return g;
+}
+
+const TILE_EDGES=[[0,-1],[1,0],[0,1],[-1,0]];
+function setTileSkirts(geometry,mask){
+ if(geometry.userData.realmSkirtMask===mask)return;
+ const {realmSurfaceIndexCount:surface,realmSkirtIndices:skirts}=geometry.userData,edgeLength=skirts.length/4;let count=surface;
+ for(let edge=0;edge<4;edge++)if(mask&(1<<edge)){geometry.index.array.set(skirts.subarray(edge*edgeLength,(edge+1)*edgeLength),count);count+=edgeLength;}
+ geometry.userData.realmSkirtMask=mask;geometry.index.needsUpdate=true;geometry.setDrawRange(0,count);
 }
 
 function lowPlant(type,palette){
@@ -97,13 +106,21 @@ export function createRealmStreamer({region,field,root,material,coreGround}){
   for(const mesh of [...natural.values()].flatMap(b=>[b.wood,b.leaves,b.low]).concat(rocks,buildingBatches.map(b=>b.mesh),monumentBatches.map(b=>b.mesh))){mesh.instanceMatrix.needsUpdate=true;if(mesh.count)mesh.computeBoundingSphere();}
   lastPoolPosition={x:position.x,z:position.z};
  }
+ function refreshBorders(cell){
+  // Equal-resolution neighbours share exact vertices: their internal vertical
+  // faces only introduce grazing depth/AO seams. Keep full-height skirts at
+  // real LOD transitions and unloaded edges, including incremental replacement.
+  for(const [dx,dz] of [[0,0],...TILE_EDGES]){const tile=tiles.get(realmSectorKey(cell.x+dx,cell.z+dz));if(!tile)continue;let mask=0;
+   TILE_EDGES.forEach(([ex,ez],edge)=>{const neighbour=tiles.get(realmSectorKey(tile.x+ex,tile.z+ez));if(!neighbour||neighbour.mesh.geometry.userData.realmSegments!==tile.mesh.geometry.userData.realmSegments)mask|=1<<edge;});setTileSkirts(tile.mesh.geometry,mask);
+  }
+ }
  function makeTile(cell){
   const geometry=createRealmTileGeometry(field,cell.x,cell.z,profile.segments[cell.lod]),mesh=new THREE.Mesh(geometry,material);mesh.name='Realm terrain '+cell.key+' · LOD '+cell.lod;mesh.receiveShadow=true;group.add(mesh);
-  const old=tiles.get(cell.key);old?.mesh.removeFromParent();old?.mesh.geometry.dispose();tiles.set(cell.key,{...cell,mesh,data:old?.data||realm.sector(cell.x,cell.z)});generated++;revision++;dirty=true;
+  const old=tiles.get(cell.key);old?.mesh.removeFromParent();old?.mesh.geometry.dispose();tiles.set(cell.key,{...cell,mesh,data:old?.data||realm.sector(cell.x,cell.z)});refreshBorders(cell);generated++;revision++;dirty=true;
  }
  function reconcile(position){
   plan=realmSectorPlan(position,field.radius,profile);const desired=new Set(plan.map(c=>c.key));
-  for(const [key,tile] of tiles)if(!desired.has(key)){tile.mesh.removeFromParent();tile.mesh.geometry.dispose();tiles.delete(key);dirty=true;revision++;}
+  for(const [key,tile] of tiles)if(!desired.has(key)){tile.mesh.removeFromParent();tile.mesh.geometry.dispose();tiles.delete(key);refreshBorders(tile);dirty=true;revision++;}
   pending=plan.filter(c=>!tiles.has(c.key)||tiles.get(c.key).lod!==c.lod);
   // A discontinuous arrival gets a complete local landing neighbourhood before
   // control resumes. Walking normally only refreshes one/two tiles per frame.
@@ -122,7 +139,7 @@ export function createRealmStreamer({region,field,root,material,coreGround}){
   get cameraSolids(){return collisionList.map(b=>({...b,bottom:field.height(b.x,b.z),top:field.height(b.x,b.z)+(b.height||20)}));},
   get collisionRevision(){return revision;},update,ensureLanding(position){lastKey='';update(position);},
   setQuality(mode,capabilities){profile=realmStreamingProfile(mode,capabilities);lastKey='';update(lastPosition);},
-  get diagnostics(){const meshes=[];group.traverse(o=>{if(o.isMesh&&(!o.isInstancedMesh||o.count))meshes.push(o);});return{region,radius:field.radius,areaHubRatio:realm.layout.areaHubRatio,sectorSize:SIZE,activeSectors:tiles.size,pendingSectors:pending.length,maxSectors:profile.maxTiles,generatedSectors:generated,terrainTriangles:[...tiles.values()].reduce((n,t)=>n+t.mesh.geometry.index.count/3,0),natureInstances:visiblePlants,maxNatureInstances:profile.naturalInstances,buildingInstances:visibleBuildings,activeSettlements:visibleSites,settlements:realm.sites.length-2,travelRelays:travelDestinations.length,drawCalls:meshes.length,position:{...lastPosition},realTerrain:true};},
+  get diagnostics(){const meshes=[];group.traverse(o=>{if(o.isMesh&&(!o.isInstancedMesh||o.count))meshes.push(o);});return{region,radius:field.radius,areaHubRatio:realm.layout.areaHubRatio,sectorSize:SIZE,activeSectors:tiles.size,pendingSectors:pending.length,maxSectors:profile.maxTiles,generatedSectors:generated,terrainTriangles:[...tiles.values()].reduce((n,t)=>n+t.mesh.geometry.drawRange.count/3,0),natureInstances:visiblePlants,maxNatureInstances:profile.naturalInstances,buildingInstances:visibleBuildings,activeSettlements:visibleSites,settlements:realm.sites.length-2,travelRelays:travelDestinations.length,drawCalls:meshes.length,position:{...lastPosition},realTerrain:true};},
   dispose(){if(disposed)return;disposed=true;group.removeFromParent();for(const tile of tiles.values())tile.mesh.geometry.dispose();tiles.clear();roadMesh?.geometry.dispose();for(const b of natural.values())for(const mesh of [b.wood,b.leaves,b.low])mesh.dispose();for(const b of buildingBatches)b.mesh.dispose();for(const b of monumentBatches)b.mesh.dispose();rocks.dispose();owned.forEach(o=>o.dispose());architecture.dispose();}
  };
 }
