@@ -42,8 +42,7 @@ export function createBrokenCircleMaster({root,owned,materials,countries=[],redu
  const loose=[];
  pieces.forEach((p,i)=>{const m=add(fracture,new THREE.BoxGeometry(p[3],p[4],p[5]),i%2?stone:gold,[p[0],p[1],p[2]],[0,0,p[6]]);loose.push({mesh:m,base:m.position.clone(),angle:p[6],phase:i*1.37});});
  // Energy rails and efficient local lights illuminate nearby architecture.
- add(energy,new THREE.TorusGeometry(9.55,.055,5,96),blue,[0,0,.45]);
- add(energy,new THREE.TorusGeometry(11.15,.04,5,96),blue,[0,0,-.45]);
+ // Inner light guides now share the animated instanced-ring draw instead of adding static meshes.
  const cyan=new THREE.PointLight('#55dfff',1.65,52,2),amber=new THREE.PointLight('#d6b46a',.48,38,2);
  cyan.position.set(0,0,3);amber.position.set(-5,-6,2);cyan.castShadow=amber.castShadow=false;energy.add(cyan,amber);
 
@@ -64,16 +63,17 @@ export function createBrokenCircleMaster({root,owned,materials,countries=[],redu
  const waveGeometry=new THREE.TorusGeometry(13,.052,5,96);
  const waveMaterial=new THREE.MeshBasicMaterial({color:'#ffffff',transparent:true,opacity:.10,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide});
  owned.push(waveGeometry,waveMaterial);
- const waves=new THREE.InstancedMesh(waveGeometry,waveMaterial,3);
+ const waves=new THREE.InstancedMesh(waveGeometry,waveMaterial,5);
  waves.name='Cercle Brisé · 3 résonances instanciées';waves.castShadow=waves.receiveShadow=false;waves.frustumCulled=false;energy.add(waves);
  const waveMatrix=new THREE.Object3D();
  const positionWave=(index,time=0,motion=0)=>{
   const phase=Math.sin(time*(1.05+index*.13)-index*1.9);
-  waveMatrix.position.set(0,0,.47-index*.09);
-  waveMatrix.scale.setScalar((13+index*.67)/13*(1+.018*phase*motion));
+  const inner=index>=3;const radius=inner?(index===3?9.55:11.15):(13+index*.67);
+  waveMatrix.position.set(0,0,inner?(index===3?.45:-.45):(.47-index*.09));
+  waveMatrix.scale.setScalar(radius/13*(1+(inner?.005:.018)*phase*motion));
   waveMatrix.updateMatrix();waves.setMatrixAt(index,waveMatrix.matrix);
  };
- for(let index=0;index<3;index++){waves.setColorAt(index,new THREE.Color(index===1?'#d6bc82':'#54d9f5'));positionWave(index);}
+ for(let index=0;index<5;index++){waves.setColorAt(index,new THREE.Color(index===1?'#d6bc82':'#54d9f5'));positionWave(index);}
  waves.instanceMatrix.needsUpdate=true;if(waves.instanceColor)waves.instanceColor.needsUpdate=true;
  // Champagne/cyan sparks share one existing particle draw; no extra point cloud mesh.
  const particleCount=32,starCount=96,totalParticles=particleCount+starCount;
@@ -94,8 +94,8 @@ export function createBrokenCircleMaster({root,owned,materials,countries=[],redu
  function setDaylight(value){daylight=clamp(Number(value)||0);}
  function setQuality(mode){
   quality=mode;
-  pg.setDrawRange(0,mode==='fluid'||mode==='low'?52:totalParticles);
-  waves.count=mode==='fluid'||mode==='low'?1:3;
+  pg.setDrawRange(0,mode==='fluid'||mode==='low'?12:totalParticles);
+  waves.count=mode==='fluid'||mode==='low'?2:5;
  }
 
  function tick(time,playerDistance=Infinity){
