@@ -22,6 +22,11 @@ export const HUB_AMBIENT_SOURCES=Object.freeze([
  }),
  Object.freeze({id:'fountain:nexus',kind:'water',name:'Fontaine du Cercle',x:0,z:0,radius:60,frequency:1550,volume:.045}),
  Object.freeze({id:'machine:broken-circle',kind:'machine',name:'Résonance du Cercle Brisé',x:0,z:0,radius:96,frequency:78,volume:.032}),
+ // The living quarters share the exact physical coordinates used for the map,
+ // collisions and NPC activity. These are quiet spatial beds, not synthetic voices.
+ Object.freeze({id:'life:welcome',kind:'activity',name:'Passants de la Place',...PLATFORM_DISTRICTS.heritage_square,radius:66,frequency:630,volume:.014}),
+ Object.freeze({id:'life:gardens',kind:'nature',name:'Oiseaux des Jardins',...PLATFORM_DISTRICTS.gardens,radius:86,frequency:2250,volume:.016}),
+ Object.freeze({id:'life:marina',kind:'activity',name:'Équipages de la Marina',...PLATFORM_DISTRICTS.docks,radius:72,frequency:510,volume:.015}),
  ...Object.entries(DISTRICT_SOUNDS).map(([id,[name,frequency,volume,buildingId]])=>{
   const room=buildings.find(b=>b.buildingId===buildingId),position=room?{x:room.buildingX,z:room.buildingZ}:PLATFORM_DISTRICTS[id];
   return Object.freeze({id:'district:'+id,kind:id==='innovation'||id==='docks'?'machine':'activity',name,...position,buildingId,radius:48,frequency,volume});
@@ -34,9 +39,10 @@ export function hubAmbientFrame(listener,{interior=null,phase='day',weather='cle
  const sources=HUB_AMBIENT_SOURCES.map(source=>{
   const spatial=spatialAudio(listener,source,source.radius);
   const sameRoom=source.buildingId&&source.buildingId===interior?.id;
-  const indoorFactor=indoors?(source.kind==='water'?.10:sameRoom?.85:.2):1;
-  const dayFactor=night&&source.kind==='activity'?.35:1;
-  const weatherFactor=source.kind==='water'&&['rain','heavy_rain','storm'].includes(weather)?1.12:1;
+  const indoorFactor=indoors?(source.kind==='water'?.10:source.kind==='nature'?.08:sameRoom?.85:.2):1;
+  const dayFactor=source.kind==='nature'?(night?.10:phase==='dawn'?.60:1):night&&source.kind==='activity'?.35:1;
+  const wet=['rain','heavy_rain','storm','snow'].includes(weather);
+  const weatherFactor=source.kind==='water'&&wet?1.12:wet&&source.kind==='nature'?.12:wet&&source.kind==='activity'?.58:1;
   return {...source,...spatial,gain:spatial.gain*source.volume*indoorFactor*dayFactor*weatherFactor};
  }).filter(source=>source.gain>.0004).sort((a,b)=>b.gain-a.gain).slice(0,Math.max(0,Math.min(4,limit)));
  return {sources,caption:sources[0]?.gain>.006?sources[0].name:null};

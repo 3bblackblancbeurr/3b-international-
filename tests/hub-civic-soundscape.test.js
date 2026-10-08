@@ -60,3 +60,18 @@ test('opt-in audio creates at most four ambient loops and releases them on hide 
   audio.enable(true,'hub');assert.equal(contexts.length,1,'a disposed scene cannot recreate sound');
  }finally{audio.close();globalThis.window=original;}
 });
+
+test('gardens, arrival and marina have distinct positional life beds and weather-sensitive city activity',()=>{
+ for(const id of ['life:welcome','life:gardens','life:marina'])assert.ok(HUB_AMBIENT_SOURCES.some(s=>s.id===id),id);
+ const garden=HUB_AMBIENT_SOURCES.find(s=>s.id==='life:gardens');
+ const daytime=hubAmbientFrame(garden,{phase:'day',weather:'clear'}).sources.find(s=>s.id===garden.id);
+ const night=hubAmbientFrame(garden,{phase:'night',weather:'clear'}).sources.find(s=>s.id===garden.id);
+ const storm=hubAmbientFrame(garden,{phase:'day',weather:'storm'}).sources.find(s=>s.id===garden.id);
+ assert.ok(daytime?.gain>0,'garden wildlife is audible next to the gardens during daylight');
+ assert.ok((night?.gain||0)<daytime.gain*.2,'wildlife quiets after dark');
+ assert.ok((storm?.gain||0)<daytime.gain*.2,'wildlife takes cover in storms');
+ const visitor=HUB_AMBIENT_SOURCES.find(s=>s.id==='life:welcome');
+ const square=hubAmbientFrame(visitor,{phase:'day'});
+ assert.ok(square.sources.some(s=>s.id==='life:welcome'),'people are audible in the central arrival district');
+ assert.ok(square.sources.length<=4,'the phone audio engine retains its four-loop maximum');
+});

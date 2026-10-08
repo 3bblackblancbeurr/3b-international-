@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {bakeCrowdHuman,crowdHumanMaterial} from './crowd-human-model.js';
-import {createCivilianRoutes,civilianRoutine} from './ambient-civilian-routes.js';
+import {createCivilianRoutes,civilianRoutine,civilianRoutePoint,nearbyCivilianRoutes} from './ambient-civilian-routes.js';
 import {obstacleDistance} from './collision.js';
 import {worldCrowdPalette} from '../design-system/tokens.js';
 
@@ -43,24 +43,38 @@ export function createAmbientCrowd(root,items,options={}){
  }
  const {cloth,skin}=worldCrowdPalette,agents=Array.from({length:maximum},(_,index)=>{
   const route=routes[index%routes.length],width=Math.max(2,Math.min(7,Number(route.width)||5));
-  return{route,phase:localRoutes?hash(index,1):.04+hash(index,1)*.22,speed:.42+hash(index,2)*.58,offset:(hash(index,3)-.5)*(localRoutes?Math.min(3.6,width*.7):Math.min(1.2,width*.2)),pause:3+hash(index,9)*7,activity:['looking','chatting','resting'][index%3],scale:.88+hash(index,4)*.22,cloth:cloth[Math.floor(hash(index,5)*cloth.length)],skin:skin[Math.floor(hash(index,6)*skin.length)],lod:1,visible:false};
+  return{route,routeReady:false,phase:localRoutes?hash(index,1):.03+hash(index,1)*.94,speed:.42+hash(index,2)*.58,offset:(hash(index,3)-.5)*(localRoutes?Math.min(3.6,width*.7):Math.min(1.2,width*.2)),pause:3+hash(index,9)*7,activity:['looking','chatting','resting'][index%3],scale:.88+hash(index,4)*.22,cloth:cloth[Math.floor(hash(index,5)*cloth.length)],skin:skin[Math.floor(hash(index,6)*skin.length)],lod:1,visible:false};
  });
  const dummy=new THREE.Object3D(),clothColor=new THREE.Color(),skinColor=new THREE.Color();
 
  function update(time,player={x:0,z:0},stamp=time*1000){
   if(disposed)return;walkTime.value=time;walkActive.value=budget.moving?1:0;lastTime=time;lastPlayer=player;lastStamp=stamp;
-  const populationChanged=localRoutes&&(!Number.isFinite(lastSimulationPlayer.x)||Math.hypot((player.x||0)-lastSimulationPlayer.x,(player.z||0)-lastSimulationPlayer.z)>24);
+  const populationChanged=!Number.isFinite(lastSimulationPlayer.x)||Math.hypot((player.x||0)-lastSimulationPlayer.x,(player.z||0)-lastSimulationPlayer.z)>24;
   if(lastUpdate!==-Infinity){if(!budget.updateHz&&!populationChanged||budget.updateHz&&stamp-lastUpdate<1000/budget.updateHz)return;}lastUpdate=stamp;lastSimulationPlayer={x:player.x||0,z:player.z||0};lastUpdateTime.value=time;updateInterval.value=budget.updateHz?1/budget.updateHz:0;visible=0;
   for(const model of models)for(const batch of model.batches)batch.count=0;
   const viewer=options.camera?.position||player;
   // A territory reuses its bounded human pool in nearby villages. Reassignment
   // only happens after an agent leaves the visible radius, so residents already
   // on screen keep their path, gait phase and identity through sector changes.
-  const localCandidates=localRoutes?routes.filter(r=>Math.hypot((r.from.x+r.to.x)/2-(player.x||0),(r.from.z+r.to.z)/2-(player.z||0))<budget.maxDistance+36).sort((a,b)=>Math.hypot((a.from.x+a.to.x)/2-player.x,(a.from.z+a.to.z)/2-player.z)-Math.hypot((b.from.x+b.to.x)/2-player.x,(b.from.z+b.to.z)/2-player.z)):[];
+  const localCandidates=localRoutes
+   ?routes.filter(r=>Math.hypot((r.from.x+r.to.x)/2-(player.x||0),(r.from.z+r.to.z)/2-(player.z||0))<budget.maxDistance+36)
+    .sort((a,b)=>Math.hypot((a.from.x+a.to.x)/2-player.x,(a.from.z+a.to.z)/2-player.z)-Math.hypot((b.from.x+b.to.x)/2-player.x,(b.from.z+b.to.z)/2-player.z))
+   :nearbyCivilianRoutes(routes,player,budget.maxDistance+36,Math.max(budget.count,Math.min(routes.length,budget.count*2)));
   for(let index=0;index<budget.count;index++){
    if(!models.length)break;
    const agent=agents[index];
-   if(localCandidates.length&&Math.hypot((agent.route.from.x+agent.route.to.x)/2-(player.x||0),(agent.route.from.z+agent.route.to.z)/2-(player.z||0))>budget.maxDistance+48){agent.route=localCandidates[index%localCandidates.length];agent.visible=false;}
+   if(localCandidates.length){
+    const mid=civilianRoutePoint(agent.route,.5),distance=Math.hypot(mid.x-(player.x||0),mid.z-(player.z||0));
+    if(localRoutes){
+     // Realm relay travel teleports the player across many kilometres. Reassign
+     // the old invisible territory pool immediately, including reduced-motion
+     // mode, instead of waiting another frame for visibility hysteresis.
+     if(distance>budget.maxDistance+48){agent.route=localCandidates[index%localCandidates.length];agent.visible=false;}
+    }else if(!agent.routeReady||(!agent.visible&&distance>budget.maxDistance+36)){
+     // Hub walking keeps visible citizens fixed; only offscreen actors relocate.
+     agent.route=localCandidates[index%localCandidates.length];agent.routeReady=true;agent.visible=false;
+    }
+   }
    const pose=civilianRoutine(agent,time,budget.moving);let {x,z}=pose;
    // A lateral lane yields to fixed furniture; the validated centre aisle is
    // always available. Distant LOD/culling hysteresis avoids boundary flicker.

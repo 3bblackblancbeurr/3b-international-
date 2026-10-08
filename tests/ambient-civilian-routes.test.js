@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {createCivilianRoutes,civilianRoutePoint,civilianRoutine} from '../src/world/ambient-civilian-routes.js';
+import {createCivilianRoutes,civilianRoutePoint,civilianRoutine,nearbyCivilianRoutes} from '../src/world/ambient-civilian-routes.js';
 import {createAmbientCrowd} from '../src/world/ambient-crowd.js';
 import {createHubPlatform} from '../src/world/hub/platform-scene.js';
 import {HUB_SCALE} from '../src/world/hub/platform-layout.js';
@@ -60,4 +60,21 @@ test('denser mobile and desktop crowds stay clear of the actual city through com
    }finally{crowd.dispose();}
   }
  }finally{city.dispose();}
+});
+
+test('active districts reuse real, safe routes nearest the visitor instead of empty distant streets',async()=>{
+ const near={id:'near',from:{x:10,z:-10},to:{x:10,z:10},length:20},far={id:'far',from:{x:320,z:-20},to:{x:320,z:20},length:40};
+ const ranked=nearbyCivilianRoutes([far,near],{x:5,z:0},70,2);
+ assert.equal(ranked[0],near);
+ assert.deepEqual(nearbyCivilianRoutes([far,near],{x:320,z:0},70,2),[far]);
+ assert.deepEqual(nearbyCivilianRoutes([far,near],{x:10000,z:10000},10,2).length,2,'remote position keeps nearest real routes as fallback');
+ const male=await loadShippedCrowdFixture(),root=new THREE.Group(),crowd=createAmbientCrowd(root,[{type:'hubBuilding'}],{modelAsset:male,mode:'fluid',coarsePointer:true,viewport:844,deviceMemory:4,groundY:()=>0});
+ await crowd.ready;
+ try{
+  crowd.tick(0,{x:0,z:0},0);assert.ok(crowd.diagnostics.visible>0);
+  crowd.tick(40,{x:280,z:0},40000);crowd.tick(41,{x:280,z:0},41000);
+  assert.ok(crowd.diagnostics.visible>0,'a player visiting another quarter finds real walkers nearby');
+  assert.equal(crowd.diagnostics.count,16,'the mobile fluid character budget is unchanged');
+  assert.ok(crowd.diagnostics.drawCalls<=4,'no additional CPU/GPU draw batches');
+ }finally{crowd.dispose();}
 });
