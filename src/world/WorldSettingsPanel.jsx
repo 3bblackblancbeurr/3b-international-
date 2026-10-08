@@ -4,7 +4,7 @@ import {Play,Map,Users,Maximize,Compass,ArrowLeft,Download,RotateCcw,Sparkles,Vo
 import WorldSaveStatus from './WorldSaveStatus.jsx';
 import {CONTROL_ACTIONS,CONTROL_KEY_CHOICES,controlLabel} from './control-bindings.js';
 const keyName=key=>({shift:'Maj',' ':'Espace',arrowup:'↑',arrowdown:'↓',arrowleft:'←',arrowright:'→'}[key]||key.toUpperCase());
-export default function WorldSettingsPanel({uid,save,saveStatus,saveMessage,rewardMessage,snapshot,onPanel,onResume,onFullscreen,onCamera,onExit,onAccount,onSync,onExport,onImport,sound,onSound,haptics,onHaptics,soundCaptions,onSoundCaptions,difficulty,onDifficulty,quality,onQuality,sensitivity,onSensitivity,onFollow,audioMix,onAudio,controls,onControl,onControlProfile,companionVisible,onCompanion}){
+export default function WorldSettingsPanel({uid,save,saveStatus,saveMessage,rewardMessage,snapshot,onPanel,onResume,onFullscreen,onCamera,onExit,onAccount,onSync,onExport,onImport,sound,onSound,haptics,onHaptics,soundCaptions,onSoundCaptions,difficulty,onDifficulty,quality,onQuality,sensitivity,onSensitivity,onFollow,audioMix,onAudio,controls,onControl,onControlProfile,onEditTouchLayout,companionVisible,onCompanion}){
  return <div className="hub-settings">
   <div className="hub-settings-intro"><span className="world-kicker">CITÉ DES HUIT HÉRITAGES</span><h3>À ton rythme.</h3><p>Reprends ton exploration ou ajuste ton confort de jeu.</p></div>
   <div className="hub-settings-primary"><Button className="world-primary" onClick={onResume}><Play size={18}/>Reprendre l’exploration</Button><Button variant="neutral" onClick={onFullscreen}><Maximize size={18}/>Plein écran</Button></div>
@@ -21,6 +21,7 @@ export default function WorldSettingsPanel({uid,save,saveStatus,saveMessage,rewa
   </details>
   <details className="hub-settings-section"><summary>Commandes clavier et tactile</summary>
    <p>Glisse à gauche pour avancer, à droite pour regarder. Un toucher court choisit une destination. Clic droit pour le regard ; molette pour zoomer.</p>
+   <div className="world-touch-settings"><h4>Commandes sur téléphone</h4><p>Déplace séparément le joystick, Sauter, Frapper, Défendre, Esquiver et Pouvoir. Enregistre : les touches garderont leur place sur cet appareil.</p><Button className="world-primary" onClick={onEditTouchLayout}>Personnaliser la position des touches</Button></div>
    <div className="world-actions"><Button variant="neutral" onClick={()=>onControlProfile('azerty')}>AZERTY</Button><Button variant="neutral" onClick={()=>onControlProfile('qwerty')}>QWERTY</Button><Button variant="neutral" onClick={()=>onControlProfile('default')}><RotateCcw size={16}/>Réinitialiser</Button></div>
    <div className="world-control-grid">{Object.entries(CONTROL_ACTIONS).map(([id,rule])=><label key={id}><span>{rule.label}</span><select aria-label={'Touche pour '+rule.label.toLowerCase()} value={controls[id]?.[0]||rule.default[0]} onChange={e=>onControl(id,e.target.value)}>{CONTROL_KEY_CHOICES.map(key=><option key={key} value={key}>{keyName(key)}</option>)}</select></label>)}</div><p>Une touche ne peut pas servir à deux actions. Interagir : {controlLabel(controls,'interact')} · courir : {controlLabel(controls,'sprint')}.</p>
   </details>
