@@ -5,9 +5,9 @@ import {advanceMotion} from '../src/world/motion.js';
 import {defaultControlBindings,controlBindingConflicts,normalizeControlBindings} from '../src/world/control-bindings.js';
 import {readHudPreferences,writeHudPreferences} from '../src/world/hud-preferences.js';
 
-test('jump has finite lift, owns its pose, lands once and rejects repeated launch',()=>{
+test('jump has finite lift, lands once and rejects repeated launch independently of an aerial strike',()=>{
  const m=createGameplayMotion();assert.equal(m.start('jump'),true);assert.equal(m.start('jump'),false);
- assert.equal(m.start('strike'),false);let frame=m.update(.18);assert.ok(frame.lift>1);assert.equal(frame.action,null);
+ assert.equal(m.start('strike'),true);let frame=m.update(.18);assert.ok(frame.lift>1);assert.equal(frame.action,'strike');
  m.update(.25);m.update(.25);frame=m.update(.1);assert.equal(frame.landed,true);assert.equal(frame.lift,0);assert.equal(m.update(.1).landed,false);
  assert.equal(m.start('jump'),true);
 });
@@ -18,14 +18,21 @@ test('takeoff cancels every previous ground action, including guard and dodge',(
   assert.equal(frame.airborne,true);assert.equal(frame.action,null);assert.equal(frame.guard,0);assert.equal(frame.dodge,null);
  }
 });
-test('airborne action rejection does not consume cooldowns and controls work on landing',()=>{
- for(const kind of ['strike','guard','power','dodge']){
-  const m=createGameplayMotion();m.start('jump');
-  assert.equal(m.start(kind),false,kind+' cannot replace the complete airborne pose');
-  for(let i=0;i<3;i++)m.update(.24);
-  assert.equal(m.start(kind),true,kind+' is immediately available after landing');
-  assert.equal(m.update(0).action,kind);
+test('aerial strikes, guards and powers retain the jump clock and use independent cooldowns',()=>{
+ for(const kind of ['strike','guard','power']){
+  const m=createGameplayMotion(),reference=createGameplayMotion();m.start('jump');reference.start('jump');
+  assert.equal(m.start(kind),true,kind+' is available during a jump');
+  assert.equal(m.start(kind),false,kind+' cannot repeat before its own cooldown');
+  for(let i=0;i<4;i++){const frame=m.update(.18),expected=reference.update(.18);assert.equal(frame.lift,expected.lift);assert.equal(frame.airborne,expected.airborne);assert.equal(frame.landed,expected.landed);}
+  m.update(.11);assert.equal(m.start('jump'),true,'action cooldown does not consume the next jump');
+  assert.equal(m.start(kind),kind!=='power','the power cooldown remains active across landing and the next jump');
  }
+});
+test('an aerial dodge rejection consumes no cooldown and a late aerial power survives landing',()=>{
+ const m=createGameplayMotion();m.start('jump');assert.equal(m.start('dodge'),false);
+ m.update(.25);m.update(.25);assert.equal(m.start('power'),true);
+ const frame=m.update(.23);assert.equal(frame.landed,true);assert.equal(frame.action,'power');assert.equal(frame.dodge,null);
+ m.update(.25);m.update(.25);assert.equal(m.start('dodge'),true,'dodge is available after the aerial action ends');
 });
 test('combat presentation sees takeoff before the first frame and recovers after landing or reset',()=>{
  const m=createGameplayMotion();assert.equal(m.airborne,false);m.start('jump');assert.equal(m.airborne,true);

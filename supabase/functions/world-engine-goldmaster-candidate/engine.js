@@ -4,7 +4,7 @@ import {CARDS,COUNTRIES,cardById,countryById} from './catalog.js';
 import {normalizeAvatar} from './avatar-rules.js';
 import {stepField} from './field-combat.js';
 import {resolveResonanceContext} from './resonance-context.js';
-import {beginField,fieldMover} from './field-world.js';
+import {beginField,fieldMover,alignLegacyCombatField} from './field-world.js';
 import {frontierState,RESOURCE_SITES,BUILDINGS,buildCost,patrolOpponent} from './frontier.js';
 import {normalizeSave,gain,discover,beacon,recruit,seal,craft,equip,awardMissions,makeEncounter,worldItems,guardianReady,clamp} from './rules.js';
 import {CHAPTERS,chapterState,chapterCards,puzzleStart,puzzleStep,puzzleSolved,nexusLevel,COSMETICS,cosmeticUnlocked} from './chapters.js';
@@ -19,12 +19,40 @@ import {HUB_DIALOGUE_INTENT_SET} from './hub/dialogue-intents.js';
 import {applyHubMissionAction} from './hub/mission-actions.js';
 import {GUARDIAN_VALUES,guardianValueStep,normalizeGuardianValueState,guardianValueDecision} from './guardian-values.js';
 import {isWorldCinematicKey} from './cinematic-events.js';
+import {applyCampaignAction,completeCampaignGuardian,claimCampaignPhase} from './campaign-runtime.js';
+import {applyRealmRelayDiscover,applyRealmTravel} from './realm-navigation.js';
 
 const fail=text=>{throw Error(text);};
 const requireThat=(condition,text)=>{if(!condition)fail(text);};
 const adventure=(s,delta)=>gain(s,{adventure:{...s.adventure,...delta}});
 const chapter=(s,id,delta)=>adventure(s,{chapters:{...s.adventure.chapters,[id]:{...chapterState(s,id),...delta}}});
 const reward=(s,xp,shards)=>gain(s,{xp:s.xp+xp,shards:s.shards+shards});
+function campaignResult(save,region,result){
+ if(result.duplicate)return save;
+ const earned=claimCampaignPhase(region,result),previousValue=save.adventure.values?.[region];
+ let s=adventure(save,{campaigns:{...save.adventure.campaigns,[region]:result.state},...(result.valueState?{values:{...save.adventure.values,[region]:result.valueState}}:{})});
+ if(earned.xp||earned.shards)s=reward(s,earned.xp,earned.shards);
+ if(result.valueState?.completed&&!previousValue?.completed)s=reward(s,60,15);
+ if(result.memory!==undefined)s=awardMissions(beacon(s,region+':'+result.memory));
+ if(result.completedPhase==='rumor'){
+  if(!chapterState(s,region).helped)s=applyWorldAction(s,{type:'help'});
+  const ally=chapterCards(region).ally;if(!s.adventure.companion&&ally)s=adventure(s,{companion:ally,companionHidden:false});
+ }
+ // The second physical phase replaces the old monument-only shortcut. It
+ // grants the existing exploration capabilities, never elemental combat powers.
+ if(result.state.phase===2&&result.completedPhase){
+  for(const power of ['ally','ambiance','terrain'])if(!chapterState(s,region).powers.includes(power))s=applyWorldAction(s,{type:'power',power});
+  if(!chapterState(s,region).solved)s=reward(chapter(s,region,{board:[...CHAPTERS[region].answer],solved:true,restored:1}),120,35);
+ }
+ if(result.completedPhase==='memory'&&chapterState(s,region).restored<2)s=applyWorldAction(s,{type:'restore',choice:result.state.history.some(row=>row.choice==='atelier')?'workshop':'garden'});
+ if(result.homecoming){
+  if(chapterState(s,region).restored<3)s=reward(chapter(s,region,{restored:3}),200,70);
+  // The presentation journal records this scene after playback. Marking it
+  // here would suppress the homecoming event before the director receives it.
+  s=adventure(s,{resonance:s.adventure.resonance||region});
+ }
+ return s;
+}
 const pactPattern=e=>[(e.pactSeed+1)%3,(e.pactSeed+2)%3,e.pactSeed%3];
 export const pactCues=['Une lumière vacille : abriter','Un écho hésite : écouter','Une trace s’efface : éclairer'];
 export const pactChoices=['Abriter','Écouter','Éclairer'];
@@ -73,6 +101,13 @@ export function applyWorldAction(input,action){
  const activeResonance=()=>s.adventure.resonance&&s.seals.includes(s.adventure.resonance)?s.adventure.resonance:null;
  const hubSignal=(state,signal)=>{const result=applyHubMissionSignal(state.hub.missions,signal);return result.missions===state.hub.missions?state:gain(state,{hub:{...state.hub,missions:result.missions}});};
  switch(action.type){
+  case 'campaignAction':{
+   const campaignRegion=action.region||region,result=applyCampaignAction(s,action);if(result.duplicate)return s;peaceful();
+   s=campaignResult(s,campaignRegion,result);
+   if(result.startGuardian){s=applyWorldAction(s,{type:'encounter',id:campaignRegion+':guardian'});return applyWorldAction(s,{type:'fieldStart'});}return s;
+  }
+  case 'realmRelayDiscover':{peaceful();inCountry();const realmRelays=applyRealmRelayDiscover(s,action);return realmRelays?adventure(s,{realmRelays}):s;}
+  case 'realmTravel':{peaceful();inCountry();return adventure(s,applyRealmTravel(s,action));}
   case 'cinematicSeen':{
    requireThat(isWorldCinematicKey(action.key),'Cinématique inconnue.');
    if(s.adventure.cinematicSeen?.includes(action.key))return s;
@@ -224,6 +259,7 @@ export function applyWorldAction(input,action){
    if(cs.restored===2){requireThat(s.seals.includes(region),'Libère le gardien du pays.');return reward(chapter(s,region,{restored:3}),200,70);}return s;
   }
   case 'encounter':{
+   if(action.id===region+':guardian'&&s.adventure.campaigns?.[region]?.active)requireThat(s.adventure.campaigns[region].phase>=5,'Achève les actes et épreuves du royaume avant le Gardien.');
    peaceful();inCountry();if(action.id===region+':guardian'&&!s.seals.includes(region))requireThat(s.adventure.values?.[region]?.completed,`Maîtrise d’abord la valeur ${GUARDIAN_VALUES[region]?.value||'du Gardien'}.`);let item=worldItems(region,s).find(i=>i.id===action.id&&['echo','guardian'].includes(i.type));
    requireThat(item,'Cette rencontre n’existe pas.');
    const boss=item.type==='guardian';if(boss){requireThat(cs.restored>=2&&guardianReady(s,region),'Reconstruis le quartier, retrouve trois souvenirs et équipe un Allié.');if(!s.seals.includes(region))requireThat(s.adventure.values?.[region]?.completed,`Maîtrise d’abord la valeur ${GUARDIAN_VALUES[region]?.value||'du Gardien'}.`);}
@@ -237,11 +273,11 @@ export function applyWorldAction(input,action){
   case 'fieldStart':{requireThat(e&&!e.result,'Aucune rencontre en cours.');return adventure(s,{encounter:{...e,field:e.field||beginField(s,e)}});}
   case 'field':case 'battle':{
    requireThat(action.type==='field'||(!e?.field&&!e?.final),e?.final?'La finale se joue uniquement en temps réel.':'Ce combat se joue en temps réel.');
-   let next=action.type==='field'?stepField(e,action,fieldMover(s)):advanceBattle(e,action.action);
+   let next=action.type==='field'?stepField(alignLegacyCombatField(s,e),action,fieldMover(s)):advanceBattle(e,action.action);
    if(next.result==='victory'&&!e.rewarded){
     if(e.patrol){const h=frontierState(s,e.region),mastery={...s.adventure.mastery};for(const id of new Set([s.leader,...s.team]))mastery[id]=Math.min(999999,(mastery[id]||0)+30);s=reward(adventure(s,{frontier:{...s.adventure.frontier,[e.region]:{...h,expedition:h.expedition+1,harvest:[],jobs:[]}},mastery}),35,8);}
     else if(e.final){if(!s.adventure.finished)s=reward(adventure(s,{finished:true,cosmetic:'union'}),1000,300);}
-    else {s=seal(s,e.region);if(e.expert&&!chapterState(s,e.region).challenge)s=reward(chapter(s,e.region,{challenge:true}),180,60);}
+    else {s=seal(s,e.region);if(e.expert&&!chapterState(s,e.region).challenge)s=reward(chapter(s,e.region,{challenge:true}),180,60);const campaign=completeCampaignGuardian(s,e.region);if(campaign)s=campaignResult(s,e.region,campaign);}
     next.rewarded=true;
    }
    return adventure(s,{encounter:next});
@@ -280,4 +316,3 @@ export function applyWorldAction(input,action){
   default:fail('Action de jeu non autorisée.');
  }
 }
-

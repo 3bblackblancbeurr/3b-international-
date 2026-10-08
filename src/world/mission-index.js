@@ -1,6 +1,7 @@
 import hubMissions from './hub/data/missions-v1.json' with {type:'json'};
 import {CHAPTERS} from './chapters.js';
 import {CANON_WORLDS,GUARDIAN_STORIES} from './story-canon.js';
+import {CAMPAIGN_RUNTIME_SPEC,validateCampaignRuntimeSpec} from './campaign-spec.js';
 
 export const MISSION_CATEGORIES=Object.freeze([
  'main','guardian','independent','secret','dynamic','city','coop','challenge','endgame',
@@ -34,13 +35,13 @@ export const GUARDIAN_CAMPAIGNS=Object.freeze({
   finalRole:'Maintient le groupe relié lorsque la manifestation cherche à séparer les huit.',
   phases:Object.freeze([
    phase('rumor','Les liens sous suspicion','entendre plusieurs accusations'),
-   phase('escort','Ceux qui restent','escorter sans abandonner les plus lents','framework'),
-   phase('truth','La parole difficile','révéler une vérité qui coûte','framework'),
+   phase('escort','Ceux qui restent','escorter sans abandonner les plus lents','runtime'),
+   phase('truth','La parole difficile','révéler une vérité qui coûte','runtime'),
    phase('memory','L’eau se souvient','restaurer canaux et souvenirs'),
    phase('value','Épreuve de Loyauté','rester, dire, protéger'),
    phase('guardian','Yliane','combat de cohésion'),
    phase('homecoming','Le retour de Yliane','réunir le quartier'),
-   phase('post','Les routes de confiance','missions de groupe évolutives','framework'),
+   phase('post','Les routes de confiance','missions de groupe évolutives','runtime'),
   ]),
  }),
  maroc:Object.freeze({
@@ -50,14 +51,14 @@ export const GUARDIAN_CAMPAIGNS=Object.freeze({
   post:'Commandes d’artisans, restauration d’objets, médiations sur le don et la dignité.',
   finalRole:'Protège l’élément vulnérable du Cercle pendant que les autres agissent.',
   phases:Object.freeze([
-   phase('rumor','Le prix du geste','observer comment l’aide peut devenir humiliation','framework'),
+   phase('rumor','Le prix du geste','observer comment l’aide peut devenir humiliation','runtime'),
    phase('craft','Le souffle des cimes','réparer cloches et messages'),
-   phase('aid','Donner sans écraser','aider sans créer de dette','framework'),
-   phase('memory','Les ateliers de mémoire','restaurer un objet transmis','framework'),
+   phase('aid','Donner sans écraser','aider sans créer de dette','runtime'),
+   phase('memory','Les ateliers de mémoire','restaurer un objet transmis','runtime'),
    phase('value','Épreuve de Noblesse','respecter, donner, tenir'),
    phase('guardian','Naël','combat de protection et retenue'),
    phase('homecoming','Le retour de Naël','ouvrir les ateliers du Nexus'),
-   phase('post','L’ouvrage transmis','artisanat et restauration avancés','framework'),
+   phase('post','L’ouvrage transmis','artisanat et restauration avancés','runtime'),
   ]),
  }),
  tunisie:Object.freeze({
@@ -67,14 +68,14 @@ export const GUARDIAN_CAMPAIGNS=Object.freeze({
   post:'Sauvetages dynamiques, tempêtes, incidents maritimes et interventions civiles.',
   finalRole:'Ouvre le passage dangereux que personne d’autre ne peut tenir assez longtemps.',
   phases:Object.freeze([
-   phase('rumor','Quand la peur arrive','préparer une intervention','framework'),
+   phase('rumor','Quand la peur arrive','préparer une intervention','runtime'),
    phase('rescue','Ce que la mer rend','sauvetage de rivage'),
-   phase('hazard','La route sous la tempête','traverser des zones à fenêtres sûres','framework'),
+   phase('hazard','La route sous la tempête','traverser des zones à fenêtres sûres','runtime'),
    phase('memory','Les marches retrouvées','récupérer les souvenirs du rivage'),
    phase('value','Épreuve de Courage','avancer, protéger, assumer'),
    phase('guardian','Soraya','combat d’avancée sous pression'),
    phase('homecoming','Le retour de Soraya','réouverture du port'),
-   phase('post','Les appels du large','sauvetages variables','framework'),
+   phase('post','Les appels du large','sauvetages variables','runtime'),
   ]),
  }),
  espagne:Object.freeze({
@@ -84,14 +85,14 @@ export const GUARDIAN_CAMPAIGNS=Object.freeze({
   post:'Défis publics, performances, parcours et duels à contraintes créatives.',
   finalRole:'Transforme l’énergie accumulée par l’équipe en fenêtre offensive contrôlée.',
   phases:Object.freeze([
-   phase('rumor','La place s’échauffe','observer une foule qui monte en intensité','framework'),
+   phase('rumor','La place s’échauffe','observer une foule qui monte en intensité','runtime'),
    phase('movement','La dernière rotation','accorder moulins et rythme'),
-   phase('arena','Le geste juste','enchaîner sans perdre le contrôle','framework'),
+   phase('arena','Le geste juste','enchaîner sans perdre le contrôle','runtime'),
    phase('memory','Le phare du crépuscule','rétablir le signal'),
    phase('value','Épreuve de Passion','canaliser, créer, maîtriser'),
    phase('guardian','Diego','duel rythmique à surchauffe'),
    phase('homecoming','Le retour de Diego','réouverture de la scène'),
-   phase('post','Les nuits de la Plaza','défis de foule et création','framework'),
+   phase('post','Les nuits de la Plaza','défis de foule et création','runtime'),
   ]),
  }),
  italie:Object.freeze({
@@ -101,14 +102,14 @@ export const GUARDIAN_CAMPAIGNS=Object.freeze({
   post:'Chantiers, jardins évolutifs, reconstruction de lieux et missions après échec.',
   finalRole:'Restaure un mécanisme du Cercle détruit pendant la confrontation finale.',
   phases:Object.freeze([
-   phase('rumor','Ce qui ne revient pas','constater une perte irréversible','framework'),
+   phase('rumor','Ce qui ne revient pas','constater une perte irréversible','runtime'),
    phase('path','Les jardins suspendus','ouvrir un nouveau chemin'),
-   phase('rebuild','Reprendre autrement','reconstruire sans copier l’ancien','framework'),
+   phase('rebuild','Reprendre autrement','reconstruire sans copier l’ancien','runtime'),
    phase('memory','La serre des vérités','faire revenir ce qui peut l’être'),
    phase('value','Épreuve d’Espoir','tenir, ouvrir, transmettre'),
    phase('guardian','Alessio','combat contre des défenses qui reviennent'),
    phase('homecoming','Le retour d’Alessio','jardin vivant au Nexus'),
-   phase('post','Les chantiers impossibles','reconstruction avancée','framework'),
+   phase('post','Les chantiers impossibles','reconstruction avancée','runtime'),
   ]),
  }),
  turquie:Object.freeze({
@@ -118,14 +119,14 @@ export const GUARDIAN_CAMPAIGNS=Object.freeze({
   post:'Routes nocturnes, observatoire, choix sous incertitude et missions de parole donnée.',
   finalRole:'Maintient le lien quand les repères visuels et sonores sont brouillés.',
   phases:Object.freeze([
-   phase('rumor','Les cartes incomplètes','accepter une information partielle','framework'),
+   phase('rumor','Les cartes incomplètes','accepter une information partielle','runtime'),
    phase('signals','Le ciel partagé','aligner les astrolabes'),
-   phase('commit','La parole sans témoin','tenir un engagement non surveillé','framework'),
+   phase('commit','La parole sans témoin','tenir un engagement non surveillé','runtime'),
    phase('memory','La galerie des étoiles','relier signes et mémoire'),
    phase('value','Épreuve de Foi','tenir, douter, agir'),
    phase('guardian','Émir','combat de signes et engagement'),
    phase('homecoming','Le retour d’Émir','observatoire du Nexus'),
-   phase('post','Les passages sans carte','missions à information limitée','framework'),
+   phase('post','Les passages sans carte','missions à information limitée','runtime'),
   ]),
  }),
  estonie:Object.freeze({
@@ -135,14 +136,14 @@ export const GUARDIAN_CAMPAIGNS=Object.freeze({
   post:'Pistage, animaux-signal, anomalies, enquêtes de motifs et décisions temporisées.',
   finalRole:'Identifie le pattern final que l’Oubli essaie de cacher dans le bruit.',
   phases:Object.freeze([
-   phase('rumor','Trop de signaux','séparer information et bruit','framework'),
+   phase('rumor','Trop de signaux','séparer information et bruit','runtime'),
    phase('tracking','La piste des aurores','suivre les lumières'),
-   phase('decoy','Le faux sentier','distinguer leurres et traces','framework'),
+   phase('decoy','Le faux sentier','distinguer leurres et traces','runtime'),
    phase('memory','Le refuge des pins','relier des indices dispersés'),
    phase('value','Épreuve de Sagesse','observer, relier, mesurer'),
    phase('guardian','Eira','combat d’observation et timing'),
    phase('homecoming','Le retour d’Eira','lanternes au Nexus'),
-   phase('post','Les anomalies boréales','pistage et décisions avancées','framework'),
+   phase('post','Les anomalies boréales','pistage et décisions avancées','runtime'),
   ]),
  }),
 });
@@ -189,12 +190,13 @@ export function centralMissionIndex(){
   signature:campaign.signature,
   gameplay:[...campaign.dominant],
   implementation:campaign.phases.every(p=>p.implementation==='runtime')?'runtime':'hybrid',
-  phases:campaign.phases,
+  phases:campaign.phases.map(p=>({...p,runtimeObjectives:CAMPAIGN_RUNTIME_SPEC[region].find(row=>row.id===p.id)?.steps.map(step=>region+':'+p.id+':'+step.id)||[]})),
  }));
  return [...hub,...guardians];
 }
 
 export function validateMissionArchitecture(){
+ validateCampaignRuntimeSpec();
  const index=centralMissionIndex(),ids=new Set();
  for(const mission of index){
   if(ids.has(mission.id))throw Error('Mission dupliquée : '+mission.id);ids.add(mission.id);
@@ -204,6 +206,7 @@ export function validateMissionArchitecture(){
   const canon=CANON_WORLDS[region],story=GUARDIAN_STORIES[region];
   if(!canon||campaign.guardian!==canon.guardian||campaign.value!==canon.value||story?.name!==campaign.guardian)throw Error('Campagne Gardien incohérente : '+region);
   if(campaign.phases.length<8)throw Error('Campagne Gardien trop courte : '+region);
+  if(campaign.phases.some(p=>!CAMPAIGN_RUNTIME_SPEC[region]?.some(runtime=>runtime.id===p.id&&runtime.steps.length)))throw Error('Phase sans objectifs jouables : '+region);
   if(!campaign.finalRole||!campaign.combat||campaign.dominant.length<4)throw Error('Identité gameplay insuffisante : '+region);
  }
  if(new Set(Object.values(GUARDIAN_CAMPAIGNS).map(c=>c.signature)).size!==8)throw Error('Deux Gardiens partagent la même signature de campagne');

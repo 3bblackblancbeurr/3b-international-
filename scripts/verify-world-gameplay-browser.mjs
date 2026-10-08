@@ -3,10 +3,12 @@ import fs from 'node:fs/promises';
 const original=await fs.readFile(new URL('./verify-hub-master-browser.mjs',import.meta.url),'utf8');
 let fixture=original.slice(0,original.indexOf('const report=[];'));
 fixture=fixture.replaceAll('5199','5201').replace("const out=process.env.HUB_MASTER_OUT||'artifacts/hub-master-ui';","const out=process.env.GAMEPLAY_OUT||'artifacts/gameplay-ui';");
+fixture=fixture.replace('strictPort:true','strictPort:true,watch:{ignored:[\'**/scripts/.*fixture*\',\'**/outputs/**\']}');
 fixture=fixture.replace("return code.replace(marker,'window.qa.scene=scene.current;'+marker);", "return code.replace(marker,'window.qa.scene=scene.current;window.qa.audioStatus=()=>audio.current?.status?.();'+marker);");
 fixture=fixture.replace(" const marker='return{\\n  refreshHubSchedule:';", " const qaAction=\"onGameplay?.(kind==='strike'?'attack':kind);\";assert.ok(code.includes(qaAction),'Real scene action callback is captured');code=code.replace(qaAction,\"(window.qa.played??=[]).push(kind==='strike'?'attack':kind);\"+qaAction);const marker='return{\\n  refreshHubSchedule:';");
 fixture=fixture.replace("args:['--no-sandbox','--disable-dev-shm-usage','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']", "args:process.env.GAMEPLAY_GPU==='1'?['--no-sandbox']:['--no-sandbox','--disable-dev-shm-usage','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']");
-fixture=fixture.replace('  qaFreezeCapture(){','  qaPlayState(){return {paused,shot:shot?.kind,presentation,ready:hero?.ready,position,playFrame,keys:[...keys],stick,elapsed,controls,life:lifeInteraction.active,smoother:motionSmoother.value(),speed:stats.speed,hidden:document.hidden};},\n  qaFreezeCapture(){');
+fixture=fixture.replace('  qaFreezeCapture(){','  qaPlayState(){return {paused,shot:shot?.kind,presentation,ready:hero?.ready,position,playFrame,keys:[...keys],stick,elapsed,controls,life:lifeInteraction.active,smoother:motionSmoother.value(),speed:stats.speed,hidden:document.hidden,path:{target,points:route.length,planning:routePlanner.status().pending}};},\n  qaFreezeCapture(){');
+fixture=fixture.replace("const qaAction=", "const airMarker=\"hero.airAction?.(animation,PLAY_ACTIONS[kind].duration)\";code=code.replace(airMarker,\"(window.qa.airActions??=[]).push(kind),\"+airMarker);const qaAction=");
 fixture=fixture.replace('return code.replace(marker,`let qaCaptureFrozen=false;',"code=code.replace('onSnapshot({','onSnapshot(window.qa.snapshot={').replace('  avatar.position.set(position.x,','  if(playFrame.airborne){window.qa.jumpSeen=true;window.qa.jumpPeak=Math.max(window.qa.jumpPeak||0,playFrame.lift);} avatar.position.set(position.x,');return code.replace(marker,`let qaCaptureFrozen=false;");
 const cases=String.raw`
 const report=[];
@@ -35,6 +37,9 @@ try{
   await page.getByRole('button',{name:'Sauter',exact:true}).click();
   await page.waitForFunction(()=>qa.jumpSeen);assert.ok(await page.evaluate(()=>qa.jumpPeak>0));
   await page.waitForFunction(()=>qa.snapshot?.gameplay&&!qa.snapshot.gameplay.airborne);assert.equal(await page.evaluate(()=>qa.snapshot.gameplay.lift),0);
+  const landAt=await page.evaluate(()=>qa.scene.qaPlayState().elapsed);await page.waitForFunction(at=>qa.scene.qaPlayState().elapsed>at+.3,landAt);
+  const air=await page.evaluate(()=>({jump:qa.scene.gameplayAction('jump'),strike:qa.scene.gameplayAction('strike'),gestures:qa.airActions}));assert.equal(air.jump,true);assert.equal(air.strike,true);assert.ok(air.gestures.includes('strike'),'actual actor upper-body action is accepted during Jump');
+  await page.waitForFunction(()=>!qa.scene.qaPlayState().playFrame.airborne);
   const before=await page.evaluate(()=>({...qa.snapshot.position}));
   if(device.hasTouch){
    const pad=await page.locator('.world-stick-pad').boundingBox();assert.ok(pad&&pad.width>=90);
@@ -56,6 +61,8 @@ try{
   }else{await page.locator('.world-canvas').focus();await page.keyboard.down('z');try{await page.waitForFunction(start=>Math.hypot(qa.scene.qaPlayState().position.x-start.x,qa.scene.qaPlayState().position.z-start.z)>1,before,{timeout:30000});}catch(error){console.log('Held move '+JSON.stringify(await page.evaluate(()=>qa.scene.qaPlayState())));throw error;}await page.keyboard.up('z');}
   await page.waitForTimeout(450);const after=await page.evaluate(()=>({...qa.snapshot.position}));console.log(device.id+': motion '+JSON.stringify({before,after}));assert.ok(Math.hypot(after.x-before.x,after.z-before.z)>1,'joystick/keyboard actually moves');
   const stopped={...after};await page.waitForTimeout(450);const still=await page.evaluate(()=>({...qa.snapshot.position}));assert.ok(Math.hypot(still.x-stopped.x,still.z-stopped.z)<.3,'release stops movement');
+  await page.evaluate(point=>qa.scene.waypoint({...point,id:'qa-guidance',name:'Repère de parcours'},true),before);await page.waitForFunction(point=>Math.hypot(qa.scene.qaPlayState().position.x-point.x,qa.scene.qaPlayState().position.z-point.z)<1,before,{timeout:45000});await page.evaluate(()=>qa.scene.cancelWaypoint());
+  await page.evaluate(()=>{const portal=qa.snapshot.mapItems.find(item=>item.type==='portal');qa.scene.waypoint(portal,true);qa.scene.setMoveInput({x:0,z:0});});await page.waitForTimeout(200);const cancelled=await page.evaluate(()=>qa.scene.qaPlayState().path);assert.equal(cancelled.planning,false);assert.equal(cancelled.target,null);assert.equal(cancelled.points,0);await page.evaluate(()=>qa.scene.cancelWaypoint());
   await page.waitForFunction(()=>!qa.scene.qaPlayState().playFrame.airborne);
   for(const [name,kind] of [['Frapper','attack'],['Défendre','guard'],['Esquiver','dodge'],['Pouvoir','power']]){
    console.log(device.id+': action '+kind+' '+JSON.stringify(await page.evaluate(()=>({played:qa.played,state:qa.scene.qaPlayState()}))));const started=await page.evaluate(()=>qa.scene.qaPlayState().elapsed);
@@ -71,7 +78,7 @@ try{
   const metrics=await page.evaluate(()=>({audio:qa.audioStatus(),fps:qa.snapshot.fps,drawCalls:qa.snapshot.drawCalls,crowd:qa.snapshot.graphics?.crowd}));
   await page.reload({waitUntil:'domcontentloaded'});await page.locator('.world-loading').waitFor({state:'hidden',timeout:120000});await page.evaluate(()=>qa.scene.skipCinematic());await page.waitForTimeout(500);
   assert.equal(await page.locator('.world-minimap').count(),0);assert.equal(await page.locator('.hub-mission-rail').count(),0);assert.equal(await page.evaluate(()=>qa.audioStatus()?.closed),false);
-  assert.deepEqual(errors,[]);report.push({device:device.id,pass:true,checks:['audio gesture after load','actions','jump/land','move/release','simultaneous joystick/jump','keyboard UI','widgets close/reopen/persist'],metrics});
+  assert.deepEqual(errors,[]);report.push({device:device.id,pass:true,checks:['audio gesture after load','actions','jump/land','move/release','worker route physically reaches target','manual input cancels pending route','simultaneous joystick/jump','keyboard UI','widgets close/reopen/persist'],metrics});
   await context.close();
  }
  await writeFile(out+'/report.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));

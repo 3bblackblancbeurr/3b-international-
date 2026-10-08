@@ -44,6 +44,9 @@ export const ACTIONS=Object.freeze({
 
 const TYPE_ACTIONS=Object.freeze({
  portal:['travel','inspect'],
+ campaignObjective:['use'],
+ realmTravel:['ride'],
+ realmSite:['inspect'],
  hubNpc:['talk','ask'],
  hubGuardian:['talk','ask'],
  hubCreature:['observe','inspect'],
@@ -105,6 +108,8 @@ export function contextActions(item,context={}){
   if(id==='open'&&item.locked&&!context.hasKey)continue;
   let overrides={};
   if(item.type==='portal')overrides={label:item.id==='hub'?'Retourner à la Cité':'Traverser la Porte'};
+  if(item.type==='campaignObjective')overrides={label:item.campaign?.started?'Poursuivre l’épreuve':'Rencontrer · '+item.name};
+  if(item.type==='realmTravel')overrides={label:'Ouvrir le relais'};
   if(item.type==='hubMission'){const row=save.hub?.missions?.[item.missionId];overrides={label:item.locked?'Voir les prérequis':row?.status==='available'?'Commencer la mission':row?.status==='active'?'Voir l’objectif':row?.status==='completed'&&!row?.claimed?'Récupérer la récompense':'Mission accomplie'};}
   if(item.type==='hubMissionAction'||item.type==='jobAction')overrides={label:item.actionLabel||item.name||ACTIONS[id]?.label};
   if(item.type==='beacon')overrides={label:item.done?'Souvenir retrouvé':'Recueillir le Souvenir'};

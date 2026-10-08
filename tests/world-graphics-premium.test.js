@@ -102,8 +102,8 @@ test('opening cinematic starts low over water before revealing the hub skyline',
  const scene=read('src/world/scene.js'),camera=read('src/world/cinematic-camera.js');
  assert.match(scene,/waterReveal:true/);
  assert.match(scene,/focus=\{x:0,z:0\}/);
- assert.match(scene,/cameraLift=waterReveal\?4\.2/);
- assert.match(scene,/focusLift=waterReveal\?2\.6/);
+ assert.match(scene,/cameraLift=\(waterReveal\?4\.2/);
+ assert.match(scene,/focusLift=\(waterReveal\?2\.6/);
  assert.match(scene,/cinematicReturnBlend\(age,\{waterReveal\}\)/);
  assert.match(camera,/waterReveal\?\.80:\.72/);
 });

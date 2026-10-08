@@ -7,10 +7,12 @@ import {obstacleDistance} from './collision.js';
 import {parisSites} from './paris-layout.js';
 import hubPlan from './hub/data/hub-master-plan-v2.json' with { type: 'json' };
 import {HUB_METROPOLIS,hubPortalPosition,metropolisRoadItems,buildMetropolisRuntimeItems} from './hub/metropolis.js';
+import {realmDimensions,realmCampaignPosition} from './realm-layout.js';
+import {createRealmGroundField} from './realm-ground.js';
 
 export const WORLD_RADIUS=260;
 export const HUB_WORLD_RADIUS=HUB_METROPOLIS.radius;
-export const worldRadiusFor=region=>region==='hub'?HUB_WORLD_RADIUS:WORLD_RADIUS;
+export const worldRadiusFor=region=>region==='hub'?HUB_WORLD_RADIUS:(realmDimensions(region)?.radius||WORLD_RADIUS);
 export const BIOMES={
  hub:{seed:83,angle:0,scale:1.8,low:'#11161b',high:'#2a3a40',rock:'#59626a',sky:'#102331',haze:'#587687',amplitude:8.2,tree:'Tree',water:{x:-310,z:285,r:72}},
  france:{seed:13,angle:-.24,scale:1.6,low:'#416b3b',high:'#839e58',rock:'#a0a590',sky:'#a3bec7',haze:'#d2d2ba',amplitude:4.3,tree:'Tree',water:{x:-42,z:26,r:11}},
@@ -25,6 +27,7 @@ export const BIOMES={
 export function randomFor(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 export function toLandscape(region,x,z){const b=BIOMES[region]||BIOMES.hub,c=Math.cos(b.angle),s=Math.sin(b.angle);return{x:(x*c-z*s)*b.scale,z:(x*s+z*c)*b.scale};}
 export function landscapeItems(region,save){return [...worldItems(region,save),...serviceItems(region,save),...districtDestinations(region)].map(item=>{
+ if(region!=='hub'&&item.type==='guardian')return{...item,...realmCampaignPosition(region,3)};
  if(region==='hub'&&item.type==='portal'){const country=COUNTRIES.find(c=>c.id===item.id);return country?{...item,...hubPortalPosition(country.portal)}:{...item,...toLandscape(region,item.x,item.z)};}
  return {...item,...toLandscape(region,item.x,item.z)};
 });}
@@ -53,12 +56,12 @@ export function createTerrainField(region,save){
   if(Math.hypot(p.x,p.z)+p.r>radius*.82||roadDistance(p.x,p.z,roads)<p.r+9||clearings.some(c=>Math.hypot(p.x-c.x,p.z-c.z)<p.r+c.r+7))continue;
   lake=p;found=true;break;
  }
- function height(x,z){
+ function coreHeight(x,z){
   const f=biome.seed*.017;
   let y=(Math.sin(x*.032+f)*Math.cos(z*.027-f)+.36*Math.sin(x*.079+z*.053+f))*biome.amplitude;
   // A continuous landscape extends into distant ridges, with gentle clearings
   // around interactions. There are no radial paths or raised navigation decks.
-  const edge=Math.max(0,Math.min(1,(Math.hypot(x,z)-radius)/140));y+=edge*edge*(3-2*edge)*(24+18*Math.sin(x*.011+z*.009)+7*Math.cos(z*.023-x*.007));
+  const edge=Math.max(0,Math.min(1,(Math.hypot(x,z)-(region==='hub'?radius:WORLD_RADIUS))/140));y+=edge*edge*(3-2*edge)*(24+18*Math.sin(x*.011+z*.009)+7*Math.cos(z*.023-x*.007));
   let flatten=1;for(const p of clearings){const d=Math.hypot(x-p.x,z-p.z);if(d<p.r+11){const t=Math.max(0,Math.min(1,(d-p.r)/11));flatten=Math.min(flatten,t*t*(3-2*t));}}
   const roadMargin=Math.max(0,Math.min(1,(roadDistance(x,z,roads)-4)/10));flatten=Math.min(flatten,roadMargin*roadMargin*(3-2*roadMargin));
   if(region!=='hub'){const corridor=landmarkSightline(region),t=Math.max(0,Math.min(1,(segmentDistance(x,z,corridor.a,corridor.b)-20)/12));flatten=Math.min(flatten,t*t*(3-2*t));}
@@ -67,6 +70,7 @@ export function createTerrainField(region,save){
   return y*(1-blend)+(-2.7+Math.min(1,d/lake.r)*.6)*blend;
  }
  const sightline=landmarkSightline(region);
- const protectedPoint=(x,z,pad=0)=>(region!=='hub'&&segmentDistance(x,z,sightline.a,sightline.b)<6+pad)||clearings.some(p=>Math.hypot(x-p.x,z-p.z)<p.r+pad)||Math.hypot(x-lake.x,z-lake.z)<lake.r+4+pad||roadDistance(x,z,roads)<pad+1;
- return {radius,biome,anchors,buildings,civic,paris,roads,squares,fields,lake,height,protectedPoint};
+ const realm=region==='hub'?null:createRealmGroundField(region,coreHeight),height=realm?.height||coreHeight;
+ const protectedPoint=(x,z,pad=0)=>(region!=='hub'&&segmentDistance(x,z,sightline.a,sightline.b)<6+pad)||clearings.some(p=>Math.hypot(x-p.x,z-p.z)<p.r+pad)||Math.hypot(x-lake.x,z-lake.z)<lake.r+4+pad||roadDistance(x,z,roads)<pad+1||!!realm?.protectedPoint(x,z,pad);
+ return {radius,biome,anchors,buildings,civic,paris,roads,squares,fields,lake,height,protectedPoint,realm};
 }

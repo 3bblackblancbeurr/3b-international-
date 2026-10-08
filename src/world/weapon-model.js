@@ -17,12 +17,12 @@ export function craftedBowLimbGeometry(z=0,radius=.027,radialSegments=6,surfaceO
 // Measure the metacarpal roots in hand space so equipping during any animation
 // produces the same socket. In particular, Object3D.attach would preserve the
 // model-space orientation and undo the wrist rotation that the weapon needs.
-function mountWeapon(root,model,weapon,tier){
- const hand=model.getObjectByName('hand_r');
+export function mountWeapon(root,model,weapon,tier=0,{side='r',grip:customGrip}={}){
+ const hand=model.getObjectByName('hand_'+side);
  if(!hand){root.position.set(.4,.85,0);model.add(root);return;}
  model.updateWorldMatrix(true,true);
  const localBone=(name,fallback)=>{const bone=model.getObjectByName(name);return bone?hand.worldToLocal(bone.getWorldPosition(new T.Vector3())):new T.Vector3(...fallback);};
- const middle=localBone('middle_01_r',[0,.115,.015]),index=localBone('index_01_r',[0,.117,.04]),pinky=localBone('pinky_01_r',[0,.099,-.035]);
+ const middle=localBone('middle_01_'+side,[0,.115,.015]),index=localBone('index_01_'+side,[0,.117,.04]),pinky=localBone('pinky_01_'+side,[0,.099,-.035]);
  const fingers=middle.clone().normalize(),thumbSide=index.sub(pinky);thumbSide.addScaledVector(fingers,-thumbSide.dot(fingers)).normalize();
  if(fingers.lengthSq()<.5)fingers.set(0,1,0);if(thumbSide.lengthSq()<.5)thumbSide.set(0,0,1);
  const dorsal=new T.Vector3().crossVectors(fingers,thumbSide).normalize(),wrist=['Griffes','Gantelet','Ailes'].includes(weapon.kind)||weapon.id==='tallinn';
@@ -40,6 +40,7 @@ function mountWeapon(root,model,weapon,tier){
  else if(weapon.kind==='Hache')grip=[0,-.06,0];
  else if(weapon.id==='paris'&&tier>0)grip=[0,-.28,0];
  else if(weapon.kind==='Lance')grip=[0,-.02,0];
+ if(customGrip)grip=customGrip;
  // The closed fingers sit on the palmar side of the metacarpals. Scale the
  // contact depth to the actual hand, including the smaller female skeleton.
  const socket=wrist?new T.Vector3():middle.clone().multiplyScalar(.7).addScaledVector(dorsal,-.025*T.MathUtils.clamp(middle.length()/.116,.7,1.3));

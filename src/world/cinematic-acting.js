@@ -35,9 +35,10 @@ const PLANS=Object.freeze({
     Object.freeze({at:.78,hero:'Idle',focus:'Idle',duration:1}),
   ]),
   'guardian-intro':Object.freeze([
-    Object.freeze({at:0,hero:'Idle',focus:'Cast',duration:1.4}),
-    Object.freeze({at:.4,hero:'Talk',focus:'Idle',duration:.9}),
-    Object.freeze({at:.7,hero:'Idle',focus:'Cast',duration:1}),
+    Object.freeze({at:0,hero:'Idle',focus:'Draw',duration:1.2}),
+    Object.freeze({at:.28,hero:'Idle',focus:'Guard',duration:1}),
+    Object.freeze({at:.52,hero:'Idle',focus:'Attack',duration:.7}),
+    Object.freeze({at:.72,hero:'Talk',focus:'Cast',duration:1}),
     Object.freeze({at:.9,hero:'Idle',focus:'Idle',duration:.6}),
   ]),
   'final-combat-intro':Object.freeze([

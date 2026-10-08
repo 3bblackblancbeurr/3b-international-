@@ -130,3 +130,11 @@ test('final field combat rotates through all eight guardian mechanics by enemy h
   if(expected[index]==='italie')assert.equal(e.guardianShield,26);
  }
 });
+
+test('field guard has only two recovery uses and guardian healing cannot regress a Circle phase',()=>{
+ let e={...encounter(),recoveries:2,hp:60,stats:{...encounter().stats,heal:8}};
+ const impact=current=>{current.field.phase='windup';current.field.windup=0;current.field.guard=500;current.field.p={x:0,z:6};current.field.enemy={x:0,z:0};current.field.aim={x:0,z:6};return idle(current);};
+ e=impact(e);assert.equal(e.recoveries,1);e=impact(e);assert.equal(e.recoveries,0);const before=e.hp;e=impact(e);assert.ok(e.hp<before,'later guards reduce damage but cannot heal indefinitely');
+ let finale={...encounter(),boss:true,final:true,region:'france',enemy:135,enemyMax:360,finalCirclePhase:6,finalCircleMastery:31,intent:'soin',guardianStep:1};
+ finale.field.phase='windup';finale.field.windup=0;finale.field.p={x:0,z:6};finale.field.enemy={x:0,z:0};finale.field.aim={x:0,z:6};finale=idle(finale);assert.equal(finale.enemy,135);assert.equal(finalCirclePhase(finale).index,6);
+});
