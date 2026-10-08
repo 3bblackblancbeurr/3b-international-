@@ -649,7 +649,12 @@ function hubNpcAvatar(item){
     while(trail.length>65)trail.shift();while(trail.length>3&&Math.hypot(trail[0].x-p.x,trail[0].z-p.z)<1.3)trail.shift();
     const goal=trail.length>3?trail[0]:null,old={x:p.x,z:p.z};
     if(goal&&!paused&&!shot){const journey=realmTraversal(region,position,{combat:fieldCombat}),result=advanceMotion({position:old,target:goal,route:[]},{x:0,z:0},dt,Math.max(11,10.5*stats.speed*1.6)*journey.speedMultiplier,obstacles,worldRadius);p.set(result.position.x,groundY(result.position.x,result.position.z),result.position.z);}
-    escort.update(dt,p.x-old.x,p.z-old.z,Math.hypot(p.x-old.x,p.z-old.z));if(Math.hypot(p.x-position.x,p.z-position.z)>40){p.set(position.x,y,position.z);trail=[];}
+    // Fix follow glitches: teleport recovery must happen before gait sampling,
+    // and a dropped/long mobile frame must not accelerate the leg cycle.
+    const recovered=Math.hypot(p.x-position.x,p.z-position.z)>40;
+    if(recovered){p.set(position.x,y,position.z);trail=[];}
+    const mx=recovered?0:p.x-old.x,mz=recovered?0:p.z-old.z;
+    escort.update(dt,mx,mz,Math.min(Math.hypot(mx,mz),Math.max(0,dt)*9.5));
    }
   }
   const wide=cameraMode===1,portrait=camera.aspect<.85;
