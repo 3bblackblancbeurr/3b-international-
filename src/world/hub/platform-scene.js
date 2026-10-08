@@ -222,6 +222,23 @@ export function createHubPlatform(save){
   const parts=group.map(o=>{const g=o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone();return g.applyMatrix4(o.matrix);}),merged=mergeGeometries(parts);parts.forEach(g=>g.dispose());
   if(merged){const batch=mesh(geo(merged),group[0].material,0,0,0);batch.castShadow=true;group.forEach(o=>o.removeFromParent());}
  }
+ // The two opaque civic glazing materials share one draw-grouped Mesh. Their
+ // distinct night and story emissions remain independently adjustable, but
+ // a new shader must not increase the Hub's mobile static-mesh allocation.
+ const civicGlassBatches=root.children.filter(o=>o.isMesh&&!dynamic.has(o)&&(o.material===glass||o.material===inhabitedGlass));
+ const networkBatch=civicGlassBatches.find(o=>o.material===glass),inhabitedBatch=civicGlassBatches.find(o=>o.material===inhabitedGlass);
+ if(networkBatch&&inhabitedBatch){
+  const parts=[networkBatch,inhabitedBatch].map(o=>(o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone()).applyMatrix4(o.matrix));
+  const grouped=mergeGeometries(parts,true);parts.forEach(g=>g.dispose());
+  if(!grouped)throw new Error('Civic glass needs compatible position, normal and UV layouts');
+  const shared=mesh(geo(grouped),[glass,inhabitedGlass],0,0,0);
+  shared.castShadow=networkBatch.castShadow||inhabitedBatch.castShadow;
+  shared.receiveShadow=networkBatch.receiveShadow||inhabitedBatch.receiveShadow;
+  for(const old of [networkBatch,inhabitedBatch]){
+   old.removeFromParent();old.geometry.dispose();
+   const at=owned.indexOf(old.geometry);if(at>=0)owned.splice(at,1);
+  }
+ }
  const update=next=>{save=next;const state=platformWorldState(save);communityBanner.visible=state.communityUnited;blooms.forEach(b=>b.visible=state.gardenRestored);glass.emissive.set(state.networkRestored?'#174963':'#000000');glass.emissiveIntensity=state.networkRestored?.4:0;root.userData.worldState=state;const count=new Set(save.seals||[]).size;circleMaster.setProgress(count);}; // gold-master-allow: retain reviewed network-restoration glass emission; docs/hub-reference-art-exceptions.md#network-glass.
  update(save);
  root.scale.set(HUB_SCALE,1.5,HUB_SCALE);
