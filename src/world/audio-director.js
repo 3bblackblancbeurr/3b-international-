@@ -20,3 +20,18 @@ export const SCORE_LAYER_STATES=Object.freeze({
  interior:{melody:.72,harmony:.7,bass:.65,counterline:0,pulse:0,threat:0},
 });
 export function scoreLayerProfile(state='exploration'){return SCORE_LAYER_STATES[state]||SCORE_LAYER_STATES.exploration;}
+
+/* Three intentional, low-fatigue headphones/phone-speaker mixes. They only
+ * change local preference gain; no user consent or sound on/off is overridden. */
+export const WORLD_AUDIO_PRESETS=Object.freeze({
+ ambiance:Object.freeze({master:.77,music:.45,ambience:.72,sfx:.23,voice:.85}),
+ cinema:Object.freeze({master:.79,music:.65,ambience:.57,sfx:.34,voice:.94}),
+ discret:Object.freeze({master:.63,music:.22,ambience:.44,sfx:.15,voice:.85}),
+});
+/** The original Circle resonance is a subtle chord under the entire city.
+ * It gains a little detail only on the central plaza, never a piercing drone. */
+export function brokenCircleMusicGain(distance,{indoors=false}={}){
+ const d=Number.isFinite(Number(distance))?Math.max(0,Number(distance)):10000;
+ const near=Math.max(0,1-d/190);
+ return .0022+(indoors?.001:.0055)*near*near;
+}
