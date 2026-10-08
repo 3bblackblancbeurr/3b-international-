@@ -77,7 +77,7 @@ export function addDistrictFabric({root,owned,buildings,collisions,cameraSolids,
  for(const island of CITE_ISLANDS.filter(i=>PROFILES[i.id])){
   const profile=PROFILES[island.id],candidates=[];
   for(let ix=-3;ix<=3;ix++)for(let iz=-3;iz<=3;iz++){
-   const seed=[...String(island.id)].reduce((n,char)=>(Math.imul(n,31)+char.charCodeAt(0))>>>0,17)*.00001;const x=island.x+ix*9+Math.sin(seed+ix*19.37+iz*7.13)*1.12,z=island.z+iz*9+Math.cos(seed*.37+ix*11.17-iz*17.33)*1.12,r=3.6;
+   const seed=[...String(island.id)].reduce((n,char)=>(Math.imul(n,31)+char.charCodeAt(0))>>>0,17)*.00001;const x=island.x+ix*9+Math.sin(seed+ix*19.37+iz*7.13)*1.95,z=island.z+iz*9+Math.cos(seed*.37+ix*11.17-iz*17.33)*1.95,r=3.6;
    if(Math.hypot(x-island.x,z-island.z)>island.r-7)continue;
    let lane=Math.abs(Math.hypot(x,z)-125);for(let axis=0;axis<8;axis++)lane=Math.min(lane,Math.abs(-Math.sin(axis*Math.PI/4)*x+Math.cos(axis*Math.PI/4)*z));
    if(lane<11||citeSurfaceDistance(x,z)>-6||terraceAisle(x,z,6))continue;
