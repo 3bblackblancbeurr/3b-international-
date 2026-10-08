@@ -50,7 +50,7 @@ export function addDistrictFabric({root,owned,buildings,collisions,cameraSolids,
    float stone=fract(sin(dot(floor(vec2(across/1.16,course)),vec2(41.7,289.1)))*43758.5);
    diffuseColor.rgb*=mix(.93+stone*.11,.69,seam*.62);`);
  };body.customProgramCacheKey=()=> '3b-district-masonry-v1';
- const glazing=new THREE.MeshPhysicalMaterial({color:'#173c52',roughness:.2,metalness:.18,clearcoat:1,clearcoatRoughness:.08,envMapIntensity:.35});
+ const glazing=new THREE.MeshPhysicalMaterial({color:'#244b60',emissive:'#112a34',emissiveIntensity:.07,roughness:.24,metalness:.14,clearcoat:1,clearcoatRoughness:.1,envMapIntensity:.36});
  const day={value:1};
  glazing.onBeforeCompile=shader=>{
   shader.uniforms.fabricDay=day;
@@ -65,9 +65,9 @@ export function addDistrictFabric({root,owned,buildings,collisions,cameraSolids,
    float interior=smoothstep(.14,.32,fabricUv.y);
    float furnishing=1.-step(.56,fabricUv.x)*step(fabricUv.y,.38)*.75;
    float curtain=.72+.28*smoothstep(.18,.28,abs(fabricUv.x-.5));
-   totalEmissiveRadiance+=vec3(.72,.43,.19)*fabricLit*pow(1.-fabricDay,1.5)*.20*reveal*interior*furnishing*curtain;`);
+   totalEmissiveRadiance+=vec3(.79,.49,.29)*fabricLit*pow(1.-fabricDay,1.25)*.33*reveal*interior*furnishing*curtain;`);
  };
- glazing.customProgramCacheKey=()=> '3b-fabric-glazing-v1';owned.push(body,glazing);
+ glazing.customProgramCacheKey=()=> '3b-fabric-glazing-v2-night';owned.push(body,glazing);
  const fineNames=new Set(['Baies vitrées','Encadrements de baies','Linteaux de baies','Tableaux de baies','Meneaux verticaux','Garde-corps de balcon','Montants de balcon','Poignées des portes','Chapiteaux de socle','Descentes et nervures','Frises civiques','Reliefs civiques','Lucarnes de toiture','Frontons des lucarnes','Clés des arcades']);
  function layer(geometry,material,name,x,y,z,sx,sy,sz,yaw=0,color){
   const fine=fineNames.has(name),key=geometry.uuid+material.uuid+(fine?'detail':'structure');if(!layers.has(key))layers.set(key,{geometry,material,name,fine,transforms:[]});
