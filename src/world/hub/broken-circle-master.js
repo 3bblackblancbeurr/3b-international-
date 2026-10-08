@@ -60,6 +60,19 @@ export function createBrokenCircleMaster({root,owned,materials,countries=[],redu
  };
  compact(fixed,new Set(heritage.map(h=>h.mesh)));compact(rotorOuter);compact(rotorInner);compact(energy);
 
+ // Resonance rings: coherent gold / matrix-blue traveling waves around the entire physical monument.
+ const resonanceRings=[];
+ for(let index=0;index<3;index++){
+  const mat=new THREE.MeshBasicMaterial({color:index===1?'#d6bc82':'#54d9f5',transparent:true,opacity:.09,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide});owned.push(mat);
+  const ring=add(energy,new THREE.TorusGeometry(13.0+index*.67,.035+index*.006,5,96),mat,[0,0,.47-index*.09]);
+  ring.castShadow=false;ring.receiveShadow=false;resonanceRings.push({ring,mat,index});
+ }
+ // Deterministic lights create sparkle without new shadows, textures or network downloads.
+ const starCount=96,starPositions=new Float32Array(starCount*3);
+ for(let i=0;i<starCount;i++){const a=i*2.399963229728653,radial=12.7+(i%9)*.19;starPositions[i*3]=Math.cos(a)*radial;starPositions[i*3+1]=Math.sin(a)*radial;starPositions[i*3+2]=.8+((i*7)%6)*.08;}
+ const starsGeometry=new THREE.BufferGeometry();starsGeometry.setAttribute('position',new THREE.BufferAttribute(starPositions,3));owned.push(starsGeometry);
+ const starsMaterial=new THREE.PointsMaterial({color:'#f7d99a',size:.17,transparent:true,opacity:.4,depthWrite:false,blending:THREE.AdditiveBlending});owned.push(starsMaterial);
+ const stars=new THREE.Points(starsGeometry,starsMaterial);energy.add(stars);
  const particleCount=32,positions=new Float32Array(particleCount*3);
  for(let i=0;i<particleCount;i++){const t=i/(particleCount-1);positions[i*3]=11.7+(i%5)*.38;positions[i*3+1]=.4+t*5.3;positions[i*3+2]=((i%7)-3)*.16;}
  const pg=new THREE.BufferGeometry();pg.setAttribute('position',new THREE.BufferAttribute(positions,3));owned.push(pg);
@@ -77,6 +90,8 @@ export function createBrokenCircleMaster({root,owned,materials,countries=[],redu
  function setQuality(mode){
   quality=mode;
   pg.setDrawRange(0,mode==='fluid'||mode==='low'?12:particleCount);
+  starsGeometry.setDrawRange(0,mode==='fluid'||mode==='low'?20:starCount);
+  resonanceRings.forEach(({ring,index})=>{ring.visible=!(mode==='fluid'||mode==='low')||index===0;});
  }
 
  function tick(time,playerDistance=Infinity){
@@ -98,6 +113,9 @@ export function createBrokenCircleMaster({root,owned,materials,countries=[],redu
   cyan.intensity=(.82+1.02*(1-daylight)+near*1.08)*pulse;
   amber.intensity=.24+.38*(1-daylight)+near*.24;
   pm.opacity=.28+.28*pulse+near*.16;
+  resonanceRings.forEach(({ring,mat,index})=>{const wave=reduced()?0:Math.sin(animationTime*(1.05+index*.13)-index*1.9);ring.scale.setScalar(1+.018*wave*motion);mat.opacity=.065+.045*(.5+.5*wave)+near*.055;});
+  starsMaterial.opacity=.19+.16*(.5+.5*Math.sin(animationTime*2.1))+near*.18;
+  stars.rotation.z=-animationTime*.045*motion;
   loose.forEach(f=>{const amp=(.06+.035*near)*motion;f.mesh.position.y=f.base.y+Math.sin(animationTime*.72+f.phase)*amp;f.mesh.position.x=f.base.x+Math.cos(animationTime*.48+f.phase)*amp*.45;f.mesh.rotation.z=f.angle+Math.sin(animationTime*.48+f.phase)*.16*motion;});
   particles.rotation.z=Math.sin(animationTime*.16)*.035*motion;particles.position.y=Math.sin(animationTime*.65)*.08*motion;
   // The architectural shell is anchored; only the internal machinery moves.
