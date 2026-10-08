@@ -225,6 +225,108 @@ export default function BrokenCircle3D({variant='stone'}){
       if(!reducedMotion){
         rotor.rotation.z-=dt*(TAU/24);
         if(menuMode){
+          const t=now/1000;
+          rotor.rotation.x=-.06+Math.sin(t*.42)*.012;
+          rotor.rotation.y=.16+Math.cos(t*.34)*.026;
+          if(ambientRig){
+            ambientRig.rotation.z+=dt*.018;
+            ambientRig.rotation.x=Math.sin(t*.21)*.018;
+            ambientRig.children.forEach((child,index)=>{
+              if(child.userData?.orbit) child.rotation.z+=(index%2===0?1:-1)*dt*(.028+index*.004);
+            });
+          }
+        }
+      }
+      renderer.render(scene,camera);
+      if(running)frame=requestAnimationFrame(renderLoop);
+    };
+
+    (async()=>{
+      const THREE=await import('three');
+      if(disposed)return;
+
+      scene=new THREE.Scene();
+      if(menuMode)scene.fog=new THREE.Fog(0x02070d,12.8,20.5);
+      camera=new THREE.PerspectiveCamera(menuMode?36:29,1,.1,100);
+      camera.position.set(0,.02,8.55);
+      camera.lookAt(0,.06,0);
+
+      renderer=new THREE.WebGLRenderer({
+        alpha:true,
+        antialias:true,
+        powerPreference:'high-performance',
+        premultipliedAlpha:true,
+      });
+      renderer.setClearColor(0x000000,0);
+      renderer.outputColorSpace=THREE.SRGBColorSpace;
+      renderer.toneMapping=THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure=menuMode ? 1.24 : 1.08;
+      renderer.shadowMap.enabled=true;
+      renderer.shadowMap.type=THREE.PCFShadowMap;
+      renderer.domElement.className='home-world-webgl-canvas';
+      renderer.domElement.setAttribute('aria-hidden','true');
+      renderer.domElement.addEventListener('webglcontextlost',(event)=>{
+        event.preventDefault();
+        stop();
+        mount.dataset.state='fallback';
+      },{passive:false});
+      mount.appendChild(renderer.domElement);
+
+      const maxAnisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+      const textureLoader=new THREE.TextureLoader();
+      const stoneTexture=textureLoader.load('/world/origins/limestone-color.webp');
+      stoneTexture.colorSpace=THREE.SRGBColorSpace;
+      stoneTexture.wrapS=stoneTexture.wrapT=THREE.RepeatWrapping;
+      stoneTexture.repeat.set(2.8,2.2);
+      stoneTexture.anisotropy=maxAnisotropy;
+
+      const stoneMaterials=makeStoneMaterials(THREE,stoneTexture,variant);
+      const energyMaterial=new THREE.MeshStandardMaterial({
+        color:0x2b9bc8,
+        emissive:0x35d5ff,
+        emissiveIntensity:menuMode ? 5.2 : 4.0,
+        roughness:.22,
+        metalness:.02,
+        transparent:true,
+        opacity:menuMode ? .96 : .90,
+      });
+
+      rotor=new THREE.Group();
+      rotor.position.set(0,.08,0);
+      rotor.rotation.x=menuMode ? -.06 : -.045;
+      rotor.rotation.y=menuMode ? .16 : .13;
+      scene.add(rotor);
+
+      addBrokenRing(THREE,rotor,stoneMaterials,energyMaterial);
+      addArchitecturalDetails(THREE,rotor,stoneMaterials);
+
+      const innerGlow=new THREE.Mesh(
+        new THREE.TorusGeometry(1.39,.022,8,112),
+        new THREE.MeshBasicMaterial({
+          color:0x48dbff,
+          transparent:true,
+          opacity:.32,
+          blending:THREE.AdditiveBlending,
+          depthWrite:false,
+        })
+      );
+      innerGlow.position.z=-.20;
+      rotor.add(innerGlow);
+
+      const outerHalo=new THREE.Mesh(
+        new THREE.TorusGeometry(2.53,.035,8,128),
+        new THREE.MeshBasicMaterial({
+          color:0x39cfff,
+          transparent:true,
+          opacity:.15,
+          blending:THREE.AdditiveBlending,
+          depthWrite:false,
+        })
+      );
+      outerHalo.position.z=-.28;
+      rotor.add(outerHalo);
+
+      if(menuMode){
         // One persistent 3D scene: the Broken Circle stays the hero, while a
         // real miniature city, floor and lighting live behind it. Everything
         // is batched so the phone gets depth without turning the home screen
