@@ -20,3 +20,20 @@
 @media(max-height:550px) and (orientation:landscape){.world-shell .world-action-pad{right:max(12px,env(safe-area-inset-right));bottom:max(12px,env(safe-area-inset-bottom));gap:6px;grid-template-columns:repeat(3,48px);grid-template-rows:repeat(2,50px)}.world-shell .world-play-action{width:48px;height:50px;border-radius:15px}.world-stick-pad{width:102px;height:102px;left:24px;bottom:18px}.world-stick-pad .stick-ring{width:76px;height:76px}.world-shell[data-region] .play-hud .play-profile,.world-shell[data-region] .play-hud .play-companion{bottom:140px!important}.world-shell .play-hud .play-interaction-cluster{bottom:14px;max-width:calc(100% - 370px)}.world-shell .hud-layout-menu{top:66px;right:12px}.world-shell .hud-minimap-close{top:61px;right:12px}.world-shell .world-notice{bottom:130px}.world-shell .field-actions{right:12px;bottom:12px}.world-shell .field-jump{right:12px;bottom:78px}.world-shell .field-movement{display:none}}
 @media(prefers-reduced-motion:reduce){.world-play-action{transition:none}}
 @media(max-height:550px) and (orientation:landscape){.world-shell[data-region=hub]>.play-party{top:max(10px,env(safe-area-inset-top));right:168px!important}.world-shell[data-region=hub]>.world-notice{bottom:128px}.world-shell .play-hud.hub-hud .hub-mission-rail{max-height:calc(100svh - 210px);width:252px}.world-shell[data-region=hub] .play-hud .play-interaction-cluster{max-width:calc(100% - 370px)!important}}
+
+
+/* Editable, uncluttered 3B touch layout. Position values are percentages of the viewport. */
+.world-shell .world-play-controls .world-action-pad{position:absolute;inset:0;left:0;right:0;top:0;bottom:0;display:block;width:100%;height:100%;padding:0;pointer-events:none}
+.world-shell .world-play-controls .world-control-slot{position:absolute;transform:translate(-50%,-50%);width:52px;height:58px;pointer-events:auto;touch-action:none;z-index:2}
+.world-shell .world-play-controls .world-stick-pad{right:auto;transform:translate(-50%,-50%);z-index:3}
+.world-shell .world-play-controls.editing .world-stick-pad{display:grid;border-color:#e8c878;box-shadow:0 0 0 4px #d6b46a2b,0 0 25px #d6b46a44}
+.world-shell .world-play-controls.editing .world-control-slot{border-radius:16px;outline:2px dashed #eed499;outline-offset:3px;cursor:grab}
+.world-shell .world-play-controls.editing .world-control-slot:active,.world-shell .world-play-controls.editing .world-stick-pad:active{cursor:grabbing}
+.world-shell .world-play-controls.editing .world-play-action{pointer-events:none}
+.world-shell .world-play-controls .world-touch-editor{position:absolute;left:50%;top:max(12px,env(safe-area-inset-top));transform:translateX(-50%);max-width:94vw;width:max-content;display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;padding:9px 12px;border:1px solid #eed49987;border-radius:16px;background:#081d2ceF;box-shadow:0 6px 26px #0008;pointer-events:auto;z-index:12;color:#ffecba}
+.world-touch-editor strong{font-size:12px}.world-touch-editor span{font-size:10px;color:#d4e8e3}
+.world-touch-editor>div{display:flex;gap:5px}
+.world-shell .world-touch-editor button{font-size:11px;min-height:38px;padding:7px 11px;border-radius:10px}
+.world-shell .world-touch-editor .touch-editor-save{background:#cdb276;color:#112a2e;font-weight:700}
+@media(max-height:550px) and (orientation:landscape){.world-shell .world-play-controls .world-action-pad{inset:0;width:100%;height:100%;display:block}.world-shell .world-play-controls .world-control-slot{width:48px;height:50px}}
+@media(prefers-reduced-motion:reduce){.world-shell .world-touch-editor,.world-shell .world-play-controls.editing .world-control-slot{transition:none}}
