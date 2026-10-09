@@ -1,89 +1,60 @@
-import test from "node:test";
-import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {NAV_GROUPS,PRINCIPAL_DESTINATIONS,MENU_CATEGORIES,navigationItems,itemsForCategory,searchNavigation,categoryForPage,availableCategories} from '../src/components/navigation-menu.js';
 
-const root = new URL("../", import.meta.url);
+const fixtures=[
+ {id:'passport',label:'Passeport',description:'Identité unique'},
+ {id:'member',label:'Connexion / Inscription',description:'Retrouver son compte'},
+ {id:'world3b',label:'Monde 3B',description:'Explorer les huit royaumes'},
+ {id:'invisible',label:'Le Monde Invisible',description:'Énigmes et fragments'},
+ {id:'secret',label:'Premier Secret',description:'Le signal du jour'},
+ {id:'shop',label:'Boutique',description:'Collections'},
+ {id:'loyalty',label:'Cartes de fidélité',description:'Récompenses'},
+ {id:'guide',label:'Guide 3B',description:'Comprendre 3B'},
+ {id:'games',label:'Jeux 3B',description:'Les jeux',status:'soon'},
+ {id:'religion',label:'Religion',description:'Cultures',status:'soon'},
+ {id:'ia',label:'Textile & IA',description:'Création'},
+];
 
-test("general menu master uses the real rotating Broken Circle and keeps live navigation", async () => {
-  const [navigation, circle, css, app] = await Promise.all([
-    readFile(new URL("src/components/AppNavigation.jsx", root), "utf8"),
-    readFile(new URL("src/components/BrokenCircle3D.jsx", root), "utf8"),
-    readFile(new URL("src/styles/menu-master.css", root), "utf8"),
-    readFile(new URL("src/App.jsx", root), "utf8"),
-  ]);
-
-  assert.match(navigation, /menu-master-dialog/);
-  assert.match(navigation, /<BrokenCircle3D variant="menu"\/>/);
-  assert.match(navigation, /BLACK · BLANC · BEUR/);
-  assert.match(navigation, /Ton univers\. Un seul centre\./);
-  assert.match(navigation, /L’héritage/);
-  assert.match(navigation, /compact \/>/);
-  assert.match(navigation, /NAV_GROUPS\.map/);
-  assert.match(navigation, /RouteLink/);
-  assert.doesNotMatch(navigation, /Destin 3B|destin/i);
-
-  assert.match(circle, /rotor\.rotation\.z/);
-  assert.match(circle, /TAU\/24/);
-  assert.match(circle, /variant==='menu'/);
-  assert.match(circle, /broken-circle-3d--\$\{variant\}/);
-  assert.match(circle, /prefers-reduced-motion/);
-  assert.match(circle, /IntersectionObserver/);
-  assert.match(circle, /ambientRig/);
-  assert.match(circle, /TorusGeometry\(2\.92/);
-  assert.match(circle, /PointsMaterial/);
-
-  assert.match(css, /menu-master-main/);
-  assert.match(css, /grid-template-columns:minmax\(390px/);
-  assert.match(css, /menu-master-circle-stage \.home-world-webgl-shell/);
-  assert.match(css, /menu-master-grid/);
-  assert.match(css, /@media\(max-width:720px\)/);
-  assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
-  assert.match(css, /menuMasterOrbit/);
-  assert.match(app, /styles\/menu-master\.css/);
+test('the principal menu has four clear destinations and every supplied route remains discoverable',()=>{
+ assert.deepEqual(PRINCIPAL_DESTINATIONS.map(item=>item.label),['Accueil','Passeport','Monde 3B','Boutique']);
+ assert.deepEqual(itemsForCategory(fixtures,'principal').map(item=>item.id),['home','passport','world3b','shop']);
+ const reachable=new Set(MENU_CATEGORIES.flatMap(category=>itemsForCategory(fixtures,category.id).map(item=>item.id)));
+ for(const item of fixtures)assert.ok(reachable.has(item.id),item.id+' remains available');
+ assert.ok(itemsForCategory(fixtures,'world').some(item=>item.id==='invisible'));
+ assert.equal(itemsForCategory(fixtures,'world').find(item=>item.id==='games').status,'soon','A preview keeps its availability status');
+ assert.ok(NAV_GROUPS.find(group=>group.title==='Univers 3B').ids.includes('invisible'));
 });
 
-
-test("mobile visual master is a dedicated phone surface, not the desktop panel squeezed down", async () => {
-  const [navigation, css] = await Promise.all([
-    readFile(new URL("src/components/AppNavigation.jsx", root), "utf8"),
-    readFile(new URL("src/styles/menu-master.css", root), "utf8"),
-  ]);
-
-  assert.match(navigation, /MOBILE_MENU_ORDER/);
-  assert.match(navigation, /menu-mobile-master/);
-  assert.match(navigation, /menu-mobile-grid/);
-  assert.match(navigation, /menu-mobile-dock/);
-  assert.match(navigation, /menu-mobile-dock-core/);
-  assert.match(navigation, /BLACK · BLANC · BEUR/);
-  assert.doesNotMatch(navigation, /Destin 3B|destin/i);
-
-  assert.match(css, /MOBILE VISUAL MASTER V2/);
-  assert.match(css, /menu-master-panel,[\s\S]*?menu-master-footer[\s\S]*?display:none!important/);
-  assert.match(css, /menu-mobile-master[\s\S]*?display:flex/);
-  assert.match(css, /menu-mobile-grid[\s\S]*?grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
-  assert.match(css, /menu-mobile-dock[\s\S]*?grid-template-columns:1fr 1fr 68px 1fr 1fr/);
-  assert.match(css, /menu-master-circle-stage[\s\S]*?width:308px/);
+test('categories and global accent-insensitive search never manufacture private account destinations',()=>{
+ assert.equal(itemsForCategory(fixtures,'account').some(item=>item.id==='control'),false);
+ assert.equal(searchNavigation(fixtures,'command').length,0);
+ const authorized=[...fixtures,{id:'control',label:'3B Command OS',description:'Centre privé'}];
+ assert.equal(itemsForCategory(authorized,'account').filter(item=>item.id==='control').length,1);
+ assert.deepEqual(searchNavigation(fixtures,'ENIGMES').map(item=>item.id),['invisible']);
+ assert.deepEqual(searchNavigation(fixtures,'monde invisible').map(item=>item.id),['invisible']);
+ assert.equal(searchNavigation(fixtures,'aucune rubrique possible').length,0);
+ assert.equal(searchNavigation(fixtures,'  ').length,navigationItems(fixtures).length);
 });
 
+test('current pages choose their category and new supplied destinations have a fallback',()=>{
+ assert.equal(categoryForPage('invisible',fixtures),'world');assert.equal(categoryForPage('member',fixtures),'account');assert.equal(categoryForPage('ia-textile',fixtures),'discover');
+ const future=[...fixtures,{id:'future-space',label:'Nouvel espace',description:'Accessible'}];
+ assert.equal(itemsForCategory(future,'discover').filter(item=>item.id==='future-space').length,1);
+ assert.equal(categoryForPage('future-space',future),'discover');
+ assert.deepEqual(availableCategories([]).map(item=>item.id),['principal','settings']);
+ assert.equal(navigationItems([...fixtures,fixtures[0]]).filter(item=>item.id==='passport').length,1);
+});
 
-test("mobile sanctuary master keeps only six signature destinations and a dedicated visual layer", async () => {
-  const [navigation, mobileCss, app] = await Promise.all([
-    readFile(new URL("src/components/AppNavigation.jsx", root), "utf8"),
-    readFile(new URL("src/styles/menu-mobile-sanctuary.css", root), "utf8"),
-    readFile(new URL("src/App.jsx", root), "utf8"),
-  ]);
-
-  assert.match(navigation, /MOBILE_MENU_ORDER = \["passport", "world3b", "shop", "member", "control", "secret"\]/);
-  assert.match(navigation, /MOBILE_MENU_LABELS/);
-  assert.match(navigation, /menu-mobile-hero-label/);
-  assert.match(navigation, /data-menu-id=\{item\.id\}/);
-  assert.doesNotMatch(navigation, /MOBILE_MENU_ORDER[\s\S]*?"guide"/);
-  assert.doesNotMatch(navigation, /Destin 3B|destin/i);
-
-  assert.match(mobileCss, /3B MOBILE SANCTUARY/);
-  assert.match(mobileCss, /menu-master-brandline[\s\S]*?display:none/);
-  assert.match(mobileCss, /menu-mobile-grid[\s\S]*?repeat\(2,minmax\(0,1fr\)\)/);
-  assert.match(mobileCss, /menu-master-panel,[\s\S]*?menu-master-footer[\s\S]*?display:none!important/);
-  assert.match(mobileCss, /menu-mobile-dock[\s\S]*?grid-template-columns:1fr 1fr 70px 1fr 1fr/);
-  assert.match(app, /styles\/menu-mobile-sanctuary\.css/);
+test('the bounded native menu retains keyboard, normal links, current-page semantics and settings',async()=>{
+ const navigation=await readFile(new URL('../src/components/AppNavigation.jsx',import.meta.url),'utf8');
+ const css=await readFile(new URL('../src/styles/simple-navigation.css',import.meta.url),'utf8');
+ assert.match(navigation,/className="app-menu-dialog"/);assert.match(navigation,/role="tablist"/);assert.match(navigation,/aria-selected=/);assert.match(navigation,/aria-current=/);
+ assert.match(navigation,/ArrowRight/);assert.match(navigation,/ArrowLeft/);assert.match(navigation,/event.key === "Escape"/);assert.match(navigation,/event.key !== '\/'/);
+ assert.match(navigation,/event.ctrlKey \|\| event.metaKey/);assert.match(navigation,/getPageHref\(page\)/);assert.match(navigation,/showModal\(\)/);assert.match(navigation,/onCancel=/);
+ assert.match(navigation,/data-menu-id=\{item.id\}/);assert.match(navigation,/ExperienceControls/);assert.match(navigation,/CompanionPresenceControl/);assert.match(navigation,/InstallApp/);
+ assert.doesNotMatch(navigation,/BrokenCircle3D|menu-mobile-grid|CompactCard|menu-master/);
+ assert.match(css,/grid-template-rows:auto auto auto minmax\(0,1fr\) auto/);assert.match(css,/overscroll-behavior:contain/);assert.match(css,/--app-viewport-height/);
+ assert.doesNotMatch(css,/#[0-9a-f]{3,8}\b/i);
 });

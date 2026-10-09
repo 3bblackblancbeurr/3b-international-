@@ -29,6 +29,7 @@ function cleanTransientParams(url) {
   url.searchParams.delete("session_id");
   url.searchParams.delete("auth");
   url.searchParams.delete("reset");
+  url.searchParams.delete("invisibleView");
 }
 
 export function getPageHref(page, location = window.location) {

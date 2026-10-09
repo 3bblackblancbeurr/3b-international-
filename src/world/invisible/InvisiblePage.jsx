@@ -4,6 +4,7 @@ import {blankSave} from '../rules.js';
 import {loadWorld,saveWorld,recordWorldAction} from '../save.js';
 import {getInvisibleEpisode} from './catalog.js';
 import {blankInvisibleState,invisibleEpisodeProgress} from './progression.js';
+import {readInvisibleView,invisibleViewHref} from './navigation.js';
 import CampaignExperience from './CampaignExperience.jsx';
 import './invisible.css';
 
@@ -13,6 +14,9 @@ export default function InvisiblePage({goTo}){
 }
 
 function InvisibleSession({uid,goTo}) {
+ const [view,setView]=useState(()=>readInvisibleView(window.location));
+ useEffect(()=>{const restore=()=>setView(readInvisibleView(window.location));window.addEventListener('popstate',restore);window.addEventListener('hashchange',restore);return()=>{window.removeEventListener('popstate',restore);window.removeEventListener('hashchange',restore);};},[]);
+ function navigateView(next){const href=invisibleViewHref(next,window.location);if(new URL(href,window.location.href).href!==window.location.href)window.history.pushState(null,'',href);setView(readInvisibleView(window.location));}
  const [save,setSave]=useState(blankSave),[loaded,setLoaded]=useState(false),[loadBlocked,setLoadBlocked]=useState(false),[saving,setSaving]=useState(false),[status,setStatus]=useState(null),[saveMessage,setSaveMessage]=useState('Récupération de ton aventure…'),[error,setError]=useState(''),[notice,setNotice]=useState(''),[selected,setSelected]=useState(()=>getInvisibleEpisode().points[0].id),[answer,setAnswer]=useState('');
  const saveRef=useRef(save),ready=useRef(false),alive=useRef(false),generation=useRef(0),loadTicket=useRef(0),dirty=useRef(false),syncFlight=useRef(null),syncTimer=useRef(null);
  const invisible=save.invisible||blankInvisibleState(),episode=getInvisibleEpisode(invisible.activeEpisode),progress=invisibleEpisodeProgress(invisible,episode.id),solved=progress.solved,point=episode.points.find(item=>item.id===selected)||episode.points[Math.min(solved.length,episode.points.length-1)];
@@ -59,11 +63,11 @@ function InvisibleSession({uid,goTo}) {
    return next;
   }catch(err){setError(err.message||'Cette action ne peut pas être enregistrée.');setNotice('');return null;}
  },[uid,sync]);
- function selectPoint(id){setSelected(id);setAnswer('');setError('');setNotice('');}
+ function selectPoint(id){if(id===selected)return;setSelected(id);setAnswer('');setError('');setNotice('');}
  function start(){if(act({type:'invisibleStart',episodeId:episode.id})){setNotice(episode.guardian+' t’attend à la première trace.');setSelected(episode.points[0].id);}}
  function submit(event){event.preventDefault();const next=act({type:'invisibleAnswer',episodeId:episode.id,id:point.id,answer});if(!next)return false;setAnswer('');const current=invisibleEpisodeProgress(next.invisible,episode.id),nextPoint=episode.points.find(item=>!current.solved.includes(item.id));setNotice(nextPoint?'Trace retrouvée. Prochaine énigme : '+nextPoint.name+'.':'Les trois traces sont réunies. Tu peux ouvrir le coffre.');if(nextPoint)setSelected(nextPoint.id);return true;}
  function openChest(){const next=act({type:'invisibleChest',episodeId:episode.id});if(next)setNotice(episode.fragment.name+' est conservé dans ton carnet du Monde Invisible.');return !!next;}
  function openPortal(){const next=act({type:'invisiblePortal',episodeId:episode.id});if(next)setNotice('Le passage de '+episode.city+' est ouvert.');return !!next;}
  function selectEpisode(id){const next=act({type:'invisibleSelectEpisode',episodeId:id});if(!next)return;const target=getInvisibleEpisode(id),state=invisibleEpisodeProgress(next.invisible,id);setSelected(target.points[Math.min(state.solved.length,target.points.length-1)].id);setAnswer('');setError('');setNotice('');}
- return <CampaignExperience uid={uid} save={save} loaded={loaded} loadBlocked={loadBlocked} saving={saving} status={status} saveMessage={saveMessage} error={error} notice={notice} selected={selected} answer={answer} onAnswerChange={setAnswer} onSelectPoint={selectPoint} onSelectEpisode={selectEpisode} onStart={start} onSubmit={submit} onChest={openChest} onPortal={openPortal} onMode={mode=>act({type:'invisibleMode',mode})} onMemory={enabled=>act({type:'invisibleMemoryConsent',enabled})} onForget={()=>{if(act({type:'invisibleForget'}))setNotice('Souvenirs supprimés et mémoire désactivée. Ton aventure est conservée.');}} onConverge={answer=>{const next=act({type:'invisibleConvergence',answer});if(next)setNotice('Les huit valeurs sont réunies. La finale est conservée dans ton carnet.');return !!next;}} onSync={sync} onRecover={recover} goTo={goTo}/>;
+ return <CampaignExperience view={view} onViewChange={navigateView} uid={uid} save={save} loaded={loaded} loadBlocked={loadBlocked} saving={saving} status={status} saveMessage={saveMessage} error={error} notice={notice} selected={selected} answer={answer} onAnswerChange={setAnswer} onSelectPoint={selectPoint} onSelectEpisode={selectEpisode} onStart={start} onSubmit={submit} onChest={openChest} onPortal={openPortal} onMode={mode=>act({type:'invisibleMode',mode})} onMemory={enabled=>act({type:'invisibleMemoryConsent',enabled})} onForget={()=>{if(act({type:'invisibleForget'}))setNotice('Souvenirs supprimés et mémoire désactivée. Ton aventure est conservée.');}} onConverge={answer=>{const next=act({type:'invisibleConvergence',answer});if(next)setNotice('Les huit valeurs sont réunies. La finale est conservée dans ton carnet.');return !!next;}} onSync={sync} onRecover={recover} goTo={goTo}/>;
 }

@@ -1,6 +1,23 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { handleNativeBack } from '../src/native/back-navigation.js';
+import { handleNativeBack, closeActiveDialog } from '../src/native/back-navigation.js';
+
+test('native back cancels an open native dialog before dispatching a shared-modal escape', () => {
+  const calls=[];
+  const dialog={dispatchEvent(event){calls.push([event.type,event.cancelable]);return false;},close(){calls.push('close');}};
+  const document={querySelector(selector){return selector==='dialog[open]'?dialog:null;}};
+  assert.equal(closeActiveDialog(document,()=>calls.push('escape')),true);
+  assert.deepEqual(calls,[['cancel',true]]);
+});
+
+test('native back dismisses shared help and settings modals without consuming route history', () => {
+  let escapes=0;
+  const document={querySelector(selector){return selector.startsWith('.gm-modal')?{}:null;}};
+  assert.equal(closeActiveDialog(document,()=>escapes++),true);
+  assert.equal(escapes,1);
+  assert.equal(closeActiveDialog({querySelector(){return null;}},()=>escapes++),false);
+  assert.equal(escapes,1);
+});
 
 function environment(overrides = {}) {
   const calls = [];

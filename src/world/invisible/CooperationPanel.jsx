@@ -2,11 +2,14 @@ import React,{useEffect,useRef,useState} from 'react';
 import {Button,Progress} from '../../design-system/index.jsx';
 import {INVISIBLE_REALMS} from './catalog.js';
 import {readInvisibleCooperation,contributeInvisibleEcho,solveInvisibleCollective,readInvisibleEvents,contributeInvisibleEvent,solveInvisibleEvent} from './guardian-client.js';
+import './cooperation-navigation.css';
 
 const date=value=>value?new Intl.DateTimeFormat('fr-FR',{timeZone:'Europe/Paris',dateStyle:'medium',timeStyle:'short'}).format(new Date(value)):'';
 const phases={upcoming:'À venir',open:'Ouverte',complete:'Résolue par le collectif',closed:'Terminée'};
-function EchoMission({uid,save,seasonal=false}){
- const [stored,setStored]=useState(null),[realm,setRealm]=useState('france'),[answer,setAnswer]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
+function EchoMission({uid,save,seasonal=false,draft,onDraft}){
+ const [stored,setStored]=useState(null),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ const realm=draft.realm,answer=draft.answer;
+ const setRealm=value=>onDraft({realm:value}),setAnswer=value=>onDraft({answer:value});
  const request=useRef(null),generation=useRef(0),owner=useRef(uid),lock=useRef(false);
  if(owner.current!==uid){owner.current=uid;generation.current++;request.current?.abort();}
  const snapshot=stored?.owner===uid?stored.value:null;
@@ -26,7 +29,7 @@ function EchoMission({uid,save,seasonal=false}){
   finally{if(ticket===generation.current){setBusy(false);lock.current=false;}}
  }
  useEffect(()=>{
-  setStored(null);setError('');setBusy(false);setRealm('france');setAnswer('');lock.current=false;
+  setStored(null);setError('');setBusy(false);lock.current=false;
   if(uid)run();
   return()=>{generation.current++;request.current?.abort();lock.current=false;};
  },[uid]);
@@ -41,7 +44,7 @@ function EchoMission({uid,save,seasonal=false}){
     {seasonal&&<div className="invisible-event-calendar"><p>Du {date(snapshot.startsAt)} au {date(snapshot.endsAt)} · heure de Paris</p><label htmlFor={'invisible-event-'+suffix}>Calendrier<select id={'invisible-event-'+suffix} value={snapshot.event} disabled={busy} onChange={event=>run('load',event.target.value)}>{snapshot.calendar?.map(item=><option key={item.event} value={item.event}>{item.title} · {phases[item.phase]}</option>)}</select></label>{snapshot.completedAt&&<small>Première résolution collective confirmée le {date(snapshot.completedAt)}.</small>}</div>}
     <div className="invisible-echo-progress"><strong>{snapshot.awakened?'Les huit lettres répondent':'Le Cercle écoute'}</strong><span>{snapshot.covered}/8 affinités · {snapshot.contributors} contribution{snapshot.contributors===1?'':'s'} confirmée{snapshot.contributors===1?'':'s'}</span></div>
     <Progress value={snapshot.covered/8*100} label={'Affinités représentées · '+(seasonal?snapshot.title:'Les huit échos')}/>
-    <div className="invisible-echo-realms">{displayRealms.map(item=>{const row=snapshot.realms.find(row=>row.realm===item.id),letter=puzzle?.letters?.find(row=>row.realm===item.id);return <div className={'invisible-echo-realm '+(row?.contributors>0?'answered':'')} key={item.id}><strong>{letter?letter.position+' · ':''}{item.name}</strong><small>{item.value}</small><span>{row?row.contributors+' écho'+(row.contributors===1?'':'s'):'État indisponible'}</span>{letter&&<b className="invisible-echo-letter" aria-label={item.name+': '+(letter.symbol?'lettre '+letter.symbol:'lettre encore masquée')}>{letter.symbol||'◇'}</b>}</div>;})}</div>
+    <ol className="invisible-echo-realms" aria-label="Les huit affinités de cette mission">{displayRealms.map(item=>{const row=snapshot.realms.find(row=>row.realm===item.id),letter=puzzle?.letters?.find(row=>row.realm===item.id);return <li className={'invisible-echo-realm '+(row?.contributors>0?'answered':'')} key={item.id}><strong>{letter?letter.position+' · ':''}{item.name}</strong><span>{row?row.contributors+' écho'+(row.contributors===1?'':'s'):'État indisponible'}</span>{letter&&<b className="invisible-echo-letter" aria-label={item.name+': '+(letter.symbol?'lettre '+letter.symbol:'lettre encore masquée')}>{letter.symbol||'◇'}</b>}</li>;})}</ol>
     {contributed?<p className="invisible-notice" role="status">Ton écho est lié à {INVISIBLE_REALMS.find(item=>item.id===contributed)?.name||'ton affinité'}.</p>:<>
      <label className="invisible-echo-choice" htmlFor={'invisible-echo-realm-'+suffix}>Choisir mon affinité<select id={'invisible-echo-realm-'+suffix} value={realm} onChange={event=>setRealm(event.target.value)} disabled={busy||!participationOpen}>{INVISIBLE_REALMS.map(item=><option key={item.id} value={item.id}>{item.name} · {item.value}</option>)}</select></label>
      <Button className="invisible-button primary" disabled={busy||!snapshot.eligible||!participationOpen} onClick={()=>run('contribute')}>Lier mon écho à {INVISIBLE_REALMS.find(item=>item.id===realm)?.name}</Button>
@@ -60,5 +63,9 @@ function EchoMission({uid,save,seasonal=false}){
  </div>;
 }
 export default function CooperationPanel({uid,save}){
- return <section className="invisible-cooperation" aria-labelledby="invisible-cooperation-title"><h2 id="invisible-cooperation-title">Transmettre ensemble</h2><p className="invisible-muted">Choisis une affinité de jeu, jamais une preuve de résidence. Une seule contribution par compte pour chaque mission ; ton choix reste lié à cet écho. Aucune identité ni localisation n’est affichée.</p><EchoMission uid={uid} save={save}/><EchoMission uid={uid} save={save} seasonal/></section>;
+ const [tab,setTab]=useState('permanent'),[drafts,setDrafts]=useState({permanent:{realm:'france',answer:''},season:{realm:'france',answer:''}});
+ useEffect(()=>{setTab('permanent');setDrafts({permanent:{realm:'france',answer:''},season:{realm:'france',answer:''}});},[uid]);
+ const seasonal=tab==='season';
+ function changeTab(next){setTab(next);}
+ return <section className="invisible-cooperation invisible-mission-screen" aria-labelledby="invisible-cooperation-title"><h2 id="invisible-cooperation-title">Missions à plusieurs</h2><nav className="invisible-mission-tabs" aria-label="Choisir une mission"><Button data-testid="mission-tab-permanent" variant={seasonal?'ghost':'champagne'} aria-current={!seasonal?'page':undefined} onClick={()=>changeTab('permanent')}>Les huit échos</Button><Button data-testid="mission-tab-season" variant={seasonal?'champagne':'ghost'} aria-current={seasonal?'page':undefined} onClick={()=>changeTab('season')}>Saison en cours</Button></nav><EchoMission key={(uid||'guest')+':'+tab} uid={uid} save={save} seasonal={seasonal} draft={drafts[tab]} onDraft={patch=>setDrafts(current=>({...current,[tab]:{...current[tab],...patch}}))}/><details className="invisible-mission-details"><summary>À propos de la participation</summary><p>Choisis une affinité de jeu, jamais une preuve de résidence. Une seule contribution par compte pour chaque mission ; ton choix reste lié à cet écho. Aucune identité ni localisation n’est affichée.</p></details></section>;
 }

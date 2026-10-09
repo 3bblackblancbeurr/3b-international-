@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowUpRight, BookOpen, Boxes, CreditCard, Gamepad2, Globe2, Home, Menu, Compass, Search, ShoppingBag, Sparkles, Trophy, UserRound, Users, LockKeyhole, X, Fingerprint } from "lucide-react";
+import { ArrowLeft, ChevronRight, BookOpen, Boxes, CreditCard, Gamepad2, Globe2, Home, Menu, Compass, Search, ShoppingBag, Sparkles, Trophy, UserRound, Users, LockKeyhole, X, Fingerprint } from "lucide-react";
 import { getPageHref } from "../lib/navigation.js";
-import CompactCard from './CompactCard.jsx';
 import { ExperienceControls } from "../design-system/LuxuryExperience.jsx";
 import { Button } from "../design-system/index.jsx";
 import InstallApp from "../install/InstallApp.jsx";
 import SecretClock from "../secret/SecretClock.jsx";
 import CompanionPresenceControl from '../companion/CompanionPresenceControl.jsx';
-import BrokenCircle3D from './BrokenCircle3D.jsx';
+import { PRINCIPAL_DESTINATIONS, availableCategories, categoryForPage, itemsForCategory, searchNavigation } from './navigation-menu.js';
+import '../styles/simple-navigation.css';
 
 const ICONS = { home: Home, passport: Fingerprint, loyalty: CreditCard, manga: BookOpen, world3b: Globe2, nosbloc: Boxes, games: Gamepad2, religion: BookOpen, guide: Compass, community: Users, secret: LockKeyhole, sport: Trophy, ia: Sparkles, shop: ShoppingBag, member: UserRound };
 export function SectionIcon({ page, ...props }) {
@@ -15,13 +15,7 @@ export function SectionIcon({ page, ...props }) {
   return <Icon size={22} strokeWidth={1.65} aria-hidden="true" {...props} />;
 }
 
-export const NAV_GROUPS = [
-  { title: "Identité & progression", ids: ["passport", "member"] },
-  { title: "Univers 3B", ids: ["world3b", "secret"] },
-  { title: "Services & avantages", ids: ["shop", "control"] },
-  { title: "En préparation", ids: ["nosbloc", "games", "manga", "religion", "sport", "community", "ia"] },
-  { title: "Comprendre 3B", ids: ["guide"] },
-];
+export { NAV_GROUPS } from './navigation-menu.js';
 
 export function RouteLink({ page, goTo, children, ...props }) {
   return <a href={getPageHref(page)} onClick={(event) => {
@@ -31,37 +25,19 @@ export function RouteLink({ page, goTo, children, ...props }) {
   }} {...props}>{children}</a>;
 }
 
-const QUICK_LINKS = [
-  { id: "home", label: "Accueil" },
-  { id: "passport", label: "Passeport" },
-  { id: "world3b", label: "Monde 3B" },
-  { id: "shop", label: "Boutique" },
-];
-
-const MOBILE_MENU_ORDER = ["passport", "world3b", "shop", "member", "control", "secret"];
-
-const MOBILE_MENU_LABELS = {
-  passport: ["Passeport 3B", "TON IDENTITÉ"],
-  world3b: ["Monde 3B", "ENTRER DANS L’UNIVERS"],
-  shop: ["Boutique", "COLLECTIONS 3B"],
-  member: ["Espace membre", "TON ESPACE"],
-  control: ["Command OS", "CENTRE PRIVÉ"],
-  secret: ["Secret 3B", "SIGNAL DU JOUR"],
-};
+const QUICK_LINKS = PRINCIPAL_DESTINATIONS;
 
 export default function AppNavigation({ page, title, menuItems, goTo, secret, options, toggleOption, installation }) {
   const dialog = useRef(null), searchInput = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("principal");
   const [online, setOnline] = useState(() => typeof navigator === 'undefined' ? true : navigator.onLine);
   const activePage = page.startsWith("ia-") ? "ia" : page;
-  const allItems = menuItems;
-
-  const normalize = value => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("fr");
-  const matching = allItems.filter(item => normalize(`${item.label} ${item.description}`).includes(normalize(query.trim())));
-  const mobileMenuItems = MOBILE_MENU_ORDER
-    .map(id => matching.find(item => item.id === id))
-    .filter(item => item && item.status !== "soon");
+  const categories = availableCategories(menuItems);
+  const currentCategory = categories.find(item => item.id === category) || categories[0];
+  const searching = query.trim().length > 0;
+  const matching = searching ? searchNavigation(menuItems, query) : itemsForCategory(menuItems, currentCategory.id);
 
   useEffect(() => { dialog.current?.close(); }, [page]);
   useEffect(() => {
@@ -75,30 +51,46 @@ export default function AppNavigation({ page, title, menuItems, goTo, secret, op
       if (event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey) return;
       const tag = event.target?.tagName;
       if (event.target?.isContentEditable || ['INPUT','TEXTAREA','SELECT'].includes(tag)) return;
+      if (document.querySelector('.gm-modal[role="dialog"][aria-modal="true"]')) return;
+      // An installation-help dialog owns its own keyboard interaction.
+      const topDialog = [...document.querySelectorAll('dialog[open]')].at(-1);
+      if (topDialog && topDialog !== dialog.current) return;
       event.preventDefault();
-      if (!dialog.current?.open) openMenu();
+      if (!dialog.current?.open) openMenu({ search: true });
       else searchInput.current?.focus();
     };
     window.addEventListener('keydown', shortcut);
     return () => window.removeEventListener('keydown', shortcut);
-  }, []);
-  // The native modal makes the background inert. Avoid an additional body
-  // overflow lock: on mobile it can survive a route change or another modal
-  // closing and leave the entire application unable to scroll.
+  }, [page, menuItems]);
+  // The native modal makes the background inert; no persistent body scroll lock.
 
-  function openMenu() {
+  function openMenu({ search = false } = {}) {
     setQuery("");
+    setCategory(categoryForPage(page, menuItems));
     if (!dialog.current?.open) dialog.current?.showModal();
     setIsOpen(true);
-    // Focusing search on a phone opens the keyboard over the menu and shrinks
-    // its scroll area before the user has chosen to search.
-    if (!window.matchMedia("(max-width: 720px)").matches) {
+    if (search || !window.matchMedia("(max-width: 720px)").matches) {
       requestAnimationFrame(() => searchInput.current?.focus({ preventScroll: true }));
     }
   }
   function navigate(nextPage) {
-    dialog.current.close();
+    dialog.current?.close();
     goTo(nextPage);
+  }
+  function changeCategory(id, focus = false) {
+    setQuery("");
+    setCategory(id);
+    if (focus) requestAnimationFrame(() => document.getElementById('menu-category-' + id)?.focus());
+  }
+  function categoryKey(event, index) {
+    let next;
+    if (event.key === 'ArrowRight') next = (index + 1) % categories.length;
+    if (event.key === 'ArrowLeft') next = (index + categories.length - 1) % categories.length;
+    if (event.key === 'Home') next = 0;
+    if (event.key === 'End') next = categories.length - 1;
+    if (next === undefined) return;
+    event.preventDefault();
+    changeCategory(categories[next].id, true);
   }
   return <>
     <a className="skip-link" href="#main-content" onClick={event => {
@@ -118,12 +110,13 @@ export default function AppNavigation({ page, title, menuItems, goTo, secret, op
     {page !== "home" && <div className="page-breadcrumb"><RouteLink page="home" goTo={goTo}><ArrowLeft size={16} aria-hidden="true" /> Accueil</RouteLink><span aria-hidden="true">/</span><span>{title}</span></div>}
     <nav className="mobile-navigation" aria-label="Navigation mobile">
       {QUICK_LINKS.map(item => <RouteLink key={item.id} page={item.id} goTo={goTo} aria-current={page === item.id ? "page" : undefined}><SectionIcon page={item.id} /><span>{item.label}</span></RouteLink>)}
-      <button type="button" onClick={openMenu} aria-label="Ouvrir le menu" aria-haspopup="dialog" aria-controls="universe-menu" aria-expanded={isOpen} className={!QUICK_LINKS.some(item => item.id === page) ? "section-active" : undefined}><Menu size={22} strokeWidth={1.65} aria-hidden="true" /><span>Menu</span></button>
+      <Button variant="ghost" type="button" onClick={openMenu} aria-label="Ouvrir le menu" aria-haspopup="dialog" aria-controls="universe-menu" aria-expanded={isOpen} className={!QUICK_LINKS.some(item => item.id === page) ? "section-active" : undefined}><Menu size={22} strokeWidth={1.65} aria-hidden="true" /><span>Menu</span></Button>
     </nav>
-    <dialog id="universe-menu" ref={dialog} className="universe-dialog menu-master-dialog" aria-labelledby="menu-title" onClose={() => setIsOpen(false)} onKeyDown={event => {
+    <dialog id="universe-menu" ref={dialog} className="app-menu-dialog" aria-labelledby="menu-title" onClose={event => { if (event.target === dialog.current) setIsOpen(Boolean(dialog.current.open)); }} onCancel={event => { if (event.target !== dialog.current) return; event.preventDefault(); dialog.current?.close(); }} onKeyDown={event => {
+      if (event.target.closest('dialog') !== dialog.current) return;
       if (event.key === "Escape") { event.preventDefault(); dialog.current.close(); }
       if (event.key === "Tab") {
-        const targets = [...dialog.current.querySelectorAll('button:not([disabled]), a[href], input:not([disabled])')].filter(element => element.getClientRects().length);
+        const targets = [...dialog.current.querySelectorAll('button:not([disabled]):not([tabindex="-1"]), a[href], input:not([disabled]), select:not([disabled]), summary')].filter(element => element.getClientRects().length);
         const first = targets[0], last = targets[targets.length - 1];
         if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
         else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
@@ -133,137 +126,34 @@ export default function AppNavigation({ page, title, menuItems, goTo, secret, op
       const bounds = dialog.current.getBoundingClientRect();
       if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) dialog.current.close();
     }}>
-      <div className="menu-master-shell">
-        <div className="dialog-heading menu-master-heading">
-          <div className="menu-master-brandline">
-            <span className="menu-master-monogram" aria-hidden="true">3B</span>
-            <div className="menu-master-titleblock">
-              <p className="eyebrow">3B INTERNATIONAL · INTERFACE 2026</p>
-              <h2 id="menu-title">Ton univers. Un seul centre.</h2>
-              <p className="menu-master-legacy">Black · Blanc · Beur — Héritage, unité, création.</p>
-            </div>
-          </div>
-          <button className="icon-button menu-master-close" type="button" autoFocus aria-label="Fermer le menu" onClick={() => dialog.current.close()}><X size={23} aria-hidden="true" /></button>
-        </div>
-
-        <div className="menu-master-main">
-          <section className="menu-master-visual" aria-label="Signature visuelle 3B">
-            <div className="menu-master-visual-copy">
-              <p className="eyebrow">CERCLE BRISÉ · MONUMENT VIVANT</p>
-              <h3>L’héritage<br/><em>en mouvement.</em></h3>
-              <p>Le Cercle Brisé tourne réellement en 3D. Le cœur 3B reste fixe.</p>
-            </div>
-            <div className="menu-mobile-hero-label" aria-hidden="true">
-              <span>3B INTERNATIONAL</span>
-              <strong>MENU GÉNÉRAL</strong>
-              <small>Ce n’est pas une marque. C’est un héritage.</small>
-            </div>
-
-            <div className="menu-master-circle-stage" aria-hidden="true">
-              <span className="menu-master-orbit menu-master-orbit-a" />
-              <span className="menu-master-orbit menu-master-orbit-b" />
-              <span className="menu-master-orbit menu-master-orbit-c" />
-              <BrokenCircle3D variant="menu"/>
-              <div className="menu-master-core">
-                <strong>3B</strong>
-                <span>BLACK · BLANC · BEUR</span>
-              </div>
-              <span className="menu-master-axis menu-master-axis-n">HÉRITAGE</span>
-              <span className="menu-master-axis menu-master-axis-e">UNITÉ</span>
-              <span className="menu-master-axis menu-master-axis-s">AVENIR</span>
-              <span className="menu-master-axis menu-master-axis-w">LIBERTÉ</span>
-            </div>
-
-            <div className="menu-master-heritage-band" aria-hidden="true">
-              <span><b>01</b> HÉRITAGE</span>
-              <span><b>02</b> UNITÉ</span>
-              <span><b>03</b> CRÉATION</span>
-            </div>
-          </section>
-
-          <section className="menu-mobile-master" aria-label="Menu général mobile 3B">
-            <div className="menu-mobile-kicker">
-              <span>ACCÈS 3B</span>
-              <small>{online ? "LIVE" : "LOCAL"}</small>
-            </div>
-
-            <div className="menu-mobile-grid">
-              {mobileMenuItems.map(item => {
-                const [displayLabel, displayMeta] = MOBILE_MENU_LABELS[item.id] || [item.label, "ACCÈS 3B"];
-                return (
-                  <RouteLink
-                    key={item.id}
-                    page={item.id}
-                    goTo={navigate}
-                    className="menu-mobile-tile"
-                    data-menu-id={item.id}
-                    aria-current={activePage === item.id ? "page" : undefined}
-                  >
-                    <span className="menu-mobile-tile-top">
-                      <span className="menu-mobile-tile-icon"><SectionIcon page={item.id}/></span>
-                      <span className="menu-mobile-tile-index">{String(MOBILE_MENU_ORDER.indexOf(item.id)+1).padStart(2,"0")}</span>
-                    </span>
-                    <span className="menu-mobile-tile-copy">
-                      <strong>{displayLabel}</strong>
-                      <small>{item.id === "secret" && secret?.phase === "open" ? "SIGNAL ACTIF" : displayMeta}</small>
-                    </span>
-                    <ArrowUpRight size={16} aria-hidden="true"/>
-                  </RouteLink>
-                );
-              })}
-            </div>
-
-            <nav className="menu-mobile-dock" aria-label="Accès rapides 3B">
-              <RouteLink page="home" goTo={navigate} aria-label="Accueil"><Home size={19}/><span>Accueil</span></RouteLink>
-              <RouteLink page="passport" goTo={navigate} aria-label="Passeport"><Fingerprint size={19}/><span>Passeport</span></RouteLink>
-              <button type="button" className="menu-mobile-dock-core" onClick={() => dialog.current.close()} aria-label="Fermer le menu 3B"><strong>3B</strong></button>
-              <RouteLink page="world3b" goTo={navigate} aria-label="Monde 3B"><Globe2 size={19}/><span>Monde</span></RouteLink>
-              <RouteLink page="member" goTo={navigate} aria-label="Profil"><UserRound size={19}/><span>Profil</span></RouteLink>
-            </nav>
-          </section>
-
-          <section className="menu-master-panel" aria-label="Navigation générale 3B">
-            <div className="menu-master-status" role="status">
-              <span className={online ? "menu-master-live-dot is-online" : "menu-master-live-dot"} aria-hidden="true" />
-              <span>{online ? "SYSTÈME 3B · CONNECTÉ" : "MODE HORS LIGNE · ACCÈS LOCAL"}</span>
-              <span className="menu-master-status-signature">MASTER INTERFACE · LIVE</span>
-            </div>
-
-            <div className="menu-search menu-master-search"><Search size={19} aria-hidden="true" /><input ref={searchInput} type="search" aria-label="Rechercher une rubrique" placeholder="Rechercher Passeport, Monde, Boutique…" value={query} onChange={event => setQuery(event.target.value)} /></div>
-            <div className="menu-secret-clock menu-master-secret"><SecretClock secret={secret} goTo={navigate} compact /></div>
-
-            <div className="dialog-scroll menu-master-scroll">
-              <div className="menu-master-directory">
-                {NAV_GROUPS.map(group => {
-                  const items = group.ids.map(id => matching.find(item => item.id === id)).filter(Boolean);
-                  return items.length > 0 && <section key={group.title} className="menu-group menu-master-group" aria-label={group.title}>
-                    <div className="menu-master-group-heading"><h3>{group.title}</h3><span>{String(items.length).padStart(2, "0")}</span></div>
-                    <div className="menu-master-grid">
-                      {items.map(item => item.status === "soon"
-                        ? <CompactCard as="article" key={item.id} className="dialog-route menu-master-card is-soon" eyebrow="En préparation" action="Bientôt" title={item.label} description={item.description} icon={<SectionIcon page={item.id}/>}/>
-                        : <CompactCard as={RouteLink} key={item.id} page={item.id} goTo={navigate} className="dialog-route menu-master-card" aria-current={activePage === item.id ? "page" : undefined} eyebrow={item.status === "preview" ? "Aperçu" : "Accès direct"} action={item.status === "preview" ? "Bientôt" : "Ouvrir"} title={item.label} description={item.description} icon={<SectionIcon page={item.id}/>}/>)}
-                    </div>
-                  </section>;
-                })}
-              </div>
-
-              <section className="menu-group menu-companion-settings menu-master-settings" aria-label="Paramètres">
-                <div className="menu-master-group-heading"><h3>Expérience 3B</h3><span>FX</span></div>
-                <CompanionPresenceControl/>
-              </section>
-
-              {installation && <div className="menu-master-install"><InstallApp installation={installation}/></div>}
-              {matching.length === 0 && <p className="menu-empty" role="status">Aucun espace trouvé. Essaie « passeport », « monde », « boutique » ou « secret ».</p>}
-            </div>
-          </section>
-        </div>
-
-        <div className="dialog-footer menu-master-footer">
-          <RouteLink page="intro" goTo={navigate}>Revoir l’introduction <ArrowUpRight size={16} aria-hidden="true" /></RouteLink>
-          <div className="menu-master-footer-mark"><strong>3B</strong><span>NOT A BRAND · A LEGACY</span></div>
-          <span>© 3B INTERNATIONAL</span>
-        </div>
+      <div className="app-menu-heading">
+        <div><h2 id="menu-title">Menu</h2><p>Page actuelle : <strong>{title || "Accueil"}</strong></p></div>
+        <Button variant="ghost" className="app-menu-close" type="button" autoFocus aria-label="Fermer le menu" onClick={() => dialog.current.close()}><X size={22} aria-hidden="true" /></Button>
       </div>
+      <div className="app-menu-search">
+        <Search size={19} aria-hidden="true" />
+        <input ref={searchInput} type="search" aria-label="Rechercher une rubrique" placeholder="Rechercher dans 3B" value={query} onChange={event => setQuery(event.target.value)} />
+        {query && <Button variant="ghost" type="button" aria-label="Effacer la recherche" onClick={() => { setQuery(""); searchInput.current?.focus(); }}><X size={17} aria-hidden="true" /></Button>}
+      </div>
+      <div className="app-menu-categories" role="tablist" aria-label="Catégories du menu">
+        {categories.map((item, index) => <Button variant="ghost" key={item.id} type="button" role="tab" id={'menu-category-' + item.id} aria-controls="menu-category-content" aria-selected={!searching && item.id === currentCategory.id} tabIndex={item.id === currentCategory.id ? 0 : -1} onClick={() => changeCategory(item.id)} onKeyDown={event => categoryKey(event, index)}>{item.label}</Button>)}
+      </div>
+      <section id="menu-category-content" className="app-menu-content" role={searching ? 'region' : 'tabpanel'} aria-label={searching ? 'Résultats de recherche' : undefined} aria-labelledby={searching ? undefined : 'menu-category-' + currentCategory.id} tabIndex={0}>
+        {searching && <p className="app-menu-results" role="status">{matching.length} {matching.length === 1 ? 'rubrique trouvée' : 'rubriques trouvées'}</p>}
+        {!searching && currentCategory.id === 'settings' ? <div className="app-menu-settings">
+          {options ? <ExperienceControls options={options} toggleOption={toggleOption} page={page}/> : <CompanionPresenceControl/>}
+          {installation && <InstallApp installation={installation}/>}
+        </div> : <div className="app-menu-list">
+          {!searching && currentCategory.id === 'world' && secret && <div className="app-menu-secret"><SecretClock secret={secret} goTo={navigate} compact /></div>}
+          {matching.map(item => <RouteLink key={item.id} page={item.id} goTo={navigate} className="app-menu-route" data-menu-id={item.id} aria-current={activePage === item.id ? "page" : undefined}>
+            <span className="app-menu-route-copy"><strong>{item.label}</strong><small>{item.description}</small></span>
+            <span className="app-menu-route-status">{activePage === item.id ? 'Page actuelle' : item.status === 'soon' ? 'En préparation' : item.status === 'preview' ? 'Aperçu' : undefined}</span>
+            <ChevronRight size={18} aria-hidden="true" />
+          </RouteLink>)}
+          {matching.length === 0 && <p className="app-menu-empty" role="status">Aucune rubrique trouvée. Essaie « monde », « passeport » ou « boutique ».</p>}
+        </div>}
+      </section>
+      <footer className="app-menu-footer"><RouteLink page="intro" goTo={navigate}>Revoir l’introduction</RouteLink><span>{online ? '3B International' : 'Hors ligne'}</span></footer>
     </dialog>
   </>;
 }
