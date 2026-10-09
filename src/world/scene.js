@@ -437,7 +437,8 @@ function hubNpcAvatar(item){
   const light=artLighting(region,worldTime,weatherState);sun.color.set(light.sunColor).lerp(new THREE.Color(worldArtMaterials.sunWarm),light.sunWarmth);sun.intensity=light.sunIntensity;hemi.color.set(light.palette.sky);hemi.groundColor.set(light.palette.ground);hemi.intensity=light.skyIntensity;fill.intensity=light.fillIntensity;scene.environmentIntensity=light.environmentIntensity;renderer.toneMappingExposure=light.exposure;
   portraitLight.intensity=.18+.12*light.day;if(scene.fog){scene.fog.color.set(light.palette.fog).lerp(new THREE.Color(light.palette.night),1-light.day);scene.fog.near=light.fogNear;scene.fog.far=light.fogFar;}
  }
- function resize(){const {width,height}=canvas.getBoundingClientRect();if(width&&height){renderer.setPixelRatio(quality.ratio(width,height,devicePixelRatio||1));renderer.setSize(width,height,false);needsRender=true;camera.aspect=width/height;camera.updateProjectionMatrix();post.resize(width,height,renderer.getPixelRatio(),qualityMode);landscape?.setQuality(qualityMode,visualCapabilities(qualityMode));}}
+ let landscapeQualityKey='';
+ function resize(){const {width,height}=canvas.getBoundingClientRect();if(width&&height){renderer.setPixelRatio(quality.ratio(width,height,devicePixelRatio||1));renderer.setSize(width,height,false);needsRender=true;camera.aspect=width/height;camera.updateProjectionMatrix();const capabilities=visualCapabilities(qualityMode);post.resize(width,height,renderer.getPixelRatio(),qualityMode,capabilities);const key=JSON.stringify([qualityMode,capabilities]);if(key!==landscapeQualityKey){landscape?.setQuality(qualityMode,capabilities);landscapeQualityKey=key;}}}
  const observer=new ResizeObserver(resize);observer.observe(canvas);
  function cancelRoutePlan(){routeEpoch++;routePlanner.cancel();}
  function startRoute(destination,interaction=false,run=false){

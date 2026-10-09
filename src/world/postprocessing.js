@@ -12,6 +12,10 @@ export function cinematicPostBudget(mode='auto',memory=4,cores=4){
  return{enabled:true,scale:weak?.48:.74,flare:weak?.5:.78,grain:weak?.38:.56};
 }
 
+export function worldAmbientOcclusion(mode,width,ratio,{desktopClass=false}={}){
+ return mode==='detail'||mode==='auto'&&desktopClass&&width>=760&&ratio>=.96;
+}
+
 const CinematicGradeShader={
  uniforms:{
   tDiffuse:{value:null},
@@ -59,7 +63,7 @@ const CinematicGradeShader={
 // outside cinematics fluid mode still uses direct rendering.
 export function createWorldPost(renderer,scene,camera){
  let composer,ao,grade,output,enabled=false,aoEnabled=false,cinematicActive=false;
- let width=1,height=1,ratio=1,mode='auto',clock=0;
+ let width=1,height=1,ratio=1,mode='auto',clock=0,targetWidth=0,targetHeight=0;
  const memory=typeof navigator!=='undefined'?Number(navigator.deviceMemory)||4:4;
  const cores=typeof navigator!=='undefined'?Number(navigator.hardwareConcurrency)||4:4;
 
@@ -84,14 +88,15 @@ export function createWorldPost(renderer,scene,camera){
   if(!composer)build();
   ao.enabled=aoEnabled;
   grade.enabled=cinematicActive;
-  composer.setSize(Math.max(1,Math.round(width*ratio)),Math.max(1,Math.round(height*ratio)));
-  grade.uniforms.resolution.value.set(Math.max(1,Math.round(width*ratio)),Math.max(1,Math.round(height*ratio)));
+  const w=Math.max(1,Math.round(width*ratio)),h=Math.max(1,Math.round(height*ratio));
+  if(w!==targetWidth||h!==targetHeight){composer.setSize(w,h);targetWidth=w;targetHeight=h;}
+  grade.uniforms.resolution.value.set(w,h);
  }
 
  return{
-  resize(nextWidth,nextHeight,nextRatio,nextMode){
+  resize(nextWidth,nextHeight,nextRatio,nextMode,capabilities){
    width=nextWidth;height=nextHeight;ratio=nextRatio;mode=nextMode;
-   aoEnabled=mode==='detail'||mode==='auto'&&width>=760&&ratio>=.96;
+   aoEnabled=worldAmbientOcclusion(mode,width,ratio,capabilities);
    applyState();
   },
   setCinematic(profile=null){
