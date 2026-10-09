@@ -20,7 +20,7 @@ export function createRealmArchitecture(region){
  const plaster=['maroc','algerie','tunisie'].includes(region);
  function builder(){
   const parts=[];
-  function add(geometry,color,x,y,z,sx=1,sy=sx,sz=sx,rotation=0,surface=color===wood||color===roof?3:color===wall&&plaster?1:0){
+  function add(geometry,color,x,y,z,sx=1,sy=sx,sz=sx,rotation=0,surface=color===wood?3:color===roof?2:color===wall&&plaster?1:0){
    const g=geometry.index?geometry.toNonIndexed():geometry.clone();dummy.position.set(x,y,z);dummy.rotation.set(0,rotation,0);dummy.scale.set(sx,sy,sz);dummy.updateMatrix();matrix.copy(dummy.matrix);g.applyMatrix4(matrix);
    const p=g.attributes.position,tint=new THREE.Color(color),colors=new Float32Array(p.count*3);for(let i=0;i<p.count;i++)colors.set([tint.r,tint.g,tint.b],i*3);g.setAttribute('color',new THREE.BufferAttribute(colors,3));
    // A common attribute layout allows boxes, extrusions and open arches to
@@ -40,12 +40,17 @@ export function createRealmArchitecture(region){
  function house(floors=1){
   const key='house-'+floors;if(templates.has(key))return templates.get(key);
   const {add,b,finish}=builder(),w=12,d=10,h=floors*5.6,east=['maroc','algerie','tunisie'].includes(region);
+  const timberFrame=region==='estonie'||region==='turquie',balconies=['italie','espagne','turquie'].includes(region),terracotta=region==='italie'||region==='espagne';
   b('#655e52',0,h/2,0,w-.75,h,d-.75);b(trim,0,.25,0,w+.3,.5,d+.3);
   for(let face=0;face<4;face++){
    const angle=face*Math.PI/2,span=face%2?d:w,deep=face%2?w:d;
    const local=(color,x,y,z,ww,hh,dd)=>{const c=Math.cos(angle),s=Math.sin(angle);return b(color,x*c+z*s,y,-x*s+z*c,ww,hh,dd,angle);};
    for(let floor=0;floor<floors;floor++){
     const y=floor*5.6;local(wall,0,y+.35,deep/2,span,.7,.55);local(wall,0,y+5.1,deep/2,span,1,.55);
+    // A continuous plinth and deep cornice give the facade real occlusion.
+    // These details live on the existing merged mesh, without extra draws.
+    local(trim,0,y+.55,deep/2+.20,span+.18,.24,.42);
+    local(timberFrame?wood:trim,0,y+4.94,deep/2+.19,span+.18,.18,.36);
     for(let i=0;i<=3;i++)local(wall,(i-1.5)*span/3,y+2.9,deep/2,.95,4.5,.55);
     for(let i=0;i<3;i++){
      const x=(i-1)*span/3,door=floor===0&&face===0&&i===1,wh=door?4.8:3.5,wy=y+(door?2.5:2.7);
@@ -54,16 +59,47 @@ export function createRealmArchitecture(region){
      local(trim,x,wy+wh/2+.1,deep/2+.13,2.9,.22,.36);
      if(!door){local(trim,x,wy-wh/2-.1,deep/2+.22,2.9,.24,.7);local(wood,x,wy,deep/2-.05,.07,wh,.1);local(wood,x,wy+.2,deep/2-.05,2.4,.07,.1);}
      if(!east&&!door)for(const side of [-1,1])local(wood,x+side*1.5,wy,deep/2+.06,.45,wh,.12);
+     if(!door){
+      // Recessed frames, shutter slats and a projecting drip edge remain
+      // readable at human scale rather than painting windows on a box.
+      local(trim,x,wy+wh/2+.27,deep/2+.30,3.05,.12,.52);
+      if(face===0&&(region==='tunisie'||region==='france'||region==='italie'))for(const side of [-1,1])for(let slat=0;slat<4;slat++)local(wood,x+side*1.5,wy-wh*.36+slat*wh*.24,deep/2+.16,.40,.075,.14);
+      if(region==='maroc'||region==='algerie'){
+       for(const bar of [-.72,0,.72])local(wood,x+bar,wy,deep/2+.10,.065,wh-.1,.12);
+       for(const bar of [-.8,.35])local(wood,x,wy+bar,deep/2+.10,2.25,.065,.12);
+      }
+      if(balconies&&floor===floors-1&&floors>1&&i===1){
+       local(trim,x,y+.89,deep/2+.56,3.7,.24,1.35);
+       local(wood,x,y+1.85,deep/2+1.11,3.6,.12,.12);
+       for(const bar of [-1.55,-.78,0,.78,1.55])local(wood,x+bar,y+1.38,deep/2+1.11,.075,.86,.075);
+      }
+     }
     }
+    if(timberFrame){for(const post of [-1,1])local(wood,post*(span/2-.22),y+2.8,deep/2+.21,.22,5.3,.24);local(wood,0,y+5.34,deep/2+.24,span,.28,.28);}
+    if(region==='france')for(const side of [-1,1])for(let course=0;course<3;course++)local(trim,side*(span/2-.24),y+1.05+course*1.45,deep/2+.17,course%2?.58:.88,.45,.28);
    }
    local(trim,0,h,deep/2+.12,span+.45,.4,.68);
   }
-  if(east){b(roof,0,h+.2,0,w+.7,.5,d+.7);for(const side of [-1,1]){b(trim,side*w/2,h+.85,0,.4,1.3,d+.5);b(trim,0,h+.85,side*d/2,w+.5,1.3,.4);}}
-  else{
-   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute([-6.6,0,-5.6,6.6,0,-5.6,6.6,0,5.6,-6.6,0,5.6,0,3.4,-5.6,0,3.4,5.6],3));g.setIndex([0,4,5,0,5,3,4,1,2,4,2,5,0,1,4,3,5,2]);g.computeVertexNormals();add(g,roof,0,h+.15,0);g.dispose();
-   b(trim,0,h,0,w+.9,.3,d+.9);b(wall,3.5,h+2.8,0,.8,3,.8);
+  if(east){
+   b(roof,0,h+.2,0,w+.7,.5,d+.7);for(const side of [-1,1]){b(trim,side*w/2,h+.85,0,.4,1.3,d+.5);b(trim,0,h+.85,side*d/2,w+.5,1.3,.4);}
+   if(region==='maroc')for(const side of [-1,1])for(let merlon=0;merlon<7;merlon++)b(wall,(merlon-3)*1.7,h+1.67,side*d/2,.65,.65,.50);
+   if(region==='algerie'){b(wall,-3.7,h+1.40,-2.5,2.7,2.35,2.5);b(trim,-3.7,h+2.64,-2.5,3,.22,2.8);}
+   if(region==='tunisie'){add(sphere,trim,-3.6,h+.36,-2.6,1.45,.82,1.45);b(wood,3.8,h+1.33,-2.8,.18,2.2,.18);b(wood,2.9,h+2.34,-2.8,2,.14,.18);}
   }
-  const geometry=finish();templates.set(key,geometry);return geometry;
+  else{
+   const rise=region==='estonie'?4.6:region==='france'?3.5:region==='italie'?1.75:region==='espagne'?2.2:2.65;
+   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute([-6.6,0,-5.6,6.6,0,-5.6,6.6,0,5.6,-6.6,0,5.6,0,rise,-5.6,0,rise,5.6],3));g.setIndex([0,4,5,0,5,3,4,1,2,4,2,5,0,1,4,3,5,2]);g.computeVertexNormals();add(g,roof,0,h+.15,0);g.dispose();
+   b(trim,0,h,0,w+.9,.3,d+.9);b(wall,3.5,h+rise*.64+1.1,.6,.9,2.2,.9);b(trim,3.5,h+rise*.64+2.26,.6,1.12,.18,1.12);
+   b(roof,0,h+rise+.20,0,.22,.22,11.6);
+   if(terracotta){
+    // Sparse raised tile courses catch grazing light. Texture grain supplies
+    // the finer tiles, keeping each instanced house comfortably bounded.
+    for(const side of [-1,1])for(let course=1;course<5;course++){const x=side*course*1.27,y=h+.17+rise*(1-Math.abs(x)/6.6);b(roof,x,y,0,.10,.14,11.3);}
+   }
+   if(region==='france')for(const side of [-1,1]){b(wall,side*3.15,h+1.32,0,1.65,2.1,1.45);b(wood,side*3.15,h+1.37,.74,.87,1.25,.08);b(trim,side*3.15,h+2.45,0,1.86,.19,1.67);}
+   if(timberFrame)for(const side of [-1,1]){b(wood,side*6.48,h+.23,0,.22,.24,11.6);b(wood,side*3.05,h+rise*.45,-5.65,.16,.26,.18);}
+  }
+  const geometry=finish();geometry.userData={region,masterFacade:true,roofProfile:east?'terrace':region==='estonie'?'steep-gable':terracotta?'tile-gable':'gable',balconies:balconies&&floors>1,timberFrame};templates.set(key,geometry);return geometry;
  }
  function monument(kind){
   if(templates.has(kind))return templates.get(kind);
