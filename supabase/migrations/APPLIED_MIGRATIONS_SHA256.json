@@ -1,8 +1,8 @@
 {
   "generated_from": "supabase_migrations.schema_migrations",
   "normalization": "trim UTF-8 SQL whitespace (space, tab, CR, LF) then SHA-256",
-  "generated_at": "2026-10-06",
-  "count": 210,
+  "generated_at": "2026-10-09",
+  "count": 213,
   "migrations": [
     {
       "version": "20260910020445",
@@ -1066,6 +1066,21 @@
       "version": "20261006083511",
       "name": "remove_destin_3b_v1",
       "sha256": "b65afe576d6b96d6cd3461f5878054d4fb656bc37e79d72a2d27d62f89789f5f"
+    },
+    {
+      "version": "20261009132006",
+      "name": "world_commit_reward_names",
+      "sha256": "5a5ccf51710752867dd8578e941187e471fbe866c346ac1c7531f698d47d0088"
+    },
+    {
+      "version": "20261009132007",
+      "name": "invisible_fragment_reward_v1",
+      "sha256": "824458b8aa8216ecca62db4c0454f022693307676d98e7aa1005ef5a2f057193"
+    },
+    {
+      "version": "20261009132008",
+      "name": "invisible_eight_echoes",
+      "sha256": "a00223a766f5f6444ac6a9c989bf85429d6b3a23ff31b15e31c37d0d75779034"
     }
   ],
   "reconciliation": {
@@ -1111,5 +1126,13 @@
   "reconciliation_20261006_remove_destin": {
     "reason": "DESTIN 3B retiré du produit. Migration destructive appliquée à la production pour supprimer uniquement les tables, fonctions et récompenses DESTIN tout en conservant l’identité Passeport partagée.",
     "version": "20261006083511"
+  },
+  "reconciliation_20261009_invisible": {
+    "reason": "Applied through Supabase migration API; filenames match server-assigned versions.",
+    "versions": [
+      "20261009132006",
+      "20261009132007",
+      "20261009132008"
+    ]
   }
 }

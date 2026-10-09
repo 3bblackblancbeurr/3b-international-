@@ -1,9 +1,18 @@
 import {authClient,SUPABASE_URL,PUBLIC_KEY} from '../loyalty/client.js';
 import {blankSave,normalizeSave,SAVE_VERSION} from './rules.js';
 import {applyWorldAction} from './engine.js';
+import {normalizeInvisibleState} from './invisible/progression.js';
 const queues=new Map(),key=id=>'3b_world_v1_'+(id||'guest'),journalBase=id=>'3b_world_actions_v2_'+id,journalKey=(id,device)=>journalBase(id)+'_'+device,ackKey=(id,device)=>'3b_world_ack_v2_'+id+'_'+device;
 export function readLocal(id){try{const v=JSON.parse(localStorage.getItem(key(id)));return v?{...v,data:normalizeSave(v.data)}:null;}catch{return null;}}
 function localMetadata(id){try{return JSON.parse(localStorage.getItem(key(id)));}catch{return null;}}
+function redactInvisibleBackup(id,snapshot){
+ const backupKey=key(id)+'_before_chapters';
+ try{
+  const backup=snapshot||JSON.parse(localStorage.getItem(backupKey));if(!backup)return;
+  const invisible={...normalizeInvisibleState(backup.data?.invisible),memoryConsent:false,memory:[]};
+  localStorage.setItem(backupKey,JSON.stringify({...backup,data:{...backup.data,invisible}}));
+ }catch{try{localStorage.removeItem(backupKey);}catch{/* An unavailable device cannot retain a readable backup. */}}
+}
 export function writeLocal(id,data,dirty=true,lastSyncedAt){try{const previous=localMetadata(id);localStorage.setItem(key(id),JSON.stringify({data:normalizeSave(data),dirty,updatedAt:Date.now(),lastSyncedAt:lastSyncedAt??previous?.lastSyncedAt??null}));return true;}catch{return false;}}
 function syncError(message,code){return Object.assign(Error(message),{code});}
 function statusFor(id,state,outcome,extra={}){const local=localMetadata(id);return {scope:id?'account':'device',outcome,pendingCount:state?.pending.length||0,lastSyncedAt:local?.lastSyncedAt||null,hasLocalCopy:!!local?.data,...extra};}
@@ -15,9 +24,11 @@ function stateFor(id){
 }
 function persist(id,state){localStorage.setItem(journalKey(id,state.device),JSON.stringify({device:state.device,next:state.next,pending:state.pending}));}
 export function recordWorldAction(id,save,action){
- const next=applyWorldAction(save,action);
+ const command=action?.type==='invisibleMemoryConsent'&&action.enabled===true?{...action,expectedMemoryRevision:normalizeInvisibleState(save?.invisible).memoryRevision}:action;
+ const next=applyWorldAction(save,command);
+ if(action.type==='invisibleForget'||(action.type==='invisibleMemoryConsent'&&action.enabled===false))redactInvisibleBackup(id);
  if(id){const state=stateFor(id);if(state.pending.length>=5000)throw Error('Synchronise ton compte avant de poursuivre. Le journal hors ligne est plein.');
-  const entry={seq:state.next,action};state.pending.push(entry);state.next++;
+  const entry={seq:state.next,action:command};state.pending.push(entry);state.next++;
   try{persist(id,state);}catch{state.next--;state.pending.pop();throw Error('Le navigateur ne peut plus conserver le journal. Télécharge ta sauvegarde.');}
  }
  const stored=writeLocal(id,next);
@@ -53,7 +64,7 @@ export async function loadWorld(id){
  const local=readLocal(id);if(!id)return{data:local?.data||blankSave(),status:statusFor(id,null,local?'local':'new'),message:local?'Partie invitée retrouvée sur cet appareil.':'Sauvegarde automatique sur cet appareil.'};
  const state=stateFor(id);
  const operation=async()=>{try{
-  try{if(local&&!localStorage.getItem(key(id)+'_before_chapters'))localStorage.setItem(key(id)+'_before_chapters',JSON.stringify(local));}catch{/* An optional migration copy must not block account recovery. */}
+  try{if(local&&!localStorage.getItem(key(id)+'_before_chapters'))redactInvisibleBackup(id,local);else redactInvisibleBackup(id);}catch{/* An optional migration copy must not block account recovery. */}
   await recoverOtherJournals(id,state);
   const result=await request(id,state,state.pending.slice(0,100)),data=reconcile(id,state,result);
   return{data,needsSave:!!state.pending.length,status:statusFor(id,state,state.pending.length?'pending':'synced'),message:result.rejected?.length?'Compte synchronisé · '+result.rejected[0].message:'Monde lié à ton compte · actions validées par le serveur.'};

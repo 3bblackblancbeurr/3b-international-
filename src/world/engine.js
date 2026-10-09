@@ -21,6 +21,8 @@ import {GUARDIAN_VALUES,guardianValueStep,normalizeGuardianValueState,guardianVa
 import {isWorldCinematicKey} from './cinematic-events.js';
 import {applyCampaignAction,completeCampaignGuardian,claimCampaignPhase} from './campaign-runtime.js';
 import {applyRealmRelayDiscover,applyRealmTravel} from './realm-navigation.js';
+import {applyInvisibleAction} from './invisible/progression.js';
+import {INVISIBLE_EPISODE} from './invisible/catalog.js';
 
 const fail=text=>{throw Error(text);};
 const requireThat=(condition,text)=>{if(!condition)fail(text);};
@@ -101,6 +103,10 @@ export function applyWorldAction(input,action){
  const activeResonance=()=>s.adventure.resonance&&s.seals.includes(s.adventure.resonance)?s.adventure.resonance:null;
  const hubSignal=(state,signal)=>{const result=applyHubMissionSignal(state.hub.missions,signal);return result.missions===state.hub.missions?state:gain(state,{hub:{...state.hub,missions:result.missions}});};
  switch(action.type){
+  case 'invisibleStart':case 'invisibleMode':case 'invisibleAnswer':case 'invisibleChest':case 'invisiblePortal':case 'invisibleMemoryConsent':case 'invisibleForget':{
+   const invisible=applyInvisibleAction(s.invisible,action),earned=!s.invisible.chestOpened&&invisible.chestOpened;
+   return gain(s,{invisible,xp:s.xp+(earned?INVISIBLE_EPISODE.rewards.xp:0),shards:s.shards+(earned?INVISIBLE_EPISODE.rewards.shards:0)});
+  }
   case 'campaignAction':{
    const campaignRegion=action.region||region,result=applyCampaignAction(s,action);if(result.duplicate)return s;peaceful();
    s=campaignResult(s,campaignRegion,result);

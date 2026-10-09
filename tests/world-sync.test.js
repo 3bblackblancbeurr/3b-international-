@@ -29,3 +29,38 @@ test('account journals recover offline actions across tabs and retain actions ma
  const drained=await c.saveWorld(uid,long);assert.equal(drained.pending,false);assert.equal(drained.data.walked,long.walked,'One sync drains multiple batches without losing new commands');
  delete globalThis.localStorage;delete globalThis.sessionStorage;
 });
+
+test('an older tab cannot replay consent after withdrawal and a new explicit opt-in remembers only future events',async t=>{
+ const descriptors=Object.fromEntries(['localStorage','sessionStorage'].map(key=>[key,Object.getOwnPropertyDescriptor(globalThis,key)]));
+ for(const key of Object.keys(descriptors)){Object.defineProperty(globalThis,key,{value:storage(),configurable:true,writable:true});t.after(()=>descriptors[key]?Object.defineProperty(globalThis,key,descriptors[key]):delete globalThis[key]);}
+ const uid='world-memory-revision-test',receipts=new Map(),requests=[];let canonical=blankSave();
+ t.mock.method(authClient.auth,'getSession',async()=>({data:{session:{user:{id:uid},access_token:'test-only'}}}));
+ t.mock.method(globalThis,'fetch',async(_url,options)=>{
+  const body=JSON.parse(options.body);requests.push(body);let sequence=receipts.get(body.device)||0;const rejected=[];
+  for(const entry of body.commands){if(entry.seq<=sequence)continue;assert.equal(entry.seq,sequence+1);try{canonical=applyWorldAction(canonical,entry.action);}catch(error){rejected.push({seq:entry.seq,message:error.message});}sequence=entry.seq;}
+  receipts.set(body.device,sequence);return new Response(JSON.stringify({data:canonical,sequence,rejected}));
+ });
+ const a=await import('../src/world/save.js?tab=memory-revision-a');let sa=(await a.loadWorld(uid)).data;
+ for(const action of [{type:'invisibleMemoryConsent',enabled:true},{type:'invisibleStart'},{type:'invisibleAnswer',id:'rive',answer:'reflet'}])sa=a.recordWorldAction(uid,sa,action);
+ sa=(await a.saveWorld(uid,sa)).data;assert.equal(canonical.invisible.memoryRevision,1);assert.equal(canonical.invisible.memory.length,2);
+ const sessionA=sessionStorage;globalThis.sessionStorage=storage();
+ const b=await import('../src/world/save.js?tab=memory-revision-b');let sb=(await b.loadWorld(uid)).data;
+ // This consent and discovery remain offline in tab B until after tab A forgets.
+ sb=b.recordWorldAction(uid,sb,{type:'invisibleMemoryConsent',enabled:true});
+ sb=b.recordWorldAction(uid,sb,{type:'invisibleAnswer',id:'balance',answer:'balance'});
+ globalThis.sessionStorage=sessionA;sa=a.recordWorldAction(uid,sa,{type:'invisibleForget'});
+ sa=(await a.saveWorld(uid,sa)).data;assert.equal(canonical.invisible.memoryRevision,2);assert.equal(canonical.invisible.memoryConsent,false);assert.deepEqual(canonical.invisible.memory,[]);
+ const recovered=await b.saveWorld(uid,sb);sb=recovered.data;
+ assert.match(recovered.message,/autre appareil/);assert.equal(recovered.pending,false);
+ assert.equal(canonical.invisible.memoryConsent,false);assert.equal(canonical.invisible.memoryRevision,2);assert.deepEqual(canonical.invisible.memory,[]);assert.deepEqual(canonical.invisible.solved,['rive','balance']);
+ const staleActivation=requests.flatMap(row=>row.commands).find(row=>row.action.type==='invisibleMemoryConsent'&&row.action.expectedMemoryRevision===1);assert.ok(staleActivation,'The journal freezes the revision observed when consent was entered');
+ await b.saveWorld(uid,sb);assert.equal(canonical.invisible.memoryRevision,2,'An acknowledged command replay does not bump the revision');
+ sb=b.recordWorldAction(uid,sb,{type:'invisibleMemoryConsent',enabled:true});
+ sb=b.recordWorldAction(uid,sb,{type:'invisibleAnswer',id:'preuve',answer:'preuve'});
+ sb=(await b.saveWorld(uid,sb)).data;
+ assert.equal(canonical.invisible.memoryRevision,3);assert.equal(canonical.invisible.memoryConsent,true);assert.deepEqual(canonical.invisible.memory.map(row=>row.kind),['riddle:preuve']);
+ // Withdrawal from the older visible revision in A must still be honored.
+ sa=a.recordWorldAction(uid,sa,{type:'invisibleMemoryConsent',enabled:false});
+ sa=(await a.saveWorld(uid,sa)).data;assert.equal(sa.invisible.memoryRevision,4);assert.equal(sa.invisible.memoryConsent,false);assert.deepEqual(sa.invisible.memory,[]);
+ await a.saveWorld(uid,sa);assert.equal(canonical.invisible.memoryRevision,4);
+});
