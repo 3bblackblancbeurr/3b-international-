@@ -3,7 +3,7 @@
 // calls to a real member's economic services. Native XR is covered by unit tests.
 import assert from 'node:assert/strict';
 import {createServer} from 'vite';
-import {mkdir,writeFile} from 'node:fs/promises';
+import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {blankSave} from '../src/world/rules.js';
@@ -13,7 +13,10 @@ import {INVISIBLE_EPISODES} from '../src/world/invisible/catalog.js';
 const modulePath=process.env.PLAYWRIGHT_MODULE||'playwright';
 const {chromium}=await import(path.isAbsolute(modulePath)?pathToFileURL(modulePath).href:modulePath);
 const external=process.env.INVISIBLE_TEST_URL;
-const server=external?null:await createServer({server:{host:'127.0.0.1',port:5295,strictPort:true}});
+const deployment=JSON.parse(await readFile(new URL('../vercel.json',import.meta.url),'utf8'));
+const permissionsPolicy=deployment.headers.find(rule=>rule.source.startsWith('/:path('))?.headers.find(header=>header.key.toLowerCase()==='permissions-policy')?.value;
+assert.ok(permissionsPolicy,'The application must declare its deployed device permissions');
+const server=external?null:await createServer({server:{host:'127.0.0.1',port:5295,strictPort:true,headers:{'Permissions-Policy':permissionsPolicy}}});
 if(server)await server.listen();
 const origin=external||'http://127.0.0.1:5295';
 const out=process.env.INVISIBLE_CAMERA_OUT||'work/invisible-camera';
@@ -78,10 +81,10 @@ try{
   });
   const page=await context.newPage();page.on('pageerror',error=>errors.push(error.message));
   try{
-   await page.goto(origin+'/#monde-invisible',{waitUntil:'domcontentloaded'});await page.getByTestId('open-invisible-lens').waitFor({timeout:60000});
+   const response=await page.goto(origin+'/#monde-invisible',{waitUntil:'domcontentloaded'});await page.getByTestId('open-invisible-lens').waitFor({timeout:60000});
    await page.waitForFunction(()=>!document.querySelector('[data-testid="open-invisible-lens"]')?.disabled);
    const before=await localProgress(page);let lens;
-   await check(name+': opening requires no camera or motion permission',async()=>{lens=await readyLens(page);assert.equal((await sensors(page)).calls,0);assert.equal((await sensors(page)).orientationRequests,0);assert.equal(await lens.getByTestId('lens-camera-toggle').isVisible(),true);assert.equal(await lens.locator('.lens-sidebar').count(),0);});
+   await check(name+': opening requires no camera or motion permission',async()=>{const policy=await page.evaluate(()=>{const api=document.permissionsPolicy||document.featurePolicy;return Object.fromEntries(['camera','accelerometer','gyroscope','xr-spatial-tracking'].map(feature=>[feature,api?.allowsFeature(feature)===true]));});for(const [feature,allowed] of Object.entries(policy))assert.equal(allowed,true,'Deployed Permissions-Policy must allow '+feature+' for the application');lens=await readyLens(page);assert.equal((await sensors(page)).calls,0);assert.equal((await sensors(page)).orientationRequests,0);assert.equal(await lens.getByTestId('lens-camera-toggle').isVisible(),true);assert.equal(await lens.locator('.lens-sidebar').count(),0);return{permissionsPolicy:response.headers()['permissions-policy'],allowedFeatures:policy};});
    await check(name+': full-screen world has no endless scroll',async()=>{const layout=await fullViewport(page);assertFullscreen(layout);await lens.screenshot({path:path.join(out,name+'-world.png')});return layout;});
    await check(name+': denied camera keeps the world usable',async()=>{await page.evaluate(()=>{window.__cameraTest.mode='deny';});await page.getByTestId('lens-camera-toggle').click();await page.getByText('Caméra refusée ou indisponible. La visite reste entièrement jouable en 3D.',{exact:true}).waitFor();assert.equal(await lens.getAttribute('data-mode'),'3d');assert.equal((await sensors(page)).active,0);});
    await check(name+': generated native camera and visible world are composited',async()=>{await page.evaluate(()=>{window.__cameraTest.mode='accept';});await page.getByTestId('lens-camera-toggle').click();await activeCamera(page);assert.equal((await sensors(page)).active,1);const constraints=await page.evaluate(()=>window.__cameraTest.lastConstraints);assert.equal(constraints.audio,false);const comparison=await compositePixels(page);assertFullscreen(await fullViewport(page));await lens.screenshot({path:path.join(out,name+'-camera.png')});return comparison;});

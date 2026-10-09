@@ -52,3 +52,21 @@ test('GPS remains a bounded button action with a cancellation and remote fallbac
  const mountEffect=source.match(/useEffect\(\(\)=>\{([\s\S]*?)\},\[\]\)/)?.[1]||'';
  assert.doesNotMatch(mountEffect,/watchPosition|getCurrentPosition|locate\(/,'mounting the walk view must not request GPS');
 });
+
+const config=JSON.parse(await read('vercel.json'));
+const policyFor=rule=>Object.fromEntries(rule.headers.find(header=>header.key.toLowerCase()==='permissions-policy').value.split(',').map(value=>value.trim().split('=')));
+
+test('the deployed application permits explicit camera, motion and spatial tracking only on its own origin',()=>{
+ const rules=config.headers.filter(rule=>rule.source.startsWith('/:path('));
+ assert.equal(rules.length,1);
+ const policy=policyFor(rules[0]);
+ for(const feature of ['camera','accelerometer','gyroscope','magnetometer','xr-spatial-tracking'])assert.equal(policy[feature],'(self)',feature);
+ assert.equal(policy.microphone,'(self)');
+ assert.equal(policy.geolocation,'(self)');
+});
+
+test('the embedded sport shell keeps its restrictive device permissions',()=>{
+ const shell=config.headers.find(rule=>rule.source==='/sport-player-shell.html');
+ const policy=policyFor(shell);
+ for(const feature of ['camera','microphone','geolocation'])assert.equal(policy[feature],'()',feature);
+});
