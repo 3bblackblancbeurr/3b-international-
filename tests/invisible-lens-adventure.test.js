@@ -10,8 +10,9 @@ test('all eight original stages preserve inspectable models within a mobile geom
   const adventure=createLensAdventure(episode);realmPalettes.add(adventure.realm.cloth);
   assert.deepEqual([...adventure.objects.keys()],['portal','chest','fragment','guardian',...episode.points.map(point=>'clue:'+point.id)]);
   assert.ok(adventure.objects.get('guardian').getObjectByName('guardian-face'));
-  let draws=0,triangles=0;for(const root of [adventure.content,adventure.environment])root.traverse(node=>{if(!node.isMesh)return;draws++;triangles+=(node.geometry.index?.count??node.geometry.attributes.position.count)/3*(node.isInstancedMesh?node.count:1);assert.equal(node.castShadow,false);});
+  let draws=0,triangles=0;for(const root of [adventure.content,adventure.environment])root.traverse(node=>{if(!node.isMesh&&!node.isPoints&&!node.isLineSegments)return;draws++;if(node.isMesh)triangles+=(node.geometry.index?.count??node.geometry.attributes.position.count)/3*(node.isInstancedMesh?node.count:1);assert.equal(node.castShadow,false);});
   assert.ok(draws<=80,episode.id+' draw budget');assert.ok(triangles<35000,episode.id+' triangle budget');
+  for(const shape of adventure.geometries)for(const name of ['position','normal'])if(shape.attributes[name])assert.ok(shape.attributes[name].array.every(Number.isFinite),episode.id+' finite '+name+' geometry');
   // Batched faces retain their model parent for both screen and native XR raycasts.
   adventure.content.updateMatrixWorld(true);const guardian=adventure.objects.get('guardian');
   const ray=new THREE.Raycaster(new THREE.Vector3(guardian.position.x,1.31,guardian.position.z+4),new THREE.Vector3(0,0,-1));
@@ -21,11 +22,29 @@ test('all eight original stages preserve inspectable models within a mobile geom
  assert.equal(realmPalettes.size,8);
 });
 
-test('camera and AR hide the complete landscape and preserve artifact identities on return',()=>{
+test('camera places a human-scale world in front of the phone and AR centers it on the tapped portal',()=>{
  const adventure=createLensAdventure(INVISIBLE_EPISODES[0]),guardian=adventure.objects.get('guardian'),position=guardian.position.clone();
  adventure.setMode('camera');assert.equal(adventure.environment.visible,false);assert.equal(adventure.objects.get('guardian'),guardian);assert.notDeepEqual(guardian.position.toArray(),position.toArray());
- adventure.setMode('ar');assert.equal(adventure.environment.visible,false);const bounds=new THREE.Box3();adventure.objects.forEach(group=>bounds.expandByObject(group));assert.ok(bounds.getSize(new THREE.Vector3()).x<5);
+ const camera=new THREE.PerspectiveCamera(64,9/19.5,.03,180);camera.position.set(0,1.6,0);camera.updateMatrixWorld(true);
+ const portal=adventure.objects.get('portal'),portalEye=portal.position.clone().add(new THREE.Vector3(0,1.6,0)).project(camera);assert.ok(Math.abs(portalEye.x)<1&&Math.abs(portalEye.y)<1&&portalEye.z> -1&&portalEye.z<1,'A portal is visible at the initial phone gaze');
+ assert.ok([...adventure.objects.values()].every(group=>group.position.z<0),'The camera starts inside the world, with objects ahead');
+ const humanHeight=new THREE.Box3().setFromObject(guardian).getSize(new THREE.Vector3()).y;assert.ok(humanHeight>1.9&&humanHeight<2.4,'The guardian keeps human scale');
+ adventure.setMode('ar');assert.equal(adventure.environment.visible,false);assert.deepEqual(portal.position.toArray(),[0,0,0]);const bounds=new THREE.Box3();adventure.objects.forEach(group=>bounds.expandByObject(group));assert.ok(bounds.getSize(new THREE.Vector3()).x<12,'The anchored world has a bounded footprint');
  adventure.setMode('3d');assert.equal(adventure.environment.visible,true);assert.deepEqual(guardian.position.toArray(),position.toArray());adventure.dispose();
+});
+
+test('visual object activation never changes the authoritative journey and settles without new allocations',()=>{
+ const adventure=createLensAdventure(INVISIBLE_EPISODES[0]),lid=adventure.objects.get('chest').getObjectByName('hinged-coffer-lid');
+ const counts=[adventure.geometries.size,adventure.materials.size,adventure.textures.size];adventure.setProgress({solved:[],chestOpened:false,portalOpened:false});
+ for(let i=0;i<72;i++){adventure.setMode(['3d','camera','ar'][i%3]);adventure.update(i);assert.equal(adventure.activate(i%2?'portal':'chest'),true);adventure.update(i+.1);assert.equal(lid.rotation.x,0);}
+ adventure.update(90);assert.deepEqual([adventure.geometries.size,adventure.materials.size,adventure.textures.size],counts);assert.equal(adventure.activate('missing'),false);assert.equal(adventure.setSelected('missing'),false);
+ assert.equal(lid.rotation.x,0);adventure.dispose();assert.equal(adventure.activate('portal'),false);
+});
+
+test('reduced motion makes appearances immediately visible without animated object transforms',()=>{
+ const adventure=createLensAdventure(INVISIBLE_EPISODES[0],{reducedMotion:true});adventure.setMode('camera');
+ const crystal=adventure.objects.get('fragment').getObjectByName('justice-crystal');adventure.update(20);const rotation=crystal.rotation.clone(),position=crystal.position.clone();
+ adventure.update(200);assert.deepEqual(crystal.rotation.toArray(),rotation.toArray());assert.deepEqual(crystal.position.toArray(),position.toArray());assert.equal(adventure.objects.get('guardian').scale.x,1);adventure.dispose();
 });
 
 test('authoritative progression controls the physical lid and portal without inventing discoveries',()=>{

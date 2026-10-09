@@ -14,10 +14,11 @@ on:
       - 'supabase/migrations/*invisible*.sql'
       - 'tests/invisible*.test.js'
       - 'scripts/verify-invisible-browser.mjs'
+      - 'scripts/verify-invisible-camera.mjs'
       - '.github/workflows/verify-invisible.yml'
   push:
     branches: [main]
-    paths: ['src/world/invisible/**', 'public/invisible/**', 'scripts/verify-invisible-browser.mjs', '.github/workflows/verify-invisible.yml']
+    paths: ['src/world/invisible/**', 'public/invisible/**', 'scripts/verify-invisible-browser.mjs', 'scripts/verify-invisible-camera.mjs', '.github/workflows/verify-invisible.yml']
 permissions:
   contents: read
 concurrency:
@@ -26,7 +27,7 @@ concurrency:
 jobs:
   adventure:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
@@ -43,9 +44,16 @@ jobs:
         env:
           PLAYWRIGHT_MODULE: '@playwright/test'
           INVISIBLE_TEST_OUT: artifacts/invisible
+      - name: Verify full-screen worlds, camera permissions and mobile sensor cleanup
+        run: node scripts/verify-invisible-camera.mjs
+        env:
+          PLAYWRIGHT_MODULE: '@playwright/test'
+          INVISIBLE_CAMERA_OUT: artifacts/invisible-camera
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
         with:
           name: monde-invisible-browser
-          path: artifacts/invisible/
+          path: |
+            artifacts/invisible/
+            artifacts/invisible-camera/
           retention-days: 7

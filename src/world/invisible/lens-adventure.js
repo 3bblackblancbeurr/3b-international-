@@ -1,22 +1,24 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {goldMasterTokens,worldRealmArt,worldArtMaterials,worldCrowdPalette,worldCartographyArt} from '../../design-system/tokens.js';
+import {createPortalSurface,createEnergyDust} from './lens-energy.js';
 
 // These are original stage designs, not reconstructions of monuments or walking routes.
 const realmLooks={
- france:{arch:'round',trees:'broad',skin:4,hair:worldCrowdPalette.cloth[0],hairStyle:'long',cape:true},
- algerie:{arch:'point',trees:'slender',skin:3,hair:worldCrowdPalette.cloth[7],hairStyle:'braid',cape:false},
- maroc:{arch:'point',trees:'slender',skin:2,hair:worldCrowdPalette.cloth[0],hairStyle:'short',cape:true},
- tunisie:{arch:'wide',trees:'slender',skin:3,hair:worldCrowdPalette.cloth[7],hairStyle:'curls',cape:true},
- espagne:{arch:'wide',trees:'broad',skin:3,hair:worldCrowdPalette.cloth[3],hairStyle:'short',cape:false},
- italie:{arch:'round',trees:'column',skin:4,hair:worldCrowdPalette.cloth[3],hairStyle:'wave',cape:true},
- turquie:{arch:'point',trees:'column',skin:3,hair:worldCrowdPalette.cloth[0],hairStyle:'knot',cape:true},
- estonie:{arch:'angular',trees:'fir',skin:5,hair:worldRealmArt.estonie.stone,hairStyle:'bob',cape:true},
+ france:{arch:'round',trees:'broad',skin:4,cape:true},
+ algerie:{arch:'point',trees:'slender',skin:3,cape:false},
+ maroc:{arch:'point',trees:'slender',skin:2,cape:true},
+ tunisie:{arch:'wide',trees:'slender',skin:3,cape:true},
+ espagne:{arch:'wide',trees:'broad',skin:3,cape:false},
+ italie:{arch:'round',trees:'column',skin:4,cape:true},
+ turquie:{arch:'point',trees:'column',skin:3,cape:true},
+ estonie:{arch:'angular',trees:'fir',skin:5,cape:true},
 };
 
-export function createLensAdventure(episode){
+export function createLensAdventure(episode,{reducedMotion=false}={}){
  const realmId=episode.fragment?.realm||episode.realm||'france',realm=worldRealmArt[realmId]||worldRealmArt.france,look=realmLooks[realmId]||realmLooks.france,palette=goldMasterTokens.colors;
- const content=new THREE.Group(),environment=new THREE.Group(),objects=new Map(),animations=[],geometries=new Set(),materials=new Set(),textures=new Set();
+ const content=new THREE.Group(),environment=new THREE.Group(),objects=new Map(),animations=[],geometries=new Set(),materials=new Set(),textures=new Set(),auras=new Map(),pulses=new Map();
+ let lastTime=null,revealAge=1,selectedKey=null;
  content.name='invisible-artifacts';environment.name='fictional-public-quay';
  const tint=(a,b,amount)=>new THREE.Color(a).lerp(new THREE.Color(b),amount);
  const duskTop=tint(realm.night,palette.matrix,.065),duskHorizon=tint(realm.fog,realm.night,.57),skyPixels=new Uint8Array(64*4);
@@ -30,7 +32,7 @@ export function createLensAdventure(episode){
  function line(points,radius,surface,parent){return mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p))),Math.max(8,points.length*3),radius,5,false),surface,parent);}
  function between(a,b,radius,surface,parent){const first=new THREE.Vector3(...a),last=new THREE.Vector3(...b),object=mesh(new THREE.CylinderGeometry(radius,radius*.95,first.distanceTo(last),8),surface,parent);object.position.copy(first).add(last).multiplyScalar(.5);object.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),last.sub(first).normalize());return object;}
  function model(key,position){const group=new THREE.Group();group.name=key;group.userData.lensKey=key;group.position.set(...position);content.add(group);objects.set(key,group);return group;}
- const gold=material({color:palette.champagne,metalness:.72,roughness:.3}),bronze=material({color:palette.champagneDeep,metalness:.64,roughness:.4}),stone=material({color:realm.stone,roughness:.92}),stoneShade=material({color:tint(realm.stone,realm.ground,.35),roughness:1}),dark=material({color:worldArtMaterials.monumentDark,metalness:.28,roughness:.56}),wood=material({color:tint(realm.ground,palette.goldInk,.3),roughness:.82}),cloth=material({color:realm.cloth,roughness:.86}),ivory=material({color:worldArtMaterials.dust,roughness:.85}),skin=material({color:worldCrowdPalette.skin[look.skin],roughness:.84}),hair=material({color:look.hair,roughness:.87}),foliage=material({color:tint(worldCartographyArt.landmarkGarden,realm.cloth,.16),roughness:1}),foliageLight=material({color:tint(worldCartographyArt.landmarkGarden,realm.sun,.18),roughness:1});
+ const gold=material({color:palette.champagne,metalness:.72,roughness:.3}),bronze=material({color:palette.champagneDeep,metalness:.64,roughness:.4}),stone=material({color:realm.stone,roughness:.92}),stoneShade=material({color:tint(realm.stone,realm.ground,.35),roughness:1}),dark=material({color:worldArtMaterials.monumentDark,metalness:.28,roughness:.56}),wood=material({color:tint(realm.ground,palette.goldInk,.3),roughness:.82}),cloth=material({color:realm.cloth,roughness:.86}),ivory=material({color:worldArtMaterials.dust,roughness:.85}),skin=material({color:worldCrowdPalette.skin[look.skin],roughness:.84}),foliage=material({color:tint(worldCartographyArt.landmarkGarden,realm.cloth,.16),roughness:1}),foliageLight=material({color:tint(worldCartographyArt.landmarkGarden,realm.sun,.18),roughness:1});
  const energy=material({color:worldArtMaterials.monumentEmission,emissive:worldArtMaterials.monumentBlue,emissiveIntensity:.65,metalness:.35,roughness:.22}),light=material({color:palette.champagneHighlight,emissive:palette.champagne,emissiveIntensity:.8,roughness:.35});
  const shadow=basic({color:realm.night,transparent:true,opacity:.15,depthWrite:false});
  function contact(parent,x,z,sx,sz){const disk=mesh(new THREE.CircleGeometry(1,24),shadow,parent,x,.015,z);disk.rotation.x=-Math.PI/2;disk.scale.set(sx,sz,1);}
@@ -77,17 +79,27 @@ export function createLensAdventure(episode){
  function crownY(x,w,h){const v=Math.min(1,Math.abs(x/w));return look.arch==='angular'?h*(1-v):look.arch==='point'?h*Math.pow(1-v,.7):h*Math.sqrt(Math.max(0,1-v*v));}
  function archShape(w,base,h,bottom=0){const shape=new THREE.Shape();shape.moveTo(-w,bottom);shape.lineTo(-w,base);for(let i=0;i<=28;i++){const x=-w+i/28*w*2;shape.lineTo(x,base+crownY(x,w,h));}shape.lineTo(w,bottom);shape.closePath();return shape;}
  const wallShape=archShape(width+.25,spring,archHeight+.24,-.015),opening=archShape(width,spring,archHeight,.12);wallShape.holes.push(new THREE.Path(opening.getPoints().reverse()));
- const masonry=mesh(new THREE.ExtrudeGeometry(wallShape,{depth:.39,bevelEnabled:true,bevelSize:.035,bevelThickness:.025,bevelSegments:1,curveSegments:12}),stone,portal,0,0,-.17);masonry.name='masonry-arch';
+ const masonry=mesh(new THREE.ExtrudeGeometry(wallShape,{depth:.39,bevelEnabled:true,bevelSize:.035,bevelThickness:.025,bevelSegments:1,curveSegments:12}),dark,portal,0,0,-.17);masonry.name='masonry-arch';
  const edgePoints=[[-width,.14,.25],[-width,spring,.25]];for(let i=0;i<=28;i++){const x=-width+i/28*width*2;edgePoints.push([x,spring+crownY(x,width,archHeight),.25]);}edgePoints.push([width,.14,.25]);
  const portalInner=line(edgePoints,.025,energy,portal);
+ const outerPoints=edgePoints.map(([x,y,z])=>[x*1.12,y+(y>spring?.1:0),z+.03]);line(outerPoints,.017,gold,portal);
  for(const x of [-1.19,1.19]){mesh(new THREE.BoxGeometry(.44,.17,.63),stoneShade,portal,x,.08,0);mesh(new THREE.BoxGeometry(.4,.14,.55),stoneShade,portal,x,spring-.07,0);mesh(new THREE.BoxGeometry(.035,1.53,.035),gold,portal,x,.99,.265);for(let i=0;i<4;i++)mesh(new THREE.BoxGeometry(.37,.025,.43),stoneShade,portal,x,.42+i*.37,.015);}
  for(let i=1;i<8;i++){const x=-width+i/8*width*2,y=spring+crownY(x,width,archHeight)+.125,block=mesh(new THREE.BoxGeometry(.1,.21,.435),stoneShade,portal,x,y,0);block.rotation.z=Math.atan2(-x,archHeight)*.62;}
  mesh(new THREE.BoxGeometry(2.72,.12,.85),stoneShade,portal,0,.03,.18);mesh(new THREE.BoxGeometry(2.42,.075,.59),stone,portal,0,.13,.15);
  const crown=mesh(new THREE.OctahedronGeometry(.09,0),gold,portal,0,spring+archHeight+.31,.12);crown.scale.set(.85,1.2,.45);
- for(const x of [-1.19,1.19]){mesh(new THREE.SphereGeometry(.043,10,8),light,portal,x,1.69,.28);const lantern=new THREE.PointLight(palette.champagneHighlight,.95,3.4,2);lantern.position.set(x,1.68,.43);portal.add(lantern);}
- const curtain=mesh(new THREE.ShapeGeometry(opening),basic({color:worldArtMaterials.monumentEmission,transparent:true,opacity:.045,side:THREE.DoubleSide,depthWrite:false}),portal,0,0,-.05);
+ for(const x of [-1.19,1.19])mesh(new THREE.SphereGeometry(.043,10,8),light,portal,x,1.69,.28);
+ const portalSurface=createPortalSurface({width,height:spring+archHeight,tint:tint(worldArtMaterials.monumentEmission,realm.cloth,.24),gold:palette.champagneHighlight,night:realm.night});materials.add(portalSurface);
+ const curtain=mesh(new THREE.ShapeGeometry(opening),portalSurface,portal,0,0,-.05);curtain.name='living-portal-window';
+ const portalHalo=new THREE.Group();portalHalo.name='portal-filaments';portal.add(portalHalo);
+ for(let i=0;i<3;i++){
+  const filamentPoints=[];for(let j=0;j<=60;j++){const a=j/60*Math.PI*2,r=1.35+i*.075;filamentPoints.push([Math.cos(a)*r,1.58+Math.sin(a)*(1.73+i*.055),.16+Math.sin(a*3+i)*.12]);}
+  const filament=line(filamentPoints,.006+i*.001,basic({color:i===1?palette.champagneHighlight:worldArtMaterials.monumentEmission,transparent:true,opacity:.46,depthWrite:false,blending:THREE.AdditiveBlending}),portalHalo);
+  animations.push(t=>{filament.rotation.z=Math.sin(t*.16+i)*.015;filament.material.opacity=.3+Math.sin(t*.45+i)*.12;});
+ }
+ const portalSigils=[];for(let i=0;i<16;i++){const a=i/16*Math.PI*2;portalSigils.push({position:[Math.cos(a)*1.48,1.58+Math.sin(a)*1.84,.26],rotation:[0,0,a],scale:[.013,.05,.013]});}
+ instances(new THREE.OctahedronGeometry(1,0),light,portalHalo,portalSigils);
  let chestOpen=false,portalOpen=false;
- animations.push(t=>{curtain.material.opacity=(portalOpen?.18:.045)+Math.sin(t*.65)*.012;});
+ animations.push(t=>{portalSurface.uniforms.time.value=t;portalSurface.uniforms.pulse.value=Math.max(portalOpen?.2:0,pulses.has('portal')?THREE.MathUtils.clamp(1-((lastTime??t)-pulses.get('portal'))/1.4,0,1):0);});
  contact(content,0,-2.1,1.55,.48);
 
  const chest=model('chest',[-1.65,0,.85]);chest.rotation.y=.19;
@@ -126,7 +138,7 @@ export function createLensAdventure(episode){
  animations.push(t=>{crystal.rotation.y=t*.16;crystal.position.y=1.22+Math.sin(t*.75)*.045;shards.forEach((shard,i)=>{shard.rotation.y=-t*.2+i;shard.position.y=1.1+Math.sin(i*2.09+t*.45)*.15;});});
  const fragmentGlow=new THREE.PointLight(palette.champagneHighlight,.55,3.1);fragmentGlow.position.set(0,1.2,0);fragment.add(fragmentGlow);contact(content,.15,1.65,.52,.34);
 
- // A human silhouette with sculpted facial features, tailored clothing and readable hands.
+ // An original masked guardian: a clear human-scale silhouette without a tiny doll-like face.
  const guardian=model('guardian',[1.8,0,.35]);guardian.rotation.y=-.16;
  const robeProfile=[[.36,.12],[.43,.22],[.37,.58],[.3,.96],[.32,1.29],[.27,1.44],[.16,1.52]].map(([x,y])=>new THREE.Vector2(x,y));
  const robeGeometry=new THREE.LatheGeometry(robeProfile,36),robePositions=robeGeometry.attributes.position;
@@ -143,31 +155,21 @@ export function createLensAdventure(episode){
  between([.28,1.33,.01],[.38,1.07,.1],.08,cloth,guardian);between([.38,1.07,.1],[.57,1.08,.28],.067,cloth,guardian);
  for(const [x,y,z]of [[-.23,1.14,.47],[.58,1.08,.29]]){mesh(new THREE.SphereGeometry(.077,10,8),skin,guardian,x,y,z).scale.set(.75,1,.72);for(let i=0;i<3;i++)between([x-.037+i*.028,y-.015,z+.04],[x-.037+i*.028,y-.07,z+.055],.012,skin,guardian);}
  mesh(new THREE.CylinderGeometry(.092,.11,.2,10),skin,guardian,0,1.54,0);
- const head=new THREE.Group();head.name='guardian-face';head.position.set(0,1.79,0);head.scale.setScalar(.8);guardian.add(head);
- const faceGeometry=new THREE.SphereGeometry(.232,32,24),facePositions=faceGeometry.attributes.position;
- for(let i=0;i<facePositions.count;i++){const y=facePositions.getY(i);if(y<-.04)facePositions.setX(i,facePositions.getX(i)*(1+Math.max(-.17,(y+.04)*.8)));}
- faceGeometry.computeVertexNormals();mesh(faceGeometry,skin,head,0,0,.025).scale.set(.84,1.12,.85);
- for(const x of [-.198,.198])mesh(new THREE.SphereGeometry(.052,10,8),skin,head,x,-.005,.015).scale.set(.4,1,.68);
- mesh(new THREE.SphereGeometry(.02,12,8),skin,head,0,.012,.2).scale.set(.51,2,.85);
- mesh(new THREE.SphereGeometry(.035,12,10),skin,head,0,-.021,.218).scale.set(.49,.72,.66);
- for(const x of [-.083,.083]){
-  mesh(new THREE.SphereGeometry(.035,16,10),ivory,head,x,.037,.197).scale.set(1.08,.25,.32);
-  mesh(new THREE.SphereGeometry(.012,12,8),dark,head,x,.037,.21).scale.set(.72,.7,.45);
-  line([[x-.031,.038,.198],[x,.048,.211],[x+.031,.038,.201]],.0038,hair,head);
-  line([[x-.033,.072,.2],[x,.08,.214],[x+.029,.074,.205]],.007,hair,head);
+ const head=new THREE.Group();head.name='guardian-face';head.position.set(0,1.82,0);guardian.add(head);
+ const hoodShape=archShape(.305,-.02,.34,-.32),hoodOpening=archShape(.208,-.02,.245,-.265);hoodShape.holes.push(new THREE.Path(hoodOpening.getPoints().reverse()));
+ const hood=mesh(new THREE.ExtrudeGeometry(hoodShape,{depth:.25,bevelEnabled:true,bevelThickness:.014,bevelSize:.018,bevelSegments:1,curveSegments:10}),material({color:tint(realm.cloth,realm.night,.5),roughness:.78}),head,0,0,-.08);hood.name='guardian-hood';
+ const maskPoints=[[-.155,.18,.11],[.155,.18,.11],[-.185,.05,.145],[.185,.05,.145],[-.126,-.16,.13],[.126,-.16,.13],[0,-.25,.105],[0,.07,.26],[0,-.065,.21],[0,.207,.16]],maskFaces=[0,2,7,0,7,9,9,7,1,1,7,3,2,4,8,2,8,7,7,8,3,3,8,5,4,6,8,8,6,5];
+ const faceGeometry=new THREE.BufferGeometry();faceGeometry.setAttribute('position',new THREE.Float32BufferAttribute(maskFaces.flatMap(index=>maskPoints[index]),3));faceGeometry.computeVertexNormals();
+ const mask=mesh(faceGeometry,material({color:tint(palette.champagne,realm.stone,.18),metalness:.82,roughness:.27}),head);mask.name='guardian-faceted-mask';
+ for(const x of [-.082,.082]){
+  const visor=mesh(new THREE.BoxGeometry(.106,.025,.025),dark,head,x,.035,.209);visor.rotation.z=x<0?.1:-.1;
+  const eye=mesh(new THREE.BoxGeometry(.075,.006,.027),light,head,x,.039,.229);eye.rotation.z=visor.rotation.z;
  }
- line([[-.039,-.095,.192],[0,-.101,.204],[.039,-.095,.192]],.006,material({color:tint(worldCrowdPalette.skin[look.skin],worldCrowdPalette.cloth[4],.35),roughness:1}),head);
- const cap=mesh(new THREE.SphereGeometry(.245,26,18,0,Math.PI*2,0,1.67),hair,head,0,.014,-.013);cap.scale.set(.87,1.12,.92);
- line([[-.19,.085,.12],[-.12,.193,.17],[.035,.218,.155],[.18,.1,.095]],.035,hair,head);
- if(['long','braid','bob','curls'].includes(look.hairStyle)){
-  const long=look.hairStyle==='long'||look.hairStyle==='braid';
-  const backHair=mesh(new THREE.SphereGeometry(.235,16,12),hair,head,0,long?-.18:-.045,-.08);backHair.scale.set(.89,long?1.7:1.2,.68);
-  for(const x of [-.173,.173])line([[x,.06,.06],[x*1.03,-.13,.04],[x*1.03,long?-.42:-.2,-.05]],look.hairStyle==='braid'?.035:.045,hair,head);
-  if(look.hairStyle==='curls')for(let i=0;i<9;i++){const a=i/9*Math.PI*2;mesh(new THREE.SphereGeometry(.065,8,6),hair,head,Math.cos(a)*.19,.07+Math.sin(a)*.15,-.04);}
- }
- if(look.hairStyle==='knot')mesh(new THREE.SphereGeometry(.085,10,8),hair,head,0,.24,-.105).scale.set(1,.7,1);
- const circlet=line([[-.2,.12,.07],[-.12,.18,.18],[0,.19,.22],[.12,.18,.18],[.2,.12,.07]],.01,gold,head);
- mesh(new THREE.OctahedronGeometry(.033,0),energy,head,0,.187,.23);
+ const circlet=line([[-.27,.08,.18],[-.18,.263,.18],[0,.327,.18],[.18,.263,.18],[.27,.08,.18]],.012,gold,head);
+ mesh(new THREE.OctahedronGeometry(.043,0),energy,head,0,.291,.206);
+ const shoulderMantle=new THREE.Group();shoulderMantle.name='guardian-mantle';guardian.add(shoulderMantle);
+ for(const x of [-.28,.28]){const armor=mesh(new THREE.SphereGeometry(.16,12,8,0,Math.PI*2,0,Math.PI*.6),dark,shoulderMantle,x,1.36,.02);armor.scale.set(1.13,.66,1);line([[x-.1,1.4,.12],[x,1.47,.14],[x+.1,1.4,.12]],.011,gold,shoulderMantle);}
+ line([[0,1.46,.23],[.06,1.16,.255],[0,.71,.27],[-.07,.22,.29]],.009,energy,guardian);
  const emblem=mesh(new THREE.TorusGeometry(.077,.012,5,20),gold,guardian,.04,1.31,.265);emblem.name='guardian-value-seal';
  mesh(new THREE.OctahedronGeometry(.04,0),energy,guardian,.04,1.31,.276);
  const book=new THREE.Group();book.position.set(-.13,1.14,.44);book.rotation.set(.25,-.12,-.12);guardian.add(book);
@@ -188,8 +190,10 @@ export function createLensAdventure(episode){
   animations.push(t=>{marker.position.y=.92+Math.sin(t*.7+index)*.035;marker.rotation.y=t*.13+index;});
   contact(content,group.position.x,group.position.z,.45,.33);
  });
- const specks=new THREE.BufferGeometry(),positions=new Float32Array(42*3);for(let i=0;i<42;i++){positions[i*3]=Math.sin(i*2.4)*3.3;positions[i*3+1]=.5+(i%13)/6;positions[i*3+2]=Math.cos(i*2.4)*2.5;}
- specks.setAttribute('position',new THREE.BufferAttribute(positions,3));const speckMaterial=new THREE.PointsMaterial({color:palette.champagneHighlight,size:.018,transparent:true,opacity:.43,depthWrite:false});materials.add(speckMaterial);const particles=new THREE.Points(geometry(specks),speckMaterial);content.add(particles);animations.push(t=>particles.rotation.y=t*.009);
+ const specks=new THREE.BufferGeometry(),positions=new Float32Array(128*3),phases=new Float32Array(128);
+ for(let i=0;i<128;i++){positions[i*3]=Math.sin(i*2.4)*(1.3+(i%7)*.32);positions[i*3+1]=.35+(i%19)/6;positions[i*3+2]=Math.cos(i*2.4)*2.5;phases[i]=i*.71;}
+ specks.setAttribute('position',new THREE.BufferAttribute(positions,3));specks.setAttribute('phase',new THREE.BufferAttribute(phases,1));specks.computeBoundingSphere();
+ const speckMaterial=createEnergyDust({color:worldArtMaterials.monumentEmission,gold:palette.champagneHighlight});materials.add(speckMaterial);const particles=new THREE.Points(geometry(specks),speckMaterial);particles.name='world-constellation';particles.frustumCulled=false;content.add(particles);animations.push(t=>{speckMaterial.uniforms.time.value=t;});
  // Bake static details by material while retaining the independently animated parts.
  // Geometry remains attached to its inspectable model, so merged surfaces keep raycast identity.
  function batch(parent,excluded=[]){
@@ -202,15 +206,36 @@ export function createLensAdventure(episode){
  }
  batch(environment,[water]);batch(portal,[portalInner,curtain]);batch(chestBody,[chestLight]);batch(lid);batch(head,[circlet]);batch(guardian,[head,staffCrown]);
  (episode.points||[]).forEach(point=>batch(objects.get('clue:'+point.id),[clueMarkers.get(point.id)]));
+ batch(content,[...objects.values()]);
+ // Thin rings make every apparition readable over both bright and dark camera images.
+ objects.forEach((group,key)=>{
+  const radius=key==='portal'?1.55:key==='guardian'?.61:key==='chest'?.8:.5;
+  const aura=new THREE.Group();aura.name='apparition-aura';group.add(aura);
+  const auraMaterial=basic({color:palette.champagneHighlight,transparent:true,opacity:.25,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide});
+  const outer=new THREE.RingGeometry(radius-.012,radius,48,1,0,Math.PI*1.65),inner=new THREE.RingGeometry(radius*.8-.005,radius*.8,36,1,0,Math.PI*1.42);inner.rotateZ(1.8);
+  const auraGeometry=mergeGeometries([outer,inner],false);outer.dispose();inner.dispose();
+  const ring=mesh(auraGeometry,auraMaterial,aura,0,.028,0);ring.rotation.x=-Math.PI/2;
+  auras.set(key,{group:aura,surface:auraMaterial,ring});
+ });
  const remotePositions=new Map([...objects].map(([id,group])=>[id,group.position.clone()]));
- // Camera overlays and native AR contain only small artifacts, never a virtual shore.
- const compactPositions=new Map([['portal',[0,0,-1.2]],['guardian',[1.22,0,0]],['chest',[-1.15,0,.25]],['fragment',[0,0,1.05]],...(episode.points||[]).map((point,i)=>['clue:'+point.id,[[-1.9,0,-.9],[-1.8,0,1.55],[1.85,0,1.5]][i%3]])]);
+ // The camera user stands inside a human-scale world. Native AR anchors the portal at the tapped surface.
+ const cameraPositions=new Map([['portal',[0,0,-5.6]],['guardian',[2,0,-2.8]],['chest',[-2,0,-4.2]],['fragment',[-1,0,-2.6]],...(episode.points||[]).map((point,i)=>['clue:'+point.id,[[-4.4,0,-5],[-4.2,0,-2],[4.5,0,-3]][i%3]])]);
+ const arPositions=new Map([...cameraPositions].map(([key,[x,y,z]])=>[key,[x,y,z+5.6]]));
  let disposed=false,currentMode='3d';
+ function reveal(){if(disposed)return;revealAge=reducedMotion?1:0;portalSurface.uniforms.reveal.value=reducedMotion?1:.16;speckMaterial.uniforms.reveal.value=reducedMotion?1:.16;objects.forEach(group=>group.scale.setScalar(reducedMotion?1:.94));}
  return {
   content,environment,objects,realm,background,fogColor:duskHorizon,geometries,materials,textures,
-  update(time){if(disposed)return;animations.forEach(update=>update(time));},
-  setMode(mode){currentMode=['camera','ar'].includes(mode)?mode:'3d';environment.visible=currentMode==='3d';particles.visible=currentMode==='3d';objects.forEach((group,id)=>{if(currentMode==='3d')group.position.copy(remotePositions.get(id));else group.position.set(...compactPositions.get(id));});content.children.filter(node=>node.material===shadow).forEach(node=>{node.visible=currentMode==='3d';});},
-  setProgress(progress){const solved=progress?.solved||[];chestOpen=progress?.chestOpened===true;portalOpen=progress?.portalOpened===true;lid.rotation.x=chestOpen?-Math.PI*.48:0;chestLight.visible=chestOpen;fragmentMaterial.emissiveIntensity=chestOpen?.6:.18+Math.min(solved.length,3)*.06;fragmentGlow.intensity=chestOpen?2.1:.55;clueMarkers.forEach((marker,id)=>{marker.material=solved.includes(id)?light:energy;});circlet.material=chestOpen?gold:bronze;portalInner.material=portalOpen?light:energy;curtain.material.opacity=portalOpen?.18:.045;},
-  dispose(){if(disposed)return;disposed=true;geometries.forEach(value=>value.dispose());materials.forEach(value=>value.dispose());textures.forEach(value=>value.dispose());content.clear();environment.clear();objects.clear();animations.length=0;},
+  reveal,
+  update(time){
+   if(disposed||!Number.isFinite(time))return;const elapsed=lastTime===null?1/60:Math.min(.1,Math.max(0,time-lastTime));lastTime=time;revealAge=Math.min(1,revealAge+elapsed/1.05);
+   const appeared=revealAge*revealAge*(3-2*revealAge);portalSurface.uniforms.reveal.value=.16+appeared*.84;speckMaterial.uniforms.reveal.value=.16+appeared*.84;
+   objects.forEach((group,key)=>{const started=pulses.get(key),pulse=started===undefined?0:THREE.MathUtils.clamp(1-(time-started)/1.4,0,1);if(started!==undefined&&pulse===0)pulses.delete(key);group.scale.setScalar(.94+appeared*.06);const aura=auras.get(key);aura.surface.opacity=(key===selectedKey?.72:.25)+pulse*.27;aura.ring.rotation.z=reducedMotion?0:time*.12;aura.group.scale.setScalar(1+pulse*.16);});
+   animations.forEach(update=>update(reducedMotion?0:time));
+  },
+  setMode(mode){const next=['camera','ar'].includes(mode)?mode:'3d',changed=currentMode!==next;currentMode=next;environment.visible=currentMode==='3d';particles.visible=true;particles.position.z=currentMode==='camera'?-3:currentMode==='ar'?1:0;objects.forEach((group,id)=>{if(currentMode==='3d')group.position.copy(remotePositions.get(id));else group.position.set(...(currentMode==='ar'?arPositions:cameraPositions).get(id));});content.children.filter(node=>node.material===shadow).forEach(node=>{node.visible=currentMode==='3d';});if(changed)reveal();},
+  setSelected(key){if(disposed)return false;selectedKey=objects.has(key)?key:null;auras.forEach((aura,id)=>{aura.surface.opacity=id===selectedKey?.72:.25;});return selectedKey!==null;},
+  activate(key){if(disposed||!objects.has(key))return false;selectedKey=key;pulses.set(key,lastTime??0);auras.get(key).surface.opacity=1;return true;},
+  setProgress(progress){const solved=progress?.solved||[];chestOpen=progress?.chestOpened===true;portalOpen=progress?.portalOpened===true;lid.rotation.x=chestOpen?-Math.PI*.48:0;chestLight.visible=chestOpen;fragmentMaterial.emissiveIntensity=chestOpen?.6:.18+Math.min(solved.length,3)*.06;fragmentGlow.intensity=chestOpen?2.1:.55;clueMarkers.forEach((marker,id)=>{marker.material=solved.includes(id)?light:energy;});circlet.material=chestOpen?gold:bronze;portalInner.material=portalOpen?light:energy;},
+  dispose(){if(disposed)return;disposed=true;geometries.forEach(value=>value.dispose());materials.forEach(value=>value.dispose());textures.forEach(value=>value.dispose());content.clear();environment.clear();objects.clear();auras.clear();pulses.clear();animations.length=0;},
  };
 }

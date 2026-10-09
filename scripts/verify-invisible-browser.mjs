@@ -176,8 +176,10 @@ try{
    const lens=page.getByTestId('lens-experience');await lens.waitFor();
    const scenePixels=await sceneVisible(page,lens);
    await page.getByTestId('lens-return-adventure').waitFor();
+   await page.getByTestId('lens-open-objects').click();
    await page.getByTestId('lens-object-guardian-guardian').click();
    await lens.getByRole('heading',{name:INVISIBLE_EPISODE.guardian,exact:true}).waitFor();
+   await page.getByTestId('lens-open-objects').click();
    await page.getByTestId('lens-object-clue-rive').click();
    await page.getByTestId('lens-camera-toggle').click();
    await page.getByText('Caméra refusée ou indisponible. La visite reste entièrement jouable en 3D.',{exact:true}).waitFor();
@@ -189,7 +191,7 @@ try{
    await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,get:()=>window.__testHidden===true});window.__testHidden=true;document.dispatchEvent(new Event('visibilitychange'));});
    assert.equal(await page.evaluate(()=>window.__invisibleSensors.stopped),2);
    await page.evaluate(()=>{window.__testHidden=false;document.dispatchEvent(new Event('visibilitychange'));window.__cameraAllowed=false;});
-   await page.getByTestId('lens-recenter').click();await lens.getByRole('button',{name:'L’assemblée',exact:true}).click();
+   await page.getByTestId('lens-recenter').click();
    await lens.screenshot({path:path.join(out,label+'-lens-3d.png')});
    await noOverflow(page,'visual exploration');
    await page.getByTestId('lens-return-adventure').click();assert.equal(await lens.count(),0);
@@ -241,6 +243,7 @@ try{
     await solveGuidedTrace(page,point,{automaticFocus:point.id!==INVISIBLE_EPISODE.points[0].id});
     if(point.id===INVISIBLE_EPISODE.points[0].id){
      await page.getByTestId('open-invisible-lens').click();await lens.waitFor();
+     await page.getByTestId('lens-open-objects').click();
      await page.getByTestId('lens-object-clue-'+point.id).click();await page.getByTestId('lens-return-adventure').click();
      await question.getByText(INVISIBLE_EPISODE.points[1].riddle.question,{exact:true}).waitFor();
      await page.waitForFunction(()=>document.querySelector('[data-testid="riddle-answer"]')===document.activeElement);
