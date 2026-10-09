@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'src/world/invisible/**'
+      - 'public/invisible/**'
       - 'src/world/save.js'
       - 'src/world/engine.js'
       - 'src/world/global-rewards.js'
@@ -16,7 +17,7 @@ on:
       - '.github/workflows/verify-invisible.yml'
   push:
     branches: [main]
-    paths: ['src/world/invisible/**', 'scripts/verify-invisible-browser.mjs', '.github/workflows/verify-invisible.yml']
+    paths: ['src/world/invisible/**', 'public/invisible/**', 'scripts/verify-invisible-browser.mjs', '.github/workflows/verify-invisible.yml']
 permissions:
   contents: read
 concurrency:
