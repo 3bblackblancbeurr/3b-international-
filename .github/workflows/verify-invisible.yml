@@ -13,12 +13,13 @@ on:
       - 'supabase/functions/world-engine/**'
       - 'supabase/migrations/*invisible*.sql'
       - 'tests/invisible*.test.js'
+      - 'vercel.json'
       - 'scripts/verify-invisible-browser.mjs'
       - 'scripts/verify-invisible-camera.mjs'
       - '.github/workflows/verify-invisible.yml'
   push:
     branches: [main]
-    paths: ['src/world/invisible/**', 'public/invisible/**', 'scripts/verify-invisible-browser.mjs', 'scripts/verify-invisible-camera.mjs', '.github/workflows/verify-invisible.yml']
+    paths: ['src/world/invisible/**', 'public/invisible/**', 'vercel.json', 'scripts/verify-invisible-browser.mjs', 'scripts/verify-invisible-camera.mjs', '.github/workflows/verify-invisible.yml']
 permissions:
   contents: read
 concurrency:
