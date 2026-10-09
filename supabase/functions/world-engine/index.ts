@@ -5,6 +5,7 @@ const BASE=Deno.env.get('SUPABASE_URL')!;
 const ADMIN=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const PUBLIC=Deno.env.get('SUPABASE_ANON_KEY')!;
 const ORIGINS=new Set(['https://localhost','capacitor://localhost','https://3b-international.vercel.app','http://localhost:5173','http://127.0.0.1:5173','http://localhost:5174','http://127.0.0.1:5174']);
+const LEGACY_INVISIBLE_ACTIONS=new Set(['invisibleStart','invisibleAnswer','invisibleChest','invisiblePortal']);
 class Failure extends Error {constructor(public status:number,message:string){super(message);}}
 async function api(path:string,body?:unknown,method=body===undefined?'GET':'POST'){
  const r=await fetch(BASE+path,{method,headers:{apikey:ADMIN,Authorization:'Bearer '+ADMIN,'Content-Type':'application/json',Prefer:'return=representation'},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(12000)});
@@ -49,7 +50,10 @@ Deno.serve(async req=>{
     if(entry.seq<=seq)continue;
     if(entry.seq!==seq+1)throw new Failure(409,'Une action manque dans le journal. Rouvre le monde pour synchroniser.');
     try{
-     const action=entry.action;
+     // A still-running first-version tab knows only France. Bind its commands
+     // at the transport boundary; the shared reducer keeps its active-episode default.
+     const submitted=entry.action;
+     const action=LEGACY_INVISIBLE_ACTIONS.has(submitted.type)&&submitted.episodeId==null?{...submitted,episodeId:'leman-001'}:submitted;
      const next=applyWorldAction(data,action);
      if(entry.action.type==='walk'&&next.walked-Number(row.walk_baseline)>(Date.now()-Date.parse(row.created_at))/1000*3+200)throw Error('Cette distance est trop rapide.');
      rewardIntents.push(...worldGlobalRewardIntents(data,next,action));

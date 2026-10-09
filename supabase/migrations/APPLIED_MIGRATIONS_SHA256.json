@@ -2,7 +2,7 @@
   "generated_from": "supabase_migrations.schema_migrations",
   "normalization": "trim UTF-8 SQL whitespace (space, tab, CR, LF) then SHA-256",
   "generated_at": "2026-10-09",
-  "count": 213,
+  "count": 216,
   "migrations": [
     {
       "version": "20260910020445",
@@ -1081,6 +1081,21 @@
       "version": "20261009132008",
       "name": "invisible_eight_echoes",
       "sha256": "a00223a766f5f6444ac6a9c989bf85429d6b3a23ff31b15e31c37d0d75779034"
+    },
+    {
+      "version": "20261009143221",
+      "name": "invisible_eight_realms_rewards_v2",
+      "sha256": "56b3d5b9834d77ea96beb1ee96a34dc9a7af9b0c22c170d5bcbb891f465e91a6"
+    },
+    {
+      "version": "20261009143229",
+      "name": "invisible_collective_puzzles_and_seasons_v2",
+      "sha256": "7814a0465bffed1d531a12e4d85014ddd8b9e766dda94848d88f55647246861f"
+    },
+    {
+      "version": "20261009144311",
+      "name": "invisible_runtime_table_grants_v3",
+      "sha256": "aab061e7afc40b739a7fb7d0693e4dd04ea45fec125c2a3454247c247a52bcce"
     }
   ],
   "reconciliation": {

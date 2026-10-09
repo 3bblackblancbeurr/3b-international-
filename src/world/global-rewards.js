@@ -1,5 +1,6 @@
 import {HUB_MISSION_BY_ID} from './hub/mission-catalog.js';
-import {INVISIBLE_EPISODE} from './invisible/catalog.js';
+import {INVISIBLE_EPISODE,INVISIBLE_EPISODE_BY_ID,INVISIBLE_CONVERGENCE} from './invisible/catalog.js';
+import {invisibleEpisodeProgress} from './invisible/progression.js';
 
 const has=(list,value)=>Array.isArray(list)&&list.includes(value);
 const claimed=(save,id)=>!!save?.hub?.missions?.[id]?.claimed;
@@ -9,8 +10,15 @@ export function worldGlobalRewardIntents(before,after,action){
  if(!before||!after||!action?.type)return intents;
  const push=(rewardCode,eventId,source='world')=>intents.push({rewardCode,eventId,source});
 
- if(action.type==='invisibleChest'&&!before.invisible?.chestOpened&&after.invisible?.chestOpened){
-  push('invisible_fragment','invisible:'+INVISIBLE_EPISODE.id);
+ if(action.type==='invisibleChest'){
+  const id=action.episodeId??before.invisible?.activeEpisode??INVISIBLE_EPISODE.id;
+  const episode=Object.hasOwn(INVISIBLE_EPISODE_BY_ID,id)?INVISIBLE_EPISODE_BY_ID[id]:null;
+  if(episode&&!invisibleEpisodeProgress(before.invisible,id).chestOpened&&invisibleEpisodeProgress(after.invisible,id).chestOpened){
+   push(episode.realm==='france'?'invisible_fragment':'invisible_fragment_'+episode.realm,'invisible:'+episode.id);
+  }
+ }
+ if(action.type==='invisibleConvergence'&&!before.invisible?.convergenceCompleted&&after.invisible?.convergenceCompleted){
+  push('invisible_convergence','invisible:'+INVISIBLE_CONVERGENCE.id);
  }
 
  if(action.type==='visit'&&action.region&&action.region!=='hub'&&!has(before.visited,action.region)&&has(after.visited,action.region)){
