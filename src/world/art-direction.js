@@ -2,6 +2,7 @@
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,Number(v)||0));
 export {worldRealmArt as REALM_ART} from '../design-system/tokens.js';
 import {worldRealmArt as REALM_ART} from '../design-system/tokens.js';
+import {skyKeyDirection} from './master-presentation.js';
 // The Cité has a blue maritime atmosphere and champagne stone in the reference.
 // Keep realm palettes untouched and grade the hub independently of progression.
 const CITE_ART=Object.freeze({...REALM_ART.hub,sky:'#8bb9d2',ground:'#233b46',fog:'#5294ac',night:'#071a2c',stone:'#a7b4b6'}); // gold-master-allow: reviewed reference Hub atmosphere grading; docs/hub-reference-art-exceptions.md#atmosphere.
@@ -13,7 +14,7 @@ export function artLighting(region,time={},weather={}){
  // Soft reflected moon/city light restores facade readability on mobile.
  // No extra lights, textures, post-processing passes or daytime tint changes.
  const civicNight=region==='hub'?Math.pow(1-day,1.25):0;
- return {palette,day,dusk,sunColor:palette.sun,sunWarmth:warmth,
+ return {palette,day,dusk,sunColor:day<.3?palette.sky:palette.sun,sunWarmth:warmth,keyDirection:skyKeyDirection(hour),
   sunIntensity:(region==='hub'?2.65:2.9)*sun*(.68+.32*visibility),
   skyIntensity:.24+.64*day+civicNight*.09,
   fillIntensity:.10+.16*day+civicNight*.06,
