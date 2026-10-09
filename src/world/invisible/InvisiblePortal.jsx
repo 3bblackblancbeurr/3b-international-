@@ -2,8 +2,9 @@ import React, {useEffect, useRef, useState} from 'react';
 import {Camera, CameraOff} from 'lucide-react';
 import {Button} from '../../design-system/index.jsx';
 import {goldMasterTokens, worldArtMaterials} from '../../design-system/tokens.js';
+import {INVISIBLE_REALMS} from './catalog.js';
 
-export default function InvisiblePortal({opened}) {
+export default function InvisiblePortal({opened,realm='france',value='Justice'}) {
  const host=useRef(null),video=useRef(null),stream=useRef(null),cameraTicket=useRef(0),[camera,setCamera]=useState(false),[pending,setPending]=useState(false),[message,setMessage]=useState(''),[fallback,setFallback]=useState(false);
  useEffect(()=>{
   let alive=true,dispose=()=>{};
@@ -48,7 +49,7 @@ export default function InvisiblePortal({opened}) {
    {camera&&<video ref={video} muted playsInline className="invisible-portal-camera" aria-label="Aperçu caméra local"/> /* gold-master-allow: transient MediaStream preview requires a video ref; shared VideoPlayer renders a saved media player. */}
    <div ref={host} className="invisible-portal-canvas" aria-hidden="true"/>
    {fallback&&<div className="invisible-portal-fallback" aria-hidden="true"><span>3B</span></div>}
-   <div className="invisible-portal-label"><span>ROYAUME DE FRANCE</span><strong>{opened?'Le passage est ouvert':'La Justice retrouve sa lumière'}</strong></div>
+   <div className="invisible-portal-label"><span>{'ROYAUME · '+(INVISIBLE_REALMS.find(item=>item.id===realm)?.name||realm).toUpperCase()}</span><strong>{opened?'Le passage est ouvert':value+' retrouve sa lumière'}</strong></div>
   </div>
   <div className="invisible-camera-tools"><Button variant="ghost" onClick={camera||pending?()=>stopCamera():startCamera}><span aria-hidden="true">{camera||pending?<CameraOff size={16}/>:<Camera size={16}/>}</span>{camera?'Arrêter la caméra':pending?'Annuler la demande':'Voir avec ma caméra'}</Button><span className="invisible-small">Superposition visuelle facultative</span></div>
   {message&&<p className="invisible-small" role="status">{message}</p>}

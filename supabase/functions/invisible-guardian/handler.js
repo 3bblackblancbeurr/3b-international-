@@ -22,11 +22,13 @@ export function normalizeGuardianRequest(body){
   if(rows.reduce((n,row)=>n+row.content.length,0)+message.length>4000)fail(400,'Conversation trop longue.');
   return{action:'dialog',message,history:rows};
  }
- if(body.action==='cooperationSnapshot'||body.action==='contribute'){
-  if(Object.keys(body).some(key=>!['action','realm'].includes(key)))fail(400,'Demande collective invalide.');
-  if(body.action==='cooperationSnapshot'&&body.realm!==undefined)fail(400,'Demande collective invalide.');
-  if(body.realm!==undefined&&typeof body.realm!=='string')fail(400,'Choisis une affinité du Cercle.');
-  return{action:body.action,realm:body.realm??null};
+ const fields={capabilities:[],cooperationSnapshot:[],contribute:['realm'],solveCollective:['answer'],eventsSnapshot:['event'],contributeEvent:['event','realm'],solveEvent:['event','answer']}[body.action];
+ if(fields){
+  if(Object.keys(body).some(key=>key!=='action'&&!fields.includes(key)))fail(400,'Demande collective invalide.');
+  if(body.realm!==undefined&&(typeof body.realm!=='string'||body.realm.length>24))fail(400,'Choisis une affinité du Cercle.');
+  if(body.event!==undefined&&(typeof body.event!=='string'||!/^echoes-[a-z]+-20[0-9]{2}$/.test(body.event)))fail(400,'Événement invalide.');
+  if(['contributeEvent','solveEvent'].includes(body.action)&&!body.event)fail(400,'Événement manquant.');
+  return{action:body.action,realm:body.realm??null,event:body.event??null,...(fields.includes('answer')?{answer:clean(body.answer,48)}:{})};
  }
  fail(400,'Action inconnue.');
 }
@@ -39,7 +41,7 @@ async function readBody(req){
  try{return JSON.parse(text);}catch{fail(400,'Demande invalide.');}
 }
 
-export function createGuardianHandler({base,serviceKey,anonKey,env=()=>'',fetchImpl=fetch,episode,normalizeState}){
+export function createGuardianHandler({base,serviceKey,anonKey,env=()=>'',fetchImpl=fetch,episode,normalizeState,getEpisode,progressFor,guardianPersonas={},realms=[],episodes=[]}){
  const api=async(path,body)=>{
   const response=await fetchImpl(base+path,{method:body===undefined?'GET':'POST',headers:{apikey:serviceKey,Authorization:'Bearer '+serviceKey,'Content-Type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(12000)});
   const data=await response.json().catch(()=>null);
@@ -50,6 +52,11 @@ export function createGuardianHandler({base,serviceKey,anonKey,env=()=>'',fetchI
    if(/passport_required/.test(raw))fail(403,'Un Passeport 3B actif est nécessaire.');
    if(/invalid_realm/.test(raw))fail(400,'Choisis une des huit affinités du Cercle.');
    if(/realm_locked/.test(raw))fail(409,'Ton écho est déjà lié à une affinité.');
+   if(/invalid_answer/.test(raw))fail(422,'Le mot ne correspond pas aux huit lettres. Réessaie.');
+   if(/echoes_incomplete/.test(raw))fail(409,'Les huit affinités doivent d’abord transmettre leur indice.');
+   if(/contribution_required/.test(raw))fail(409,'Lie d’abord ton écho à cette mission.');
+   if(/event_not_open/.test(raw))fail(409,'Cette saison n’est pas ouverte selon le calendrier du serveur.');
+   if(/event_unavailable/.test(raw))fail(404,'Cet événement n’existe pas dans le calendrier.');
    fail(503,'Le service du Monde Invisible est momentanément indisponible.');
   }
   return data;
@@ -69,16 +76,35 @@ export function createGuardianHandler({base,serviceKey,anonKey,env=()=>'',fetchI
   await validSession(user.id,sid);return{uid:user.id,sid};
  };
  const rate=async(key,limit,window)=>{if(await rpc('loyalty_rate',{p_key:key,p_limit:limit,p_window:window})!==true)fail(429,'Le Gardien doit se reposer. Réessaie plus tard.');};
+ const capabilities=()=>{
+  const override=env('INVISIBLE_AI_ENABLED'),enabled=override?override==='true':env('AI_ENABLED')==='true';
+  const configured=!!env('OPENAI_API_KEY')&&!!env('OPENAI_CHAT_MODEL');
+  return{aiConfigured:enabled&&configured,narrativeAvailable:true,reason:!enabled?'disabled':!configured?'provider_missing':'configured'};
+ };
+ const presentation=invisible=>{
+  const active=getEpisode?getEpisode(invisible.activeEpisode):episode,realm=active.fragment.realm;
+  const progress=progressFor?progressFor(invisible,active.id):invisible;
+  const catalog=Array.isArray(episodes)?episodes:Object.values(episodes);
+  const options={progress,persona:guardianPersonas[realm]||{},realmName:realms.find(row=>row.id===realm)?.name||realm,completedPortals:progressFor?catalog.filter(row=>progressFor(invisible,row.id).portalOpened).length:(progress.portalOpened?1:0)};
+  const identity={guardian:active.guardian,episodeId:active.id,realm};
+  return{active,options,identity};
+ };
+ const narrativeReply=(invisible,body,reason)=>{
+  const {active,options,identity}=presentation(invisible);
+  return{source:'narrative',...identity,reason,text:narrativeGuardian(invisible,body.message,active,options)};
+ };
  const provider=async(invisible,body)=>{
-  const narrative=()=>({source:'narrative',guardian:episode.guardian,text:narrativeGuardian(invisible,body.message,episode)});
-  if(env('AI_ENABLED')!=='true'||!env('OPENAI_API_KEY')||!env('OPENAI_CHAT_MODEL'))return narrative();
+  const {active,options,identity}=presentation(invisible);
+  const narrative=reason=>narrativeReply(invisible,body,reason);
+  const status=capabilities();
+  if(!status.aiConfigured)return narrative(status.reason);
   await rate('invisible:ai:global',100,86400);
   try{
-   const response=await fetchImpl('https://api.openai.com/v1/responses',{method:'POST',headers:{Authorization:'Bearer '+env('OPENAI_API_KEY'),'Content-Type':'application/json'},body:JSON.stringify({model:env('OPENAI_CHAT_MODEL'),instructions:guardianInstructions(guardianContext(invisible,episode)),input:[...body.history,{role:'user',content:body.message}],max_output_tokens:512,store:false,tools:[]}),signal:AbortSignal.timeout(20000)});
-   if(!response.ok)return narrative();
+   const response=await fetchImpl('https://api.openai.com/v1/responses',{method:'POST',headers:{Authorization:'Bearer '+env('OPENAI_API_KEY'),'Content-Type':'application/json'},body:JSON.stringify({model:env('OPENAI_CHAT_MODEL'),instructions:guardianInstructions(guardianContext(invisible,active,options)),input:[...body.history,{role:'user',content:body.message}],max_output_tokens:512,store:false,tools:[]}),signal:AbortSignal.timeout(20000)});
+   if(!response.ok)return narrative('provider_failure');
    const result=await response.json(),text=safeGuardianText(result.output?.flatMap(row=>row.content||[]).filter(row=>row.type==='output_text').map(row=>row.text).join('\n'));
-   return text?{source:'ai',guardian:episode.guardian,text}:narrative();
-  }catch{return narrative();}
+   return text?{source:'ai',...identity,text}:narrative('unsafe_output');
+  }catch{return narrative('provider_failure');}
  };
  return async req=>{
   const origin=req.headers.get('origin')||'',cors={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Vary':'Origin','Access-Control-Allow-Headers':'authorization,apikey,content-type,x-client-info','Access-Control-Allow-Methods':'POST,OPTIONS',...(ORIGINS.has(origin)?{'Access-Control-Allow-Origin':origin}:{})};
@@ -88,19 +114,26 @@ export function createGuardianHandler({base,serviceKey,anonKey,env=()=>'',fetchI
   if(req.method!=='POST')return reply({error:'Méthode non autorisée.'},405);
   try{
    const body=normalizeGuardianRequest(await readBody(req)),{uid,sid}=await authenticate(req);
+   if(body.action==='capabilities'){
+    await activePassport(uid);await rate('invisible:status:'+uid,30,60);return reply(capabilities());
+   }
    if(body.action==='dialog'){
     await activePassport(uid);
     await rate('invisible:session:'+sid,6,60);
     await rate('invisible:user:'+uid,12,60);
     await rate('invisible:day:'+uid,60,86400);
     const row=(await api('/rest/v1/member_world_state?user_id=eq.'+uid+'&select=data&limit=1'))?.[0];
-    const invisible=normalizeState(row?.data?.invisible),result=await provider(invisible,body);
+    const invisible=normalizeState(row?.data?.invisible);let result=await provider(invisible,body);
+    const currentRow=(await api('/rest/v1/member_world_state?user_id=eq.'+uid+'&select=data&limit=1'))?.[0],current=normalizeState(currentRow?.data?.invisible);
+    // A memory withdrawal or episode switch during generation invalidates the old context.
+    if(current.memoryRevision!==invisible.memoryRevision||current.memoryConsent!==invisible.memoryConsent||current.activeEpisode!==invisible.activeEpisode)result=narrativeReply(current,body,'context_changed');
     // Revocation during a provider request must not return a response to an ended session.
     await validSession(uid,sid);await activePassport(uid);return reply(result);
    }
    await rate('invisible:cooperation:'+uid,20,60);
    const params={p_user:uid,p_session:sid};
-   return reply(await rpc(body.action==='contribute'?'invisible_echo_contribute':'invisible_echo_snapshot',body.action==='contribute'?{...params,p_realm:body.realm}:params));
+   const operation={cooperationSnapshot:['invisible_echo_snapshot',params],contribute:['invisible_echo_contribute',{...params,p_realm:body.realm}],solveCollective:['invisible_echo_solve',{...params,p_answer:body.answer}],eventsSnapshot:['invisible_event_snapshot',{...params,p_event:body.event}],contributeEvent:['invisible_event_contribute',{...params,p_event:body.event,p_realm:body.realm}],solveEvent:['invisible_event_solve',{...params,p_event:body.event,p_answer:body.answer}]}[body.action];
+   return reply(await rpc(operation[0],operation[1]));
   }catch(error){return reply({error:error instanceof Failure?error.message:'Le service du Monde Invisible est momentanément indisponible.'},error instanceof Failure?error.status:503);}
  };
 }

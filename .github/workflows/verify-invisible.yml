@@ -4,9 +4,14 @@ on:
     paths:
       - 'src/world/invisible/**'
       - 'src/world/save.js'
+      - 'src/world/engine.js'
+      - 'src/world/global-rewards.js'
       - 'src/App.jsx'
       - 'src/lib/navigation.js'
       - 'supabase/functions/invisible-guardian/**'
+      - 'supabase/functions/world-engine/**'
+      - 'supabase/migrations/*invisible*.sql'
+      - 'tests/invisible*.test.js'
       - 'scripts/verify-invisible-browser.mjs'
       - '.github/workflows/verify-invisible.yml'
   push:
@@ -28,9 +33,11 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Verify campaign, permissions, rewards and sensor lifecycle
+        run: node --test tests/invisible*.test.js
       - run: npm install --no-save --package-lock=false @playwright/test@1.56.1
       - run: npx playwright install --with-deps chromium
-      - name: Play and resume the full episode on desktop and phone
+      - name: Play the eight adventures, finale and visual exploration on desktop and phone
         run: node scripts/verify-invisible-browser.mjs
         env:
           PLAYWRIGHT_MODULE: '@playwright/test'

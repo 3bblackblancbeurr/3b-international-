@@ -2,7 +2,12 @@ import {authClient,SUPABASE_URL,PUBLIC_KEY} from '../loyalty/client.js';
 import {blankSave,normalizeSave,SAVE_VERSION} from './rules.js';
 import {applyWorldAction} from './engine.js';
 import {normalizeInvisibleState} from './invisible/progression.js';
+import {INVISIBLE_EPISODE} from './invisible/catalog.js';
 const queues=new Map(),key=id=>'3b_world_v1_'+(id||'guest'),journalBase=id=>'3b_world_actions_v2_'+id,journalKey=(id,device)=>journalBase(id)+'_'+device,ackKey=(id,device)=>'3b_world_ack_v2_'+id+'_'+device;
+const episodeActions=new Set(['invisibleStart','invisibleAnswer','invisibleChest','invisiblePortal']);
+// Journals created before the eight-realm campaign always refer to the Léman.
+// New commands retain their episode even if another tab changes the selection.
+function legacyEpisodeEntry(entry){return episodeActions.has(entry?.action?.type)&&!entry.action.episodeId?{...entry,action:{...entry.action,episodeId:INVISIBLE_EPISODE.id}}:entry;}
 export function readLocal(id){try{const v=JSON.parse(localStorage.getItem(key(id)));return v?{...v,data:normalizeSave(v.data)}:null;}catch{return null;}}
 function localMetadata(id){try{return JSON.parse(localStorage.getItem(key(id)));}catch{return null;}}
 function redactInvisibleBackup(id,snapshot){
@@ -19,12 +24,13 @@ function statusFor(id,state,outcome,extra={}){const local=localMetadata(id);retu
 export function worldSaveStatus(id){return statusFor(id,id?stateFor(id):null,id?'pending':'local');}
 function stateFor(id){
  if(!queues.has(id)){let device,saved;try{device=sessionStorage.getItem('3b_world_tab_'+id);if(!device){device=crypto.randomUUID();sessionStorage.setItem('3b_world_tab_'+id,device);}saved=JSON.parse(localStorage.getItem(journalKey(id,device)));}catch{}
-  queues.set(id,{device:device||crypto.randomUUID(),next:saved?.next||1,pending:Array.isArray(saved?.pending)?saved.pending:[],chain:Promise.resolve()});
+  queues.set(id,{device:device||crypto.randomUUID(),next:saved?.next||1,pending:Array.isArray(saved?.pending)?saved.pending.map(legacyEpisodeEntry):[],chain:Promise.resolve()});
  }return queues.get(id);
 }
 function persist(id,state){localStorage.setItem(journalKey(id,state.device),JSON.stringify({device:state.device,next:state.next,pending:state.pending}));}
 export function recordWorldAction(id,save,action){
- const command=action?.type==='invisibleMemoryConsent'&&action.enabled===true?{...action,expectedMemoryRevision:normalizeInvisibleState(save?.invisible).memoryRevision}:action;
+ const invisible=normalizeInvisibleState(save?.invisible);
+ const command=action?.type==='invisibleMemoryConsent'&&action.enabled===true?{...action,expectedMemoryRevision:invisible.memoryRevision}:episodeActions.has(action?.type)&&!action.episodeId?{...action,episodeId:invisible.activeEpisode}:action;
  const next=applyWorldAction(save,command);
  if(action.type==='invisibleForget'||(action.type==='invisibleMemoryConsent'&&action.enabled===false))redactInvisibleBackup(id);
  if(id){const state=stateFor(id);if(state.pending.length>=5000)throw Error('Synchronise ton compte avant de poursuivre. Le journal hors ligne est plein.');
@@ -56,7 +62,7 @@ async function recoverOtherJournals(id,current){
  // Each tab has its own sequence. Read abandoned journals without rewriting a
  // different tab's queue; server receipts make concurrent recovery idempotent.
  const journals=[];for(let i=0;i<localStorage.length;i++){const name=localStorage.key(i);if(!name?.startsWith(journalBase(id))||name===journalKey(id,current.device))continue;try{const j=JSON.parse(localStorage.getItem(name));if(j?.device&&Array.isArray(j.pending))journals.push(j);}catch{}}
- for(const j of journals){let acknowledged=Number(localStorage.getItem(ackKey(id,j.device)))||0;const pending=j.pending.filter(e=>e.seq>acknowledged);
+ for(const j of journals){let acknowledged=Number(localStorage.getItem(ackKey(id,j.device)))||0;const pending=j.pending.filter(e=>e.seq>acknowledged).map(legacyEpisodeEntry);
   for(let i=0;i<pending.length;i+=100){const result=await request(id,j,pending.slice(i,i+100));acknowledged=Math.max(acknowledged,result.sequence);localStorage.setItem(ackKey(id,j.device),String(acknowledged));}
  }
 }

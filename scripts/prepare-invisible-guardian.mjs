@@ -12,7 +12,7 @@ function visit(name){
  const content=fs.readFileSync(path.join(root,'src/world',name),'utf8');
  for(const relative of imports(content))visit(path.posix.join(path.posix.dirname(name),relative));
 }
-visit('invisible/catalog.js');visit('invisible/progression.js');
+visit('invisible/catalog.js');visit('invisible/progression.js');visit('story-canon.js');
 const folder=path.join(root,'supabase/functions/invisible-guardian');
 const files=['index.ts','handler.js'].map(name=>({name,content:fs.readFileSync(path.join(folder,name),'utf8').replaceAll('../../../src/world/','./world/')}));
 files.push({name:'guardian-story.js',content:fs.readFileSync(path.join(root,'src/world/invisible/guardian-story.js'),'utf8')});

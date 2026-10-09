@@ -34,6 +34,7 @@ test('the dedicated Invisible reward commits through the CAS outbox and credits 
   await db.exec(sql('tests/fixtures/city3b-credit-reward-before-asset-keys.sql'));
   await db.exec(sql('supabase/migrations/20261003030633_city3b_reward_transaction_keys.sql'));
   const migration=sql('supabase/migrations/20261009132007_invisible_fragment_reward_v1.sql');await db.exec(migration);await db.exec(migration);
+  const expansion=sql('supabase/migrations/20261009143221_invisible_eight_realms_rewards_v2.sql');await db.exec(expansion);await db.exec(expansion);
   await db.exec(sql('supabase/migrations/20260920163347_threeb_world_reward_transactional_outbox_v1.sql').split('create or replace function public.threeb_process_reward_outbox_server(')[0]);
   await db.exec(sql('supabase/migrations/20261005130821_threeb_reward_outbox_retry_accounting_v1.sql'));
   await db.exec(sql('supabase/migrations/20261009132006_world_commit_reward_names.sql'));
@@ -56,5 +57,18 @@ test('the dedicated Invisible reward commits through the CAS outbox and credits 
   await assert.rejects(claim('invisible:forged-other-episode'),/already_claimed/);
   assert.deepEqual((await db.query('select xp,coins from economy_accounts')).rows,[{xp:120,coins:15}]);
   assert.equal((await db.query("select count(*) n from threeb_wallet_ledger where event_key='reward:invisible_fragment'")).rows[0].n,1);
+  const newCodes=['algerie','maroc','tunisie','espagne','italie','turquie','estonie'].map(realm=>'invisible_fragment_'+realm).concat('invisible_convergence');
+  for(const code of newCodes){
+   const event=code==='invisible_convergence'?'invisible:convergence-eight-v1':'invisible:realm-'+code.slice('invisible_fragment_'.length);
+   const credit=()=>db.query('select threeb_credit_reward_server($1,$2,$3) reward',[USER,code,event]);
+   await credit();
+   const granted=(await db.query('select xp_delta,coins_delta from threeb_wallet_ledger where user_id=$1 and event_key=$2',[USER,'reward:'+code])).rows[0];
+   assert.deepEqual(granted,{xp_delta:code==='invisible_convergence'?240:120,coins_delta:code==='invisible_convergence'?30:15});
+   assert.equal((await credit()).rows[0].reward.idempotent,true);
+   await assert.rejects(db.query('select threeb_credit_reward_server($1,$2,$3)',[USER,code,event+':forged']),/already_claimed/);
+  }
+  assert.deepEqual((await db.query('select xp,coins from economy_accounts')).rows,[{xp:1200,coins:150}]);
+  assert.equal((await db.query("select count(*)::integer n from threeb_reward_policy where reward_code like 'invisible_%' and max_events_lifetime=1")).rows[0].n,9);
+  assert.equal((await db.query("select max_events_lifetime from threeb_reward_policy where reward_code='world_secret'")).rows[0].max_events_lifetime,16);
  }finally{await db.close();}
 });
