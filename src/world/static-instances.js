@@ -12,20 +12,27 @@ export function createStaticInstances(root,entries,{exclude=[]}={}){
   sourceSet.add(source);const key=[source.geometry.uuid,source.material.uuid,source.castShadow,source.receiveShadow].join(':');
   if(!groups.has(key))groups.set(key,[]);groups.get(key).push(source);
  });
- const batches=[],inverse=new THREE.Matrix4(),matrix=new THREE.Matrix4(),frustum=new THREE.Frustum(),projection=new THREE.Matrix4(),sphere=new THREE.Sphere();
+ // Authored transforms are static; only visibility and the camera change.
+ // Cache in root-local space so the 350 ms LOD pass never walks the entire
+ // landscape/skeleton hierarchy or recomputes every instance's bounds.
+ const batches=[],inverse=new THREE.Matrix4().copy(root.matrixWorld).invert(),frustum=new THREE.Frustum(),projection=new THREE.Matrix4(),sphere=new THREE.Sphere();
  for(const sources of groups.values()){
   if(sources.length<3)continue;
   const first=sources[0],mesh=new THREE.InstancedMesh(first.geometry,first.material,sources.length);
   mesh.castShadow=first.castShadow;mesh.receiveShadow=first.receiveShadow;mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.count=0;
-  batchRoot.add(mesh);const masks=sources.map(s=>s.layers.mask);sources.forEach(s=>s.layers.set(31));batches.push({sources,masks,mesh});
+  const matrices=sources.map(source=>new THREE.Matrix4().multiplyMatrices(inverse,source.matrixWorld));
+  const bounds=sources.map((source,i)=>{if(!source.geometry.boundingSphere)source.geometry.computeBoundingSphere();return source.geometry.boundingSphere.clone().applyMatrix4(matrices[i]);});
+  mesh.boundingSphere=new THREE.Sphere();for(const bound of bounds)mesh.boundingSphere.union(bound);
+  batchRoot.add(mesh);const masks=sources.map(s=>s.layers.mask);sources.forEach(s=>s.layers.set(31));batches.push({sources,masks,mesh,matrices,bounds,selected:[]});
  }
  root.add(batchRoot);let dead=false;
  const visible=source=>{for(let o=source;o&&o!==root;o=o.parent)if(!o.visible)return false;return true;};
  function update(camera=null){
-  if(dead)return;if(camera){camera.updateMatrixWorld();projection.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);frustum.setFromProjectionMatrix(projection);}root.updateMatrixWorld(true);inverse.copy(batchRoot.matrixWorld).invert();
-  for(const {sources,mesh} of batches){let count=0;
-   for(const source of sources){if(!visible(source))continue;if(camera){if(!source.geometry.boundingSphere)source.geometry.computeBoundingSphere();sphere.copy(source.geometry.boundingSphere).applyMatrix4(source.matrixWorld);sphere.radius+=10;if(!frustum.intersectsSphere(sphere))continue;}matrix.multiplyMatrices(inverse,source.matrixWorld);mesh.setMatrixAt(count++,matrix);}
-   mesh.count=count;mesh.instanceMatrix.needsUpdate=true;if(count)mesh.computeBoundingSphere();
+  if(dead)return;if(camera){camera.updateMatrixWorld();projection.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);frustum.setFromProjectionMatrix(projection);}batchRoot.updateWorldMatrix(true,false);
+  for(const {sources,mesh,matrices,bounds,selected} of batches){let count=0,changed=false;
+   for(let i=0;i<sources.length;i++){if(!visible(sources[i]))continue;if(camera){sphere.copy(bounds[i]).applyMatrix4(batchRoot.matrixWorld);sphere.radius+=10;if(!frustum.intersectsSphere(sphere))continue;}if(selected[count]!==i){selected[count]=i;mesh.setMatrixAt(count,matrices[i]);changed=true;}count++;}
+   selected.length=count;mesh.count=count;if(changed)mesh.instanceMatrix.needsUpdate=true;
+   // The full authored bound remains conservative for every visible subset.
   }
  }
  update();
