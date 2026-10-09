@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {NAV_GROUPS,PRINCIPAL_DESTINATIONS} from '../src/components/navigation-menu.js';
 
 const home=readFileSync(new URL('../src/components/HomePage.jsx',import.meta.url),'utf8');
 const app=readFileSync(new URL('../src/App.jsx',import.meta.url),'utf8');
@@ -16,16 +17,16 @@ test('home hides technical status cards and keeps the ecosystem guide at the bot
  assert.ok(home.indexOf('<WorldPortalCard') < home.indexOf('Les espaces 3B'));
  const guide=home.lastIndexOf('Le guide 3B');
  assert.ok(guide>home.indexOf('secondaryGroups.map'));
- assert.match(nav,/title: "Identité & progression", ids: \["passport", "member"\]/);
- assert.match(nav,/title: "Univers 3B", ids: \["world3b", "secret"\]/);
+ assert.deepEqual(NAV_GROUPS.find(group=>group.title==='Identité & progression').ids,['passport','member','loyalty']);
+ assert.deepEqual(NAV_GROUPS.find(group=>group.title==='Univers 3B').ids,['world3b','invisible','secret']);
  assert.doesNotMatch(home,/<InstallCards|dashboard-footer/);
  assert.match(home,/item.status!=='soon'/);
 });
 
 test('mobile navigation keeps an active destination instead of staged games',()=>{
- assert.match(nav,/\{ id: "shop", label: "Boutique" \}/);
- assert.doesNotMatch(nav,/\{ id: "games", label: "Jeux" \}/);
- assert.match(nav,/Services & avantages/);
+ assert.ok(PRINCIPAL_DESTINATIONS.some(item=>item.id==='shop'&&item.label==='Boutique'));
+ assert.equal(PRINCIPAL_DESTINATIONS.some(item=>item.id==='games'),false);
+ assert.ok(NAV_GROUPS.some(group=>group.title==='Services & avantages'));
 });
 
 test('sport religion manga games and nosbloc are locked in preparation without deleting their routes',()=>{
@@ -35,14 +36,14 @@ test('sport religion manga games and nosbloc are locked in preparation without d
  assert.match(app,/const PREPARATION_ROUTE_IDS = new Set\(\["nosbloc", "games", "religion", "manga", "sport"\]\)/);
  assert.match(app,/PREPARATION_ROUTE_IDS\.has\(page\) \|\| page === "game"/);
  assert.match(app,/EN PRÉPARATION · 3B/);
- assert.match(nav,/En préparation"[\s\S]*"nosbloc", "games", "manga", "religion", "sport"/);
+ for(const id of ['nosbloc','games','manga','religion','sport'])assert.ok(NAV_GROUPS.find(group=>group.title==='En préparation').ids.includes(id));
 });
 
 test('community and textile AI remain explicitly staged as coming soon',()=>{
  for(const label of ['Communauté','Espace textile & IA']){
   assert.match(app,new RegExp('label: "'+label+'"[\\s\\S]{0,90}status: "soon"'));
  }
- assert.match(nav,/item\.status === "soon"/);
+ assert.match(nav,/item\.status === ['"]soon['"]/);
 });
 
 test('home presents one cinematic world entry without the legacy atlas and pylons',()=>{

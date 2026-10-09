@@ -1,0 +1,19 @@
+.invisible-page .invisible-mission-screen{margin:0;padding:0;border:0;background:transparent;border-radius:var(--3b-radius-flat)}
+.invisible-mission-screen>h2{margin-bottom:var(--3b-space-4)}
+.invisible-mission-tabs{display:flex;gap:var(--3b-space-2);margin-bottom:var(--3b-space-6);flex-wrap:wrap}
+.invisible-mission-tabs .gm-button{min-height:44px}
+.invisible-mission-screen .invisible-echo-mission{border-top:0;padding:0}
+.invisible-mission-screen .invisible-echo-mission>.invisible-section-heading{margin-bottom:var(--3b-space-3)}
+.invisible-mission-screen .invisible-echo-mission>.invisible-section-heading .invisible-eyebrow{display:none}
+.invisible-mission-screen .invisible-echo-mission>p{max-width:65ch;line-height:1.55}
+.invisible-mission-screen .invisible-echo-realms{list-style:none;padding:0;margin:var(--3b-space-4) 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 var(--3b-space-6)}
+.invisible-mission-screen .invisible-echo-realm{display:grid;grid-template-columns:minmax(0,1fr) auto 24px;align-items:center;gap:var(--3b-space-3);min-height:40px;padding:var(--3b-space-2) 0;border:0;border-bottom:1px solid var(--3b-line-quiet);border-radius:var(--3b-radius-flat);background:transparent}
+.invisible-mission-screen .invisible-echo-realm strong{font-size:.8rem;font-weight:500}
+.invisible-mission-screen .invisible-echo-realm>span{font-size:.68rem;color:var(--3b-muted);margin:0;white-space:nowrap}
+.invisible-mission-screen .invisible-echo-letter{font-size:1.1rem;text-align:center;margin:0}
+.invisible-mission-screen .invisible-echo-puzzle{padding:var(--3b-space-4) 0;margin:var(--3b-space-4) 0;border:0;border-top:1px solid var(--3b-line-quiet);background:transparent;border-radius:var(--3b-radius-flat)}
+.invisible-mission-screen .invisible-event-calendar{margin-block:var(--3b-space-3);gap:var(--3b-space-2)}
+.invisible-mission-details{margin-top:var(--3b-space-6);color:var(--3b-muted);font-size:.75rem}
+.invisible-mission-details summary{cursor:pointer;min-height:44px;display:flex;align-items:center}
+.invisible-mission-details p{max-width:65ch;line-height:1.6}
+@media(max-width:560px){.invisible-mission-screen .invisible-echo-realms{grid-template-columns:1fr}.invisible-mission-screen .invisible-echo-realm{min-height:36px}.invisible-mission-tabs{margin-bottom:var(--3b-space-4)}.invisible-mission-tabs .gm-button{font-size:.75rem;flex:1}.invisible-mission-screen .invisible-echo-puzzle h4{font-size:1rem}}

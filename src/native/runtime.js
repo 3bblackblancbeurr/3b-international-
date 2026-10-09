@@ -1,6 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 import { readLocation, navigateTo } from '../lib/navigation.js';
-import { handleNativeBack } from './back-navigation.js';
+import { handleNativeBack, closeActiveDialog } from './back-navigation.js';
 
 export const isNativeApp = () => Capacitor.isNativePlatform();
 export const PUBLIC_APP_URL = 'https://3b-international.vercel.app/';
@@ -14,10 +14,7 @@ export async function setupNativeApp() {
     handleNativeBack({
       canGoBack,
       closeDialog() {
-        const dialog = document.querySelector('dialog[open]');
-        if (!dialog) return false;
-        if (dialog.dispatchEvent(new Event('cancel', { cancelable: true }))) dialog.close();
-        return true;
+        return closeActiveDialog(document, () => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })));
       },
       page: readLocation().page,
       back: () => window.history.back(),

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {NAV_GROUPS} from '../src/components/navigation-menu.js';
 import {
   allocateTeamRevenue,
   createProject,
@@ -35,7 +36,7 @@ test('Nosbloc is an official routed 3B space', () => {
   assert.match(navigation, /nosbloc: "nosbloc"/);
   assert.match(menu, /nosbloc: Boxes/);
   assert.match(app, /id: "nosbloc"[\s\S]{0,120}status: "soon"/);
-  assert.match(menu, /En préparation[\s\S]*nosbloc/);
+  assert.ok(NAV_GROUPS.find(group=>group.title==='En préparation').ids.includes('nosbloc'));
   assert.doesNotMatch(home, /const PRIMARY_IDS = \[[^\]]*'nosbloc'/);
 });
 
