@@ -18,9 +18,9 @@ test('support detection never requests a session or infers AR from a camera',asy
  assert.equal(await detectARSupport({isSessionSupported:async()=>{throw Error();},requestSession(){}}),false);
 });
 test('real frame pose is copied, placed only by select, and handles are released',async()=>{
- const session=new Session(),poses=[],selections=[],states=[];let requested;
- const controller=createXRSessionController({xr:{requestSession:async(mode,options)=>{requested={mode,options};return session;}},overlayRoot:{},attachSession:async()=>({type:'renderer-local'}),onPose:pose=>poses.push(pose),onSelect:event=>selections.push(event),onState:state=>states.push(state.phase)});
- assert.equal(await controller.start(),true);assert.equal(requested.mode,'immersive-ar');assert.deepEqual(requested.options.requiredFeatures,['hit-test','local']);assert.deepEqual(requested.options.optionalFeatures,['dom-overlay']);
+ const session=new Session(),overlayRoot={},poses=[],selections=[],states=[];let requested;session.domOverlayState={type:'screen'};
+ const controller=createXRSessionController({xr:{requestSession:async(mode,options)=>{requested={mode,options};return session;}},overlayRoot,attachSession:async()=>({type:'renderer-local'}),onPose:pose=>poses.push(pose),onSelect:event=>selections.push(event),onState:state=>states.push(state.phase)});
+ assert.equal(await controller.start(),true);assert.equal(requested.mode,'immersive-ar');assert.deepEqual(requested.options.requiredFeatures,['hit-test','local','dom-overlay']);assert.equal(requested.options.optionalFeatures,undefined);assert.equal(requested.options.domOverlay.root,overlayRoot);
  const matrix=identity();matrix[12]=1.25;let poseSpace;
  controller.frame({session,getHitTestResults:source=>{assert.ok(source);return [{getPose:space=>{poseSpace=space;return {transform:{matrix}};}}];}});
  assert.equal(poseSpace.type,'renderer-local');assert.equal(poses.at(-1)[12],1.25);assert.equal(selections.length,0);
@@ -28,6 +28,21 @@ test('real frame pose is copied, placed only by select, and handles are released
  controller.frame({session,getHitTestResults:()=>[]});session.dispatchEvent(new Event('select'));assert.equal(selections[1].pose,null);
  await controller.stop();assert.equal(session.ends,1);assert.equal(session.cancels,1);assert.equal(controller.active,false);
  session.dispatchEvent(new Event('select'));assert.equal(selections.length,2);assert.ok(states.includes('surface'));
+});
+test('native AR without an overlay root requests only its spatial features',async()=>{
+ const session=new Session();let requested;
+ const controller=createXRSessionController({xr:{requestSession:async(mode,options)=>{requested={mode,options};return session;}}});
+ assert.equal(await controller.start(),true);assert.deepEqual(requested.options.requiredFeatures,['hit-test','local']);assert.equal(requested.options.domOverlay,undefined);assert.equal(requested.options.optionalFeatures,undefined);await controller.stop();
+});
+test('an unavailable required DOM overlay rejects AR without attaching renderer handles',async()=>{
+ let attaches=0;const states=[];
+ const controller=createXRSessionController({overlayRoot:{},xr:{requestSession:async(mode,options)=>{assert.ok(options.requiredFeatures.includes('dom-overlay'));throw new DOMException('DOM overlay unsupported','NotSupportedError');}},attachSession:()=>attaches++,onState:state=>states.push(state.phase)});
+ await assert.rejects(controller.start(),{name:'NotSupportedError'});assert.equal(attaches,0);assert.equal(controller.active,false);assert.equal(controller.phase,'error');assert.deepEqual(states,['starting','error']);
+});
+test('a session accepting AR without its promised DOM overlay is ended before rendering',async()=>{
+ const session=new Session();session.domOverlayState=null;let attaches=0;
+ const controller=createXRSessionController({overlayRoot:{},xr:{requestSession:async()=>session},attachSession:()=>attaches++});
+ await assert.rejects(controller.start(),/commandes AR/);assert.equal(attaches,0);assert.equal(session.ends,1);assert.equal(controller.active,false);assert.equal(controller.phase,'error');assert.deepEqual(session.spaces,[]);assert.equal(session.cancels,0);
 });
 test('closing while native permission is pending ends the late session without attaching',async()=>{
  const request=deferred(),session=new Session();let attaches=0;

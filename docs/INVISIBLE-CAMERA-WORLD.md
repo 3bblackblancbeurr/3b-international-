@@ -16,13 +16,13 @@ Choisir un autre royaume dans **Royaumes**, puis ouvrir sa caméra. Les huit amb
 | Placer en AR | Session native `immersive-ar`, suivi du téléphone et détection du sol par WebXR. Le portail est placé en mètres au point touché, face au joueur. Les objets restent dans le repère spatial de cette session. |
 | 3D | Visite à distance du royaume, sans caméra ni capteurs. Le toucher tourne autour des objets ; pincer ajuste la distance. |
 
-Le placement est proposé après `isSessionSupported('immersive-ar')` et la demande doit effectivement fournir `hit-test` et un repère local. Une caméra accessible ne constitue pas une preuve de suivi spatial. Les murs, plafonds et poses non rigides sont refusés. Une perte du suivi masque le monde ; un changement du repère demande un nouveau placement. Aucune ancre persistante, reconnaissance de bâtiment, géolocalisation ni occlusion par les objets réels n’est annoncée.
+Le placement est proposé après `isSessionSupported('immersive-ar')` et la demande doit effectivement fournir `hit-test`, un repère local et `dom-overlay`, afin de garder les commandes HTML accessibles. Une caméra accessible ne constitue pas une preuve de suivi spatial. Les murs, plafonds et poses non rigides sont refusés. Une perte du suivi masque le monde ; un changement du repère demande un nouveau placement. Aucune ancre persistante, reconnaissance de bâtiment, géolocalisation ni occlusion par les objets réels n’est annoncée.
 
 Google documente [WebXR sur Chrome Android via ARCore](https://developers.google.com/ar/develop/webxr). La compatibilité de chaque téléphone reste vérifiée à l’exécution. [WebXR Hit Test](https://www.w3.org/TR/webxr-hit-test-1/) et [Device Orientation](https://www.w3.org/TR/orientation-event/) définissent les poses et les axes utilisés.
 
 ## Ressources et permissions
 
-La demande de caméra vise la caméra arrière, 1280×720 et 30 images/seconde, sans audio ; ce sont des contraintes idéales, la résolution réellement fournie dépend du navigateur. Le rendu est limité à 1,5 fois la définition CSS et 1,8 million de pixels. Les huit scènes conservent au plus 80 appels de dessin et 35 000 triangles ; les effets du portail sont procéduraux et n’exigent aucune texture distante.
+La demande de caméra vise la caméra arrière, 1280×720 et 30 images/seconde, sans audio ; ce sont des contraintes idéales, la résolution réellement fournie dépend du navigateur. Le rendu hors session XR native est limité à 1,5 fois la définition CSS et 1,8 million de pixels. Les huit scènes conservent au plus 80 appels de dessin et 35 000 triangles ; les effets du portail sont procéduraux et n’exigent aucune texture distante.
 
 Fermer, revenir en 3D ou passer l’application en arrière-plan arrête la caméra et les capteurs. Les flux et sessions obtenus après annulation sont immédiatement libérés. Passer de l’AR à la caméra attend la fin de la session native. Aucun enregistrement de photo/vidéo et aucun envoi du flux ne sont implémentés. Observer à l’arrêt dans un espace public dégagé.
 

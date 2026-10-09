@@ -1,4 +1,5 @@
 // Primary references: https://www.w3.org/TR/webxr-hit-test-1/
+// https://www.w3.org/TR/webxr-dom-overlays-1/
 // https://threejs.org/docs/pages/WebXRManager.html
 // This module controls permissions and native handles. It never awards progress.
 export async function detectARSupport(xr=globalThis.navigator?.xr){
@@ -48,8 +49,11 @@ export function createXRSessionController({xr=globalThis.navigator?.xr,overlayRo
   try{
    // Called directly in the user's activation handler, with no support-check
    // await beforehand: immersive session requests require user activation.
-   next=await xr.requestSession('immersive-ar',{requiredFeatures:['hit-test','local'],...(overlayRoot?{optionalFeatures:['dom-overlay'],domOverlay:{root:overlayRoot}}:{})});
+   next=await xr.requestSession('immersive-ar',{requiredFeatures:['hit-test','local',...(overlayRoot?['dom-overlay']:[])],...(overlayRoot?{domOverlay:{root:overlayRoot}}:{})});
    if(ticket!==generation){await endSession(next);return false;}
+   // The in-world controls are part of the experience. Never attach a native
+   // session that accepted the request without actually enabling its HUD.
+   if(overlayRoot&&!next.domOverlayState)throw Error('Le navigateur n’a pas activé les commandes AR. Continue avec la caméra ou la visite 3D.');
    session=next;
    endListener=()=>{if(ticket!==generation)return;generation++;release();emit('idle','AR terminée. L’exploration 3D reste disponible.');};
    selectListener=event=>{if(ticket===generation&&session===next)onSelect({pose:lastPose?.slice()||null,viewerPosition:lastViewer?{...lastViewer}:null,event,referenceSpace:reference});};
