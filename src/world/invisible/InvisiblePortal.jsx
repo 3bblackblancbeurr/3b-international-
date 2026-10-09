@@ -1,11 +1,11 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {Camera, CameraOff} from 'lucide-react';
+import {Camera} from 'lucide-react';
 import {Button} from '../../design-system/index.jsx';
 import {goldMasterTokens, worldArtMaterials} from '../../design-system/tokens.js';
 import {INVISIBLE_REALMS} from './catalog.js';
 
-export default function InvisiblePortal({opened,realm='france',value='Justice'}) {
- const host=useRef(null),video=useRef(null),stream=useRef(null),cameraTicket=useRef(0),[camera,setCamera]=useState(false),[pending,setPending]=useState(false),[message,setMessage]=useState(''),[fallback,setFallback]=useState(false);
+export default function InvisiblePortal({opened,realm='france',value='Justice',onExplore}) {
+ const host=useRef(null),[fallback,setFallback]=useState(false);
  useEffect(()=>{
   let alive=true,dispose=()=>{};
   import('three').then(THREE=>{
@@ -35,23 +35,12 @@ export default function InvisiblePortal({opened,realm='france',value='Justice'})
   }).catch(()=>{if(alive)setFallback(true);});
   return()=>{alive=false;dispose();};
  },[]);
- function stopCamera(note='Caméra arrêtée.') {cameraTicket.current++;stream.current?.getTracks().forEach(track=>track.stop());stream.current=null;if(video.current)video.current.srcObject=null;setCamera(false);setPending(false);setMessage(note);}
- useEffect(()=>{const hide=()=>{if(document.hidden)stopCamera('Caméra arrêtée lorsque l’application passe en arrière-plan.');};document.addEventListener('visibilitychange',hide);return()=>{cameraTicket.current++;stream.current?.getTracks().forEach(track=>track.stop());stream.current=null;document.removeEventListener('visibilitychange',hide);};},[]);
- useEffect(()=>{if(video.current&&stream.current){video.current.srcObject=stream.current;video.current.play().catch(()=>stopCamera('L’aperçu caméra est indisponible. Le portail reste visible.'));}},[camera]);
- async function startCamera(){
-  if(!navigator.mediaDevices?.getUserMedia){setMessage('La caméra est indisponible ici. Le portail reste visible.');return;}
-  const ticket=++cameraTicket.current;setPending(true);setMessage('Autorisation caméra en attente…');
-  try{const next=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});if(ticket!==cameraTicket.current||document.hidden){next.getTracks().forEach(track=>track.stop());return;}stream.current=next;setCamera(true);setPending(false);setMessage('Aperçu caméra avec portail superposé. Aucune image enregistrée ; aucun suivi spatial.');}
-  catch{if(ticket===cameraTicket.current){setPending(false);setMessage('Caméra refusée ou indisponible. Tu peux utiliser le portail sans caméra.');}}
- }
  return <div className="invisible-portal">
   <div className={'invisible-portal-stage'+(opened?' is-opened':'')}>
-   {camera&&<video ref={video} muted playsInline className="invisible-portal-camera" aria-label="Aperçu caméra local"/> /* gold-master-allow: transient MediaStream preview requires a video ref; shared VideoPlayer renders a saved media player. */}
    <div ref={host} className="invisible-portal-canvas" aria-hidden="true"/>
    {fallback&&<div className="invisible-portal-fallback" aria-hidden="true"><span>3B</span></div>}
    <div className="invisible-portal-label"><span>{'ROYAUME · '+(INVISIBLE_REALMS.find(item=>item.id===realm)?.name||realm).toUpperCase()}</span><strong>{opened?'Le passage est ouvert':value+' retrouve sa lumière'}</strong></div>
   </div>
-  <div className="invisible-camera-tools"><Button variant="ghost" onClick={camera||pending?()=>stopCamera():startCamera}><span aria-hidden="true">{camera||pending?<CameraOff size={16}/>:<Camera size={16}/>}</span>{camera?'Arrêter la caméra':pending?'Annuler la demande':'Voir avec ma caméra'}</Button><span className="invisible-small">Superposition visuelle facultative</span></div>
-  {message&&<p className="invisible-small" role="status">{message}</p>}
+  <div className="invisible-camera-tools"><Button data-testid="portal-explore-world" variant="ghost" onClick={onExplore} disabled={!onExplore}><Camera size={16} aria-hidden="true"/>Voir avec ma caméra</Button><span className="invisible-small">Ouvrir le monde en plein écran</span></div>
  </div>;
 }

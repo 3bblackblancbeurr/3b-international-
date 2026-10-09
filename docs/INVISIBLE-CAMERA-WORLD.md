@@ -2,7 +2,7 @@
 
 ## Utilisation sur Android
 
-Ouvrir le Monde Invisible, puis **Caméra** dans la navigation. Le monde s’ouvre en plein écran, avant toute demande de permission. Appuyer sur **Ouvrir ma caméra**, puis autoriser la caméra. Le décor filmé reste visible derrière les objets 3D.
+Ouvrir le Monde Invisible, puis **Caméra** dans la navigation. Le bouton caméra du portail ouvre cette même vue ; il ne crée aucun aperçu intégré supplémentaire. Le monde s’ouvre en plein écran, avant toute demande de permission. Appuyer sur **Ouvrir ma caméra**, puis autoriser la caméra. Le décor filmé reste visible derrière les objets 3D.
 
 **Tourner avec téléphone** active le regard par les capteurs. Le premier échantillon valide calibre la direction ; **Recentrer** replace le portail devant soi. Sans capteurs, glisser tourne le regard. Taper un objet ouvre sa fiche ; **Réveiller sa lumière** produit une réaction visuelle. **Objets** permet également de choisir une présence sans la chercher dans le champ de vision.
 

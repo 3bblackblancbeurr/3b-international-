@@ -254,8 +254,15 @@ try{
    layout.push({stage:'chest',...await shortAdventure(page,'chest')});
    const chest=await objective(page,'chest');await playableInViewport(chest);await chest.click();
    await objective(page,'portal');layout.push({stage:'portal',...await shortAdventure(page,'portal')});
+   const cameraRequestsBeforePortalPreview=await page.evaluate(()=>window.__invisibleSensors.camera);
    await page.getByRole('button',{name:'Voir avec ma caméra',exact:true}).click();
-   await page.getByText('Caméra refusée ou indisponible. Tu peux utiliser le portail sans caméra.',{exact:true}).waitFor();
+   await lens.waitFor();
+   assert.equal(await page.evaluate(()=>window.__invisibleSensors.camera),cameraRequestsBeforePortalPreview,'Opening the portal world does not request camera permission');
+   await page.waitForFunction(()=>document.querySelector('[data-testid="lens-camera-toggle"]')?.disabled===false);
+   await page.getByTestId('lens-camera-toggle').click();
+   await page.getByText('Caméra refusée ou indisponible. La visite reste entièrement jouable en 3D.',{exact:true}).waitFor();
+   await page.getByTestId('lens-exit').click();await lens.waitFor({state:'detached'});
+   await page.waitForFunction(()=>document.activeElement?.dataset.testid==='portal-open');
    const portal=await objective(page,'portal');await portal.scrollIntoViewIfNeeded();await playableInViewport(portal);await portal.click();
    await objective(page,'next');layout.push({stage:'next',...await shortAdventure(page,'next')});
    await openPanel(page,'settings');await page.getByTestId('forget-memory').click();
