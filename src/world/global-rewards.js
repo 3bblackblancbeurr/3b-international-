@@ -1,4 +1,5 @@
 import {HUB_MISSION_BY_ID} from './hub/mission-catalog.js';
+import {INVISIBLE_EPISODE} from './invisible/catalog.js';
 
 const has=(list,value)=>Array.isArray(list)&&list.includes(value);
 const claimed=(save,id)=>!!save?.hub?.missions?.[id]?.claimed;
@@ -7,6 +8,10 @@ export function worldGlobalRewardIntents(before,after,action){
  const intents=[];
  if(!before||!after||!action?.type)return intents;
  const push=(rewardCode,eventId,source='world')=>intents.push({rewardCode,eventId,source});
+
+ if(action.type==='invisibleChest'&&!before.invisible?.chestOpened&&after.invisible?.chestOpened){
+  push('invisible_fragment','invisible:'+INVISIBLE_EPISODE.id);
+ }
 
  if(action.type==='visit'&&action.region&&action.region!=='hub'&&!has(before.visited,action.region)&&has(after.visited,action.region)){
   push('country_entry','country:'+action.region);

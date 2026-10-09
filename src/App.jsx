@@ -48,6 +48,7 @@ import ReligionPage from "./components/ReligionPage.jsx";
 const CommunityPage = lazy(() => import("./community/CommunityPage.jsx"));
 import SportPage from "./sport/SportPage.jsx";
 const WorldExperience=lazy(()=>import('./world/WorldEntry.jsx'));
+const InvisibleExperience=lazy(()=>import('./world/invisible/InvisiblePage.jsx'));
 const ArenaExperience=lazy(()=>import('./arena/ArenaPage.jsx'));
 const NosblocPage=lazy(()=>import('./nosbloc/NosblocPremiumPage.jsx'));
 
@@ -77,6 +78,12 @@ const BASE_MENU_ITEMS = [
     label: "Le Monde du 3B",
     icon: "🌍",
     description: "Explore les huit Portes.",
+  },
+  {
+    id: "invisible",
+    label: "Le Monde Invisible",
+    icon: "⌁",
+    description: "Les secrets du Léman et les huit royaumes.",
   },
   {
     id: "nosbloc",
@@ -421,6 +428,7 @@ export default function App() {
       {page === "community" && <ComingSoon goTo={goTo} eyebrow="COMMUNAUTÉ · 3B" title="Communauté 3B" description="Profils, échanges, défis et modération sont en cours de finalisation pour ouvrir la communauté dans une version plus solide et plus claire." />}
       {page === "secret" && <PremierSecretPage goTo={goTo} dailySecret={secret} />}
       {page === "world3b" && <Suspense fallback={<AppLoadingState label="Ouverture du Monde 3B…" />}><WorldExperience goTo={goTo}/></Suspense>}
+      {page === "invisible" && <InvisibleExperience key={loyalty.user?.id||'guest'} goTo={goTo}/>}
       {page === "arena" && <div className="arena-standalone"><Suspense fallback={<AppLoadingState label="Ouverture de l’arène 3B…" compact />}><ArenaExperience key={loyalty.user?.id||'guest'} onExit={()=>goTo('world3b')} onAccount={()=>goTo('member')}/></Suspense></div>}
 
       {page === "member" && (

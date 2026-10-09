@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {blankSave} from '../src/world/rules.js';
 import {applyWorldAction} from '../src/world/engine.js';
 import {authClient} from '../src/loyalty/client.js';
+import {INVISIBLE_EPISODE} from '../src/world/invisible/catalog.js';
 
 function storage(){
  const entries=new Map();
@@ -117,4 +118,48 @@ test('missing authentication with no local snapshot never claims there is a save
 test('guest sync failure remains pending and clearly identifies device storage',async t=>{
  const h=await harness(t,'guest-status');t.mock.method(localStorage,'setItem',()=>{throw Error('Quota exceeded');});
  const result=await h.api.saveWorld(null,blankSave());assert.equal(result.pending,true);assert.equal(result.status.scope,'device');assert.equal(result.status.outcome,'storage');assert.equal(result.status.hasLocalCopy,false);
+});
+
+test('migration backups redact Invisible memory while retaining the gameplay snapshot',async t=>{
+ const h=await harness(t,'memory-backup');let local=(await h.api.loadWorld(h.uid)).data;
+ for(const action of [{type:'invisibleMemoryConsent',enabled:true},{type:'invisibleStart'},...INVISIBLE_EPISODE.points.map(point=>({type:'invisibleAnswer',id:point.id,answer:point.riddle.answers[0]})),{type:'invisibleChest'}])local=h.api.recordWorldAction(h.uid,local,action);
+ assert.ok(local.invisible.memory.length>0);await h.api.saveWorld(h.uid,local);
+ const loaded=await h.api.loadWorld(h.uid),backup=JSON.parse(localStorage.getItem('3b_world_v1_'+h.uid+'_before_chapters'));
+ assert.equal(backup.data.invisible.memoryConsent,false);assert.deepEqual(backup.data.invisible.memory,[]);
+ assert.deepEqual(backup.data.invisible.solved,local.invisible.solved);assert.equal(backup.data.invisible.chestOpened,true);assert.equal(backup.data.xp,local.xp);
+ assert.equal(loaded.data.invisible.memoryConsent,true);assert.ok(loaded.data.invisible.memory.length>0,'Redacting the backup does not revoke the current consent');
+});
+
+test('forget and consent withdrawal purge old backup summaries and preserve one-time gains',async t=>{
+ const h=await harness(t,'memory-forget');let local=(await h.api.loadWorld(h.uid)).data;
+ for(const action of [{type:'invisibleMemoryConsent',enabled:true},{type:'invisibleStart'},...INVISIBLE_EPISODE.points.map(point=>({type:'invisibleAnswer',id:point.id,answer:point.riddle.answers[0]})),{type:'invisibleChest'}])local=h.api.recordWorldAction(h.uid,local,action);
+ const backupKey='3b_world_v1_'+h.uid+'_before_chapters';
+ for(const action of [{type:'invisibleForget'},{type:'invisibleMemoryConsent',enabled:false}]){
+  localStorage.setItem(backupKey,JSON.stringify({data:local,dirty:false}));
+  const forgotten=h.api.recordWorldAction(h.uid,local,action),backup=JSON.parse(localStorage.getItem(backupKey));
+  assert.equal(backup.data.invisible.memoryConsent,false);assert.deepEqual(backup.data.invisible.memory,[]);assert.equal(backup.data.invisible.chestOpened,true);
+  assert.equal(forgotten.xp,local.xp);assert.equal(forgotten.shards,local.shards);
+ }
+ localStorage.setItem(backupKey,JSON.stringify({data:local}));
+ const set=localStorage.setItem.bind(localStorage);t.mock.method(localStorage,'setItem',(key,value)=>{if(key===backupKey)throw Error('Quota exceeded');set(key,value);});
+ const forgotten=h.api.recordWorldAction(h.uid,local,{type:'invisibleForget'});
+ assert.equal(localStorage.getItem(backupKey),null,'Delete an old backup if its redacted replacement cannot be stored');
+ assert.equal(forgotten.invisible.memoryConsent,false);assert.deepEqual(forgotten.invisible.memory,[]);assert.equal(forgotten.invisible.chestOpened,true);
+});
+
+test('overlapping mount loads replay Invisible actions entered before the second response',async t=>{
+ const h=await harness(t,'duplicate-mount-load'),fetchNow=globalThis.fetch;let requests=0,release,started;
+ const wait=new Promise(resolve=>{release=resolve;}),began=new Promise(resolve=>{started=resolve;});
+ t.mock.method(globalThis,'fetch',async(...args)=>{requests++;if(requests===2){started();await wait;}return fetchNow(...args);});
+ // React StrictMode repeats effect setup while retaining refs. Both closures
+ // may be live; model the two load requests against the real save queue.
+ const first=h.api.loadWorld(h.uid),second=h.api.loadWorld(h.uid);let local=(await first).data;
+ await began;
+ local=h.api.recordWorldAction(h.uid,local,{type:'invisibleStart'});
+ local=h.api.recordWorldAction(h.uid,local,{type:'invisibleAnswer',id:'rive',answer:'reflet'});
+ release();const repeatedMount=await second;
+ assert.deepEqual(repeatedMount.data.invisible.solved,['rive']);assert.equal(repeatedMount.needsSave,true);
+ assert.deepEqual(h.api.readLocal(h.uid).data.invisible.solved,['rive']);
+ const synced=await h.api.saveWorld(h.uid,repeatedMount.data);assert.equal(synced.pending,false);assert.deepEqual(synced.data.invisible.solved,['rive']);
+ assert.equal(h.pending().length,0);
 });

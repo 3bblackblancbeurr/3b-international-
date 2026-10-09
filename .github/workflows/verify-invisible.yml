@@ -1,0 +1,43 @@
+name: Verify Monde Invisible
+on:
+  pull_request:
+    paths:
+      - 'src/world/invisible/**'
+      - 'src/world/save.js'
+      - 'src/App.jsx'
+      - 'src/lib/navigation.js'
+      - 'supabase/functions/invisible-guardian/**'
+      - 'scripts/verify-invisible-browser.mjs'
+      - '.github/workflows/verify-invisible.yml'
+  push:
+    branches: [main]
+    paths: ['src/world/invisible/**', 'scripts/verify-invisible-browser.mjs', '.github/workflows/verify-invisible.yml']
+permissions:
+  contents: read
+concurrency:
+  group: invisible-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  adventure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm install --no-save --package-lock=false @playwright/test@1.56.1
+      - run: npx playwright install --with-deps chromium
+      - name: Play and resume the full episode on desktop and phone
+        run: node scripts/verify-invisible-browser.mjs
+        env:
+          PLAYWRIGHT_MODULE: '@playwright/test'
+          INVISIBLE_TEST_OUT: artifacts/invisible
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: monde-invisible-browser
+          path: artifacts/invisible/
+          retention-days: 7
