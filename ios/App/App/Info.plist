@@ -24,6 +24,10 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>À ton choix, 3B utilise la caméra pour superposer les objets du Monde Invisible à ton environnement. Aucune image ni vidéo n’est enregistrée ; tu peux aussi jouer sans caméra.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>À ta demande, 3B utilise la localisation pendant une promenade pour afficher un repère du Monde Invisible ou mesurer la distance parcourue dans le Monde 3B. Les coordonnées ne sont pas conservées ; tu peux jouer sans localisation.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>
