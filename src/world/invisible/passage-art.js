@@ -26,7 +26,7 @@ export function createPassageArt(){
  const realm=new THREE.Group();root.add(realm);
  function inside(material){const clone=keep(material.clone());clone.stencilWrite=true;clone.stencilRef=1;clone.stencilFunc=THREE.EqualStencilFunc;clone.stencilFail=clone.stencilZFail=clone.stencilZPass=THREE.KeepStencilOp;clone.side=THREE.DoubleSide;return clone;}
  const stone=inside(new THREE.MeshStandardMaterial({color:0x153549,roughness:.65,metalness:.18}));
- const architecture=inside(new THREE.MeshStandardMaterial({color:0xc5b38d,metalness:.52,roughness:.4}));
+ const architecture=inside(new THREE.MeshStandardMaterial({color:0x968468,metalness:.52,roughness:.4}));
  const lit=inside(new THREE.MeshBasicMaterial({color:0x8fdfff,toneMapped:false}));
  const blue=inside(new THREE.MeshBasicMaterial({color:0x132b48}));
  function realmMesh(geometry,material,position){const mesh=add(geometry,material,position,realm);mesh.renderOrder=2;return mesh;}
@@ -52,7 +52,7 @@ export function createPassageArt(){
  const particlesMaterial=keep(new THREE.PointsMaterial({color:0x9bddf5,size:.0017,transparent:true,opacity:.7,depthWrite:false,toneMapped:false,stencilWrite:true,stencilRef:1,stencilFunc:THREE.EqualStencilFunc,stencilZPass:THREE.KeepStencilOp}));
  const particles=new THREE.Points(particlesGeometry,particlesMaterial);particles.renderOrder=3;realm.add(particles);
  // Light sources belong to the same physical portal, rather than a painted lighting effect.
- const rimLight=new THREE.PointLight(0x79cdff,.6,.6,2);rimLight.position.set(0,.015,.09);root.add(rimLight);
- const realmLight=new THREE.PointLight(0x71c5ff,.12,.9,2);realmLight.position.set(0,.11,-.2);root.add(realmLight);
+ const rimLight=new THREE.PointLight(0x79cdff,.012,.6,2);rimLight.position.set(0,.015,.09);root.add(rimLight);
+ const realmLight=new THREE.PointLight(0x71c5ff,.003,.9,2);realmLight.position.set(0,.11,-.2);root.add(realmLight);
  return {root,update(time,reduced=false){const t=reduced?0:time;particles.rotation.z=t*.018;particlesMaterial.opacity=.6+.1*Math.sin(t*.9);animated.forEach(item=>{item.mesh.position.y=item.y+Math.sin(t*.5+item.phase)*.003;});},dispose(){resources.forEach(resource=>resource.dispose());}};
 }

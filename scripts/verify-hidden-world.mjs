@@ -49,6 +49,8 @@ try{
   await page.getByRole('button',{name:'Découvrir le passage en 3D',exact:true}).click();await page.locator('.hidden-passage-stage.is-preview canvas').waitFor();
   await page.waitForTimeout(700);assert.equal(await page.evaluate(()=>window.__cameraCalls),0,'3D visit must not request camera');
   await page.locator('.hidden-passage-stage').screenshot({path:path.join(out,'passage-'+width+'.png')});
+  const box=await page.locator('.hidden-passage-stage canvas').boundingBox();await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();await page.mouse.move(box.x+box.width/2+100,box.y+box.height/2);await page.mouse.up();await page.waitForTimeout(150);
+  await page.locator('.hidden-passage-stage').screenshot({path:path.join(out,'passage-side-'+width+'.png')});
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
   await page.getByRole('button',{name:'Fermer la visite 3D',exact:true}).click();assert.equal(await page.locator('.hidden-passage-stage canvas').count(),0);
   await page.getByRole('button',{name:'Révéler le passage',exact:true}).click();
