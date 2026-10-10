@@ -67,6 +67,9 @@ try{
   await page.getByRole('button',{name:'Pause',exact:true}).click();assert.equal(await page.getByRole('button',{name:'Reprendre',exact:true}).getAttribute('aria-pressed'),'true');
   await page.locator('.hidden-passage-stage').screenshot({path:path.join(out,'apparition-animated-'+width+'.png')});
   await page.getByRole('button',{name:'Relancer',exact:true}).click();assert.equal(await page.getByRole('button',{name:'Pause',exact:true}).getAttribute('aria-pressed'),'false');
+  await page.waitForFunction(()=>document.querySelector('.hidden-echo-status')?.textContent.includes('te fait un signe'),{},{timeout:15000});
+  await page.getByRole('button',{name:'Pause',exact:true}).click();
+  await page.locator('.hidden-passage-stage').screenshot({path:path.join(out,'apparition-gesture-'+width+'.png')});
   await page.getByRole('button',{name:'Fermer la visite 3D',exact:true}).click();assert.equal(await page.locator('.hidden-passage-stage canvas').count(),0);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
   await page.locator('.hidden-photo-tools > summary').click();

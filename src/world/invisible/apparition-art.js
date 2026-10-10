@@ -32,20 +32,25 @@ export function createApparitionArt({onReady=()=>{},onError=()=>{},onPhase=()=>{
   const scale=.36/size.y;model.scale.multiplyScalar(scale);model.position.set(-center.x*scale,-.18-bounds.min.y*scale,-center.z*scale);
   model.traverse(o=>{if(!o.isMesh)return;o.frustumCulled=false;
    o.material=[o.material].flat().map(material=>{
-    const m=material.clone();material.dispose();m.transparent=true;m.depthWrite=false;m.side=THREE.FrontSide;m.roughness=.55;m.metalness=.12;
+    const skin=/Skin|Hands/.test(material.name),eyes=/EyeColor/.test(material.name),hair=/HairColor/.test(material.name);
+    const tint=new THREE.Color(skin?0x65cbe9:eyes?0x182e45:hair?0x245d7c:0x2488b8);
+    const m=material.clone();material.dispose();m.transparent=true;m.depthWrite=true;m.side=THREE.FrontSide;
+    // Preserve the shipped normal/colour maps without turning cloth and skin into metal.
+    m.roughness=skin?.82:eyes?.36:hair?.85:.7;m.metalness=0;
     m.onBeforeCompile=shader=>{
      shader.uniforms.holoTime=uniforms.time;shader.uniforms.holoFade=uniforms.fade;shader.uniforms.holoDepth=uniforms.depth;shader.uniforms.holoDepthOn=uniforms.depthOn;shader.uniforms.holoDepthMatrix=uniforms.depthMatrix;shader.uniforms.holoDepthScale=uniforms.depthScale;shader.uniforms.holoViewport=uniforms.viewport;
+     shader.uniforms.holoTint={value:tint};shader.uniforms.holoRim={value:skin?.24:eyes?.08:.46};shader.uniforms.holoScan={value:skin||eyes||hair?0:.018};
      shader.vertexShader='varying vec3 holoWorld;varying vec3 holoNormal;varying float holoViewDepth;\n'+shader.vertexShader;
      shader.vertexShader=shader.vertexShader.replace('#include <project_vertex>','holoWorld=(modelMatrix*vec4(transformed,1.0)).xyz;holoNormal=normalize(mat3(modelMatrix)*objectNormal);holoViewDepth=-(modelViewMatrix*vec4(transformed,1.0)).z;\n#include <project_vertex>');
-     shader.fragmentShader='uniform float holoTime;uniform float holoFade;uniform sampler2D holoDepth;uniform float holoDepthOn;uniform mat4 holoDepthMatrix;uniform float holoDepthScale;uniform vec4 holoViewport;varying vec3 holoWorld;varying vec3 holoNormal;varying float holoViewDepth;\n'+shader.fragmentShader;
+     shader.fragmentShader='uniform vec3 holoTint;uniform float holoRim;uniform float holoScan;uniform float holoTime;uniform float holoFade;uniform sampler2D holoDepth;uniform float holoDepthOn;uniform mat4 holoDepthMatrix;uniform float holoDepthScale;uniform vec4 holoViewport;varying vec3 holoWorld;varying vec3 holoNormal;varying float holoViewDepth;\n'+shader.fragmentShader;
      shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>',`if(holoDepthOn>.5){vec2 screen=(gl_FragCoord.xy-holoViewport.xy)/holoViewport.zw;screen.y=1.0-screen.y;vec4 samplePoint=holoDepthMatrix*vec4(screen,0.,1.);vec2 uv=samplePoint.xy/samplePoint.w;if(all(greaterThanEqual(uv,vec2(0.)))&&all(lessThanEqual(uv,vec2(1.)))){float realDepth=texture2D(holoDepth,uv).r*holoDepthScale;if(realDepth>0.&&holoViewDepth>realDepth+.025)discard;}}
-      float rim=pow(1.0-abs(dot(normalize(holoNormal),normalize(cameraPosition-holoWorld))),2.4);
+      float rim=pow(1.0-abs(dot(normalize(normal),normalize(vViewPosition))),3.2);
       float luminance=dot(outgoingLight,vec3(.2126,.7152,.0722));
       float scan=pow(.5+.5*sin(holoWorld.y*650.0-holoTime*1.8),14.0);
-      outgoingLight=mix(outgoingLight*.20,vec3(.018,.42,.72)*(.4+min(luminance,1.5)),.80)+vec3(.09,.65,1.0)*rim*.95+vec3(.025,.06,.08)*scan;
-      diffuseColor.a=holoFade*(.70+.25*rim);if(diffuseColor.a<.008)discard;
+      outgoingLight=mix(outgoingLight*.28,holoTint*(.24+min(luminance,2.0)*1.15),.88)+vec3(.12,.65,1.0)*rim*holoRim+vec3(.2,.65,1.0)*scan*holoScan;
+      diffuseColor.a=min(1.0,holoFade/.86)*.97;if(diffuseColor.a<.008)discard;
       #include <opaque_fragment>`);
-    };m.customProgramCacheKey=()=> '3b-echo-hologram-v1';materials.push(m);return m;
+    };m.customProgramCacheKey=()=> '3b-echo-hologram-v2';materials.push(m);return m;
    });if(o.material.length===1)o.material=o.material[0];
   });
   body.add(model);ready=true;onReady();
