@@ -51,3 +51,5 @@
 .hidden-realm:hover{background:#ffffff04}
 @media(max-width:480px){.hidden-passage-actions{gap:4px}.hidden-passage-actions .gm-button:last-child{min-height:44px}.hidden-scanner{padding:0 6% 24px}.hidden-nav{gap:0;margin:8px auto}.hidden-scanner .hidden-section-title{padding-top:24px}}
 @media(orientation:landscape) and (max-height:500px){.hidden-spatial-hud-bottom{max-height:65svh;max-width:580px}.hidden-spatial-hud-bottom p{margin-bottom:6px}}
+
+.hidden-echo-controls{gap:8px}.hidden-echo-controls .gm-button{min-width:90px;padding:10px 9px}.hidden-voice-message{color:#c7ecf7;font-size:13px;text-align:center;line-height:1.6;margin:8px 0 12px}.hidden-spatial-hud-bottom .hidden-echo-controls .gm-button{min-width:85px}

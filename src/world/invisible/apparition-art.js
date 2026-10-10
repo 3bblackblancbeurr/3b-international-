@@ -12,7 +12,7 @@ export function createApparitionArt({onReady=()=>{},onError=()=>{},onPhase=()=>{
  const root=new THREE.Group(),body=new THREE.Group(),clock=createApparitionClock();root.add(body);
  let depthTexture=new THREE.DataTexture(new Float32Array([0]),1,1,THREE.RedFormat,THREE.FloatType);depthTexture.minFilter=depthTexture.magFilter=THREE.NearestFilter;depthTexture.needsUpdate=true;
  const uniforms={time:{value:0},fade:{value:0},depth:{value:depthTexture},depthOn:{value:0},depthMatrix:{value:new THREE.Matrix4()},depthScale:{value:1},viewport:{value:new THREE.Vector4(0,0,1,1)}},materials=[];
- let disposed=false,model=null,mixer=null,ready=false,current=null,lastTime=null,animated=true,lastPhase='',actions={};
+ let disposed=false,model=null,mixer=null,ready=false,current=null,lastTime=null,animated=true,speaking=false,lastPhase='',actions={};
  const particlesGeometry=new THREE.BufferGeometry(),points=[];
  for(let i=0;i<150;i++){const angle=i*2.399,rad=.018+((i*17)%101)/101*.09;points.push(Math.cos(angle)*rad,((i*29)%151)/151*.39-.19,Math.sin(angle)*rad);}
  particlesGeometry.setAttribute('position',new THREE.Float32BufferAttribute(points,3));
@@ -34,7 +34,7 @@ export function createApparitionArt({onReady=()=>{},onError=()=>{},onPhase=()=>{
   if(disposed){disposeModel(asset.scene);return;}
   model=asset.scene;
   model.traverse(o=>{const hair=o.name.match(/^Hair_(\d+)/),boots=o.name.match(/^Boots_(\d+)/);if(hair)o.visible=Number(hair[1])===3;if(boots)o.visible=Number(boots[1])===0;});
-  mixer=new THREE.AnimationMixer(model);for(const clip of asset.animations)if(['Idle','Walk','Interact'].includes(clip.name))actions[clip.name]=mixer.clipAction(clip);
+  mixer=new THREE.AnimationMixer(model);for(const clip of asset.animations)if(['Idle','Walk','Interact','Talk'].includes(clip.name))actions[clip.name]=mixer.clipAction(clip);
   if(!actions.Idle||!actions.Walk||!actions.Interact)throw Error('Les animations de cette apparition sont incomplètes.');
   actions.Idle.play();current='Idle';mixer.update(0);model.updateMatrixWorld(true);
   const bounds=new THREE.Box3().setFromObject(model,true),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());
@@ -66,7 +66,7 @@ export function createApparitionArt({onReady=()=>{},onError=()=>{},onPhase=()=>{
   body.add(model);ready=true;onReady();
  }).catch(error=>{if(!disposed)onError(error);});
  function update(time,reduced=false){
-  if(disposed)return;const t=clock.advance(time,{visible:root.visible,ready}),pose=apparitionPose(t,{animated:animated&&!reduced});
+  if(disposed)return;const t=clock.advance(time,{visible:root.visible&&!speaking,ready}),pose=speaking?{phase:'parole',clip:actions.Talk?'Talk':'Idle',opacity:.86,x:0,z:0,yaw:0,done:false}:apparitionPose(t,{animated:animated&&!reduced});
   const dt=lastTime===null?0:Math.max(0,Math.min(.05,time-lastTime));lastTime=time;
   if(!ready||!root.visible)return;
   if(pose.clip!==current){const next=actions[pose.clip];next.reset().play();actions[current].crossFadeTo(next,.28,false);current=pose.clip;}
@@ -81,5 +81,5 @@ export function createApparitionArt({onReady=()=>{},onError=()=>{},onPhase=()=>{
  return {root,promise,update,setDepth(depth,viewport){uniforms.depthOn.value=0;if(!depth||!viewport||viewport.z<=0||viewport.w<=0)return;
   if(depthTexture.image.width!==depth.width||depthTexture.image.height!==depth.height){depthTexture.dispose();depthTexture=new THREE.DataTexture(depth.data.slice(),depth.width,depth.height,THREE.RedFormat,THREE.FloatType);depthTexture.minFilter=depthTexture.magFilter=THREE.NearestFilter;uniforms.depth.value=depthTexture;}else depthTexture.image.data.set(depth.data);
   depthTexture.needsUpdate=true;uniforms.depthMatrix.value.fromArray(depth.matrix);uniforms.depthScale.value=depth.scale;uniforms.viewport.value.copy(viewport);uniforms.depthOn.value=1;
- },setAura(value){aura.visible=!!value;},replay(){clock.restart();lastTime=null;},setPaused(value){clock.setPaused(value);},setAnimated(value){animated=!!value;clock.restart();lastTime=null;},dispose(){if(disposed)return;disposed=true;depthTexture.dispose();mixer?.stopAllAction();if(model){mixer?.uncacheRoot(model);disposeModel(model);}particlesGeometry.dispose();particlesMaterial.dispose();waveGeometry.dispose();waveMaterial.dispose();ringGeometry.dispose();ringMaterial.dispose();ripples.forEach(({mesh})=>mesh.material.dispose());materials.forEach(m=>m.dispose());},get ready(){return ready;}};
+ },setSpeaking(value){const next=!!value;if(next===speaking)return;speaking=next;clock.restart();clock.setPaused(false);lastTime=null;},setAura(value){aura.visible=!!value;},replay(){clock.restart();lastTime=null;},setPaused(value){clock.setPaused(value);},setAnimated(value){animated=!!value;clock.restart();lastTime=null;},dispose(){if(disposed)return;disposed=true;depthTexture.dispose();mixer?.stopAllAction();if(model){mixer?.uncacheRoot(model);disposeModel(model);}particlesGeometry.dispose();particlesMaterial.dispose();waveGeometry.dispose();waveMaterial.dispose();ringGeometry.dispose();ringMaterial.dispose();ripples.forEach(({mesh})=>mesh.material.dispose());materials.forEach(m=>m.dispose());},get ready(){return ready;}};
 }

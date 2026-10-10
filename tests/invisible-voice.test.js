@@ -19,3 +19,10 @@ test('remote-only or unavailable synthesis stays unavailable and never transmits
  assert.equal(reader.supported,false);assert.equal(reader.read('Bonjour'),false);assert.equal(calls,0);
  assert.equal(createGuardianReader().supported,false);assert.equal(createGuardianReader().read('Bonjour'),false);
 });
+
+test('speech errors report failure only for the current utterance and not after disposal',()=>{
+ const spoken=[];let errors=0;
+ const reader=createGuardianReader({synthesis:{getVoices:()=>[{lang:'fr-FR',localService:true}],speak:u=>spoken.push(u),cancel(){}},createUtterance:text=>({text}),onError:()=>errors++});
+ reader.read('Première phrase.');reader.read('On viendra te chercher, Ish.');spoken[0].onerror();assert.equal(errors,0);
+ spoken[1].onerror();assert.equal(errors,1);reader.dispose();spoken[1].onerror();assert.equal(errors,1);
+});

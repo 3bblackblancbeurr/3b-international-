@@ -27,6 +27,15 @@ test('late model downloads are disposed after closing, and failed downloads repo
  let errors=0;const bad=createApparitionArt({load:async()=>{throw Error('offline');},onError:()=>errors++});await bad.promise;assert.equal(errors,1);assert.equal(bad.ready,false);bad.dispose();
 });
 
+test('speech keeps the character visible past the sequence duration without moving its spatial anchor',async()=>{
+ const a=asset();a.animations.push(new THREE.AnimationClip('Talk',1,[new THREE.NumberKeyframeTrack('Human.rotation[z]',[0,.5,1],[0,.2,0])]));
+ const phases=[],art=createApparitionArt({load:async()=>a,onPhase:p=>phases.push(p)});await art.promise;
+ const matrix=new THREE.Matrix4().makeTranslation(2,1,3);art.root.matrixAutoUpdate=false;art.root.matrix.copy(matrix);
+ art.setSpeaking(true);for(let i=0;i<300;i++)art.update(i*.05);
+ assert.equal(phases.at(-1),'parole');assert.equal(a.scene.visible,true);assert.notEqual(a.mesh.rotation.z,0);assert.deepEqual(art.root.matrix.toArray(),matrix.toArray());
+ art.setSpeaking(false);art.update(20);assert.notEqual(phases.at(-1),'parole');art.dispose();
+});
+
 import {readApparitionDepth} from '../src/world/invisible/apparition-depth.js';
 test('optional depth accepts only bounded CPU float metre data and drops missing, invalid or GPU readings',()=>{
  const session={depthUsage:'cpu-optimized',depthDataFormat:'float32'},reference={},view={},depth={width:2,height:2,data:new Float32Array([.4,.5,.6,.7]).buffer,rawValueToMeters:1,normDepthBufferFromNormView:{matrix:new THREE.Matrix4().toArray()}},frame={getViewerPose:()=>({views:[view]}),getDepthInformation:v=>{assert.equal(v,view);return depth;}};
