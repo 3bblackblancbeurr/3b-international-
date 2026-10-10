@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {worldRealmArt} from '../design-system/tokens.js';
+import {villageCirculation,villageDoorPath} from './realm-village-layout.js';
 
 export function createRealmRoadMaterial(region){
  const palette=worldRealmArt[region]||worldRealmArt.france;
@@ -35,9 +36,9 @@ export function createRealmRoadMaterial(region){
 
 /** All country strips, village streets and walks share one opaque draw.
  * Shoulders sample the existing terrain and carry its continuous vertex tint. */
-export function createRealmRoadGeometry(field,segments,sites){
+function* roadGeometrySteps(field,segments,sites){
  const p=[],indices=[],uv=[],color=[],profiles=[],low=new THREE.Color(field.biome.low),high=new THREE.Color(field.biome.high),tint=new THREE.Color();
- function strip(a,b,width,paving=0,lift=.065){
+ function* strip(a,b,width,paving=0,lift=.065){
   const dx=b.x-a.x,dz=b.z-a.z,length=Math.hypot(dx,dz);if(length<.01)return;
   const steps=Math.max(1,Math.ceil(length/10)),start=p.length/3,half=width/2;
   for(let i=0;i<=steps;i++){
@@ -48,18 +49,38 @@ export function createRealmRoadGeometry(field,segments,sites){
     const m=.48+.12*Math.sin(x*.017)*Math.cos(z*.019)+.06*Math.sin(x*.13-z*.08);tint.copy(low).lerp(high,Math.max(0,Math.min(1,m)));color.push(tint.r,tint.g,tint.b);
    }
    if(i){const n=start+i*4;for(let lane=0;lane<3;lane++)indices.push(n-4+lane,n-3+lane,n+lane,n-3+lane,n+1+lane,n+lane);}
+   yield;
   }
  }
- for(const segment of segments)strip(segment.a,segment.b,segment.road.width);
+ function polygon(points,paving,lift=.082){
+  const start=p.length/3;
+  for(const point of points){const {x,z}=point;p.push(x,field.height(x,z)+lift,z);uv.push(x,z);profiles.push(0,paving);tint.copy(low).lerp(high,.48);color.push(tint.r,tint.g,tint.b);}
+  for(let i=1;i<points.length-1;i++)indices.push(start,start+i+1,start+i);
+ }
+ for(const segment of segments)yield* strip(segment.a,segment.b,segment.road.width);
  for(const site of sites){
-  // A settlement's real circulation continues beyond its arrival relay.
-  // Two side walks connect the facades and mission positions to that street.
-  strip({x:site.x,z:site.z-51},{x:site.x,z:site.z+54},18,1,.085);
-  for(const side of [-1,1]){
-   strip({x:site.x+side*21,z:site.z-49},{x:site.x+side*21,z:site.z+47},3.4,1,.085);
-   for(const z of [-30,-8,28])strip({x:site.x+side*8,z:site.z+z},{x:site.x+side*22,z:site.z+z},2.8,1,.105);
+  const circulation=villageCirculation(site);polygon(circulation.square,1,.115);
+  yield;
+  for(const lane of circulation.lanes)for(let i=1;i<lane.points.length;i++)yield* strip(lane.points[i-1],lane.points[i],lane.width,1,.09);
+  for(const home of field.realm.layout.buildings.filter(b=>b.site===site.id)){
+   const c=Math.cos(home.rotation),s=Math.sin(home.rotation),w=home.width/2+.75,d=home.depth/2+.75;
+   polygon([[-w,-d],[w,-d],[w,d],[-w,d]].map(([x,z])=>({x:home.x+x*c+z*s,z:home.z-x*s+z*c})),.56,.08);
+   const [street,door]=villageDoorPath(site,home);
+   yield* strip(street,door,2.6,.85,.10);
   }
  }
  if(!p.length)return null;
  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(p,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geometry.setAttribute('color',new THREE.Float32BufferAttribute(color,3));geometry.setAttribute('roadProfile',new THREE.Float32BufferAttribute(profiles,2));geometry.setIndex(indices);geometry.computeVertexNormals();geometry.computeBoundingBox();geometry.computeBoundingSphere();return geometry;
 }
+
+// Keep the last complete road surface visible while the next one is prepared.
+// Row-sized work also bounds cold visits to a densely built village.
+export function createRealmRoadTask(field,segments,sites){
+ const iterator=roadGeometrySteps(field,segments,sites);let geometry=null,done=false;
+ return{step({budgetMs=1,now=()=>performance.now(),maxSteps=Infinity}={}){
+  if(done)return true;const start=now();let count=0;
+  do{const part=iterator.next();if(part.done){geometry=part.value;done=true;return true;}count++;}while(count<maxSteps&&now()-start<budgetMs);
+  return false;
+ },get geometry(){return geometry;},cancel(){iterator.return();done=true;geometry?.dispose();geometry=null;}};
+}
+export function createRealmRoadGeometry(field,segments,sites){const task=createRealmRoadTask(field,segments,sites);task.step({budgetMs:Infinity});return task.geometry;}

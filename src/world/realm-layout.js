@@ -1,5 +1,5 @@
 import {REALM_MASTER_SPEC,targetRealmRadius} from './realm-master-spec.js';
-import {createVillageFurnitureLayout} from './realm-village-layout.js';
+import {createVillageFurnitureLayout,createVillageHomes,villageWalkX} from './realm-village-layout.js';
 import {obstacleDistance} from './collision.js';
 
 /** Playable territory measurements, in game units. These are compact artistic
@@ -40,12 +40,7 @@ export function realmLayout(region){
  const makeSite=(id,name,kind,x,z,province,major=false,context='')=>{
   const site={id:region+':realm:'+id,region,name,kind,x,z,province,major,r:major?88:65,context,arrival:{x,z:z+30},campaign:{x:x-18,z:z+22},monument:{x,z:z-27},rotation:0};
   sites.push(site);
-  // All approaches stay in a broad central aisle. Buildings face that aisle;
-  // collision dimensions are the exact same dimensions used by the renderer.
-  for(let row=0;row<(major?4:3);row++)for(const side of [-1,1]){
-   const variant=(row+(side>0?2:0)+province)%5,width=11+(variant%3)*1.2,depth=10+(variant%2),floors=kind==='alpine'||kind==='forest'?1:1+(variant%2);
-   buildings.push({id:site.id+':home:'+row+':'+side,site:site.id,region,x:x+side*(33+(row%2)*2),z:z-42+row*27,width,depth,height:floors*5.6+3,floors,rotation:side>0?-Math.PI/2:Math.PI/2,variant,kind});
-  }
+  buildings.push(...createVillageHomes(site));
   return site;
  };
  const origin={x:0,z:320};
@@ -130,9 +125,9 @@ export function realmTravelItems(region){return realmSites(region).map(site=>({i
 export function realmNavigationItems(region){return realmSites(region).map(site=>({id:site.id,type:'realmSite',region,name:site.name,...site.campaign,range:6,province:site.province,kind:site.kind,description:site.context}));}
 export function realmCivilianRoadItems(region){
  return realmSites(region).filter(s=>s.kind!=='terminal'&&s.kind!=='guardianCourt').flatMap(s=>[
-  ...[-9,0,9].map(x=>({id:s.id+':civilian:'+x,width:4,from:{x:s.x+x,z:s.z-28},to:{x:s.x+x,z:s.z+29}})),
-  ...[-21,21].map(x=>({id:s.id+':promenade:'+x,width:3,from:{x:s.x+x,z:s.z-43},to:{x:s.x+x,z:s.z+43}})),
-  ...[-8,28].map(z=>({id:s.id+':crossing:'+z,width:2.8,from:{x:s.x-21,z:s.z+z},to:{x:s.x+21,z:s.z+z}})),
+  ...[-4,0,4].map(x=>({id:s.id+':civilian:'+x,width:3,from:{x:s.x+x,z:s.z-6},to:{x:s.x+x,z:s.z+35}})),
+  ...[-1,1].map(side=>({id:s.id+':promenade:'+side*20,width:3,from:{x:s.x+side*villageWalkX(s),z:s.z-43},to:{x:s.x+side*villageWalkX(s),z:s.z+43}})),
+  ...[0,24].map(z=>({id:s.id+':crossing:'+z,width:2.8,from:{x:s.x-villageWalkX(s),z:s.z+z},to:{x:s.x+villageWalkX(s),z:s.z+z}})),
  ].map(route=>({...route,type:'hubRoad',kind:'street'})));
 }
 export function realmPositionValid(region,point,padding=.9){

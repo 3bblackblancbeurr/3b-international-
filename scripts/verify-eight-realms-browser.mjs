@@ -55,7 +55,7 @@ try{
     },site):site.arrival;
     assert.equal(await page.evaluate(({site,landing})=>game.relocateRealm({region:site.region,x:landing.x,z:landing.z}),{site,landing}),true);await page.evaluate(({close,view})=>close?game.qaSurfaceLook(view):game.qaLook(),{close:surfaceClose,view:landing.view});
     const settlingStarted=Date.now();
-    try{await page.waitForFunction(court=>{const s=game.qaRealmState();return s.stream?.pendingSectors===0&&s.crowd?.ready&&(court?s.guardians.some(g=>g.ready):s.crowd.visible>0);},site.kind==='guardianCourt',{timeout:settleTimeout,polling:400});}
+    try{await page.waitForFunction(court=>{const s=game.qaRealmState();return s.stream?.pendingSectors===0&&!s.stream.pendingRoadSurface&&s.crowd?.ready&&(court?s.guardians.some(g=>g.ready):s.crowd.visible>0);},site.kind==='guardianCourt',{timeout:settleTimeout,polling:400});}
     catch(error){const state=await page.evaluate(()=>game.qaRealmState()).catch(e=>({diagnosticError:String(e)}));const summary={site:site.id,pending:state.stream?.pendingSectors,active:state.stream?.activeSectors,sectors:state.stream?.generatedSectors,visible:state.crowd?.visible,crowdReady:state.crowd?.ready,crowdError:state.crowd?.error,guardianReady:state.guardians?.some(g=>g.ready),render:state.render,paused:state.paused};result.lastState=summary;console.error(region+': settlement diagnostics '+JSON.stringify(summary));throw error;}
     const settleMs=Date.now()-settlingStarted;console.log(region+': '+site.id+' settled in '+settleMs+'ms; '+renderer);
     const before=await page.evaluate(()=>game.qaRealmState()),floorBefore=await page.evaluate(p=>game.qaTerrainAt(p),before.position);assert.ok(finiteState(before));assert.ok(Math.hypot(before.position.x-landing.x,before.position.z-landing.z)<.1,'Selected landing really is unobstructed');assert.ok(floorBefore.hit&&floorBefore.difference<1.5,'Actual rendered ground matches physics');assert.ok(Math.hypot(before.position.x,before.position.z)>before.stream.radius*.70,'Reached outer playable territory');assert.ok(before.stream.activeSectors<=49&&before.stream.maxSectors<=49);assert.ok(before.stream.natureInstances<=320&&before.stream.buildingInstances<=48);assert.ok(before.stream.drawCalls<=72);assert.equal(before.crowd.count,32);assert.ok(before.crowd.drawCalls<=4);
@@ -71,7 +71,7 @@ try{
      },site);
      assert.equal(await page.evaluate(p=>game.relocateRealm({region:qa.save.region,x:p.x,z:p.z}),close),true);
      await page.evaluate(p=>game.qaSurfaceLook(p.view),close);
-     await page.waitForFunction(()=>game.qaRealmState().stream.pendingSectors===0,undefined,{timeout:settleTimeout});
+     await page.waitForFunction(()=>game.qaRealmState().stream.pendingSectors===0&&!game.qaRealmState().stream.pendingRoadSurface,undefined,{timeout:settleTimeout});
      await capture(page,resolve(out,region+'-domestic-day.png'));
      await page.evaluate(()=>{window.qaTime='21:30:00';});
      await page.waitForFunction(()=>qa.snapshot?.time.daylight<.3,undefined,{timeout:60000});
