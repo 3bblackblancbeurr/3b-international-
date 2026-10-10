@@ -17,3 +17,11 @@ architectural interpretations, glTF exports and gameplay integration.
 
 Architectural miniatures are stylized studies, not precise site reconstructions.
 No paid asset pack, Fal generation, MetaHuman or DLSS asset is included.
+
+Apparition speech demo — apparition-ish.mp3
+Text: “On viendra te chercher, Ish.” (3B demo requested by the user).
+Generated offline using meSpeak 2.0.2 / eSpeak French voice; no paid service.
+Generator source: https://github.com/mikolalysenko/mespeak (GPL).
+No generator code is distributed in the app. Audio output only.
+French voice, speed 145, pitch 38, variant m3; normalized to -18 LUFS, -2 dBTP.
+This is a synthetic demonstration voice, not a recorded actor.
