@@ -64,6 +64,8 @@ test('story presence follows the current evidence and never invents a completed 
  assert.match(journeyPresence(current,80).text,/écouter/);assert.equal(journeyPresence(current,5).text,current.dialogue);
  assert.match(journeyPresence({...current,effects:['archives_ouvertes']},80).text,/date et la couture/);
  assert.match(journeyPresence({...current,effects:['noms_retablis']},80).text,/retrouve sa page/);
+ assert.match(journeyPresence({...current,phaseId:'homecoming',effects:['noms_retablis']},80).text,/Ramenons-le à la Cité/);
+ assert.match(journeyPresence({...current,phaseId:'post',effects:['noms_retablis']},80).text,/correction/);
  assert.equal(journeyPresence({...current,finished:true}),null);assert.equal(campaignPerson({id:'france:rumor:relieuse',region:'france'}).body,'femme');
 });
 test('the French clue is a physical book on its plinth, with bounded meshes and proper disposal',()=>{
