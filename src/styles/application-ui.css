@@ -165,3 +165,4 @@ html[data-luxury="v2"] body .app3b[data-page] .home-world-entry .world-portal-co
  html[data-luxury="v2"] body .app3b[data-page] .app-menu-categories { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 4px; padding-inline: 8px; overflow-x: visible; }
  html[data-luxury="v2"] body .app3b[data-page] .app-menu-categories > button { min-width: 0; width: 100%; padding-inline: 2px; font-size: 11.5px; white-space: normal; overflow-wrap: anywhere; line-height: 1.4; }
 }
+html[data-luxury="v2"] body .app3b[data-page] :is(.loyalty-intro > button,.shop-back,.shop-bag-link,.boutique-actions > button:not(.loyalty-primary),.loyalty-detail-actions > button:not(.loyalty-primary),.loyalty-section-heading > button) { border: 0; border-radius: var(--3b-radius-flat); background: transparent; box-shadow: var(--3b-shadow-flat); min-height: 48px; color: var(--3b-champagne-highlight); }
