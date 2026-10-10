@@ -15,6 +15,8 @@ Produit principal immédiatement exploitable.
 
 État vérifiable du code au 10 octobre 2026 : l'audit gratuit et l'export JSON existent. Le suivi multi-sites et les rapports premium ne sont pas encore livrés par la page QuickKit ; l'offre Pro est donc présentée comme en préparation, même si le serveur possède déjà un checkout et des droits. Le bouton de disponibilité utilise un GET sans transaction. Seule une démo test, clairement identifiée et déclenchée par un second clic, peut être ouverte depuis cette page. Le contrôle backend des paiements réels reste inchangé.
 
+La route existante `/api/pwa-quickkit-checkout` sert deux méthodes distinctes : `GET` retourne uniquement la disponibilité, sans appel Stripe ni base de données ; `POST` conserve les contrôles du checkout. Cette réutilisation conserve les 12 fonctions API directes prévues par le budget Vercel du projet.
+
 ### 2. Produit numérique
 Produit futur : PWA Starter Kit Pro.
 

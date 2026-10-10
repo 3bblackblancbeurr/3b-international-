@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createPwaQuickKitCommerce } from '../server/pwa-quickkit-commerce.js';
+import checkoutEndpoint from '../api/pwa-quickkit-checkout.js';
 
 const baseEnv = {
   PWA_QUICKKIT_PUBLIC_URL: 'https://example.com/pwa-quickkit/',
@@ -114,7 +115,7 @@ test('public availability separates disabled, test and live configuration withou
     [{ livemode: true }, 'live', true],
   ]) {
     const f = commerceFixture(options);
-    const response = await f.api.availability(new Request(ORIGIN + '/api/pwa-quickkit-availability'));
+    const response = await f.api.availability(new Request(ORIGIN + '/api/pwa-quickkit-checkout'));
     assert.equal(response.status, 200);
     assert.equal(response.headers.get('cache-control'), 'no-store');
     assert.deepEqual(await response.json(), {
@@ -127,10 +128,39 @@ test('public availability separates disabled, test and live configuration withou
 
 test('availability is read-only and rejects POST without opening a session', async () => {
   const f = commerceFixture();
-  const response = await f.api.availability(postRequest('availability', {}));
+  const response = await f.api.availability(postRequest('checkout', {}));
   assert.equal(response.status, 405);
   assert.equal(response.headers.get('allow'), 'GET');
   assert.deepEqual(f.calls, { checkout: [], database: [], writes: [], prices: [] });
+});
+
+test('the existing QuickKit endpoint dispatches read-only GET and preserves fail-closed POST', async t => {
+  const env = {
+    PWA_QUICKKIT_PUBLIC_URL: ORIGIN + '/pwa-quickkit/',
+    PWA_QUICKKIT_CHECKOUT_ENABLED: 'false',
+    STRIPE_SECRET_KEY: '',
+  };
+  const previous = Object.fromEntries(Object.keys(env).map(key => [key, process.env[key]]));
+  t.after(() => {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
+  Object.assign(process.env, env);
+  const response = await checkoutEndpoint.fetch(new Request(ORIGIN + '/api/pwa-quickkit-checkout'));
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('cache-control'), 'no-store');
+  assert.deepEqual(await response.json(), {
+    mode: 'off', checkoutConfigured: false, offerState: 'in_preparation',
+    amount: 990, currency: 'eur', interval: 'month',
+  });
+  assert.equal((await checkoutEndpoint.fetch(checkoutRequest())).status, 503);
+  for (const method of ['PUT', 'DELETE', 'HEAD', 'OPTIONS']) {
+    const rejected = await checkoutEndpoint.fetch(new Request(ORIGIN + '/api/pwa-quickkit-checkout', { method }));
+    assert.equal(rejected.status, 405);
+    assert.equal(rejected.headers.get('allow'), 'GET, POST');
+  }
 });
 
 test('a demonstration cannot silently become a live checkout after configuration changes', async () => {

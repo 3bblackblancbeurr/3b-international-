@@ -98,7 +98,7 @@ const proNote = document.getElementById('proCheckoutNote');
 let proAvailability = null;
 
 async function checkProAvailability() {
-  const response = await fetch('/api/pwa-quickkit-availability', {
+  const response = await fetch('/api/pwa-quickkit-checkout', {
     method: 'GET', headers: { accept: 'application/json' },
   });
   const data = await response.json().catch(() => ({}));

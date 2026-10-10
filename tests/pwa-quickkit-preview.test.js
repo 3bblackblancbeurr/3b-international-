@@ -25,8 +25,8 @@ function pageFixture({ availability = { mode: 'test', checkoutConfigured: true, 
     fetch: async (url, options) => {
       requests.push({ url, options });
       if (offline) throw new TypeError('Network unavailable');
-      if (url === '/api/pwa-quickkit-availability') return Response.json(availability);
-      if (url === '/api/pwa-quickkit-checkout') return Response.json(checkout);
+      if (url === '/api/pwa-quickkit-checkout' && options.method === 'GET') return Response.json(availability);
+      if (url === '/api/pwa-quickkit-checkout' && options.method === 'POST') return Response.json(checkout);
       throw new Error('Unexpected request: ' + url);
     },
   };
@@ -39,7 +39,7 @@ test('checking Pro availability performs only a read; a separately labelled clic
   const page = pageFixture();
   await page.click();
   assert.equal(page.requests.length, 1);
-  assert.equal(page.requests[0].url, '/api/pwa-quickkit-availability');
+  assert.equal(page.requests[0].url, '/api/pwa-quickkit-checkout');
   assert.equal(page.requests[0].options.method, 'GET');
   assert.deepEqual(page.redirects, []);
   assert.match(page.button.textContent, /démo.*aucun débit réel/);
@@ -75,7 +75,8 @@ test('unavailable or malformed availability never falls back to checkout', async
     const page = pageFixture(options);
     await page.click();
     await page.click();
-    assert.equal(page.requests.every(request => request.url === '/api/pwa-quickkit-availability'), true);
+    assert.equal(page.requests.every(request => request.url === '/api/pwa-quickkit-checkout'
+      && request.options.method === 'GET'), true);
     assert.deepEqual(page.redirects, []);
     assert.equal(page.button.disabled, false);
     assert.equal(page.button.textContent, 'Vérifier la disponibilité Pro');
