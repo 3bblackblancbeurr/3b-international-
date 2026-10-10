@@ -6,7 +6,7 @@ import {createRealmArchitecture} from './realm-architecture.js';
 import {createPlantGeometry,FLORA_PALETTES,windShader} from './flora.js';
 import {foliageAtlas} from './foliage-atlas.js';
 import {createRealmRoadMaterial,createRealmRoadTask} from './realm-road-surface.js';
-import {createVillageFurnitureGeometry} from './realm-village-props.js';
+import {createVillageFurnitureGeometry,createVillageGardenGeometry,createVillageGardenLayout} from './realm-village-props.js';
 
 const SIZE=REALM_SECTOR_SIZE;
 const coreCell=(x,z)=>x>=-2&&x<=1&&z>=-2&&z<=1;
@@ -106,6 +106,7 @@ export function createRealmStreamer({region,field,root,material,coreGround}){
  for(const type of new Set([realm.style.tree,...realm.layout.provinces.map(p=>provincePlant(p[1]))]))plantBatches(type);
  const rockGeometry=new THREE.IcosahedronGeometry(1,1),rockTint=new THREE.Color(field.biome.rock),rockColors=new Float32Array(rockGeometry.attributes.position.count*3);for(let i=0;i<rockColors.length;i+=3)rockColors.set([rockTint.r,rockTint.g,rockTint.b],i);rockGeometry.setAttribute('color',new THREE.BufferAttribute(rockColors,3));owned.push(rockGeometry);const rocks=instance(rockGeometry,naturalMaterial,160,'Sector rocks');
  const furnitureGeometry=createVillageFurnitureGeometry(region,field.biome);owned.push(furnitureGeometry);const furniture=instance(furnitureGeometry,naturalMaterial,24,'Village benches, planters and lanterns'),furniturePlacements=realmStreetFurniture(region);furniture.castShadow=true;
+ const gardenGeometry=createVillageGardenGeometry(region);owned.push(gardenGeometry);const gardens=instance(gardenGeometry,naturalMaterial,64,'Low village herb gardens'),gardenPlacements=createVillageGardenLayout(realm.layout);
  for(const site of realm.sites.filter(s=>s.major&&(s.monument||s.kind==='guardianCourt'))){const mesh=instance(site.kind==='guardianCourt'?architecture.guardianCourt():architecture.monument(site.kind),architecture.material,1,site.name+' · structural landmark');mesh.castShadow=true;monumentBatches.push({site,mesh});}
  // Only roads inside loaded sectors are submitted. An opaque strip sits a
  // fixed centimetres above the same sampled ground, with no overlapping copies.
@@ -151,11 +152,12 @@ export function createRealmStreamer({region,field,root,material,coreGround}){
   if(closeSites.map(s=>s.id).sort().join('|')!==roadSitesKey)buildRoads();
   visibleSites=closeSites.length;visibleBuildings=0;for(const b of buildingBatches)b.mesh.count=0;
   furniture.count=0;for(const p of furniturePlacements.filter(p=>ids.has(p.site)).slice(0,24)){dummy.position.set(p.x,field.height(p.x,p.z),p.z);dummy.rotation.set(0,p.rotation,0);dummy.scale.setScalar(1);dummy.updateMatrix();furniture.setMatrixAt(furniture.count++,dummy.matrix);}
+  gardens.count=0;for(const p of gardenPlacements.filter(p=>ids.has(p.site)).slice(0,64)){dummy.position.set(p.x,field.height(p.x,p.z),p.z);dummy.rotation.set(0,p.rotation,0);dummy.scale.setScalar(1);dummy.updateMatrix();gardens.setMatrixAt(gardens.count++,dummy.matrix);}
   for(const home of realm.layout.buildings.filter(b=>ids.has(b.site)).slice(0,profile.buildingInstances)){
    const batch=buildingBatches.find(b=>b.floors===home.floors&&b.variant===home.variant%3);dummy.position.set(home.x,field.height(home.x,home.z),home.z);dummy.rotation.set(0,home.rotation,0);dummy.scale.set(home.width/12,1,home.depth/10);dummy.updateMatrix();batch.mesh.setMatrixAt(batch.mesh.count++,dummy.matrix);visibleBuildings++;
   }
   for(const b of monumentBatches){b.mesh.count=distance(b.site)<profile.siteDistance+100?1:0;if(b.mesh.count){const p=b.site.monument||b.site;dummy.position.set(p.x,field.height(p.x,p.z),p.z);dummy.rotation.set(0,0,0);dummy.scale.setScalar(1);dummy.updateMatrix();b.mesh.setMatrixAt(0,dummy.matrix);}}
-  for(const mesh of [...natural.values()].flatMap(b=>[b.wood,b.leaves,b.low]).concat(rocks,furniture,buildingBatches.map(b=>b.mesh),monumentBatches.map(b=>b.mesh))){mesh.instanceMatrix.needsUpdate=true;if(mesh.count)mesh.computeBoundingSphere();}
+  for(const mesh of [...natural.values()].flatMap(b=>[b.wood,b.leaves,b.low]).concat(rocks,furniture,gardens,buildingBatches.map(b=>b.mesh),monumentBatches.map(b=>b.mesh))){mesh.instanceMatrix.needsUpdate=true;if(mesh.count)mesh.computeBoundingSphere();}
   lastPoolPosition={x:position.x,z:position.z};
   work.peakInstanceMs=Math.max(work.peakInstanceMs,performance.now()-began);
  }
@@ -186,13 +188,18 @@ export function createRealmStreamer({region,field,root,material,coreGround}){
  function update(position={x:0,z:5}){
   if(disposed)return;const updateStarted=performance.now(),arrival=landingPending;lastPosition=position;const centre=realmSectorAt(position),key=realmSectorKey(centre.x,centre.z);
   if(key!==lastKey){lastKey=key;reconcile(position,landingPending);landingPending=false;}
-  const workStarted=performance.now(),tileBudget=roadTask?2:3;
-  for(let i=0;i<profile.workPerFrame&&(activeTile||pending.length);i++){
-   if(i&&performance.now()-workStarted>=tileBudget)break;
+  const workStarted=performance.now(),tileBudget=roadTask?2:3,nearSegments=profile.segments[0],vertexBudget=profile.workPerFrame*((nearSegments+1)**2+4*(nearSegments+1));
+  // Small distant tiles may share one slice. Limiting by vertex uploads instead
+  // of tile count clears a distant view faster without increasing the CPU
+  // deadline or the previous two-dense-tiles GPU upload budget.
+  for(let vertices=0;activeTile||pending.length;){
+   if(performance.now()-workStarted>=tileBudget)break;
+   const next=activeTile?.cell||pending[0],segments=profile.segments[next.lod],vertexCount=(segments+1)**2+4*(segments+1);
+   if(vertices&&vertices+vertexCount>vertexBudget)break;
    if(!activeTile){const cell=pending.shift();activeTile={cell,task:createRealmTileTask(field,cell.x,cell.z,profile.segments[cell.lod])};}
    const sliceStarted=performance.now(),done=activeTile.task.step({budgetMs:Math.max(.15,tileBudget-(sliceStarted-workStarted))});
    work.tileSlices++;work.peakTileSliceMs=Math.max(work.peakTileSliceMs,performance.now()-sliceStarted);
-   if(!done)break;makeTile(activeTile.cell,activeTile.task.geometry);activeTile=null;
+   if(!done)break;vertices+=activeTile.task.geometry.attributes.position.count;makeTile(activeTile.cell,activeTile.task.geometry);activeTile=null;
   }
   coreGround.visible=Math.abs(position.x)<1300&&Math.abs(position.z)<1300;
   if(dirty||Math.hypot(position.x-lastPoolPosition.x,position.z-lastPoolPosition.z)>36){updateInstances(position);dirty=false;}
@@ -206,6 +213,6 @@ export function createRealmStreamer({region,field,root,material,coreGround}){
   setDaylight(value){architecture.setDaylight(value);},
   setQuality(mode,capabilities){activeTile?.task.cancel();activeTile=null;profile=realmStreamingProfile(mode,capabilities);lastKey='';update(lastPosition);},
   get diagnostics(){const meshes=[];group.traverse(o=>{if(o.isMesh&&(!o.isInstancedMesh||o.count))meshes.push(o);});return{region,radius:field.radius,areaHubRatio:realm.layout.areaHubRatio,sectorSize:SIZE,activeSectors:tiles.size,pendingSectors:pending.length+(activeTile?1:0),pendingRoadSurface:!!roadTask,work:{...work},maxSectors:profile.maxTiles,generatedSectors:generated,terrainTriangles:[...tiles.values()].reduce((n,t)=>n+t.mesh.geometry.drawRange.count/3,0),natureInstances:visiblePlants,maxNatureInstances:profile.naturalInstances,buildingInstances:visibleBuildings,activeSettlements:visibleSites,settlements:realm.sites.length-2,travelRelays:travelDestinations.length,drawCalls:meshes.length,position:{...lastPosition},realTerrain:true};},
-  dispose(){if(disposed)return;disposed=true;activeTile?.task.cancel();activeTile=null;roadTask?.cancel();roadTask=null;group.removeFromParent();for(const tile of tiles.values())tile.mesh.geometry.dispose();tiles.clear();roadMesh?.geometry.dispose();for(const b of natural.values())for(const mesh of [b.wood,b.leaves,b.low])mesh.dispose();for(const b of buildingBatches)b.mesh.dispose();for(const b of monumentBatches)b.mesh.dispose();rocks.dispose();furniture.dispose();owned.forEach(o=>o.dispose());architecture.dispose();}
+  dispose(){if(disposed)return;disposed=true;activeTile?.task.cancel();activeTile=null;roadTask?.cancel();roadTask=null;group.removeFromParent();for(const tile of tiles.values())tile.mesh.geometry.dispose();tiles.clear();roadMesh?.geometry.dispose();for(const b of natural.values())for(const mesh of [b.wood,b.leaves,b.low])mesh.dispose();for(const b of buildingBatches)b.mesh.dispose();for(const b of monumentBatches)b.mesh.dispose();rocks.dispose();furniture.dispose();gardens.dispose();owned.forEach(o=>o.dispose());architecture.dispose();}
  };
 }

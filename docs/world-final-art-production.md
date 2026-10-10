@@ -21,6 +21,13 @@ Une ligne n'est terminée que lorsque son résultat est visible et vérifié en 
   remplacement d'un détail de terrain sans réenvoyer inutilement tous les arbres.
 - Un passage trop étroit contre une tour des remparts d'Estonie a été repéré par
   le nouveau contrôle des portes et élargi, dans le décor et les déplacements.
+- Deuxième passe après examen des vraies images : motifs de toiture plus fins,
+  jardins bas devant les façades, accès et promenades laissés libres. Chaque
+  jardin utilise 260 triangles, avec un seul dessin partagé pour tous les jardins
+  visibles et aucune texture supplémentaire.
+- Les petits morceaux de terrain lointains peuvent être préparés ensemble dans
+  le même court créneau, sans augmenter la quantité maximale de géométrie
+  envoyée par image. Cela accélère la fin de chargement d'une vue lointaine.
 
 ## Liste professionnelle
 
@@ -45,7 +52,7 @@ Une ligne n'est terminée que lorsque son résultat est visible et vérifié en 
 | M — Matières | Pierre, enduit, bois, métal et verre réagissent différemment. | **Corrigé** : murs du Hub et vitrage ; textures existantes réutilisées. Révision artistique exhaustive des autres matières : **à poursuivre**. |
 | N — Nuit | Fenêtres habitées et chemins lisibles sans multiplier les lampes. | Fenêtres liées au cycle jour/nuit conservées ; rendu nocturne réel dans les contrôles. |
 | O — Ombres et contact | Décors ancrés dans leur environnement. | Toitures extérieures, socles et normales corrigés. Ombres fines sur tous les téléphones : **à poursuivre**, selon leur coût réel. |
-| P — Plantes | Espèces reconnaissables, formes naturelles de près et de loin. | **Corrigé** : sapins, cyprès et palmiers lointains. Animations et modèles proches existants conservés ; modèles artistiques plus riches : **à poursuivre**. |
+| P — Plantes | Espèces reconnaissables, formes naturelles de près et de loin. | **Corrigé** : sapins, cyprès et palmiers lointains, jardins bas aux pieds des façades. Animations et modèles proches existants conservés ; modèles artistiques plus riches : **à poursuivre**. |
 | Q — Qualité à distance | Le décor garde sa silhouette sans coûter autant au loin. | **Corrigé** : silhouettes sobres, chargement progressif, ancien sol visible jusqu'au remplacement complet. |
 | R — Rues et places | Un revêtement cohérent et relié aux bâtiments. | **Corrigé** : places irrégulières, chemins vers les portes, assises individuelles dans le même matériau. |
 | S — Scènes de vie | Les habitants ont des activités et utilisent réellement les rues. | Promenades, traversées, pauses et discussions existantes conservées et adaptées au nouveau plan. Activités professionnelles distinctes : **à poursuivre**. |

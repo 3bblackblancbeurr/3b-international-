@@ -40,7 +40,7 @@ export function createRealmArchitecture(region){
    // A common attribute layout allows boxes, extrusions and open arches to
    // merge without relying on draw-time material arrays.
    for(const key of Object.keys(g.attributes))if(!['position','normal','color'].includes(key))g.deleteAttribute(key);
-   realmMasonryUv(g,surface);g.setAttribute('realmWindow',new THREE.BufferAttribute(new Float32Array(p.count),1));g.setAttribute('realmGlazing',new THREE.BufferAttribute(new Float32Array(p.count),1));
+   realmMasonryUv(g,surface,color===palette.roof?palette.roofTileMetres:undefined);g.setAttribute('realmWindow',new THREE.BufferAttribute(new Float32Array(p.count),1));g.setAttribute('realmGlazing',new THREE.BufferAttribute(new Float32Array(p.count),1));
    parts.push(g);return g;
   }
   const b=(color,x,y,z,w,h,d,r=0,surface,window=0)=>{const g=add(box,color,x,y,z,w,h,d,r,surface);if(window)g.attributes.realmWindow.array.fill(window);return g;};
@@ -59,7 +59,7 @@ export function createRealmArchitecture(region){
   const wall=new THREE.Color(base[0]).lerp(new THREE.Color(variant===1?art.sun:art.cloth),variant===1?.16:variant===2?.22:0);
   const roof=new THREE.Color(base[2]).multiplyScalar(variant===1?.83:variant===2?1.08:1),wood=new THREE.Color(base[3]).lerp(new THREE.Color(variant===1?art.ground:art.cloth),variant?.36:0);
   const key='house-'+floors+'-'+variant;if(templates.has(key))return templates.get(key);
-  const {add,b,finish}=builder({wall,roof,wood}),w=12,d=10,h=floors*5.6,east=['maroc','algerie','tunisie'].includes(region);
+  const {add,b,finish}=builder({wall,roof,wood,roofTileMetres:1.35}),w=12,d=10,h=floors*5.6,east=['maroc','algerie','tunisie'].includes(region);
   const timberFrame=region==='estonie'||region==='turquie',balconies=['italie','espagne','turquie'].includes(region),terracotta=region==='italie'||region==='espagne';
   b('#655e52',0,h/2,0,w-.75,h,d-.75);b(trim,0,.25,0,w+.3,.5,d+.3);
   for(let face=0;face<4;face++){

@@ -1,15 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {Mesh,Raycaster,Vector3,ShaderLib} from 'three';
+import {Mesh,Group,PlaneGeometry,MeshStandardMaterial,Raycaster,Vector3,ShaderLib} from 'three';
 import {REALM_PROVINCES,realmLayout,realmStaticObstacles} from '../src/world/realm-layout.js';
 import {villageDoorPath} from '../src/world/realm-village-layout.js';
 import {obstacleDistance} from '../src/world/collision.js';
 import {createRealmArchitecture} from '../src/world/realm-architecture.js';
-import {createRealmTileTask,createRealmTileGeometry,lowPlant} from '../src/world/realm-streaming.js';
+import {createRealmStreamer,createRealmTileTask,createRealmTileGeometry,lowPlant} from '../src/world/realm-streaming.js';
 import {createRealmRoadTask,createRealmRoadGeometry} from '../src/world/realm-road-surface.js';
 import {createTerrainField} from '../src/world/terrain.js';
 import {blankSave} from '../src/world/rules.js';
 import {FLORA_PALETTES} from '../src/world/flora.js';
+import {createVillageGardenLayout,createVillageGardenGeometry} from '../src/world/realm-village-props.js';
+import {realmStreamingProfile} from '../src/world/streaming.js';
 
 test('every village has staggered frontages and an unobstructed walk to every door',()=>{
  for(const region of Object.keys(REALM_PROVINCES)){
@@ -93,4 +95,31 @@ test('distant plants retain valid lighting normals and a bounded silhouette budg
    }
   }finally{g.dispose();}
  }
+});
+
+test('village gardens add low greenery without covering entrances or inflating the shared mesh',()=>{
+ for(const region of Object.keys(REALM_PROVINCES)){
+  const layout=realmLayout(region),gardens=createVillageGardenLayout(layout),geometry=createVillageGardenGeometry(region);
+  try{assert.ok(gardens.length>=170&&gardens.length<=192);assert.ok(geometry.attributes.position.count/3<=300);assert.ok(geometry.boundingBox.max.y<1,'Herb beds cannot become tall opaque barriers');assert.equal(geometry.groups.length,0);
+   for(const bed of gardens){
+    assert.ok(geometry.boundingBox.max.x-geometry.boundingBox.min.x<=bed.width+.001);assert.ok(geometry.boundingBox.max.z-geometry.boundingBox.min.z<=bed.depth+.001);
+    for(const home of layout.buildings.filter(h=>h.site===bed.site)){
+     const site=layout.sites.find(s=>s.id===home.site),[a,b]=villageDoorPath(site,home);
+     for(let i=0;i<=60;i++)assert.ok(obstacleDistance({x:a.x+(b.x-a.x)*i/60,z:a.z+(b.z-a.z)*i/60},bed)>1,'Garden leaves the door approach free');
+    }
+   }
+  }finally{geometry.dispose();}
+ }
+});
+
+test('packing small terrain jobs preserves the existing maximum vertex uploads per walking frame',()=>{
+ const region='france',field=createTerrainField(region,blankSave()),root=new Group(),material=new MeshStandardMaterial(),geometry=new PlaneGeometry(1024,1024),core=new Mesh(geometry,material),stream=createRealmStreamer({region,field,root,material,coreGround:core});
+ const site=field.realm.sites.find(s=>s.id.endsWith('village-2-3')),profile=realmStreamingProfile('auto',{desktopClass:false}),segments=profile.segments[0],limit=profile.workPerFrame*((segments+1)**2+4*(segments+1));
+ try{stream.setQuality('auto',{desktopClass:false});stream.ensureLanding(site);let previous=new Set(stream.walkSurfaces.map(m=>m.geometry));
+  for(let frame=0;frame<100;frame++){
+   stream.update(site);const meshes=stream.walkSurfaces;const vertices=meshes.filter(m=>!previous.has(m.geometry)).reduce((sum,m)=>sum+m.geometry.attributes.position.count,0);
+   assert.ok(vertices<=limit,'Small jobs cannot create a bulk GPU upload');previous=new Set(meshes.map(m=>m.geometry));
+  }
+  assert.equal(stream.diagnostics.pendingSectors,0);assert.equal(stream.diagnostics.pendingRoadSurface,false);assert.ok(stream.diagnostics.drawCalls<=72);
+ }finally{stream.dispose();material.dispose();geometry.dispose();}
 });
