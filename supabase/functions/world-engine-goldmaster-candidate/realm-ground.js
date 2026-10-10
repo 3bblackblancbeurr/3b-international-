@@ -21,27 +21,31 @@ export function createRealmGroundField(region,coreHeight){
   return broad*style.rolling+rolling*style.rolling*.34+ridge*style.relief*radial;
  };
  const blended=(x,z)=>{const d=Math.hypot(x,z);if(d<=350)return coreHeight(x,z);if(d>=550)return raw(x,z);const t=smooth((d-350)/200);return lerp(coreHeight(x,z),raw(x,z),t);};
- const sites=layout.sites.map(s=>({...s,y:blended(s.x,s.z)}));
+ const sites=layout.sites.map(s=>({...s,y:blended(s.x,s.z)})),empty=[];
+ const local=(x,z)=>index.get(realmSectorKey(Math.floor(x/REALM_SECTOR_SIZE),Math.floor(z/REALM_SECTOR_SIZE)))||empty;
  function place(entry,minX,minZ,maxX,maxZ){for(let x=Math.floor(minX/REALM_SECTOR_SIZE);x<=Math.floor(maxX/REALM_SECTOR_SIZE);x++)for(let z=Math.floor(minZ/REALM_SECTOR_SIZE);z<=Math.floor(maxZ/REALM_SECTOR_SIZE);z++){const key=realmSectorKey(x,z);if(!index.has(key))index.set(key,[]);index.get(key).push(entry);}}
  for(const site of sites)place({site},site.x-site.r-35,site.z-site.r-35,site.x+site.r+35,site.z+site.r+35);
- const siteHeight=(x,z)=>{
-  let y=blended(x,z);for(const {site} of index.get(realmSectorKey(Math.floor(x/REALM_SECTOR_SIZE),Math.floor(z/REALM_SECTOR_SIZE)))||[]){if(!site)continue;const d=Math.hypot(x-site.x,z-site.z);if(d<site.r+30)y=lerp(site.y,y,smooth((d-site.r)/30));}return y;
+ const siteHeight=(x,z,entries=local(x,z))=>{
+  let y=blended(x,z);for(const {site} of entries){if(!site)continue;const d=Math.hypot(x-site.x,z-site.z);if(d<site.r+30)y=lerp(site.y,y,smooth((d-site.r)/30));}return y;
  };
  const roadSegments=[];
  for(const road of layout.roads)for(let i=1;i<road.points.length;i++){
   const a=road.points[i-1],b=road.points[i],dx=b.x-a.x,dz=b.z-a.z,entry={road,a,b,dx,dz,lengthSq:dx*dx+dz*dz,ay:siteHeight(a.x,a.z),by:siteHeight(b.x,b.z)};roadSegments.push(entry);
   const pad=road.width/2+9;place(entry,Math.min(a.x,b.x)-pad,Math.min(a.z,b.z)-pad,Math.max(a.x,b.x)+pad,Math.max(a.z,b.z)+pad);
  }
- const local=(x,z)=>index.get(realmSectorKey(Math.floor(x/REALM_SECTOR_SIZE),Math.floor(z/REALM_SECTOR_SIZE)))||[];
  function roadAt(x,z){let best=null,distance=Infinity;for(const segment of local(x,z)){if(!segment.road)continue;const t=clamp(((x-segment.a.x)*segment.dx+(z-segment.a.z)*segment.dz)/segment.lengthSq),d=Math.hypot(x-segment.a.x-segment.dx*t,z-segment.a.z-segment.dz*t)-segment.road.width/2;if(d<distance){distance=d;best={...segment,t,d};}}return best;}
  function height(x,z){
   if(Math.hypot(x,z)<=350)return coreHeight(x,z);
-  let y=siteHeight(x,z);
+  const entries=local(x,z);let y=siteHeight(x,z,entries);
   // A road joins the edge of a level settlement. Its interpolated outside
   // slope must not deform the town square or the guardian's combat floor.
-  if(local(x,z).some(entry=>entry.site&&Math.hypot(x-entry.site.x,z-entry.site.z)<entry.site.r))return y;
-  const road=roadAt(x,z);
-  if(road&&road.d<9)y=lerp(lerp(road.ay,road.by,road.t),y,smooth(road.d/9));
+  for(const {site} of entries)if(site&&Math.hypot(x-site.x,z-site.z)<site.r)return y;
+  // Terrain normals call height five times per vertex. Reuse the sector lookup
+  // and keep scalar road samples: cloning every candidate road here creates
+  // thousands of short-lived objects during one tile's preparation.
+  let road=null,roadT=0,roadD=Infinity;
+  for(const segment of entries){if(!segment.road)continue;const t=clamp(((x-segment.a.x)*segment.dx+(z-segment.a.z)*segment.dz)/segment.lengthSq),d=Math.hypot(x-segment.a.x-segment.dx*t,z-segment.a.z-segment.dz*t)-segment.road.width/2;if(d<roadD){road=segment;roadT=t;roadD=d;}}
+  if(road&&roadD<9)y=lerp(lerp(road.ay,road.by,roadT),y,smooth(roadD/9));
   return y;
  }
  function protectedPoint(x,z,pad=0){return local(x,z).some(entry=>entry.site?Math.hypot(x-entry.site.x,z-entry.site.z)<entry.site.r+pad:entry.road&&(()=>{const t=clamp(((x-entry.a.x)*entry.dx+(z-entry.a.z)*entry.dz)/entry.lengthSq);return Math.hypot(x-entry.a.x-entry.dx*t,z-entry.a.z-entry.dz*t)<entry.road.width/2+pad;})());}

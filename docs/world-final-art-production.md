@@ -17,6 +17,9 @@ Une ligne n'est terminée que lorsque son résultat est visible et vérifié en 
 - Terrain et routes préparés progressivement pendant la course ; remplacement
   uniquement lorsque la nouvelle surface est complète. Les arrivées disposent
   immédiatement de leur sol. Les espèces d'arbres sont préparées au chargement.
+- Échantillonnage du relief allégé : une seule recherche du secteur et aucune
+  copie de route temporaire par point du terrain. Les hauteurs restent strictement
+  identiques sur plus de 71 000 points comparés dans les huit royaumes.
 - Calcul de distance des arbres effectué une fois avant leur classement ;
   remplacement d'un détail de terrain sans réenvoyer inutilement tous les arbres.
 - Un passage trop étroit contre une tour des remparts d'Estonie a été repéré par
