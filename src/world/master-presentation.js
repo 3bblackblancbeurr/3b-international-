@@ -19,7 +19,15 @@ export function combatCameraView(view,hero,enemy,{enabled=true,aspect=1,fov=60}=
  if(distance>36)return view;
  const focus=clamp((36-distance)/14,0,1),weight=.42*focus;
  const target={x:view.target.x+(enemy.x-hero.x)*weight,y:view.target.y+(enemy.y-hero.y)*weight,z:view.target.z+(enemy.z-hero.z)*weight};
- const dx=view.position.x-view.target.x,dy=view.position.y-view.target.y,dz=view.position.z-view.target.z,length=Math.hypot(dx,dy,dz)||1;
+ let dx=view.position.x-view.target.x,dz=view.position.z-view.target.z;
+ const dy=view.position.y-view.target.y,length=Math.hypot(dx,dy,dz)||1;
+ // When both actors line up with the camera, their silhouettes and attacks
+ // overlap. A small automatic shoulder angle separates them without changing
+ // the player's orbit setting, zoom distance, or manually chosen view.
+ const horizontal=Math.hypot(dx,dz),opponentX=enemy.x-hero.x,opponentZ=enemy.z-hero.z;
+ const alignment=horizontal&&distance?Math.abs((dx*opponentX+dz*opponentZ)/(horizontal*distance)):0;
+ const shoulder=clamp((alignment-.78)/.22,0,1)*.42*focus,c=Math.cos(shoulder),s=Math.sin(shoulder);
+ [dx,dz]=[dx*c+dz*s,dz*c-dx*s];
  const halfFov=Math.atan(Math.tan(clamp(fov,35,90)*Math.PI/360)*clamp(aspect,.35,1));
  const required=(distance*Math.max(weight,1-weight)+2.8)/Math.sin(halfFov);
  const framed=length+(clamp(required,length,70)-length)*focus;

@@ -39,6 +39,20 @@ test('combat framing fits nearby actors in portrait and landscape without moving
  }
 });
 
+test('automatic combat camera separates aligned silhouettes while preserving orbit distance and manual framing',()=>{
+ for(const aspect of [390/844,1,1280/800])for(const yaw of [0,.8,1.6,3.2,4.8])for(const distance of [4,6,12]){
+  const hero={x:0,y:0,z:0},enemy={x:-Math.sin(yaw)*distance,y:0,z:-Math.cos(yaw)*distance};
+  const view=orbitView({yaw,pitch:.34,distance:24},hero,0,aspect<.85),before=structuredClone(view);
+  const framed=combatCameraView(view,hero,enemy,{aspect}),camera=new THREE.PerspectiveCamera(60,aspect,.3,1800);
+  camera.position.copy(framed.position);camera.lookAt(new THREE.Vector3(framed.target.x,framed.target.y,framed.target.z));camera.updateMatrixWorld();
+  const a=new THREE.Vector3(hero.x,1.8,hero.z).project(camera),b=new THREE.Vector3(enemy.x,2.5,enemy.z).project(camera);
+  assert.ok(Math.abs(a.x-b.x)>.07,'Aligned combatants must have distinct horizontal screen positions');
+  assert.deepEqual(view,before,'Automatic framing must not rewrite the chosen orbit');
+  assert.equal(combatCameraView(view,hero,enemy,{enabled:false,aspect}),view);
+  assert.ok(camera.position.distanceTo(new THREE.Vector3(framed.target.x,framed.target.y,framed.target.z))<=70.00001);
+ }
+});
+
 test('camera impulse requires real damage, remains bounded, settles and honors reduced motion',()=>{
  const impulse=createCameraImpulse();impulse.start({outgoing:0,incoming:0,action:'miss'},1);
  assert.deepEqual(impulse.sample(1.04),{x:0,y:0});

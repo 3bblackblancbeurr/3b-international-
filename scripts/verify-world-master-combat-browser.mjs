@@ -104,7 +104,7 @@ function checkCamera(s,{framed=true}={}){
  assert.ok(c.orbit.distance>=10&&c.orbit.distance<=52,'Orbit zoom is bounded');
  assert.ok(c.distance>1&&c.distance<=70.25&&c.desiredDistance<=70.25,'Actual and desired combat camera remain bounded');
  assert.ok(c.position[1]>=c.floor+1.05,'Camera clears streamed ground after feedback');
- if(framed){assert.equal(c.anchors.length,4);for(const p of c.anchors)assert.ok(finite(p)&&Math.abs(p[0])<=1&&Math.abs(p[1])<=1&&p[2]>=-1&&p[2]<=1,'Hero and guardian feet/head remain in the real camera frustum');}
+ if(framed){assert.equal(c.anchors.length,4);for(const p of c.anchors)assert.ok(finite(p)&&Math.abs(p[0])<=1&&Math.abs(p[1])<=1&&p[2]>=-1&&p[2]<=1,'Hero and guardian feet/head remain in the real camera frustum');assert.ok(Math.abs(c.anchors[0][0]-c.anchors[2][0])>.08,'Automatic combat framing separates the real hero and guardian silhouettes');}
 }
 function checkThreat(s){
  assert.equal(s.threat.active,true);assert.equal(s.threat.remaining,s.field.windup,'Gauge follows accepted remaining time');
