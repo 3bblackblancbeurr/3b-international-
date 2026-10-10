@@ -19,14 +19,14 @@ const weaponPoses={
  wings:{Light:{spine_02:[-.06,0,0],upperarm_r:[-.24,-.04,-.02],lowerarm_r:[.17,.04,0]},Heavy:{spine_02:[.05,.16,0],upperarm_r:[-.28,-.14,-.05],lowerarm_r:[.24,0,0]}}
 };
 
-function addBoneOffset(base, bone, delta=[0,0,0]){
+function addBoneOffset(base, delta=[0,0,0]){
  return [...base.slice(0,3).map((v,i)=>v+(delta[i]||0))];
 }
 
 function createClip(base,name,idle){
  // Preparation, contact and recovery remain visual poses. Hits use the
  // accepted combat clock, never an animation's keyframe or local timer.
- const guard=name==='Guard',heavy=/Heavy|Rake|Long|Release|Dive/.test(name);
+ const guard=name==='Guard',heavy=/Heavy|Rake|Long|Release|Dive|Attack3/.test(name);
  const times=guard?[0,.18,.38,.55,.78,1]:heavy?[0,.21,.38,.52,.8,1]:[0,.16,.32,.46,.7,1];
  const weights=guard?[0,1,1,1,1,1]:heavy?[0,-.3,1,.72,.13,0]:[0,-.24,1,.58,.1,0];
  const tracks=idle.tracks.filter(t=>! /^(root|pelvis|thigh_|calf_|foot_|ball_)/.test(t.name)).map(t=>{
@@ -59,7 +59,7 @@ function mapWeaponPose(weapon,action,power='Light'){
 export function weaponAnimations(idle,weapon=''){
  if(!idle)return [];
  const base=Object.entries(basePoses).map(([name,pose])=>createClip(pose,name,idle));
- if(!weapon) return base;
+ if(!weapon)return base;
  const byWeapon={
   paris:{Light:'ThrustLight',Heavy:'ThrustHeavy'},
   scissors:{Light:'SplitLight',Heavy:'SplitHeavy'},
@@ -70,7 +70,7 @@ export function weaponAnimations(idle,weapon=''){
   wings:{Light:'Lift',Heavy:'Dive'}
  };
  const aliases=byWeapon[weapon];
- if(!aliases) return base;
+ if(!aliases)return [...base,createClip(basePoses.Split,'Attack2',idle),createClip(basePoses.Bash,'Attack3',idle)];
  const variants=[
   {name:aliases.Light,action:'Thrust',power:'Light'},
   {name:aliases.Heavy,action:'Thrust',power:'Heavy'}
@@ -85,5 +85,9 @@ export function weaponAnimations(idle,weapon=''){
  };
  const selected=special[weapon]||variants;
  const extra=selected.map(s=>createClip(mapWeaponPose(weapon,s.action,s.power),s.name,idle));
- return [...base,...extra];
+ // These are the names the living actor actually plays. The original weapon
+ // clips remain available to the guardian animation authoring layer.
+ const light=mapWeaponPose(weapon,selected[0].action,'Light'),heavy=mapWeaponPose(weapon,selected[1].action,'Heavy');
+ const returning=Object.fromEntries(Object.entries(light).map(([bone,[x,y,z]])=>[bone,[x*.86,-y,-z*.82]]));
+ return [...base,...extra,createClip(light,'Attack',idle),createClip(returning,'Attack2',idle),createClip(heavy,'Attack3',idle)];
 }

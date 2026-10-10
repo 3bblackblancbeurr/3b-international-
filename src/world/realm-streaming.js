@@ -3,7 +3,7 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {realmStreamingProfile} from './streaming.js';
 import {REALM_SECTOR_SIZE,realmSectorAt,realmSectorKey,realmStaticObstacles,realmNavigationItems,realmTravelItems,realmStreetFurniture} from './realm-layout.js';
 import {createRealmArchitecture} from './realm-architecture.js';
-import {createPlantGeometry,FLORA_PALETTES} from './flora.js';
+import {createPlantGeometry,FLORA_PALETTES,windShader} from './flora.js';
 import {foliageAtlas} from './foliage-atlas.js';
 import {createRealmRoadMaterial,createRealmRoadGeometry} from './realm-road-surface.js';
 import {createVillageFurnitureGeometry} from './realm-village-props.js';
@@ -48,13 +48,13 @@ function setTileSkirts(geometry,mask){
  geometry.userData.realmSkirtMask=mask;geometry.index.needsUpdate=true;geometry.setDrawRange(0,count);
 }
 
-function lowPlant(type,palette){
+export function lowPlant(type,palette){
  const parts=[],tint=new THREE.Color(palette[1]),bark=new THREE.Color('#7b6955');
  function piece(g,x,y,z,sx,sy,sz,color){const p=g.index?g.toNonIndexed():g.clone();p.applyMatrix4(new THREE.Matrix4().makeScale(sx,sy,sz));p.translate(x,y,z);const colors=new Float32Array(p.attributes.position.count*3);for(let i=0;i<colors.length;i+=3)colors.set([color.r,color.g,color.b],i);p.setAttribute('color',new THREE.BufferAttribute(colors,3));for(const name of Object.keys(p.attributes))if(!['position','normal','color'].includes(name))p.deleteAttribute(name);parts.push(p);g.dispose();}
  piece(new THREE.CylinderGeometry(.2,.3,5,6),0,2.5,0,1,1,1,bark);
- if(type==='Pine'||type==='Cypress')for(let i=0;i<3;i++)piece(new THREE.ConeGeometry(1,1,8),0,4+i*1.6,0,(type==='Pine'?2.7:1.2)-i*.35,4,2.7-i*.35,tint);
+ if(type==='Pine'||type==='Cypress')for(let i=0;i<5;i++){const radius=(type==='Pine'?2.65:1.04)*(1-i*.15);tint.set(palette[i%palette.length]);piece(new THREE.ConeGeometry(1,1,8),Math.sin(i*2.4)*.12,3.7+i*1.13,Math.cos(i*2.4)*.12,radius,3.4,radius,tint);}
  else if(type==='Palm')for(let i=0;i<6;i++){const a=i*Math.PI/3;piece(new THREE.SphereGeometry(1,6,4),Math.cos(a)*1.2,6,Math.sin(a)*1.2,2,.25,.7,tint);}
- else for(let i=0;i<3;i++)piece(new THREE.IcosahedronGeometry(1,1),Math.sin(i*2.4)*1.2,5+i*.7,Math.cos(i*2.4),2.3,1.7,2.2,tint);
+ else for(let i=0;i<11;i++){const a=i*2.399,olive=type==='Olive',reach=1.35+Math.sin(i*1.7)*.35;tint.set(palette[i%palette.length]);piece(new THREE.IcosahedronGeometry(1,0),Math.sin(a)*reach,(olive?3.7:5.3)+(i%3)*.75,Math.cos(a)*reach,1.35+(i%2)*.2,olive?.78:1.25,1.28+(i%3)*.12,tint);}
  const g=mergeGeometries(parts);parts.forEach(p=>p.dispose());return g;
 }
 
@@ -63,6 +63,7 @@ export function createRealmStreamer({region,field,root,material,coreGround}){
  const group=new THREE.Group();group.name='3B · secteurs explorables · '+region;root.add(group);
  const tiles=new Map(),owned=[],natural=new Map(),architecture=createRealmArchitecture(region),buildingBatches=[],monumentBatches=[],dummy=new THREE.Object3D();
  const leafAtlas=foliageAtlas(),leafMaterial=new THREE.MeshStandardMaterial({map:leafAtlas,alphaTest:.24,alphaToCoverage:true,vertexColors:true,roughness:.93,side:THREE.DoubleSide}),naturalMaterial=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.98});owned.push(leafMaterial,naturalMaterial);if(leafAtlas)owned.push(leafAtlas);
+ const windTime={value:0};windShader(leafMaterial,windTime);
  let profile=realmStreamingProfile(),plan=[],pending=[],lastKey='',lastPosition={x:0,z:5},lastPoolPosition={x:Infinity,z:Infinity},dirty=true,disposed=false,revision=0,generated=0,visiblePlants=0,visibleBuildings=0,visibleSites=0;
  const collisionList=realmStaticObstacles(region),navigationItems=realmNavigationItems(region),travelDestinations=realmTravelItems(region);
  function instance(geometry,mat,max,name){const mesh=new THREE.InstancedMesh(geometry,mat,max);mesh.name=name;mesh.count=0;mesh.castShadow=false;mesh.receiveShadow=true;mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);group.add(mesh);return mesh;}
@@ -144,7 +145,7 @@ export function createRealmStreamer({region,field,root,material,coreGround}){
  update(lastPosition);
  return{group,collisions:collisionList,navigationItems,travelDestinations,get walkSurfaces(){return[coreGround,...tiles.values()].map(t=>t.mesh||t);},
   get cameraSolids(){return collisionList.map(b=>({...b,bottom:field.height(b.x,b.z),top:field.height(b.x,b.z)+(b.height||20)}));},
-  get collisionRevision(){return revision;},update,ensureLanding(position){lastKey='';landingPending=true;update(position);},
+  get collisionRevision(){return revision;},update,tick(time){windTime.value=Number.isFinite(time)?time:0;},ensureLanding(position){lastKey='';landingPending=true;update(position);},
   setQuality(mode,capabilities){profile=realmStreamingProfile(mode,capabilities);lastKey='';update(lastPosition);},
   get diagnostics(){const meshes=[];group.traverse(o=>{if(o.isMesh&&(!o.isInstancedMesh||o.count))meshes.push(o);});return{region,radius:field.radius,areaHubRatio:realm.layout.areaHubRatio,sectorSize:SIZE,activeSectors:tiles.size,pendingSectors:pending.length,maxSectors:profile.maxTiles,generatedSectors:generated,terrainTriangles:[...tiles.values()].reduce((n,t)=>n+t.mesh.geometry.drawRange.count/3,0),natureInstances:visiblePlants,maxNatureInstances:profile.naturalInstances,buildingInstances:visibleBuildings,activeSettlements:visibleSites,settlements:realm.sites.length-2,travelRelays:travelDestinations.length,drawCalls:meshes.length,position:{...lastPosition},realTerrain:true};},
   dispose(){if(disposed)return;disposed=true;group.removeFromParent();for(const tile of tiles.values())tile.mesh.geometry.dispose();tiles.clear();roadMesh?.geometry.dispose();for(const b of natural.values())for(const mesh of [b.wood,b.leaves,b.low])mesh.dispose();for(const b of buildingBatches)b.mesh.dispose();for(const b of monumentBatches)b.mesh.dispose();rocks.dispose();furniture.dispose();owned.forEach(o=>o.dispose());architecture.dispose();}
