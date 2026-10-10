@@ -155,3 +155,9 @@ html[data-luxury="v2"] body .app3b[data-page] .account-options > summary { min-h
 
 /* Supersede the former glass-material !important rules at the same scope. */
 html[data-luxury="v2"] body .app3b[data-page] :is(.compact-card.gm-card,.shop-product,.shop-cart,.account-command-center) { background: transparent !important; border-color: var(--3b-line-soft) !important; box-shadow: var(--3b-shadow-flat) !important; }
+
+html[data-luxury="v2"] body .app3b[data-page] .home-world-entry .world-portal-copy h2 { font-size: clamp(44px,4.6vw,66px); line-height: 1.06; }
+@media(max-width:720px) {
+ html[data-luxury="v2"] body .app3b[data-page] .app-menu-categories { gap: 10px; padding-inline: 16px; }
+ html[data-luxury="v2"] body .app3b[data-page] .home-world-entry .world-portal-copy h2 { font-size: clamp(40px,11vw,62px); }
+}

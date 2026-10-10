@@ -15,10 +15,10 @@ export const NAV_GROUPS=Object.freeze([
 ]);
 
 export const MENU_CATEGORIES=Object.freeze([
- {id:'principal',label:'Principal',ids:['home','passport','world3b','shop']},
- {id:'world',label:'Monde et jeux',ids:['world3b','invisible','secret','games','nosbloc','arena']},
+ {id:'principal',label:'Essentiel',ids:['home','passport','world3b','shop']},
+ {id:'world',label:'Monde',ids:['world3b','invisible','secret','games','nosbloc','arena']},
  {id:'account',label:'Compte',ids:['member','passport','loyalty','control']},
- {id:'discover',label:'Découvrir',ids:['guide','community','manga','religion','sport','ia']},
+ {id:'discover',label:'Autres',ids:['guide','community','manga','religion','sport','ia']},
  {id:'settings',label:'Réglages',ids:[]},
 ]);
 
