@@ -1,0 +1,11 @@
+attribute vec3 aPosition;
+attribute vec3 aNormal;
+attribute vec2 aUV;
+uniform mat4 uModel;
+uniform mat4 uView;
+uniform mat4 uProjection;
+varying vec2 vUV;
+varying vec3 vNormal;
+varying vec3 vEye;
+varying vec4 vClip;
+void main(){vec4 eye=uView*uModel*vec4(aPosition,1.0);vEye=eye.xyz;vNormal=mat3(uView*uModel)*aNormal;vUV=aUV;vClip=uProjection*eye;gl_Position=vClip;}
