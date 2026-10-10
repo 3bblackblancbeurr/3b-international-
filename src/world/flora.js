@@ -81,18 +81,26 @@ export function createPlantGeometry(type='Tree',seed=1,palette=FLORA_PALETTES.hu
 export function windShader(material,time){
  material.onBeforeCompile=shader=>{
   shader.uniforms.floraTime=time;
-  shader.vertexShader='uniform float floraTime; attribute float plantFlex;\n'+shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+  // A smooth periodic wave keeps the same range and stationary crests as
+  // sine, without three transcendental evaluations for every leaf vertex.
+  // Its first derivative is continuous at the triangle's joins and wrap.
+  shader.vertexShader=`uniform float floraTime; attribute float plantFlex;
+  float botanicalWave(float phase){
+   float ramp=1.-4.*abs(fract(phase*.159154943+.25)-.5);
+   return ramp*(1.5-.5*ramp*ramp);
+  }
+  `+shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
    vec4 plantWorld=vec4(position,1.);
    #ifdef USE_INSTANCING
     plantWorld=instanceMatrix*plantWorld;
    #endif
    plantWorld=modelMatrix*plantWorld;
-   float gust=sin(floraTime*.95+plantWorld.x*.18+plantWorld.z*.14);
-   float flutter=sin(floraTime*2.8+plantWorld.x*1.7+plantWorld.z*1.2)*.012;
+   float gust=botanicalWave(floraTime*.95+plantWorld.x*.18+plantWorld.z*.14);
+   float flutter=botanicalWave(floraTime*2.8+plantWorld.x*1.7+plantWorld.z*1.2)*.012;
    transformed.x+=gust*plantFlex*.085;
-   transformed.z+=(sin(floraTime*1.2+plantWorld.z*.23)*.045+flutter)*plantFlex;`);
+   transformed.z+=(botanicalWave(floraTime*1.2+plantWorld.z*.23)*.045+flutter)*plantFlex;`);
  };
- material.customProgramCacheKey=()=> '3b-botanical-clusters-3';
+ material.customProgramCacheKey=()=> '3b-botanical-clusters-4';
 }
 
 export function createFlora(region,seed=1,occlusion){
