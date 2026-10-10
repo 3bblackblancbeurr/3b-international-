@@ -1,4 +1,4 @@
-export const INVISIBLE_VIEWS = ['adventure', 'realms', 'journal', 'missions'];
+export const INVISIBLE_VIEWS = ['adventure', 'realms', 'journal', 'missions', 'scanner'];
 
 export function readInvisibleView(location) {
   if (location.hash !== '#monde-invisible') return 'adventure';

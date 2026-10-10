@@ -9,7 +9,7 @@ export default function WorldSettingsPanel({uid,save,saveStatus,saveMessage,rewa
  return <div className="hub-settings">
   <div className="hub-settings-intro"><span className="world-kicker">CITÉ DES HUIT HÉRITAGES</span><h3>À ton rythme.</h3><p>Reprends ton exploration ou ajuste ton confort de jeu.</p></div>
   <div className="hub-settings-primary"><Button className="world-primary" onClick={onResume}><Play size={18}/>Reprendre l’exploration</Button><Button variant="neutral" onClick={onFullscreen}><Maximize size={18}/>Plein écran</Button></div>
-  <Button variant="neutral" onClick={onInvisible}><Compass size={18}/>Le Monde Invisible · le secret du Léman</Button>
+  <Button variant="neutral" onClick={onInvisible}><Compass size={18}/>Le Monde caché · les huit héritages</Button>
   <nav className="hub-settings-shortcuts" aria-label="Carnet du voyageur">{[['atlas',Map,'Atlas'],['journal',BookOpen,'Missions'],['collection',Users,'Compagnons'],['team',Users,'Équipe'],['avatar',Sparkles,'Personnage et armes'],['party',Users,'Groupe'],['gps',Footprints,'Sortie GPS'],...(uid?[['premium',Sparkles,'Premium']]:[])].map(([id,Icon,label])=><Button key={id} variant="neutral" onClick={()=>onPanel(id)}><Icon size={18}/>{label}</Button>)}</nav>
   <WorldSaveStatus status={saveStatus} message={saveMessage} onSync={onSync} onExport={onExport} onAccount={onAccount}/>
   <details className="hub-settings-section"><summary>Confort et accessibilité</summary>

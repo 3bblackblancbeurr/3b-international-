@@ -79,9 +79,9 @@ const BASE_MENU_ITEMS = [
   },
   {
     id: "invisible",
-    label: "Le Monde Invisible",
+    label: "Le Monde caché",
     icon: "⌁",
-    description: "Les secrets du Léman et les huit royaumes.",
+    description: "Les huit héritages, le scanner et tes futures découvertes.",
   },
   {
     id: "nosbloc",
