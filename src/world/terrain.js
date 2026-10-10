@@ -36,7 +36,11 @@ export function landscapeRoads(region){
  if(region==='hub')return metropolisRoadItems(hubPlan).map(r=>({id:r.id,width:r.width,points:[r.from,r.to]}));
  return settlementPlan(region).roads.map(r=>({...r,width:r.width*(BIOMES[region]?.scale||1),points:r.points.map(p=>toLandscape(region,...p))}));
 }
-export function roadDistance(x,z,roads){return Math.min(Infinity,...roads.flatMap(r=>r.points.slice(1).map((b,i)=>segmentDistance(x,z,r.points[i],b)-r.width/2)));}
+export function roadDistance(x,z,roads){
+ let nearest=Infinity;
+ for(const road of roads)for(let i=1;i<road.points.length;i++)nearest=Math.min(nearest,segmentDistance(x,z,road.points[i-1],road.points[i])-road.width/2);
+ return nearest;
+}
 export function landmarkSightline(region){return{a:{x:0,z:5},b:toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z)};}
 export function buildingSites(region,anchors=[]){
  if(region==='hub')return COUNTRIES.map((c,i)=>{const p=hubPortalPosition(c.portal);return{id:c.id,x:p.x+18,z:p.z-18,rotation:-.18+i*.2,variant:i,...buildingDimensions(c.id,i)};});

@@ -25,7 +25,7 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {loadWorldModels} from './models.js';
 import {createLivingActor} from './living.js';
 import {DEFAULT_ORBIT,restoreOrbit,rotateOrbit,zoomOrbit,orbitView} from './orbit.js';
-import {advanceMotion,pointerStick,joystickProfile,sprintIntent,createQualityController,createMotionSmoother} from './motion.js';
+import {createIndexedMotion,pointerStick,joystickProfile,sprintIntent,createQualityController,createMotionSmoother} from './motion.js';
 import {movementHeading} from './heading.js';
 import {COUNTRIES,countryById,cardById} from './catalog.js';
 import {createPortalFrame} from './portals.js';
@@ -59,6 +59,8 @@ import {advancePortalCrossing,initialPortalCrossingState} from './portal-crossin
 import {createAmbientCrowd} from './ambient-crowd.js';
 import {createGameplayMotion,PLAY_ACTIONS,battleAnimation} from './gameplay-motion.js';
 import {loadCameraSensitivity,cameraSensitivity} from './camera-preferences.js';
+import {combatCameraView,createCameraImpulse,masterRenderBudget} from './master-presentation.js';
+import {playAcceptedCombatReaction,createCameraImpulseLayer} from './combat-frame-presentation.js';
 import {createHubLifeInteraction} from './hub/life-interaction.js';
 import {hubPhysicalItemsForLevel,towerDestinationReturnsGround} from './hub/tower-navigation.js';
 
@@ -74,9 +76,9 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  const portraitLight=new THREE.DirectionalLight('#fff1dc',.22);scene.add(portraitLight,portraitLight.target);
  const cinematicBlue=new THREE.PointLight('#58d1ff',0,34,2),cinematicGold=new THREE.PointLight('#e0c486',0,28,2);scene.add(cinematicBlue,cinematicGold);
  sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-36,right:36,top:36,bottom:-36,near:1,far:130});sun.shadow.bias=-.0004;sun.shadow.normalBias=.025;sun.shadow.radius=3;sun.shadow.camera.updateProjectionMatrix();
- const cameraTarget=new THREE.Vector3(),desiredTarget=new THREE.Vector3(),desiredCamera=new THREE.Vector3(),ray=new THREE.Raycaster(),pointer=new THREE.Vector2(),screenPoint=new THREE.Vector3();
+ const cameraTarget=new THREE.Vector3(),desiredTarget=new THREE.Vector3(),desiredCamera=new THREE.Vector3(),sunOffset=new THREE.Vector3(-38,54,35),ray=new THREE.Raycaster(),pointer=new THREE.Vector2(),screenPoint=new THREE.Vector3();
  const screenAnchor=p=>{screenPoint.copy(p);screenPoint.y+=4.5;screenPoint.project(camera);return{x:(screenPoint.x+1)*50,y:(1-screenPoint.y)*50};};
- let staticInstances=null,ambientCrowd=null,cameraSolids=[];
+ let staticInstances=null,ambientCrowd=null,cameraSolids=[],itemsById=new Map();
  let root=new THREE.Group(),resources=[],animations=[],obstacles=[],items=[],portalItems=[],portalFrames=[],region=save.region,worldRadius=worldRadiusFor(save.region),position={x:0,z:5},heading=180,target=null,waypoint=null,route=[];
  let paused=false,presentation=null,npcConversationId=null,disposed=false,held=null,stick={x:0,z:0},keys=new Set(),controls=loadControlBindings(),moving=false,elapsed=0,last=performance.now(),report=0,raf,frames=0,frameTime=0,qualityWarmupUntil=0,fps=60,shadowAt=0;
  let avatar,companion,focusRing,waypointRing,effect,cinematicFx=null,portalMaterials=[],cooldowns=new Map(),itemVisuals=new Map(),cameraMode=0,feedbackAt=-100,feedbackAction='';
@@ -96,6 +98,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  let cameraLookSensitivity=loadCameraSensitivity();
  let qualityMode='auto',cameraFollow=true,manualCameraAt=-Infinity,travelTimer=null,transportRide=null,contextTraversal=null,traversalLift=0,routeSprintUntil=0,lastGroundTapAt=-Infinity,lastCameraTapAt=-Infinity,lastWorldTimeAt=0,lastStreamingAt=0,lastNpcUpdateAt=0,lastHubScheduleKey='',portalCrossing=initialPortalCrossingState(),worldTime=worldTimeSnapshot(),weather=worldWeatherForDate(save.region,new Date()),weatherState=weatherProfile(weather),weatherFx=null,weatherPositions=null;
  try{cameraFollow=localStorage.getItem('3b-world-camera-follow')!=='false';}catch{}
+ const advanceMotion=createIndexedMotion();
  const movementFrame=createMovementFrame(),motionSmoother=createMotionSmoother(),gameplay=createGameplayMotion();
  let playFrame={lift:0,guard:0},freeEffectUntil=0;const freeEffectTarget=new THREE.Vector3();
  let orbit={...DEFAULT_ORBIT},orbitHeld=null,avatarKey='';try{orbit=restoreOrbit(JSON.parse(localStorage.getItem('3b-world-camera')));}catch{}
@@ -106,7 +109,8 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  function endLifeInteraction(){const origin=lifeInteraction.finish();if(origin)position=origin;hero?.setPose?.(null);needsRender=true;}
  function selectTowerFloor(index){if(region!=='hub'||!landscape?.setTowerFloor)return false;endLifeInteraction();clearInput();const selected=landscape.setTowerFloor(index);obstacles=selected?[...(landscape.obstaclesForTowerFloor?.()||[])]:baseHubObstacles||obstacles;const destination=selected||landscape.liftItems?.[0]?.destinations?.[0];if(!destination)return false;position={x:destination.x,z:destination.z};waypoint=null;moving=false;heading=180;shot=null;report=0;needsRender=true;return destination;}
  const visualCapabilities=(mode=qualityMode)=>worldVisualCapabilities({mode,width:canvas.clientWidth,height:canvas.clientHeight,deviceMemory:typeof navigator!=='undefined'?Number(navigator.deviceMemory)||4:4,coarsePointer:window.matchMedia('(pointer: coarse)').matches});
- const combatFx=createCombatEffects({reducedMotion}),threat=createCombatTelegraph({reducedMotion});scene.add(combatFx.root,threat.root);let lastCombat=null;const opponentPosition=new THREE.Vector3();
+ const combatFx=createCombatEffects({reducedMotion}),threat=createCombatTelegraph({reducedMotion,heightAt:(x,z)=>groundY(x,z)}),cameraImpulse=createCameraImpulse({reducedMotion}),cameraImpulseLayer=createCameraImpulseLayer();scene.add(combatFx.root,threat.root);let lastCombat=null;const opponentPosition=new THREE.Vector3();let shadowInvalidated=true,shadowInterval=83;
+ function clearCameraImpulse(){cameraImpulseLayer.remove(camera.position);cameraImpulse.clear();}
  const register=asset=>(resources.push(asset),asset),sceneWetness={value:.06},sceneDaylight={value:1};let sceneWetnessTarget=.06;
  const material=(color,extra={})=>{const key=JSON.stringify([color,extra]);if(!materialCache.has(key)){
   const physical=['clearcoat','transmission','ior','thickness','specularIntensity'].some(key=>extra[key]!==undefined),Material=physical?THREE.MeshPhysicalMaterial:THREE.MeshStandardMaterial;const m=new Material({color,roughness:.8,metalness:.08,...extra});
@@ -253,6 +257,7 @@ function hubNpcAvatar(item){
    staticInstances?.dispose();staticInstances=null;ambientCrowd?.dispose();ambientCrowd=null;portalCrossing=initialPortalCrossingState();portalFrames=[];cameraSolids=[];partyActors?.dispose();partyActors=null;escort?.dispose();escort=null;escortId=null;shot=null;post.setCinematic(null);cinematicBlue.intensity=cinematicGold.intensity=0;cinematicFx=null;fieldRival=null;combatFx.clear();lastCombat=null;
   hero?.dispose();landscape?.dispose();actors.forEach(a=>{a.aura?.dispose();a.controller.dispose();});hubNpcActors.forEach(a=>a.controller?.dispose());actors=[];hubNpcActors=[];hubVehicles=[];hubLodState.clear();transportRide=null;weatherFx=null;weatherPositions=null;scene.remove(root);resources.forEach(r=>r.dispose());resources=[];materialCache=new Map();root=new THREE.Group();scene.add(root);animations=[];portalMaterials=[];obstacles=[];itemVisuals=new Map();battleTarget=null;
   region=nextRegion;worldRadius=worldRadiusFor(region);weather=worldWeatherForDate(region,new Date());weatherState=weatherProfile(weather);lastHubScheduleKey=region==='hub'?hubScheduleClockKey():'';items=worldRuntimeItems(region,save,{weather});portalItems=items.filter(item=>item.type==='portal');sceneWetnessTarget=wetnessForWeather(weather);sceneWetness.value=.06;sceneDaylight.value=worldTime.daylight;position=region==='hub'?{...HUB_PLATFORM.spawn}:{x:0,z:5};heading=180;target=null;route=[];waypoint=null;clearInput();
+  itemsById=new Map(items.map(item=>[item.id,item]));
   const c=countryById[region],biome=BIOMES[region],rng=randomFor(biome.seed),accent=c?.color||'#e4cd94';
   scene.background=new THREE.Color(biome.sky);sky.setRegion(biome);sky.setAtmosphere?.({daylight:worldTime.daylight,weather});scene.fog=new THREE.Fog(0xbacdd6,region==='hub'?300:220,region==='hub'?1350:780);hemi.color.set(biome.sky).lerp(new THREE.Color('#ffffff'),.5);hemi.intensity=.55;sun.intensity=3.5;
   daylight?.dispose();daylight=createDaylight(renderer,biome);scene.environment=sky.environment||daylight.texture;scene.environmentIntensity=.55;
@@ -435,10 +440,11 @@ function hubNpcAvatar(item){
  }
  function applyArtLighting(){
   const light=artLighting(region,worldTime,weatherState);sun.color.set(light.sunColor).lerp(new THREE.Color(worldArtMaterials.sunWarm),light.sunWarmth);sun.intensity=light.sunIntensity;hemi.color.set(light.palette.sky);hemi.groundColor.set(light.palette.ground);hemi.intensity=light.skyIntensity;fill.intensity=light.fillIntensity;scene.environmentIntensity=light.environmentIntensity;renderer.toneMappingExposure=light.exposure;
-  portraitLight.intensity=.18+.12*light.day;if(scene.fog){scene.fog.color.set(light.palette.fog).lerp(new THREE.Color(light.palette.night),1-light.day);scene.fog.near=light.fogNear;scene.fog.far=light.fogFar;}
+  sunOffset.copy(light.keyDirection).multiplyScalar(72);sky.setLighting(light);shadowInvalidated=true;
+  portraitLight.intensity=.20+.10*light.day;if(scene.fog){scene.fog.color.set(light.palette.fog).lerp(new THREE.Color(light.palette.night),1-light.day);scene.fog.near=light.fogNear;scene.fog.far=light.fogFar;}
  }
  let landscapeQualityKey='';
- function resize(){const {width,height}=canvas.getBoundingClientRect();if(width&&height){renderer.setPixelRatio(quality.ratio(width,height,devicePixelRatio||1));renderer.setSize(width,height,false);needsRender=true;camera.aspect=width/height;camera.updateProjectionMatrix();const capabilities=visualCapabilities(qualityMode);post.resize(width,height,renderer.getPixelRatio(),qualityMode,capabilities);const key=JSON.stringify([qualityMode,capabilities]);if(key!==landscapeQualityKey){landscape?.setQuality(qualityMode,capabilities);landscapeQualityKey=key;}}}
+ function resize(){const {width,height}=canvas.getBoundingClientRect();if(width&&height){renderer.setPixelRatio(quality.ratio(width,height,devicePixelRatio||1));renderer.setSize(width,height,false);needsRender=true;camera.aspect=width/height;camera.updateProjectionMatrix();const capabilities=visualCapabilities(qualityMode);post.resize(width,height,renderer.getPixelRatio(),qualityMode,capabilities);sky.setQuality(qualityMode,capabilities);shadowInterval=masterRenderBudget(qualityMode,capabilities).shadowInterval;const key=JSON.stringify([qualityMode,capabilities]);if(key!==landscapeQualityKey){landscape?.setQuality(qualityMode,capabilities);landscapeQualityKey=key;shadowInvalidated=true;}}}
  const observer=new ResizeObserver(resize);observer.observe(canvas);
  function cancelRoutePlan(){routeEpoch++;routePlanner.cancel();}
  function startRoute(destination,interaction=false,run=false){
@@ -454,7 +460,7 @@ function hubNpcAvatar(item){
    accept((interaction?findInteractionPath:findPath)(origin,destination,plannedObstacles,worldRadius));
   });
  }
- function clearInput(){cancelRoutePlan();hero?.cancelAirborne?.();if(gameplay.airborne)hero?.action?.('Idle',.18);combatButton=null;combatClock=0;combatInput.x=combatInput.z=0;gameplay.reset();playFrame={lift:0,guard:0};hero?.setCombat?.({});keys.clear();stick={x:0,z:0};held=null;orbitHeld=null;touchPoints.clear();pinchDistance=null;target=null;route=[];routeSprintUntil=0;movementFrame.reset();motionSmoother.reset();}
+ function clearInput(){clearCameraImpulse();cancelRoutePlan();hero?.cancelAirborne?.();if(gameplay.airborne)hero?.action?.('Idle',.18);combatButton=null;combatClock=0;combatInput.x=combatInput.z=0;gameplay.reset();playFrame={lift:0,guard:0};hero?.setCombat?.({});keys.clear();stick={x:0,z:0};held=null;orbitHeld=null;touchPoints.clear();pinchDistance=null;target=null;route=[];routeSprintUntil=0;movementFrame.reset();motionSmoother.reset();}
  function down(e){
   if(paused||transportRide||contextTraversal||!landscape||e.button>2)return;e.preventDefault();onActivity();canvas.focus({preventScroll:true});canvas.setPointerCapture(e.pointerId);
   const rect=canvas.getBoundingClientRect(),cameraTouch=e.pointerType==='touch'&&e.clientX-rect.left>=rect.width*.52;
@@ -605,7 +611,7 @@ function hubNpcAvatar(item){
     lastStreamingAt=now;
     for(const [id,visuals] of itemVisuals){
      if(!id.startsWith('hub:')||id.startsWith('hub:npc:'))continue;
-     const item=items.find(entry=>entry.id===id);if(!item)continue;
+     const item=itemsById.get(id);if(!item)continue;
      const distanceToItem=Math.hypot(item.x-position.x,item.z-position.z),previousLod=hubLodState.get(id),lod=lodForDistanceHysteresis(distanceToItem,stream,previousLod,.08);
      hubLodState.set(id,lod);visuals.forEach((visual,index)=>{visual.visible=lod<3&&(lod<2||index===0);});
     }
@@ -638,7 +644,7 @@ function hubNpcAvatar(item){
    opponent={...opponent,x:fieldRival.x,z:fieldRival.z};
   }else if(!cinematic)fieldRival=null;
   combatDistance=opponent?Math.hypot(opponent.x-position.x,opponent.z-position.z):Infinity;
-  if(opponent&&!retaliationPlayed&&age>=.32){retaliationPlayed=true;if(lastCombat?.counter){actors.find(a=>a.itemId===opponent.id)?.controller.action('Attack');if(lastCombat.incoming>0&&!lastCombat.defended&&!gameplay.airborne)hero.action('Hit');}}
+  if(opponent&&!retaliationPlayed&&age>=.32){retaliationPlayed=true;playAcceptedCombatReaction(lastCombat,actors.find(a=>a.itemId===opponent.id),hero,{airborne:gameplay.airborne});}
   if(opponent&&!fieldCombat){let ox=opponent.x-position.x,oz=opponent.z-position.z,d=Math.hypot(ox,oz);if(d<.01){ox=0;oz=-1;d=1;}const spacing=Math.max(0,4.5-d),approach=feedbackAction==='guard'||feedbackAction==='dodge'?0:impact*.75;avatar.position.x+=ox/d*(approach-spacing);avatar.position.z+=oz/d*(approach-spacing);if(feedbackAction==='dodge'&&!fieldCombat){avatar.position.x+=oz/d*impact*2.4;avatar.position.z-=ox/d*impact*2.4;}avatar.position.y=groundY(avatar.position.x,avatar.position.z);avatar.rotation.y=Math.atan2(ox,oz);}
   if(escort){
    escort.object.visible=!cinematic&&!transportRide;
@@ -660,7 +666,7 @@ function hubNpcAvatar(item){
   }
   const wide=cameraMode===1,portrait=camera.aspect<.85;
   if(opponent&&!fieldCombat){const mx=(avatar.position.x+opponent.x)/2,mz=(avatar.position.z+opponent.z)/2,my=(avatar.position.y+groundY(opponent.x,opponent.z))/2;desiredTarget.set(mx,my+1.8,mz);desiredCamera.set(mx+(portrait?12:15),my+(portrait?14:11),mz+(portrait?20:18));}
-  else{const cameraGround=transportRide?.transport==='boat'?(x,z)=>referenceWaterClear({x,z},0)?-27:groundY(x,z):groundY,view=orbitView(orbit,position,y,portrait,cameraGround);desiredTarget.copy(view.target);desiredCamera.copy(view.position);}
+  else{const cameraGround=transportRide?.transport==='boat'?(x,z)=>referenceWaterClear({x,z},0)?-27:groundY(x,z):groundY,view=orbitView(orbit,position,y,portrait,cameraGround),framed=fieldCombat&&opponent?combatCameraView(view,avatar.position,{x:opponent.x,y:groundY(opponent.x,opponent.z),z:opponent.z},{enabled:cameraFollow&&!orbitHeld&&now-manualCameraAt>1200,aspect:camera.aspect,fov:camera.fov}):view;desiredTarget.copy(framed.target);desiredCamera.copy(framed.position);desiredCamera.y=Math.max(desiredCamera.y,cameraGround(desiredCamera.x,desiredCamera.z)+1.2);}
   if(shot&&(!reducedMotion||shot.heritage||shot.cinematic)){const age=Math.max(0,Math.min(1,1-(shot.until-now)/shot.duration)),ease=cinematicEase(age),framing=cinematicFraming(shot.kind,age,{reducedMotion}),waterReveal=shot.kind==='world-opening'&&region==='hub',rise=cinematicRiseProgress(age,{waterReveal}),dolly=cinematicDollyProgress(age,{waterReveal}),arc=reducedMotion?0:(shot.arc??.28),a=shot.angle+ease*arc+framing.yawOffset,baseY=groundY(shot.x,shot.z),baseRadius=shot.radius??(shot.heritage?(portrait?118:106):23),radius=Math.max(3,baseRadius*(1-(shot.dolly||0)*dolly)*framing.radiusScale),focusLift=(waterReveal?2.6+(shot.focusY-2.6)*rise:(shot.focusY??(shot.heritage?28:2)))+framing.targetOffset,cameraLift=(waterReveal?4.2+((shot.height??18)-4.2)*rise:(shot.height??(shot.heritage?36:14)))+framing.heightOffset;
     if(shot.cinematic){
      const acting=cinematicActingBeat(shot.kind,age);
@@ -672,7 +678,8 @@ function hubNpcAvatar(item){
      }
     }desiredTarget.set(shot.x,baseY+focusLift,shot.z);desiredCamera.set(shot.x+Math.sin(a)*radius,baseY+cameraLift,shot.z+Math.cos(a)*radius);if(shot.endCamera&&shot.endTarget){const returnBlend=cinematicReturnBlend(age,{waterReveal});desiredCamera.lerp(shot.endCamera,returnBlend);desiredTarget.lerp(shot.endTarget,returnBlend);}if(Number.isFinite(shot.fovStart)){camera.fov=shot.fovStart+(shot.fovEnd-shot.fovStart)*ease;camera.updateProjectionMatrix();}}
 
-  const smoothing=1-Math.exp(-dt*(reducedMotion?20:7));camera.position.lerp(desiredCamera,smoothing);cameraTarget.lerp(desiredTarget,smoothing);if(!shot||shot.cinematic&&!shot.major&&!shot.heritage){const eye=resolveCameraObstruction(cameraTarget,camera.position,cameraSolids);camera.position.copy(eye);}camera.lookAt(cameraTarget);landscape.updateCamera(camera.position,cameraTarget,!shot?.heritage);
+  cameraImpulseLayer.remove(camera.position);
+  const smoothing=1-Math.exp(-dt*(reducedMotion?20:7));camera.position.lerp(desiredCamera,smoothing);cameraTarget.lerp(desiredTarget,smoothing);if(!shot||shot.cinematic&&!shot.major&&!shot.heritage){const eye=resolveCameraObstruction(cameraTarget,camera.position,cameraSolids);camera.position.copy(eye);}cameraImpulseLayer.apply(camera.position,cameraTarget,cameraImpulse.sample(elapsed),{enabled:!shot&&!orbitHeld});camera.lookAt(cameraTarget);landscape.updateCamera(camera.position,cameraTarget,!shot?.heritage);
   portraitLight.position.copy(camera.position);portraitLight.position.y+=5;portraitLight.target.position.copy(avatar.position);portraitLight.target.position.y+=1.5;
   if(shot?.cinematic&&cinematicFx){
    const p=Math.max(0,Math.min(1,1-(shot.until-now)/shot.duration)),fade=Math.sin(Math.PI*p),baseY=groundY(shot.x,shot.z),scale=shot.kind==='world-opening'?10:shot.heritage?8:shot.kind==='final-combat-intro'?5.2:shot.kind==='guardian-intro'?3.8:shot.kind==='memory-fragment'?1.8:2.8;
@@ -680,7 +687,7 @@ function hubNpcAvatar(item){
    cinematicFx.blue.color.set(shot.accent||'#58d1ff');cinematicFx.blue.opacity=.12+.32*fade;cinematicFx.gold.opacity=.08+.26*fade;cinematicFx.pm.opacity=.12+.42*fade;cinematicFx.pm.color.set(shot.secondary||'#e0c486');
    cinematicBlue.color.set(shot.accent||'#58d1ff');cinematicGold.color.set(shot.secondary||'#e0c486');cinematicBlue.position.set(shot.x+4,baseY+5,shot.z+3);cinematicGold.position.set(shot.x-3,baseY+3.2,shot.z-2);const lightPulse=cinematicFraming(shot.kind,p,{reducedMotion}).lightPulse;cinematicBlue.intensity=(shot.major?7.5:4.6)*fade*(1+.26*lightPulse);cinematicGold.intensity=(shot.major?5.2:3.2)*fade*(1+.18*lightPulse);
   }else{if(cinematicFx)cinematicFx.group.visible=false;cinematicBlue.intensity*=.82;cinematicGold.intensity*=.82;}
-  sun.position.set(position.x-38,y+54,position.z+35);sun.target.position.set(position.x,y,position.z);portalMaterials.forEach(mat=>{mat.uniforms.time.value=elapsed;if(mat.uniforms.daylight)mat.uniforms.daylight.value=sceneDaylight.value;});
+  sun.position.set(position.x+sunOffset.x,y+sunOffset.y,position.z+sunOffset.z);sun.target.position.set(position.x,y,position.z);portalMaterials.forEach(mat=>{mat.uniforms.time.value=elapsed;if(mat.uniforms.daylight)mat.uniforms.daylight.value=sceneDaylight.value;});
   for(const a of animations){if(a.type==='float'){a.mesh.position.y=a.y+Math.sin(elapsed*1.5+a.mesh.position.x)*.15;a.mesh.rotation.y+=dt*.3;}if(a.type==='shadow')a.mesh.position.set(avatar.position.x,avatar.position.y+.07,avatar.position.z);if(a.type==='particles')a.mesh.rotation.y=Math.sin(elapsed*.04)*.03;if(a.type==='premiumAura'){a.mesh.rotation.z+=dt*.42;a.mesh.material.opacity=.56+Math.sin(elapsed*2.2)*.14;}if(a.type==='premiumBrokenRing')a.mesh.rotation.z+=dt*.18;if(a.type==='premiumRefuge'){a.mesh.rotation.z+=dt*.12;a.mesh.material.opacity=.48+Math.sin(elapsed*1.25)*.12;}}
   if(weatherFx?.visible&&weatherPositions){weatherFx.position.set(position.x,groundY(position.x,position.z)+1,position.z);for(let i=0;i<weatherPositions.length;i+=3){weatherPositions[i]+=weatherState.wind*dt*2;weatherPositions[i+1]-=weatherState.speed*dt;if(weatherPositions[i+1]<0){weatherPositions[i+1]=32;weatherPositions[i]=(Math.random()-.5)*72;weatherPositions[i+2]=(Math.random()-.5)*72;}}weatherFx.geometry.attributes.position.needsUpdate=true;}
   partyActors?.tick(dt,region);landscape.tick(elapsed,dt,position);landscape.updateDistrict(camera,position);
@@ -690,11 +697,14 @@ function hubNpcAvatar(item){
    const focusActor=combatActive?opponent:shotActive?{x:a.x,z:a.z}:null;
    object.visible=a.itemId==='final'?active:active||!(cooldowns.get(a.itemId)>Date.now())&&Math.hypot(position.x-a.x,position.z-a.z)<190;
    if(!object.visible)continue;
-   const previous=object.position.clone(),wander=!active&&!paused?Math.sin(elapsed*.28+a.x)*.6:0;
+   const previous=a.lastFramePosition||(a.lastFramePosition=new THREE.Vector3());previous.copy(object.position);const wander=!active&&!paused?Math.sin(elapsed*.28+a.x)*.6:0;
    const ax=focusActor?focusActor.x:a.x+wander,az=focusActor?focusActor.z:a.z;
    object.position.set(ax,groundY(ax,az),az);
    a.controller.setLod?.(active?0:Math.hypot(camera.position.x-ax,camera.position.z-az));
    a.controller.setGuardianState?.({liberated:save.seals.includes(a.country),phase:combatActive?bossPresentation?.index||1:1,threat:combatActive&&encounter?.field?.phase==='windup'?1:0,power:combatActive&&encounter?.field?.phase==='recovery'?1:0,projection:a.projection});
+   const acceptedPhase=combatActive&&!encounter?.result&&!encounter?.pact?encounter?.field?.phase:null;
+   if(object.userData.guardianIdentity)a.controller.setGuardianAnticipation?.(acceptedPhase==='windup');
+   a.combatPhase=acceptedPhase;
    a.aura?.tick(elapsed,{liberated:save.seals.includes(a.country),phase:combatActive?bossPresentation?.index||1:1,cinematic:shotActive});
    const movement=object.position.distanceTo(previous);a.controller.update(dt,object.position.x-previous.x,object.position.z-previous.z,movement);
    if(active){if(combatActive){const d=Math.hypot(position.x-ax,position.z-az)||1,response=lastCombat?.counter?retaliation:0;object.position.x+=(position.x-ax)/d*response*.9;object.position.z+=(position.z-az)/d*response*.9;object.rotation.y=Math.atan2(position.x-ax,position.z-az);object.rotation.z=lastCombat?.outgoing?impact*.06:0;}else{object.rotation.y=Math.atan2(camera.position.x-ax,camera.position.z-az);object.rotation.z=0;}}else object.rotation.z=0;
@@ -706,8 +716,8 @@ function hubNpcAvatar(item){
   focusRing.visible=!!closest&&!paused;if(closest)focusRing.position.set(closest.x,groundY(closest.x,closest.z)+.09,closest.z);
   waypointRing.visible=!!waypoint&&!paused&&distance(position,waypoint)>7;if(waypoint)waypointRing.position.set(waypoint.x,groundY(waypoint.x,waypoint.z)+.1,waypoint.z);
   effect.visible=!lastCombat&&age<.65;if(effect.visible){effect.position.set(avatar.position.x,avatar.position.y+.15,avatar.position.z);effect.scale.setScalar(1+age*6);effect.material.opacity=Math.max(0,1-age/.65)*.7;effect.material.color.set(feedbackAction==='guard'?'#a2dff0':'#ffe0a0');}
-  if(renderer.shadowMap.enabled&&(needsRender||now-shadowAt>=50)){renderer.shadowMap.needsUpdate=true;shadowAt=now;}
-  sky.update(camera,reducedMotion?0:elapsed);landscape?.renderWaterReflection?.(renderer,scene,camera,elapsed);renderer.info.reset();post.render(dt);report-=dt;
+  if(renderer.shadowMap.enabled&&(shadowInvalidated||now-shadowAt>=shadowInterval)){renderer.shadowMap.needsUpdate=true;shadowAt=now;shadowInvalidated=false;}
+  sky.update(camera,reducedMotion?0:elapsed,dt);landscape?.renderWaterReflection?.(renderer,scene,camera,elapsed);renderer.info.reset();post.render(dt);report-=dt;
   if(report<=0||needsRender){
    report=(moving||held?.drag)?.1:.4;
    const evolution=hubEvolutionState(hubPlan,{seals:save.seals,restoredRegions:Object.entries(save.adventure.chapters||{}).filter(([,c])=>c.restored===3).map(([id])=>id)});
@@ -735,7 +745,7 @@ function hubNpcAvatar(item){
   combatAction,
   canBattle(action){return !['strike','power','wait'].includes(action)||combatDistance<=(action==='power'?22:action==='wait'?8:7.5);},
   setPaused(value){if(value)endLifeInteraction();paused=value;needsRender=true;last=performance.now();frames=frameTime=0;if(value){clearInput();cancelContextTraversal();}},
-  setPresentation(value){presentation=value;if(value!=='encounter')combatFx.clear();needsRender=true;},
+  setPresentation(value){presentation=value;if(value!=='encounter'){combatFx.clear();clearCameraImpulse();for(const actor of actors)actor.controller.setGuardianAnticipation?.(false);}needsRender=true;},
   performTraversal(actionId,item){
    if(paused||transportRide||contextTraversal||!isPhysicalTraversalAction(actionId)||save.adventure.encounter?.field)return Promise.resolve(false);
    let plan=traversalPlan(actionId,position,item,heading,worldRadius);if(!plan)return Promise.resolve(false);
@@ -760,13 +770,20 @@ function hubNpcAvatar(item){
    feedbackAt=elapsed;feedbackAction=action||type;lastCombat=null;
    if(!next?.adventure.encounter?.field&&type==='battle'&&action==='dodge'&&fieldRival){const x=position.x-fieldRival.x,z=position.z-fieldRival.z,len=Math.hypot(x,z)||1;const dodge=advanceMotion({position,target:null,route:[]},{x:z/len,z:-x/len},.2,20,obstacles,worldRadius);position=dodge.position;}
    if(type==='battle'){
-    lastCombat=combatCue(previous?.adventure.encounter,next?.adventure.encounter,action,next?.adventure.avatar);combatFx.start(lastCombat,elapsed);retaliationPlayed=false;
+    lastCombat=combatCue(previous?.adventure.encounter,next?.adventure.encounter,action,next?.adventure.avatar);combatFx.start(lastCombat,elapsed);cameraImpulse.start(lastCombat,elapsed);
     // Impacts keep the airborne legs intact; accepted voluntary gestures use
     // the independent upper-body layer while Jump keeps its original clock.
-    const animation=battleAnimation(action,gameplay.airborne),field=next?.adventure.encounter?.field;
+    const e=next?.adventure.encounter,field=e?.field,reactive=field&&['enemy','miss'].includes(action);
+    const animation=reactive?null:battleAnimation(action,gameplay.airborne);
     if(gameplay.airborne&&['strike','guard','power'].includes(action))hero?.airAction?.(battleAnimation(action,false),action==='guard'&&field?field.guard/1000:PLAY_ACTIONS[action]?.duration);
     else if(animation)hero?.action(animation,animation==='Guard'&&field?field.guard/1000:undefined);
-    const e=next?.adventure.encounter,rival=actors.find(a=>a.itemId===battleTarget?.id||(!battleTarget&&a.itemId===items.find(i=>e?.patrol?i.type==='patrol':i.card===e?.card)?.id));if(lastCombat?.outgoing)rival?.controller.action(e?.result==='victory'?'Death':'Hit');
+    const rivalItem=e?.final?items.find(i=>i.type==='final'):e?.patrol?items.find(i=>i.type==='patrol'):battleTarget?.card===e?.card?battleTarget:items.find(i=>i.card===e?.card);
+    const rival=actors.find(a=>a.itemId===rivalItem?.id);
+    if(lastCombat?.outgoing)rival?.controller.action(e?.result==='victory'?'Death':'Hit');
+    // The accepted field event is already the reaction. Dispatch it now,
+    // before another player's action can replace this frame's cue.
+    retaliationPlayed=!!field||!lastCombat?.counter;
+    if(field)playAcceptedCombatReaction(lastCombat,rival,hero,{airborne:gameplay.airborne});
    }else if(type==='power'&&!gameplay.airborne)hero?.action('Cast');
    needsRender=true;
   },
@@ -834,6 +851,7 @@ function hubNpcAvatar(item){
    const liveNpcs=new Map(hubNpcActors.map(actor=>[actor.item.id,actor.item]));
    items=nextItems.map(item=>{const live=liveNpcs.get(item.id);if(!live)return item;const x=live.x,z=live.z,homeX=live.homeX,homeZ=live.homeZ;Object.assign(live,item,{x,z,homeX,homeZ});return live;});
   }else items=nextItems;
+  itemsById=new Map(items.map(item=>[item.id,item]));
   portalItems=items.filter(item=>item.type==='portal');syncRealmMarkers();
   if(models)for(const item of items){if(!['echo','patrol'].includes(item.type)||previousItems.find(i=>i.id===item.id)?.card===item.card)continue;const old=actors.find(a=>a.itemId===item.id);if(old){old.controller.object.removeFromParent();old.aura?.dispose();old.controller.dispose();actors=actors.filter(a=>a!==old);}itemVisuals.set(item.id,[makeActor(item)]);}needsRender=true;},
   travel(id){if(!models)return;cancelContextTraversal();clearTimeout(travelTimer);paused=true;clearInput();onLoadState?.(true);travelTimer=setTimeout(()=>{if(disposed)return;try{rebuild(countryById[id]?id:'hub');

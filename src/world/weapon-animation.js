@@ -10,9 +10,9 @@ const basePoses={
 };
 
 const weaponPoses={
- paris:{Light:{Thrust:[.04,-.2,0]},Heavy:{Thrust:[.18,-.34,0], upperarm_r:[-.72,.02,-.34],lowerarm_r:[-.12,-.02,0]}},
- scissors:{Light:{Split:[0,.31,0],upperarm_l:[-.2,.32,.7]},Heavy:{Split:[.18,.12,0],upperarm_r:[-.55,-.17,-.75],lowerarm_r:[-.42,0,0]}},
- axe:{Light:{Bash:[.22,-.16,0],upperarm_r:[-.58,.18,-.31],lowerarm_r:[-.5,0,0]},Heavy:{Bash:[.31,-.08,0],upperarm_r:[-.64,.06,-.41],lowerarm_r:[-.98,0,0]}},
+ paris:{Light:{spine_02:[.04,-.2,0]},Heavy:{spine_02:[.18,-.34,0], upperarm_r:[-.72,.02,-.34],lowerarm_r:[-.12,-.02,0]}},
+ scissors:{Light:{spine_02:[0,.31,0],upperarm_l:[-.2,.32,.7]},Heavy:{spine_02:[.18,.12,0],upperarm_r:[-.55,-.17,-.75],lowerarm_r:[-.42,0,0]}},
+ axe:{Light:{spine_02:[.22,-.16,0],upperarm_r:[-.58,.18,-.31],lowerarm_r:[-.5,0,0]},Heavy:{spine_02:[.31,-.08,0],upperarm_r:[-.64,.06,-.41],lowerarm_r:[-.98,0,0]}},
  claws:{Light:{upperarm_r:[-.46,-.03,.02],lowerarm_r:[-.1,0,0],spine_02:[.03,.07,0]},Heavy:{upperarm_r:[-.7,-.15,.18],lowerarm_r:[-.44,0,0],spine_02:[.14,.2,0]}},
  thread:{Light:{upperarm_r:[-.32,.13,-.4],lowerarm_r:[-.03,-.07,0],spine_02:[.02,-.1,0]},Heavy:{upperarm_r:[-.22,.09,-.65],lowerarm_r:[-.26,-.06,0],spine_02:[.14,.06,0]}},
  bow:{Light:{upperarm_r:[-.48,-.24,-.1],lowerarm_r:[.1,.08,0],spine_02:[-.08,0,0],upperarm_l:[-.18,-.03,.33],lowerarm_l:[-.25,.14,0]},Heavy:{upperarm_r:[-.58,-.28,-.16],lowerarm_r:[.08,.1,0],spine_02:[-.02,-.05,0],upperarm_l:[-.08,-.02,.43],lowerarm_l:[-.41,.16,0]}},
@@ -23,7 +23,12 @@ function addBoneOffset(base, bone, delta=[0,0,0]){
  return [...base.slice(0,3).map((v,i)=>v+(delta[i]||0))];
 }
 
-function createClip(base,name,idle,times=[0,.18,.38,.55,.78,1],weights=name==='Guard'?[0,1,1,1,1,1]:[0,-.22,1,.8,.25,0]){
+function createClip(base,name,idle){
+ // Preparation, contact and recovery remain visual poses. Hits use the
+ // accepted combat clock, never an animation's keyframe or local timer.
+ const guard=name==='Guard',heavy=/Heavy|Rake|Long|Release|Dive/.test(name);
+ const times=guard?[0,.18,.38,.55,.78,1]:heavy?[0,.21,.38,.52,.8,1]:[0,.16,.32,.46,.7,1];
+ const weights=guard?[0,1,1,1,1,1]:heavy?[0,-.3,1,.72,.13,0]:[0,-.24,1,.58,.1,0];
  const tracks=idle.tracks.filter(t=>! /^(root|pelvis|thigh_|calf_|foot_|ball_)/.test(t.name)).map(t=>{
   const bone=t.name.replace('.quaternion','');
   if(!base[bone]||!t.name.endsWith('.quaternion'))return t.clone();

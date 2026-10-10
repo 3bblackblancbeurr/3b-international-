@@ -1,6 +1,7 @@
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {hoodGeometry,hoodHemGeometry} from './hood.js';
+import {prepareTintMaterial} from './avatar-material.js';
 
 /** Rigid armour parts share the human skeleton and are batched into four
  * skinned draws. There is no per-stud/plate draw and no second skeleton. */
@@ -10,10 +11,11 @@ export function fitGuardianAppearance(model,identity,{reducedMotion=false}={}){
  if(!source)return null;
  const originalMeshes=[];model.traverse(o=>{if(o.isMesh)originalMeshes.push({object:o,visible:o.visible});});
  const skeleton=source.skeleton,materials=[],geometry=[],meshes=[],batches=new Map(),lowBatches=new Map(),lowMeshes=[],owned=new T.Group(),lowObject=new T.Group();owned.name=identity.name+' · armure';lowObject.name=identity.name+' · silhouette distante';lowObject.visible=false;model.add(owned,lowObject);
- const material=(name,color,metalness=.65,roughness=.36)=>{const m=new T.MeshStandardMaterial({name,color,metalness,roughness});materials.push(m);return m;};
- const plate=material('guardian-plate',identity.plate,.78,.34),gold=material('guardian-gold',identity.trim,.73,.33),cloth=material('guardian-collar',identity.cape,0,.85),hair=material('guardian-hair',identity.hairColor,0,.9);
+ const material=(name,color,surface='metal')=>{const m=new T.MeshStandardMaterial({name,color});prepareTintMaterial(m,{surface,tint:false,fabric:'satin'});materials.push(m);return m;};
+ const plate=material('guardian-plate',identity.plate),gold=material('guardian-gold',identity.trim),cloth=material('guardian-collar',identity.cape,'cloth'),hair=material('guardian-hair',identity.hairColor,'hair');
+ plate.roughness=.43;gold.roughness=.34;
  const spot=name=>{const bone=model.getObjectByName(name);return bone?model.worldToLocal(bone.getWorldPosition(new T.Vector3())):new T.Vector3();};
- const head=spot('Head'),chest=spot('spine_03'),waist=spot('pelvis');
+ const head=spot('Head'),neck=spot('neck_01'),chest=spot('spine_03'),waist=spot('pelvis');
  function add(g,mat,boneName,p,scale=[1,1,1],rotation=[0,0,0],target=batches){
   const bone=skeleton.bones.findIndex(b=>b.name===boneName);if(bone<0){g.dispose();return;}
   g.applyMatrix4(new T.Matrix4().compose(p,new T.Quaternion().setFromEuler(new T.Euler(...rotation)),new T.Vector3(...scale)));
@@ -34,21 +36,45 @@ export function fitGuardianAppearance(model,identity,{reducedMotion=false}={}){
   if(points.length===2){const a=points[0],b=points[1],delta=b.clone().sub(a),g=new T.CylinderGeometry(r,r,delta.length(),6);g.applyQuaternion(new T.Quaternion().setFromUnitVectors(new T.Vector3(0,1,0),delta.normalize()));return add(g,mat,boneName,a.clone().add(b).multiplyScalar(.5));}
   return add(new T.TubeGeometry(new T.CatmullRomCurve3(points),Math.max(8,points.length*5),r,5,false),mat,boneName,new T.Vector3());
  }
- const breastplate=new T.SphereGeometry(1,24,14,0,Math.PI,.35,Math.PI-.62),positions=breastplate.attributes.position;
- for(let i=0;i<positions.count;i++){const y=positions.getY(i);positions.setX(i,positions.getX(i)*(1-.18*Math.max(0,-y)));}breastplate.computeVertexNormals();
+ const breastplate=new T.SphereGeometry(1,28,16,0,Math.PI,.35,Math.PI-.62),positions=breastplate.attributes.position;
+ // A forged central ridge and a tapered waist replace the uniformly rounded
+ // shell. Its relief catches the same moving lights as the actual metal.
+ for(let i=0;i<positions.count;i++){
+  const x=positions.getX(i),y=positions.getY(i),z=positions.getZ(i);
+  positions.setX(i,x*(1-.26*Math.max(0,-y)));
+  positions.setZ(i,z+.1*Math.exp(-x*x*45)*(1-y*y));
+ }breastplate.computeVertexNormals();
  add(breastplate,plate,'spine_03',at(chest,0,-.035,.07),[.21,.255,.12]);
- const platePoint=(x,y)=>at(chest,x,y,.081+.12*Math.sqrt(Math.max(0,1-(x/.21)**2-((y+.035)/.255)**2)));
+ const platePoint=(x,y)=>{const yy=(y+.035)/.255,width=.21*(1-.26*Math.max(0,-yy));return at(chest,x,y,.081+.12*Math.sqrt(Math.max(0,1-(x/width)**2-yy*yy))+.012*Math.exp(-((x/width)**2)*45)*(1-yy*yy));};
+ // Rolled neck guard, fluted cuirass and articulated joints are part of the
+ // existing metal batches, with no per-rivet or per-layer draw calls.
+ add(new T.CylinderGeometry(.083,.115,.067,20,1,true),plate,'spine_03',at(neck,0,-.025,.014),[1,1,.84]);
+ for(const y of [-.059,.008])add(new T.TorusGeometry(y<0?.115:.083,.0045,5,24),gold,'spine_03',at(neck,0,y,.014),[1,1,.84],[Math.PI/2,0,0]);
+ for(const side of [-1,1]){
+  for(const offset of [.04,.085])line([platePoint(side*offset,-.205),platePoint(side*(offset+.009),-.09),platePoint(side*(offset+.034),.045)],.004,plate);
+  line([platePoint(side*.09,.095),platePoint(side*.05,.15),platePoint(0,.177)],.0045,gold);
+ }
  // Curved gilt borders, central heraldry and asymmetric layered shoulders.
  for(const side of [-1,1]){
   line([platePoint(side*.105,-.22),platePoint(side*.195,-.055),platePoint(side*.14,.12)],.0055,gold);
   line([platePoint(side*.03,-.22),platePoint(side*.055,-.07),platePoint(side*.12,.06)],.0035,gold);
   const suffix=side<0?'r':'l',shoulder=spot('upperarm_'+suffix),forearm=spot('lowerarm_'+suffix),shin=spot('calf_'+suffix);
   for(let layer=0;layer<3;layer++){
-   add(new T.SphereGeometry(1,12,6,0,Math.PI*2,0,Math.PI*.65),layer===1?gold:plate,'upperarm_'+suffix,at(shoulder,side*(.03+layer*.03),-.013-layer*.035,0),[.15-layer*.016,.088,.15-layer*.007]);
+   const shell=new T.SphereGeometry(1,14,7,0,Math.PI*2,0,Math.PI*.65),p=shell.attributes.position;
+   for(let i=0;i<p.count;i++){const z=p.getZ(i);p.setZ(i,z*(1-.12*Math.abs(p.getX(i))));}shell.computeVertexNormals();
+   add(shell,layer===1?gold:plate,'upperarm_'+suffix,at(shoulder,side*(.03+layer*.03),-.013-layer*.035,0),[.15-layer*.016,.088,.15-layer*.007]);
   }
+  // Front rim and recessed fasteners make the layered shoulder readable in
+  // motion, while leaving the top of the joint free for a raised guard.
+  line([at(shoulder,side*.01,.022,.138),at(shoulder,side*.085,-.02,.138),at(shoulder,side*.135,-.072,.104)],.0045,gold,'upperarm_'+suffix);
+  for(const offset of [.02,.09])add(new T.SphereGeometry(.007,6,4),gold,'upperarm_'+suffix,at(shoulder,side*offset,-.043,.139));
   add(new T.CylinderGeometry(.073,.061,.165,10,1,true),plate,'lowerarm_'+suffix,at(forearm,side*.135,0,0),[1,1,1],[0,0,Math.PI/2]);
   for(const offset of [.06,.2])add(new T.TorusGeometry(.07,.009,4,16),gold,'lowerarm_'+suffix,at(forearm,side*offset,0,0),[1,1,1],[0,Math.PI/2,0]);
+  add(new T.SphereGeometry(1,10,7),plate,'lowerarm_'+suffix,at(forearm,side*.022,0,.017),[.043,.078,.066]);
+  line([at(forearm,side*.064,-.002,.072),at(forearm,side*.13,-.004,.07),at(forearm,side*.197,-.006,.061)],.0045,gold,'lowerarm_'+suffix);
   add(new T.SphereGeometry(1,10,6),plate,'calf_'+suffix,at(shin,0,-.17,.072),[.064,.18,.035]);
+  add(new T.SphereGeometry(1,10,6),plate,'calf_'+suffix,at(shin,0,-.016,.055),[.077,.07,.038]);
+  line([at(shin,0,-.054,.107),at(shin,0,-.17,.109),at(shin,0,-.31,.091)],.0035,gold,'calf_'+suffix);
   for(const y of [-.045,-.3])add(new T.TorusGeometry(.058,.006,4,16),gold,'calf_'+suffix,at(shin,0,y,.008),[1,1,1],[Math.PI/2,0,0]);
   // Tassets articulate with the upper leg, leaving a knee and stride gap.
   const thigh=spot('thigh_'+suffix);for(let j=0;j<3;j++){
@@ -88,7 +114,7 @@ export function fitGuardianAppearance(model,identity,{reducedMotion=false}={}){
   const shape=new T.Shape();[[-.075,.015],[-.043,-.044],[0,-.055],[.043,-.044],[.075,.015],[.056,.025],[0,.003],[-.056,.025]].forEach(([x,y],i)=>i?shape.lineTo(x,y):shape.moveTo(x,y));shape.closePath();
   add(new T.ExtrudeGeometry(shape,{depth:.006,bevelEnabled:true,bevelSize:.003,bevelThickness:.003,bevelSegments:1}),hair,'Head',at(head,0,-.013,.091));
  }
- const lowSkin=material('guardian-lod-skin',identity.skinColor,0,.86);
+ const lowSkin=material('guardian-lod-skin',identity.skinColor,'skin');
  const low=(g,mat,boneName,p,scale=[1,1,1],rotation=[0,0,0])=>add(g,mat,boneName,p,scale,rotation,lowBatches);
  low(new T.SphereGeometry(1,10,7),lowSkin,'Head',at(head,0,.11,.005),[.088,.131,.081]);
  low(new T.SphereGeometry(1,10,5,0,Math.PI*2,0,Math.PI*.55),hair,'Head',at(head,0,.155,-.012),[.094,.092,.088]);

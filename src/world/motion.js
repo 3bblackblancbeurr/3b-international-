@@ -1,4 +1,16 @@
 import {distance,moveWithCollision} from './rules.js';
+import {spatialObstacles} from './hub/spatial-obstacles.js';
+
+// A scene owns its cache; replacing the scenery or changing floors selects a
+// fresh index. The original narrow phase and 12 cm collision steps are retained.
+export function createIndexedMotion(){
+ const indices=new WeakMap();
+ return (state,input,seconds,speed,obstacles,radius=76)=>{
+  let entry=indices.get(obstacles);
+  if(!entry||entry.length!==obstacles.length){entry={length:obstacles.length,nearby:spatialObstacles(obstacles)};indices.set(obstacles,entry);}
+  return advanceMotion(state,input,seconds,speed,obstacles,radius,(p,dx,dz)=>moveWithCollision(p,dx,dz,entry.nearby(p),radius));
+ };
+}
 
 // Consume distance in small collision steps. Arrival uses the remaining distance,
 // so a slow frame cannot skip a waypoint or alternate around the destination.

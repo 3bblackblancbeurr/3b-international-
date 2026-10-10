@@ -58,7 +58,7 @@ function identity(b){
  * their canonical navigation footprints; repeated facade detail is concentrated
  * into strong storey bands so the complete city remains mobile-safe. */
 export function addPlatformArchitecture({mesh,geo,box,cylinder,sphere,materials,buildings,collisions,cameraSolids=[],sign}){
- const {dark,gold,blue,glass,stone,green}=materials,mapSites=[];
+ const {dark,gold,blue,glass,stone,green}=materials,windowGlass=materials.windowGlass||glass,mapSites=[];
  for(const b of buildings){
   const x=b.buildingX,z=b.buildingZ,w=b.width,d=b.depth,h=b.height,rear=z-d/2-4;
   const {height,profile,style}=identity(b),shaftW=w*.72,shaftD=4;
@@ -72,7 +72,7 @@ export function addPlatformArchitecture({mesh,geo,box,cylinder,sphere,materials,
    const level=floorCount===1?height*.5:2+floor*Math.max(1,height-4)/(floorCount-1),s=scaleAt(profile,level/height),span=shaftW*s,depth=shaftD*s;
    for(const side of [-1,1]){
     const front=civicGlazingGeometry(shaftW,shaftD,height,profile,level,side,'z',.72,1.8);
-    if(front){mesh(geo(front),glass,x,h,rear);mesh(geo(civicGlazingFrameGeometry(front)),gold,x,h,rear);}
+    if(front){mesh(geo(front),windowGlass,x,h,rear);mesh(geo(civicGlazingFrameGeometry(front)),gold,x,h,rear);}
    }
    if(floor===Math.floor(floorCount/2))mesh(geo(civicShaftGeometry(span+.24,depth+.24,.12,[[0,1],[1,1]])),gold,x,h+level+.88,rear);
   }
@@ -111,7 +111,7 @@ export function addPlatformArchitecture({mesh,geo,box,cylinder,sphere,materials,
    const floorCount=3;
    for(let f=0;f<floorCount;f++){
     const y=2+f*Math.max(1,h-4)/(floorCount-1),s=scaleAt(profile,y/h);
-    for(const face of [-1,1]){const glazing=civicGlazingGeometry(8,9,h,profile,y,face,'z',.72,1.8);if(glazing){mesh(geo(glazing),glass,tx,0,tz);mesh(geo(civicGlazingFrameGeometry(glazing)),gold,tx,0,tz);}}
+    for(const face of [-1,1]){const glazing=civicGlazingGeometry(8,9,h,profile,y,face,'z',.72,1.8);if(glazing){mesh(geo(glazing),windowGlass,tx,0,tz);mesh(geo(civicGlazingFrameGeometry(glazing)),gold,tx,0,tz);}}
     if(f===1)mesh(geo(civicShaftGeometry(8*s+.22,9*s+.22,.12,[[0,1],[1,1]])),gold,tx,y+.9,tz);
    }
    const top=profile.at(-1)[1];mesh(geo(civicShaftGeometry(8*top+.5,9*top+.5,.32,[[0,1],[1,1]])),gold,tx,h,tz);

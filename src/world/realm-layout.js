@@ -1,4 +1,6 @@
 import {REALM_MASTER_SPEC,targetRealmRadius} from './realm-master-spec.js';
+import {createVillageFurnitureLayout} from './realm-village-layout.js';
+import {obstacleDistance} from './collision.js';
 
 /** Playable territory measurements, in game units. These are compact artistic
  * interpretations, never a geographic map or a claim of real country size. */
@@ -116,7 +118,10 @@ export function realmMonumentObstacles(region){return realmSites(region).filter(
  if(s.kind==='lighthouse'||s.kind==='windmill')return[{id:s.id+':monument',x,z,width:13,depth:11,height:26,rotation:0}];
  return [{id:s.id+':monument',x,z,width:26,depth:19,height:22,rotation:0}];
 });}
-export const realmStaticObstacles=region=>[...realmBuildings(region).map(b=>({...b})),...realmMonumentObstacles(region),...realmSites(region).filter(s=>s.kind==='guardianCourt').flatMap(s=>REALM_COURT_COLUMNS.map((p,i)=>({id:s.id+':column:'+i,x:s.x+p.x,z:s.z+p.z,width:3.6,depth:3.6,height:9,rotation:0})))];
+const realmStructuralObstacles=region=>[...realmBuildings(region).map(b=>({...b})),...realmMonumentObstacles(region),...realmSites(region).filter(s=>s.kind==='guardianCourt').flatMap(s=>REALM_COURT_COLUMNS.map((p,i)=>({id:s.id+':column:'+i,x:s.x+p.x,z:s.z+p.z,width:3.6,depth:3.6,height:9,rotation:0})))];
+const furnitureCache=new Map();
+export function realmStreetFurniture(region){if(!realmLayout(region))return[];if(!furnitureCache.has(region))furnitureCache.set(region,createVillageFurnitureLayout(realmLayout(region),realmStructuralObstacles(region)));return furnitureCache.get(region);}
+export const realmStaticObstacles=region=>[...realmStructuralObstacles(region),...realmStreetFurniture(region).map(p=>({...p}))];
 export function realmCampaignPosition(region,index=0){
  const sites=realmSites(region),site=index===3?sites.find(s=>s.kind==='guardianCourt'):sites.find(s=>s.id.endsWith('province-'+Math.max(0,Math.min(2,index))));
  return site?{...site.campaign,site:site.id,province:site.province,name:site.name}:{x:0,z:5};
@@ -126,9 +131,8 @@ export function realmNavigationItems(region){return realmSites(region).map(site=
 export function realmCivilianRoadItems(region){
  return realmSites(region).filter(s=>s.kind!=='terminal'&&s.kind!=='guardianCourt').flatMap(s=>[-1,0,1].map(i=>({id:s.id+':civilian:'+i,type:'hubRoad',kind:'street',width:5,from:{x:s.x+i*9,z:s.z-28},to:{x:s.x+i*9,z:s.z+29}})));
 }
-function signedDistance(p,b){const c=Math.cos(b.rotation||0),s=Math.sin(b.rotation||0),dx=p.x-b.x,dz=p.z-b.z,x=Math.abs(dx*c-dz*s)-b.width/2,z=Math.abs(dx*s+dz*c)-b.depth/2;return Math.hypot(Math.max(x,0),Math.max(z,0))+Math.min(0,Math.max(x,z));}
 export function realmPositionValid(region,point,padding=.9){
- const size=realmDimensions(region);return !!size&&!!point&&Number.isFinite(point.x)&&Number.isFinite(point.z)&&Math.hypot(point.x,point.z)<=size.radius-padding&&!realmStaticObstacles(region).some(b=>signedDistance(point,b)<padding);
+ const size=realmDimensions(region);return !!size&&!!point&&Number.isFinite(point.x)&&Number.isFinite(point.z)&&Math.hypot(point.x,point.z)<=size.radius-padding&&!realmStaticObstacles(region).some(b=>obstacleDistance(point,b)<padding);
 }
 export function safeRealmPosition(region,point){
  if(realmPositionValid(region,point))return{x:point.x,z:point.z};
