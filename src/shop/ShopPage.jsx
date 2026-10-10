@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { ShoppingBag, ShieldCheck, ArrowLeft, Trash2, CheckCircle2, Truck, BadgeCheck, Maximize2, X } from "lucide-react";
 import { CART_KEY, PENDING_KEY, readStored, writeStored, sanitizeCart, subtractPurchased } from "./cart.js";
 import "./shop.css";
+import {hasPassportAccess} from "../passport/access.js";
 import {useLoyalty} from "../loyalty/LoyaltyContext.jsx";
 import {checkoutAuth} from "../loyalty/client.js";
 import {discountFor} from "../../shared/loyalty.js";
@@ -132,7 +133,7 @@ function PullPreview() {
         <div className="shop-product-price"><strong>80,00 €</strong><span>TTC · livraison France incluse</span></div>
         <CountryChoices />
         <div className="shop-delivery-note"><Truck size={18} aria-hidden="true" /> Après paiement : prise en charge sous 5 jours maximum, puis expédition sous 2 jours.</div>
-        <div className="shop-preview-status"><BadgeCheck size={18} aria-hidden="true" /> Présentation en ligne. Le bouton de paiement s’active uniquement quand Stripe et les paramètres vendeur sont complètement validés.</div>
+        <div className="shop-preview-status"><BadgeCheck size={18} aria-hidden="true" /> Découvre la collection 3B. Les commandes ne sont pas encore ouvertes.</div>
         <button type="button" className="shop-button" disabled><ShoppingBag size={18} aria-hidden="true" /> Paiement bientôt disponible</button>
       </div>
     </article>
@@ -222,6 +223,7 @@ export default function ShopPage({ goTo, reducedMotion = false }) {
     setNotice(`${product.name} · ${variantLabel(product)} ajouté au panier.`);
   }
   async function checkout() {
+    if (!hasPassportAccess(account.passport)) { goTo("member"); return; }
     if (submitting.current || !catalog?.enabled || invalidCart || !cart.length || resolvingPayment) return;
     submitting.current = true; setBusy(true); setCheckoutError("");
     const snapshot = cart.map(row => ({ ...row }));
@@ -333,7 +335,7 @@ export default function ShopPage({ goTo, reducedMotion = false }) {
             disabled={busy || resolvingPayment || !catalog?.enabled || !cart.length || invalidCart || !!loadError}>
             <ShieldCheck size={19} aria-hidden="true" /> {busy ? "Ouverture du paiement…" : "Passer au paiement"}
           </button>
-          {catalog?.enabled ? <p className="shop-muted">Paiement sécurisé par Stripe. Le prix et la variante sont vérifiés côté serveur avant d’ouvrir Stripe.</p>
+          {catalog?.enabled ? <p className="shop-muted">Paiement sécurisé. Vérifie ton article, sa taille et le montant avant de continuer.</p>
             : <p className="shop-muted">Le produit est présenté en ligne. Le paiement reste verrouillé tant que la configuration serveur et les informations vendeur ne sont pas complètes.</p>}
           {checkoutError && <div role="alert"><p className="shop-error">{checkoutError}</p>
             <button type="button" className="shop-text-button" onClick={() => setReload(n => n + 1)}>Actualiser la collection</button></div>}

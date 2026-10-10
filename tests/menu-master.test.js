@@ -18,12 +18,12 @@ const fixtures=[
 ];
 
 test('the principal menu has four clear destinations and every supplied route remains discoverable',()=>{
- assert.deepEqual(PRINCIPAL_DESTINATIONS.map(item=>item.label),['Accueil','Passeport','Monde 3B','Boutique']);
+ assert.deepEqual(PRINCIPAL_DESTINATIONS.map(item=>item.label),['Accueil','Scanner','Monde 3B','Boutique']);
  assert.deepEqual(itemsForCategory(fixtures,'principal').map(item=>item.id),['home','passport','world3b','shop']);
  const reachable=new Set(MENU_CATEGORIES.flatMap(category=>itemsForCategory(fixtures,category.id).map(item=>item.id)));
- for(const item of fixtures)assert.ok(reachable.has(item.id),item.id+' remains available');
+ for(const item of fixtures.filter(item=>item.status!=='soon'))assert.ok(reachable.has(item.id),item.id+' remains available');
  assert.ok(itemsForCategory(fixtures,'world').some(item=>item.id==='invisible'));
- assert.equal(itemsForCategory(fixtures,'world').find(item=>item.id==='games').status,'soon','A preview keeps its availability status');
+ assert.equal(reachable.has('games'),false,'Unavailable spaces stay outside the live menu');
  assert.ok(NAV_GROUPS.find(group=>group.title==='Univers 3B').ids.includes('invisible'));
 });
 
@@ -35,7 +35,7 @@ test('categories and global accent-insensitive search never manufacture private 
  assert.deepEqual(searchNavigation(fixtures,'ENIGMES').map(item=>item.id),['invisible']);
  assert.deepEqual(searchNavigation(fixtures,'monde invisible').map(item=>item.id),['invisible']);
  assert.equal(searchNavigation(fixtures,'aucune rubrique possible').length,0);
- assert.equal(searchNavigation(fixtures,'  ').length,navigationItems(fixtures).length);
+ assert.equal(searchNavigation(fixtures,'  ').length,navigationItems(fixtures).filter(item=>item.status!=='soon').length);
 });
 
 test('current pages choose their category and new supplied destinations have a fallback',()=>{

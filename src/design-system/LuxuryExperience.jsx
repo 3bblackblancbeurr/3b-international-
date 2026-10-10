@@ -4,7 +4,7 @@ import EntryAtmosphere from './EntryAtmosphere.jsx';
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { SlidersHorizontal, X } from 'lucide-react';
 import { Button } from './index.jsx';
-import { DEFAULT_OPTIONS, loadJsonStorage, STORAGE_OPTIONS_KEY } from '../lib/member.js';
+import { DEFAULT_OPTIONS, OPTION_LABELS, loadJsonStorage, STORAGE_OPTIONS_KEY } from '../lib/member.js';
 import { experiencePolicy, markIntroSeen, MOTION, surfaceTilt } from './experience-policy.js';
 import { createInterfaceSound, interfaceSoundIntent, companionActionCue, canonicalInterfaceCue, SOUND_ACTION_SELECTOR, COMPANION_SPEAKING_EVENT, COMPANION_ACTION_EVENT, INTERFACE_SOUND_EVENT } from '../audio/interface-sound.js';
 import { enterIntroImmersive, exitIntroImmersive } from '../native/immersive.js';
@@ -151,12 +151,12 @@ export function ExperienceControls({ options, toggleOption, page, inline = false
   };
   useEffect(() => { if (disclosure.current) disclosure.current.open = false; }, [page]);
   const Container = inline ? "section" : "details";
-  return <Container className={inline ? "luxury-controls luxury-controls-inline" : "luxury-controls"} ref={disclosure} onKeyDown={event => { if (event.key === 'Escape') { disclosure.current.open = false; disclosure.current.querySelector('summary')?.focus(); } }}>
+  return <Container className={inline ? "luxury-controls luxury-controls-inline" : "luxury-controls"} ref={disclosure} onKeyDown={event => { if (!inline && event.key === 'Escape') { disclosure.current.open = false; disclosure.current.querySelector('summary')?.focus(); } }}>
     {!inline && <summary aria-label="Paramètres de l’application" data-companion-settings-trigger><SlidersHorizontal size={18}/><span>Paramètres</span></summary>}
     <div className="luxury-controls-panel">
       <strong>À ton rythme.</strong><p>Une même identité. Ton confort.</p>
       <CompanionPresenceControl/>
-      {[['interfaceSound', 'Sons de l’interface'], ['haptics', 'Vibrations au toucher'], ['reducedMotion', 'Réduire les mouvements']].map(([key, label]) =>
+      {[['interfaceSound', 'Sons de l’interface'], ['haptics', 'Vibrations au toucher'], ['reducedMotion', 'Réduire les mouvements'], ['animations', OPTION_LABELS.animations], ['matrix', OPTION_LABELS.matrix], ['premiumGlow', OPTION_LABELS.premiumGlow], ['cinematicIntros', OPTION_LABELS.cinematicIntros]].map(([key, label]) =>
         <Button key={key} variant="ghost" data-sound-toggle={key === 'interfaceSound' ? key : undefined} onClick={() => toggleOption(key)} aria-pressed={options[key]}>{label}<span>{options[key] ? 'Oui' : 'Non'}</span></Button>)}
       {options.interfaceSound && <Button variant="ghost" data-sound="entry">Écouter la signature 3B<span aria-hidden="true">♫</span></Button>}
       <p>Des sons discrets pour tes actions. La voix se choisit dans les réglages de ton compagnon.</p>

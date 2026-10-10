@@ -1,6 +1,6 @@
 export const PRINCIPAL_DESTINATIONS=Object.freeze([
  {id:'home',label:'Accueil'},
- {id:'passport',label:'Passeport'},
+ {id:'invisible',label:'Scanner'},
  {id:'world3b',label:'Monde 3B'},
  {id:'shop',label:'Boutique'},
 ]);
@@ -18,7 +18,7 @@ export const MENU_CATEGORIES=Object.freeze([
  {id:'principal',label:'Essentiel',ids:['home','passport','world3b','shop']},
  {id:'world',label:'Monde',ids:['world3b','invisible','secret','games','nosbloc','arena']},
  {id:'account',label:'Compte',ids:['member','passport','loyalty','control']},
- {id:'discover',label:'Autres',ids:['guide','community','manga','religion','sport','ia']},
+ {id:'discover',label:'Repères',ids:['guide','community','manga','religion','sport','ia']},
  {id:'settings',label:'Réglages',ids:[]},
 ]);
 
@@ -32,7 +32,7 @@ export function navigationItems(menuItems=[]){
 }
 
 export function itemsForCategory(menuItems,categoryId){
- const items=navigationItems(menuItems),category=MENU_CATEGORIES.find(item=>item.id===categoryId);
+ const items=navigationItems(menuItems).filter(item=>item.status!=='soon'),category=MENU_CATEGORIES.find(item=>item.id===categoryId);
  if(!category)return [];
  const ordered=category.ids.map(id=>items.find(item=>item.id===id)).filter(Boolean);
  return categoryId==='discover'?[...ordered,...items.filter(item=>!assignedIds.has(item.id))]:ordered;
@@ -40,7 +40,7 @@ export function itemsForCategory(menuItems,categoryId){
 
 export function searchNavigation(menuItems,query){
  const words=normalized(query).trim().split(/\s+/).filter(Boolean);
- return navigationItems(menuItems).filter(item=>{
+ return navigationItems(menuItems).filter(item=>item.status!=='soon').filter(item=>{
   const text=normalized(`${item.id} ${item.label} ${item.description||''}`);
   return words.every(word=>text.includes(word));
  });

@@ -47,3 +47,15 @@ test('a normal click and a new-tab link use the same destination without duplica
     else globalThis.window = previousWindow;
   }
 });
+
+// Camera entry is a normal link: it works with history and in a new tab.
+test('direct scanner links preserve campaign params and choose the camera view',()=>{
+ const source=new URL('https://3b.example/jeux/penalty-rush?checkout=success&campaign=summer');
+ const destination=new URL(getPageHref('scanner',source),source);
+ assert.equal(readLocation(destination).page,'invisible');
+ assert.equal(destination.pathname,'/');
+ assert.equal(destination.searchParams.get('invisibleView'),'scanner');
+ assert.equal(destination.searchParams.get('campaign'),'summer');
+ assert.equal(destination.searchParams.has('checkout'),false);
+ assert.equal(new URL(getPageHref('home',destination),destination).searchParams.has('invisibleView'),false);
+});

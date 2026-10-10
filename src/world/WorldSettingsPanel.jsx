@@ -1,4 +1,5 @@
 import React from 'react';
+import {openApplicationMenu} from '../components/application-menu-events.js';
 import {Button} from '../design-system/index.jsx';
 import {Play,Map,Users,Maximize,Compass,ArrowLeft,Download,RotateCcw,Sparkles,Volume2,Footprints,BookOpen} from 'lucide-react';
 import WorldSaveStatus from './WorldSaveStatus.jsx';
@@ -8,7 +9,7 @@ const keyName=key=>({shift:'Maj',' ':'Espace',arrowup:'↑',arrowdown:'↓',arro
 export default function WorldSettingsPanel({uid,save,saveStatus,saveMessage,rewardMessage,snapshot,onPanel,onResume,onFullscreen,onCamera,onExit,onInvisible,onAccount,onSync,onExport,onImport,sound,onSound,haptics,onHaptics,soundCaptions,onSoundCaptions,difficulty,onDifficulty,quality,onQuality,sensitivity,onSensitivity,onFollow,audioMix,onAudio,onAudioPreset,controls,onControl,onControlProfile,onEditTouchLayout,companionVisible,onCompanion}){
  return <div className="hub-settings">
   <div className="hub-settings-intro"><span className="world-kicker">CITÉ DES HUIT HÉRITAGES</span><h3>À ton rythme.</h3><p>Reprends ton exploration ou ajuste ton confort de jeu.</p></div>
-  <div className="hub-settings-primary"><Button className="world-primary" onClick={onResume}><Play size={18}/>Reprendre l’exploration</Button><Button variant="neutral" onClick={onFullscreen}><Maximize size={18}/>Plein écran</Button></div>
+  <div className="hub-settings-primary"><Button variant="ghost" onClick={()=>openApplicationMenu()}>Menu 3B</Button><Button variant="ghost" onClick={()=>openApplicationMenu('settings')}>Réglages de l’application</Button><Button className="world-primary" onClick={onResume}><Play size={18}/>Reprendre l’exploration</Button><Button variant="neutral" onClick={onFullscreen}><Maximize size={18}/>Plein écran</Button></div>
   <Button variant="neutral" onClick={onInvisible}><Compass size={18}/>Le Monde caché · les huit héritages</Button>
   <nav className="hub-settings-shortcuts" aria-label="Carnet du voyageur">{[['atlas',Map,'Atlas'],['journal',BookOpen,'Missions'],['collection',Users,'Compagnons'],['team',Users,'Équipe'],['avatar',Sparkles,'Personnage et armes'],['party',Users,'Groupe'],['gps',Footprints,'Sortie GPS'],...(uid?[['premium',Sparkles,'Premium']]:[])].map(([id,Icon,label])=><Button key={id} variant="neutral" onClick={()=>onPanel(id)}><Icon size={18}/>{label}</Button>)}</nav>
   <WorldSaveStatus status={saveStatus} message={saveMessage} onSync={onSync} onExport={onExport} onAccount={onAccount}/>

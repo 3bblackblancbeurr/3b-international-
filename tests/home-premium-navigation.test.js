@@ -43,7 +43,8 @@ test('community and textile AI remain explicitly staged as coming soon',()=>{
  for(const label of ['Communauté','Espace textile & IA']){
   assert.match(app,new RegExp('label: "'+label+'"[\\s\\S]{0,90}status: "soon"'));
  }
- assert.match(nav,/item\.status === ['"]soon['"]/);
+ assert.doesNotMatch(nav,/app-menu-upcoming/);
+ assert.equal(PRINCIPAL_DESTINATIONS.find(item=>item.label==='Scanner')?.id,'invisible');
 });
 
 test('home presents one cinematic world entry without the legacy atlas and pylons',()=>{

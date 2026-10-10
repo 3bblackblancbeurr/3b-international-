@@ -27,7 +27,7 @@ test('Command OS stays mobile-first while remaining responsive for the owner on 
  assert.match(css,/\.control-page\.is-desktop/);
  assert.match(css,/@media \(pointer:coarse\)/);
  assert.match(app,/\['world3b','arena','game','control','invisible'\]/);
- assert.match(app,/passportAllowed = new Set\(\["home", "passport", "member", "religion", "control"\]\)/);
+ assert.match(app,/passportAllowed = new Set\(\["home", "passport", "member", "religion", "control", "shop", "guide", "invisible"\]\)/);
 });
 
 test('Command OS V2 exposes a truthful Nexus, privacy mode and fact-only brief',()=>{
