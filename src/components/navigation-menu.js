@@ -15,7 +15,7 @@ export const NAV_GROUPS=Object.freeze([
 ]);
 
 export const MENU_CATEGORIES=Object.freeze([
- {id:'principal',label:'Essentiel',ids:['home','passport','world3b','shop']},
+ {id:'principal',label:'Essentiel',ids:['home','invisible','world3b','shop']},
  {id:'world',label:'Monde',ids:['world3b','invisible','secret','games','nosbloc','arena']},
  {id:'account',label:'Compte',ids:['member','passport','loyalty','control']},
  {id:'discover',label:'Repères',ids:['guide','community','manga','religion','sport','ia']},
@@ -34,20 +34,21 @@ export function navigationItems(menuItems=[]){
 export function itemsForCategory(menuItems,categoryId){
  const items=navigationItems(menuItems).filter(item=>item.status!=='soon'),category=MENU_CATEGORIES.find(item=>item.id===categoryId);
  if(!category)return [];
- const ordered=category.ids.map(id=>items.find(item=>item.id===id)).filter(Boolean);
+ const ordered=category.ids.map(id=>items.find(item=>item.id===id)).filter(Boolean).map(item=>categoryId==='principal'&&item.id==='invisible'?{...item,label:'Scanner',description:'Faire apparaître une scène autour de toi.',target:'scanner'}:item);
  return categoryId==='discover'?[...ordered,...items.filter(item=>!assignedIds.has(item.id))]:ordered;
 }
 
 export function searchNavigation(menuItems,query){
  const words=normalized(query).trim().split(/\s+/).filter(Boolean);
  return navigationItems(menuItems).filter(item=>item.status!=='soon').filter(item=>{
-  const text=normalized(`${item.id} ${item.label} ${item.description||''}`);
+  const text=normalized(`${item.id} ${item.label} ${item.description||''} ${item.id==='invisible'?'scanner caméra réalité augmentée':''}`);
   return words.every(word=>text.includes(word));
  });
 }
 
 export function categoryForPage(page,menuItems){
  const active=page.startsWith('ia-')?'ia':page;
+ if(active==='invisible')return 'world';
  return MENU_CATEGORIES.find(category=>itemsForCategory(menuItems,category.id).some(item=>item.id===active))?.id||'principal';
 }
 

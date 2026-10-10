@@ -155,7 +155,7 @@ export default function AppNavigation({ page, title, menuItems, goTo, secret, op
           {installation && <InstallApp installation={installation}/>}
         </div> : <div className="app-menu-list">
           {!searching && currentCategory.id === 'world' && secret && <div className="app-menu-secret"><SecretClock secret={secret} goTo={navigate} compact /></div>}
-          {matching.map(item => <RouteLink key={item.id} page={item.id} goTo={navigate} className="app-menu-route" data-menu-id={item.id} aria-current={activePage === item.id ? "page" : undefined}>
+          {matching.map(item => <RouteLink key={item.id} page={item.target || item.id} goTo={navigate} className="app-menu-route" data-menu-id={item.id} aria-current={activePage === item.id ? "page" : undefined}>
             <SectionIcon page={item.id}/><span className="app-menu-route-copy"><strong>{item.label}</strong><small>{item.description}</small></span>
             <span className="app-menu-route-status">{activePage === item.id ? 'Page actuelle' : item.status === 'preview' ? 'Aperçu' : undefined}</span>
             <ChevronRight size={18} aria-hidden="true" />

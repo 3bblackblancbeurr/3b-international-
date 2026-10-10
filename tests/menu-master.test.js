@@ -19,7 +19,7 @@ const fixtures=[
 
 test('the principal menu has four clear destinations and every supplied route remains discoverable',()=>{
  assert.deepEqual(PRINCIPAL_DESTINATIONS.map(item=>item.label),['Accueil','Scanner','Monde 3B','Boutique']);
- assert.deepEqual(itemsForCategory(fixtures,'principal').map(item=>item.id),['home','passport','world3b','shop']);
+ assert.deepEqual(itemsForCategory(fixtures,'principal').map(item=>item.id),['home','invisible','world3b','shop']);
  const reachable=new Set(MENU_CATEGORIES.flatMap(category=>itemsForCategory(fixtures,category.id).map(item=>item.id)));
  for(const item of fixtures.filter(item=>item.status!=='soon'))assert.ok(reachable.has(item.id),item.id+' remains available');
  assert.ok(itemsForCategory(fixtures,'world').some(item=>item.id==='invisible'));
@@ -32,6 +32,8 @@ test('categories and global accent-insensitive search never manufacture private 
  assert.equal(searchNavigation(fixtures,'command').length,0);
  const authorized=[...fixtures,{id:'control',label:'3B Command OS',description:'Centre privé'}];
  assert.equal(itemsForCategory(authorized,'account').filter(item=>item.id==='control').length,1);
+ assert.deepEqual(searchNavigation(fixtures,'scanner').map(item=>item.id),['invisible']);
+ assert.equal(itemsForCategory(fixtures,'principal').find(item=>item.id==='invisible').target,'scanner');
  assert.deepEqual(searchNavigation(fixtures,'ENIGMES').map(item=>item.id),['invisible']);
  assert.deepEqual(searchNavigation(fixtures,'monde invisible').map(item=>item.id),['invisible']);
  assert.equal(searchNavigation(fixtures,'aucune rubrique possible').length,0);

@@ -36,6 +36,7 @@ try{
   check(`Dialog fits viewport ${viewport.width}`,await dialog.evaluate(e=>{const r=e.getBoundingClientRect();return r.left>=0&&r.top>=0&&r.right<=innerWidth+1&&r.bottom<=innerHeight+1;}));
   await page.screenshot({path:out+'/menu-principal-'+viewport.width+'.png'});
   check(`Category names fit without horizontal scrolling ${viewport.width}`,await dialog.locator('.app-menu-categories').evaluate(e=>e.scrollWidth<=e.clientWidth+1));
+  check(`Category labels remain on one readable line ${viewport.width}`,await dialog.locator('.app-menu-categories button').evaluateAll(buttons=>buttons.every(button=>{const range=document.createRange();range.selectNodeContents(button);return new Set([...range.getClientRects()].map(rect=>Math.round(rect.top))).size<=1;})));
   await dialog.getByRole('tab',{name:'Monde',exact:true}).click();
   check(`Hidden world accessible ${viewport.width}`,await dialog.locator('[data-menu-id="invisible"]').isVisible());
   check(`Unfinished games omitted from current menu ${viewport.width}`,await dialog.locator('[data-menu-id="games"]').count()===0);
