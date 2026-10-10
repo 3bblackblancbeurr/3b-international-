@@ -16,6 +16,12 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    sourceSets {
+        main {
+            // Canonical shader artwork shared with the web preview.
+            assets.srcDir file("../../src/world/invisible/ar-assets")
+        }
+    }
     buildTypes {
         debug {
             applicationIdSuffix ".arpreview"
