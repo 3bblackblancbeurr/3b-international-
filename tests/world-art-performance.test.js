@@ -5,6 +5,7 @@ import {createCameraObstructionResolver,resolveCameraObstruction} from '../src/w
 import {createRealmArchitecture} from '../src/world/realm-architecture.js';
 import {REALM_PROVINCES,realmCivilianRoadItems,realmStaticObstacles} from '../src/world/realm-layout.js';
 import {createCivilianRoutes,civilianRoutePoint,civilianRoutine,civilianHeading} from '../src/world/ambient-civilian-routes.js';
+import {createQualityController} from '../src/world/motion.js';
 import {obstacleDistance} from '../src/world/collision.js';
 
 test('camera broad phase exactly preserves rotated walls, interior cutaways, cell crossings and live disabled gates',()=>{
@@ -88,4 +89,15 @@ test('residents brake continuously, face a companion or visitor, then turn befor
  const before=civilianHeading(agent,civilianRoutine(agent,24-dt),null),after=civilianHeading(agent,civilianRoutine(agent,24+dt),null);
  assert.ok(Math.abs(Math.sin(before)-Math.sin(after))<.001&&Math.abs(Math.cos(before)-Math.cos(after))<.001,'No snapped half turn on departure');
  assert.equal(civilianHeading(agent,stopped,visitor,false),0,'Reduced motion freezes idle turning');
+});
+
+
+test('automatic quality still reduces rendering load below one frame per second and ignores invalid samples',()=>{
+ const q=createQualityController('auto'),ratio=()=>q.ratio(1280,800,1),start=ratio();
+ assert.equal(Math.round(1/3),0,'The old display label loses a real slow-frame sample');
+ assert.equal(q.sampleFrames(1,3),true);assert.ok(ratio()<start,'A multi-second frame must trigger load reduction');
+ for(let i=0;i<8;i++)q.sampleFrames(1,3);assert.equal(ratio(),.6,'Repeated stalls reach the existing lower bound');
+ for(const [frames,seconds] of [[0,3],[-1,3],[NaN,3],[1,0],[1,Infinity],[1,-3]])assert.equal(q.sampleFrames(frames,seconds),false);
+ for(let i=0;i<12;i++)q.sampleFrames(60,1);assert.ok(ratio()>.6,'Sustained recovery still restores quality gradually');
+ const fluid=createQualityController('fluid');assert.equal(fluid.sampleFrames(1,3),false,'Explicit user quality remains fixed');
 });

@@ -534,7 +534,7 @@ function hubNpcAvatar(item){
    needsRender=true;
   }
   if(!paused&&!shot){
-   if(now<qualityWarmupUntil){frames=0;frameTime=0;}else{frames++;frameTime+=rawDt;}if(frameTime>=1){fps=Math.round(frames/frameTime);if(quality.sample(fps,frameTime))resize();frames=0;frameTime=0;}
+   if(now<qualityWarmupUntil){frames=0;frameTime=0;}else{frames++;frameTime+=rawDt;}if(frameTime>=1){fps=Math.round(frames/frameTime);if(quality.sampleFrames(frames,frameTime))resize();frames=0;frameTime=0;}
    if(lifeInteraction.active){const pose=lifeInteraction.sample(elapsed);position={x:pose.x,z:pose.z};heading=pose.heading;hero?.setPose?.(pose.pose,{seatHeight:pose.seatHeight});hero?.face?.(Math.sin(pose.heading*Math.PI/180),Math.cos(pose.heading*Math.PI/180),dt);moving=false;}else if(contextTraversal){
     const current=contextTraversal,previous=position,pose=traversalPose(current.plan,now-current.started);
     position={x:pose.x,z:pose.z};traversalLift=pose.lift;dx=position.x-previous.x;dz=position.z-previous.z;travelled=Math.hypot(dx,dz);moving=!pose.done;
