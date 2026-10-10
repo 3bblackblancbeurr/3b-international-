@@ -1,7 +1,7 @@
 import React,{useEffect,useRef,useState} from 'react';
 import * as THREE from 'three';
-import vertexShader from '../../../android/app/src/main/assets/hidden-ar/portal.vert?raw';
-import fragmentShader from '../../../android/app/src/main/assets/hidden-ar/portal.frag?raw';
+import vertexShader from './ar-assets/hidden-ar/portal.vert?raw';
+import fragmentShader from './ar-assets/hidden-ar/portal.frag?raw';
 
 // The preview and native Android module use the exact same portal shader artwork.
 // This is a 3D preview, never a simulated camera or a claim of spatial tracking.
