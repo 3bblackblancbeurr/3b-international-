@@ -46,6 +46,7 @@ try{
   await page.getByTestId('invisible-nav-realms').click();assert.equal(await page.locator('.hidden-realm').count(),8);await page.locator('.hidden-realm').first().click();await page.getByRole('dialog').waitFor();await page.keyboard.press('Escape');assert.equal(await page.getByRole('dialog').count(),0);
   await page.getByTestId('invisible-nav-scanner').click();
   assert.equal(await page.locator('.hidden-camera-portal').count(),0,'No screen-fixed camera overlay');
+  await page.getByRole('button',{name:'Passage 3D',exact:true}).click();
   await page.getByRole('button',{name:'Découvrir le passage en 3D',exact:true}).click();await page.locator('.hidden-passage-stage.is-preview canvas').waitFor();
   await page.waitForTimeout(700);assert.equal(await page.evaluate(()=>window.__cameraCalls),0,'3D visit must not request camera');
   await page.locator('.hidden-passage-stage').screenshot({path:path.join(out,'passage-'+width+'.png')});
@@ -57,6 +58,17 @@ try{
   await page.waitForFunction(()=>!document.querySelector('.hidden-spatial-hud.is-active'));
   assert.equal(await page.evaluate(()=>window.__cameraCalls),0,'Unsupported XR must not substitute an overlay');
   assert.equal(await page.locator('.hidden-passage-stage canvas').count(),0);
+  await page.getByRole('button',{name:'Apparition animée',exact:true}).click();
+  await page.getByRole('button',{name:'Découvrir l’apparition en 3D',exact:true}).click();
+  await page.locator('.hidden-passage-stage[data-ready="true"]').waitFor({timeout:30000});await page.waitForTimeout(350);
+  assert.equal(await page.evaluate(()=>window.__cameraCalls),0,'Apparition visit needs no camera');
+  await page.locator('.hidden-passage-stage').screenshot({path:path.join(out,'apparition-'+width+'.png')});
+  await page.getByRole('button',{name:'Animations arrêtées',exact:true}).click();await page.waitForTimeout(2000);
+  await page.getByRole('button',{name:'Pause',exact:true}).click();assert.equal(await page.getByRole('button',{name:'Reprendre',exact:true}).getAttribute('aria-pressed'),'true');
+  await page.locator('.hidden-passage-stage').screenshot({path:path.join(out,'apparition-animated-'+width+'.png')});
+  await page.getByRole('button',{name:'Relancer',exact:true}).click();assert.equal(await page.getByRole('button',{name:'Pause',exact:true}).getAttribute('aria-pressed'),'false');
+  await page.getByRole('button',{name:'Fermer la visite 3D',exact:true}).click();assert.equal(await page.locator('.hidden-passage-stage canvas').count(),0);
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
   await page.locator('.hidden-photo-tools > summary').click();
   await page.getByRole('button',{name:'Ouvrir la caméra',exact:true}).click();await page.waitForFunction(()=>document.querySelector('.hidden-scanner video')?.readyState>=2);
   await page.getByRole('button',{name:'Prendre une photo',exact:true}).click();await page.locator('.hidden-viewfinder img').waitFor();assert.equal(await page.evaluate(()=>document.querySelector('.hidden-scanner video').srcObject),null);

@@ -1,0 +1,11 @@
+# Apparition animée du scanner
+
+Le scanner propose une apparition humaine 3D et le passage existant. La scène utilise une ancre WebXR ; l’animation déplace seulement le personnage dans le repère de cette ancre. La scène compacte mesure environ 36 cm et le placement libre reste à 55 cm.
+
+L’apparition utilise `public/world/living/traveller-0.glb`, modèle déjà livré dans 3B : adaptation locale d’une source Quaternius CC0, crédits dans `public/world/living/CREDITS.txt`. Les textures de surface et les normales sont conservées sous un traitement bleu cyan avec silhouette lumineuse, transparence, fines lignes et particules. Ce modèle ne constitue pas une nouvelle sculpture photoréaliste correspondant aux références envoyées par Zakaria. Le service de génération n’a pas livré de modèle pendant cette intervention.
+
+La séquence dure 11,2 secondes : apparition, présence, geste Interact, marche latérale de 7 cm, retour du regard et disparition. Elle ne contient ni voix enregistrée, ni reconnaissance de dessin, ni énigme. Pause, relance et désactivation des mouvements sont disponibles. Le réglage système de réduction des mouvements est respecté par défaut ; une activation explicite reste possible.
+
+Chargement tardif après fermeture, interruption de rendu, erreur de téléchargement et perte de suivi sont traités. L’horloge est suspendue hors suivi et pendant le chargement ; une reprise ne rattrape pas le temps passé en arrière-plan. Les téléchargements tardifs sont détruits après fermeture. La visite sans caméra vérifie le modèle, les matériaux et les animations ; elle ne valide pas le suivi spatial sur un téléphone réel.
+
+La cible artistique premium n’est pas déclarée atteinte : un personnage sculpté spécifiquement, des animations faciales et vocales produites, une occlusion réelle et une validation sur Samsung restent nécessaires pour une apparition correspondant exactement aux références. Le parcours actuel ne propose aucune substitution collée à la caméra en cas d’absence de WebXR.
