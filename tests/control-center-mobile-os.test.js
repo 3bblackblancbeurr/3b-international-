@@ -26,7 +26,7 @@ test('Command OS stays mobile-first while remaining responsive for the owner on 
  assert.match(css,/prefers-reduced-motion/);
  assert.match(css,/\.control-page\.is-desktop/);
  assert.match(css,/@media \(pointer:coarse\)/);
- assert.match(app,/\['world3b','arena','game','control'\]/);
+ assert.match(app,/\['world3b','arena','game','control','invisible'\]/);
  assert.match(app,/passportAllowed = new Set\(\["home", "passport", "member", "religion", "control"\]\)/);
 });
 
