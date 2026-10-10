@@ -124,7 +124,7 @@ html[data-luxury="v2"] body .hub-settings .world-audio-slider input { min-height
  html[data-luxury="v2"] body .app3b[data-page] .app-menu-heading { padding-top: 22px; padding-bottom: 16px; }
  html[data-luxury="v2"] body .app3b[data-page] .app-menu-heading h2 { font-size: 28px; }
  html[data-luxury="v2"] body .app3b[data-page] .app-menu-categories { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 4px; padding-inline: 8px; overflow-x: visible; }
- html[data-luxury="v2"] body .app3b[data-page] .app-menu-categories > button { min-width: 0; width: 100%; padding-inline: 2px; font-size: 12px; white-space: normal; overflow-wrap: anywhere; line-height: 1.4; }
+ html[data-luxury="v2"] body .app3b[data-page] .app-menu-categories > button { min-width: 0; width: 100%; padding-inline: 2px; font-size: 12px; letter-spacing: normal; white-space: nowrap; overflow-wrap: normal; line-height: 1.4; }
  html[data-luxury="v2"] body .app3b[data-page] .app-menu-route-status { display: none; }
  html[data-luxury="v2"] body .app3b[data-page] .app-menu-route[aria-current="page"] .app-menu-route-copy strong::after { content: ' · ici'; color: var(--3b-muted); font-size: 11px; }
  html[data-luxury="v2"] body .app3b[data-page] .account-entry { gap: 28px; }
