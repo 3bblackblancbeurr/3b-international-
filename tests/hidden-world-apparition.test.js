@@ -26,3 +26,12 @@ test('late model downloads are disposed after closing, and failed downloads repo
  const art=createApparitionArt({load:()=>pending,onReady:()=>ready++});art.dispose();resolve(a);await art.promise;assert.equal(disposed,1);assert.equal(ready,0);
  let errors=0;const bad=createApparitionArt({load:async()=>{throw Error('offline');},onError:()=>errors++});await bad.promise;assert.equal(errors,1);assert.equal(bad.ready,false);bad.dispose();
 });
+
+import {readApparitionDepth} from '../src/world/invisible/apparition-depth.js';
+test('optional depth accepts only bounded CPU float metre data and drops missing, invalid or GPU readings',()=>{
+ const session={depthUsage:'cpu-optimized',depthDataFormat:'float32'},reference={},view={},depth={width:2,height:2,data:new Float32Array([.4,.5,.6,.7]).buffer,rawValueToMeters:1,normDepthBufferFromNormView:{matrix:new THREE.Matrix4().toArray()}},frame={getViewerPose:()=>({views:[view]}),getDepthInformation:v=>{assert.equal(v,view);return depth;}};
+ assert.equal(readApparitionDepth(frame,session,reference).data[0],new Float32Array([.4])[0]);
+ assert.equal(readApparitionDepth(frame,{...session,depthUsage:'gpu-optimized'},reference),null);
+ assert.equal(readApparitionDepth({...frame,getDepthInformation:()=>null},session,reference),null);
+ depth.rawValueToMeters=NaN;assert.equal(readApparitionDepth(frame,session,reference),null);depth.rawValueToMeters=1;depth.width=99999;assert.equal(readApparitionDepth(frame,session,reference),null);
+});

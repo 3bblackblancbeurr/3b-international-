@@ -60,7 +60,7 @@ try{
   assert.equal(await page.locator('.hidden-passage-stage canvas').count(),0);
   await page.getByRole('button',{name:'Apparition animée',exact:true}).click();
   await page.getByRole('button',{name:'Découvrir l’apparition en 3D',exact:true}).click();
-  await page.locator('.hidden-passage-stage[data-ready="true"]').waitFor({timeout:30000});await page.waitForTimeout(350);
+  await page.locator('.hidden-passage-stage[data-ready="true"]').waitFor({timeout:30000}).catch(async error=>{console.error(await page.locator('.hidden-inline-status').allTextContents(),errors);throw error;});await page.waitForTimeout(350);
   assert.equal(await page.evaluate(()=>window.__cameraCalls),0,'Apparition visit needs no camera');
   await page.locator('.hidden-passage-stage').screenshot({path:path.join(out,'apparition-'+width+'.png')});
   await page.getByRole('button',{name:'Animations arrêtées',exact:true}).click();await page.waitForTimeout(2000);

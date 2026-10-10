@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {apparitionPose,createApparitionClock} from './apparition-sequence.js';
 function disposeModel(model){
  const geometry=new Set(),materials=new Set(),textures=new Set();
@@ -7,9 +8,10 @@ function disposeModel(model){
  geometry.forEach(x=>x.dispose());materials.forEach(x=>x.dispose());textures.forEach(x=>x.dispose());
 }
 /** Existing licensed 3B human, full rig and surface maps; no flat portrait. */
-export function createApparitionArt({onReady=()=>{},onError=()=>{},onPhase=()=>{},load=url=>new GLTFLoader().loadAsync(url)}={}){
+export function createApparitionArt({onReady=()=>{},onError=()=>{},onPhase=()=>{},load=url=>new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(url)}={}){
  const root=new THREE.Group(),body=new THREE.Group(),clock=createApparitionClock();root.add(body);
- const uniforms={time:{value:0},fade:{value:0}},materials=[];
+ let depthTexture=new THREE.DataTexture(new Float32Array([0]),1,1,THREE.RedFormat,THREE.FloatType);depthTexture.minFilter=depthTexture.magFilter=THREE.NearestFilter;depthTexture.needsUpdate=true;
+ const uniforms={time:{value:0},fade:{value:0},depth:{value:depthTexture},depthOn:{value:0},depthMatrix:{value:new THREE.Matrix4()},depthScale:{value:1},viewport:{value:new THREE.Vector4(0,0,1,1)}},materials=[];
  let disposed=false,model=null,mixer=null,ready=false,current=null,lastTime=null,animated=true,lastPhase='',actions={};
  const particlesGeometry=new THREE.BufferGeometry(),points=[];
  for(let i=0;i<150;i++){const angle=i*2.399,rad=.018+((i*17)%101)/101*.09;points.push(Math.cos(angle)*rad,((i*29)%151)/151*.39-.19,Math.sin(angle)*rad);}
@@ -32,11 +34,12 @@ export function createApparitionArt({onReady=()=>{},onError=()=>{},onPhase=()=>{
    o.material=[o.material].flat().map(material=>{
     const m=material.clone();material.dispose();m.transparent=true;m.depthWrite=false;m.side=THREE.FrontSide;m.roughness=.55;m.metalness=.12;
     m.onBeforeCompile=shader=>{
-     shader.uniforms.holoTime=uniforms.time;shader.uniforms.holoFade=uniforms.fade;
-     shader.vertexShader='varying vec3 holoWorld;varying vec3 holoNormal;\n'+shader.vertexShader;
-     shader.vertexShader=shader.vertexShader.replace('#include <project_vertex>','holoWorld=(modelMatrix*vec4(transformed,1.0)).xyz;holoNormal=normalize(mat3(modelMatrix)*objectNormal);\n#include <project_vertex>');
-     shader.fragmentShader='uniform float holoTime;uniform float holoFade;varying vec3 holoWorld;varying vec3 holoNormal;\n'+shader.fragmentShader;
-     shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>',`float rim=pow(1.0-abs(dot(normalize(holoNormal),normalize(cameraPosition-holoWorld))),2.4);
+     shader.uniforms.holoTime=uniforms.time;shader.uniforms.holoFade=uniforms.fade;shader.uniforms.holoDepth=uniforms.depth;shader.uniforms.holoDepthOn=uniforms.depthOn;shader.uniforms.holoDepthMatrix=uniforms.depthMatrix;shader.uniforms.holoDepthScale=uniforms.depthScale;shader.uniforms.holoViewport=uniforms.viewport;
+     shader.vertexShader='varying vec3 holoWorld;varying vec3 holoNormal;varying float holoViewDepth;\n'+shader.vertexShader;
+     shader.vertexShader=shader.vertexShader.replace('#include <project_vertex>','holoWorld=(modelMatrix*vec4(transformed,1.0)).xyz;holoNormal=normalize(mat3(modelMatrix)*objectNormal);holoViewDepth=-(modelViewMatrix*vec4(transformed,1.0)).z;\n#include <project_vertex>');
+     shader.fragmentShader='uniform float holoTime;uniform float holoFade;uniform sampler2D holoDepth;uniform float holoDepthOn;uniform mat4 holoDepthMatrix;uniform float holoDepthScale;uniform vec4 holoViewport;varying vec3 holoWorld;varying vec3 holoNormal;varying float holoViewDepth;\n'+shader.fragmentShader;
+     shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>',`if(holoDepthOn>.5){vec2 screen=(gl_FragCoord.xy-holoViewport.xy)/holoViewport.zw;screen.y=1.0-screen.y;vec4 samplePoint=holoDepthMatrix*vec4(screen,0.,1.);vec2 uv=samplePoint.xy/samplePoint.w;if(all(greaterThanEqual(uv,vec2(0.)))&&all(lessThanEqual(uv,vec2(1.)))){float realDepth=texture2D(holoDepth,uv).r*holoDepthScale;if(realDepth>0.&&holoViewDepth>realDepth+.025)discard;}}
+      float rim=pow(1.0-abs(dot(normalize(holoNormal),normalize(cameraPosition-holoWorld))),2.4);
       float luminance=dot(outgoingLight,vec3(.2126,.7152,.0722));
       float scan=pow(.5+.5*sin(holoWorld.y*650.0-holoTime*1.8),14.0);
       outgoingLight=mix(outgoingLight*.20,vec3(.018,.42,.72)*(.4+min(luminance,1.5)),.80)+vec3(.09,.65,1.0)*rim*.95+vec3(.025,.06,.08)*scan;
@@ -53,10 +56,13 @@ export function createApparitionArt({onReady=()=>{},onError=()=>{},onPhase=()=>{
   if(!ready||!root.visible)return;
   if(pose.clip!==current){const next=actions[pose.clip];next.reset().play();actions[current].crossFadeTo(next,.28,false);current=pose.clip;}
   if(!clock.paused&&animated&&!reduced)mixer.update(dt);
-  uniforms.time.value=t;uniforms.fade.value=pose.opacity;body.position.set(pose.x,0,pose.z);body.rotation.y=pose.yaw;
+  uniforms.time.value=t;uniforms.fade.value=pose.opacity;body.position.set(pose.x,0,.04+pose.z);body.rotation.y=pose.yaw;
   particles.rotation.y=t*.12;particles.position.y=pose.phase==='disparition'?(t-9.6)*.015:0;particlesMaterial.opacity=pose.done?0:pose.opacity*.3;
   ringMaterial.opacity=pose.opacity*.35;model.visible=pose.opacity>.001;
   if(pose.phase!==lastPhase){lastPhase=pose.phase;onPhase(pose.phase);}
  }
- return {root,promise,update,replay(){clock.restart();lastTime=null;},setPaused(value){clock.setPaused(value);},setAnimated(value){animated=!!value;clock.restart();lastTime=null;},dispose(){if(disposed)return;disposed=true;mixer?.stopAllAction();if(model){mixer?.uncacheRoot(model);disposeModel(model);}particlesGeometry.dispose();particlesMaterial.dispose();ringGeometry.dispose();ringMaterial.dispose();materials.forEach(m=>m.dispose());},get ready(){return ready;}};
+ return {root,promise,update,setDepth(depth,viewport){uniforms.depthOn.value=0;if(!depth||!viewport||viewport.z<=0||viewport.w<=0)return;
+  if(depthTexture.image.width!==depth.width||depthTexture.image.height!==depth.height){depthTexture.dispose();depthTexture=new THREE.DataTexture(depth.data.slice(),depth.width,depth.height,THREE.RedFormat,THREE.FloatType);depthTexture.minFilter=depthTexture.magFilter=THREE.NearestFilter;uniforms.depth.value=depthTexture;}else depthTexture.image.data.set(depth.data);
+  depthTexture.needsUpdate=true;uniforms.depthMatrix.value.fromArray(depth.matrix);uniforms.depthScale.value=depth.scale;uniforms.viewport.value.copy(viewport);uniforms.depthOn.value=1;
+ },replay(){clock.restart();lastTime=null;},setPaused(value){clock.setPaused(value);},setAnimated(value){animated=!!value;clock.restart();lastTime=null;},dispose(){if(disposed)return;disposed=true;depthTexture.dispose();mixer?.stopAllAction();if(model){mixer?.uncacheRoot(model);disposeModel(model);}particlesGeometry.dispose();particlesMaterial.dispose();ringGeometry.dispose();ringMaterial.dispose();materials.forEach(m=>m.dispose());},get ready(){return ready;}};
 }
