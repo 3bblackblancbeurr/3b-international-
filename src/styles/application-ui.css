@@ -197,3 +197,8 @@ html[data-luxury="v2"] body .account-identity-help { margin-block: 16px; }
 html[data-luxury="v2"] body .account-identity-help > summary { min-height: 48px; padding-block: 14px; cursor: pointer; font-size: 14px; color: var(--3b-champagne-highlight); }
 html[data-luxury="v2"] body .app3b[data-page="member"] .matrix-layer { display: none; }
 html[data-luxury="v2"] body .app3b[data-page] .account-entry :is(label,.account-recover,.account-help,.account-consents p) { font-size: 14px; line-height: 1.6; }
+
+html[data-luxury="v2"] body .hidden-world :is(.hidden-back,.hidden-tools button,.hidden-modal-head button) { width: 48px; min-width: 48px; padding: 0; border: 0; border-radius: var(--3b-radius-flat); box-shadow: var(--3b-shadow-flat); background: transparent; }
+html[data-luxury="v2"] body .hidden-hero-copy .hidden-text-action { background: transparent; color: var(--3b-champagne-highlight); padding: 12px 0; border: 0; }
+html[data-luxury="v2"] body .hidden-settings > section { border: 0; border-top: 1px solid var(--3b-line-soft); border-radius: var(--3b-radius-flat); background: transparent; padding-inline: 0; }
+html[data-luxury="v2"] body .hidden-world .hidden-realm { display: grid; white-space: normal; text-align: left; }

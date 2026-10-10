@@ -404,6 +404,6 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
    </div>
   </div>}
 
-  <div className="account-settings-link"><button onClick={()=>openApplicationMenu('settings')}>Réglages de l’application <span aria-hidden="true">↗</span></button><p>Affichage, sons et compagnon au même endroit.</p></div>
+  <div className="account-settings-link"><Button variant="ghost" onClick={()=>openApplicationMenu('settings')}>Réglages de l’application <span aria-hidden="true">↗</span></Button><p>Affichage, sons et compagnon au même endroit.</p></div>
  </section>;
 }
