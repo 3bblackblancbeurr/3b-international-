@@ -6,17 +6,21 @@ const {chromium}=await import(process.env.PLAYWRIGHT_MODULE||'@playwright/test')
 const server=await createServer({server:{host:'127.0.0.1',port:5198,strictPort:true}});await server.listen();
 const browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{}),args:['--no-sandbox','--disable-dev-shm-usage','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
 const origin='http://127.0.0.1:5198',out=process.env.APP_UI_OUT||'/tmp/3b-menu-qa';await mkdir(out,{recursive:true});
+const uid='11111111-1111-4111-8111-111111111111';
+const profile={user_id:uid,name:'Membre Démonstration',handle:'demo_3b',country:'France',xp:1800,points:100,passport_state:'active',passport_public_id:'22222222-2222-4222-8222-222222222222',passport_version:1,theme:'heir',created_at:'2026-01-01T00:00:00Z'};
 const results=[],errors=[];
 const check=(label,value)=>{assert.ok(value,label);results.push(label);console.log('PASS',label);};
 try{
  for(const viewport of [{width:320,height:700},{width:390,height:844},{width:844,height:390},{width:1440,height:1000}]){
   const context=await browser.newContext({viewport,reducedMotion:'reduce'});
-  await context.addInitScript(()=>{localStorage.setItem('threeb_companion_prefs_v1',JSON.stringify({enabled:false}));localStorage.setItem('threeb_companion_living_v1',JSON.stringify({voiceEnabled:false}));});
+  await context.addInitScript(({uid})=>{const token=[btoa(JSON.stringify({alg:'HS256',typ:'JWT'})),btoa(JSON.stringify({sub:uid,exp:Math.floor(Date.now()/1000)+3600,role:'authenticated'})),'synthetic-ui-test'].join('.');localStorage.setItem('3b_member_auth_v1',JSON.stringify({access_token:token,refresh_token:'synthetic-ui-test',expires_at:Math.floor(Date.now()/1000)+3600,token_type:'bearer',user:{id:uid,aud:'authenticated',email:'demo@example.invalid'}}));localStorage.setItem('threeb_companion_prefs_v1',JSON.stringify({enabled:false}));localStorage.setItem('threeb_companion_living_v1',JSON.stringify({voiceEnabled:false}));},{uid});
   await context.route('**/*',route=>{
    const u=new URL(route.request().url());const json=body=>route.fulfill({contentType:'application/json',body:JSON.stringify(body)});
    if(u.pathname==='/api/catalog')return json({enabled:false,items:[],products:[]});
    if(u.pathname==='/api/my-orders')return json({orders:[]});
    if(u.origin===origin)return route.continue();
+   if(u.pathname.endsWith('/member-api'))return json({profile,events:[],inventory:[],entitlements:[],identity_claims_complete:true});
+   if(u.pathname.endsWith('/city-3b'))return json({hasCity:false});
    if(u.pathname.endsWith('/rpc/secret3b_daily_status'))return json({phase:'waiting',server_now:new Date().toISOString()});
    return route.abort();
   });
