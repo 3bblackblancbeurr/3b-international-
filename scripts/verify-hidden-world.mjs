@@ -9,7 +9,8 @@ const server=await createServer({server:{host:'127.0.0.1',port:5394,strictPort:t
 await server.listen();
 let browser;
 try{browser=await chromium.launch({headless:true,args:['--use-fake-device-for-media-stream','--use-fake-ui-for-media-stream']});}catch(error){await server.close();throw error;}
-await mkdir('work/hidden-world',{recursive:true});
+const out=process.env.HIDDEN_WORLD_TEST_OUT||'work/hidden-world';
+await mkdir(out,{recursive:true});
 try{
  for(const width of [390,844,1440]){
   const context=await browser.newContext({viewport:{width,height:width===844?390:900},permissions:['camera'],reducedMotion:'reduce'});
@@ -31,7 +32,7 @@ try{
   await page.getByRole('button',{name:'Effacer l’aperçu'}).click();assert.equal(await page.locator('.hidden-viewfinder img').count(),0);
   await page.getByRole('button',{name:'Ouvrir la caméra',exact:true}).click();await page.waitForFunction(()=>document.querySelector('.hidden-scanner video')?.readyState>=2);await page.evaluate(()=>{window.__testStream=document.querySelector('.hidden-scanner video').srcObject;});await page.getByTestId('invisible-nav-adventure').click();assert.equal(await page.evaluate(()=>window.__testStream.getTracks().every(track=>track.readyState==='ended')),true);
   await page.getByRole('button',{name:'Réglages',exact:true}).click();await page.getByRole('dialog').waitFor();await page.keyboard.press('Escape');
-  await page.locator('.hidden-world').screenshot({path:'work/hidden-world/home-'+width+'.png'});
+  await page.locator('.hidden-world').screenshot({path:path.join(out,'home-'+width+'.png')});
   assert.deepEqual(errors,[]);console.log('PASS '+width+': four views, eight guardians, no retired challenges, camera capture/cleanup, dialogs, no overflow or runtime error');await context.close();
  }
 }finally{await browser.close();await server.close();}

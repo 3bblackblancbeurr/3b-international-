@@ -13,13 +13,15 @@ on:
       - 'supabase/functions/world-engine/**'
       - 'supabase/migrations/*invisible*.sql'
       - 'tests/invisible*.test.js'
+      - 'tests/hidden-world*.test.js'
+      - 'scripts/verify-hidden-world.mjs'
       - 'vercel.json'
       - 'scripts/verify-invisible-browser.mjs'
       - 'scripts/verify-invisible-camera.mjs'
       - '.github/workflows/verify-invisible.yml'
   push:
     branches: [main]
-    paths: ['src/world/invisible/**', 'public/invisible/**', 'vercel.json', 'scripts/verify-invisible-browser.mjs', 'scripts/verify-invisible-camera.mjs', '.github/workflows/verify-invisible.yml']
+    paths: ['src/world/invisible/**', 'public/invisible/**', 'vercel.json', 'scripts/verify-invisible-browser.mjs', 'scripts/verify-invisible-camera.mjs', 'scripts/verify-hidden-world.mjs', '.github/workflows/verify-invisible.yml']
 permissions:
   contents: read
 concurrency:
@@ -37,24 +39,18 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Verify campaign, permissions, rewards and sensor lifecycle
-        run: node --test tests/invisible*.test.js
+        run: node --test tests/invisible*.test.js tests/hidden-world*.test.js
       - run: npm install --no-save --package-lock=false @playwright/test@1.56.1
       - run: npx playwright install --with-deps chromium
-      - name: Play the eight adventures, finale and visual exploration on desktop and phone
-        run: node scripts/verify-invisible-browser.mjs
+      - name: Verify hidden world menu, empty missions, scanner and camera cleanup
+        run: node scripts/verify-hidden-world.mjs
         env:
           PLAYWRIGHT_MODULE: '@playwright/test'
-          INVISIBLE_TEST_OUT: artifacts/invisible
-      - name: Verify full-screen worlds, camera permissions and mobile sensor cleanup
-        run: node scripts/verify-invisible-camera.mjs
-        env:
-          PLAYWRIGHT_MODULE: '@playwright/test'
-          INVISIBLE_CAMERA_OUT: artifacts/invisible-camera
+          HIDDEN_WORLD_TEST_OUT: artifacts/hidden-world
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
         with:
           name: monde-invisible-browser
           path: |
-            artifacts/invisible/
-            artifacts/invisible-camera/
+            artifacts/hidden-world/
           retention-days: 7
