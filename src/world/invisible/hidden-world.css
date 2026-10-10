@@ -10,7 +10,7 @@
 .hidden-scene-choices{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0}.hidden-scene-choices button{flex:1;min-width:130px;padding:14px 18px;border-radius:16px;border:1px solid #34434e;background:#0e1820;color:#b9c9d3;font:inherit;cursor:pointer}.hidden-scene-choices button[aria-pressed=true]{border-color:#7fd9f4;background:linear-gradient(120deg,#152d39,#101b24);color:#c7f2ff;box-shadow:inset 0 0 20px #72cfff0b}.hidden-echo-controls{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.hidden-echo-controls button{white-space:normal;flex:1;min-width:100px}.hidden-echo-status{color:#a4e5fb;font-size:15px;line-height:1.5}.hidden-scene-choices button:focus-visible{outline:2px solid #a9eaff;outline-offset:4px}
 
 /* Quiet hierarchy: one action, open space, secondary tools on demand. */
-.hidden-nav{border:0;border-radius:0;background:transparent;box-shadow:none;padding:0;gap:8px}
+.hidden-nav{position:relative;top:auto;border:0;border-radius:0;background:transparent;box-shadow:none;padding:0;gap:8px}
 .hidden-nav button{border-radius:0;border-bottom:1px solid transparent;min-height:58px;background:transparent}
 .hidden-nav button[aria-current]{background:transparent;border-bottom-color:var(--hw-gold)}
 .hidden-scanner{max-width:1000px;margin:auto}
