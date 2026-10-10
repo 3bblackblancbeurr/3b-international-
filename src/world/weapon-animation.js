@@ -59,6 +59,7 @@ function mapWeaponPose(weapon,action,power='Light'){
 export function weaponAnimations(idle,weapon=''){
  if(!idle)return [];
  const base=Object.entries(basePoses).map(([name,pose])=>createClip(pose,name,idle));
+ if(!weapon)return base;
  const byWeapon={
   paris:{Light:'ThrustLight',Heavy:'ThrustHeavy'},
   scissors:{Light:'SplitLight',Heavy:'SplitHeavy'},
@@ -69,7 +70,7 @@ export function weaponAnimations(idle,weapon=''){
   wings:{Light:'Lift',Heavy:'Dive'}
  };
  const aliases=byWeapon[weapon];
- if(!aliases)return [...base,createClip(basePoses.Thrust,'Attack',idle),createClip(basePoses.Split,'Attack2',idle),createClip(basePoses.Bash,'Attack3',idle)];
+ if(!aliases)return [...base,createClip(basePoses.Split,'Attack2',idle),createClip(basePoses.Bash,'Attack3',idle)];
  const variants=[
   {name:aliases.Light,action:'Thrust',power:'Light'},
   {name:aliases.Heavy,action:'Thrust',power:'Heavy'}
