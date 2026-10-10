@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
@@ -27,7 +28,8 @@ public class HiddenARActivity extends Activity {
     private GLSurfaceView surface;
     private PortalRenderer renderer;
     private TextView guidance, capabilities;
-    private Button place;
+    private Button place, reset, close;
+    private LinearLayout controls, actions;
     private Session session;
     private boolean installRequested, resumed, permissionRequested, failed, running;
     private String lastGuidance = "";
@@ -46,17 +48,29 @@ public class HiddenARActivity extends Activity {
         TextView title = label("3B  /  LE PASSAGE", 19); title.setTextColor(0xffe4cf9e); title.setTypeface(null, Typeface.BOLD); header.addView(title);
         capabilities = label("Démonstration visuelle · aucune énigme",12); header.addView(capabilities);
         FrameLayout.LayoutParams top = new FrameLayout.LayoutParams(-1,-2,Gravity.TOP); top.topMargin=dp(24); root.addView(header,top);
-        LinearLayout controls = new LinearLayout(this); controls.setOrientation(LinearLayout.VERTICAL); controls.setPadding(dp(20),dp(20),dp(20),dp(24));
+        controls = new LinearLayout(this); controls.setOrientation(LinearLayout.VERTICAL); controls.setPadding(dp(20),dp(20),dp(20),dp(24));
         controls.setBackground(new GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP,new int[]{0xff080e16,0x00080e16}));
         guidance = label("Ouverture du regard…",16); guidance.setGravity(Gravity.CENTER); controls.addView(guidance);
         place = button("Placer le portail", true); place.setEnabled(false); place.setOnClickListener(v -> renderer.requestPlacement()); controls.addView(place);
-        LinearLayout row = new LinearLayout(this);
-        Button reset = button("Replacer",false); reset.setOnClickListener(v -> surface.queueEvent(renderer::resetAnchor)); row.addView(reset,new LinearLayout.LayoutParams(0,dp(56),1));
-        Button close = button("Fermer",false); close.setOnClickListener(v -> finish()); row.addView(close,new LinearLayout.LayoutParams(0,dp(56),1)); controls.addView(row);
+        actions = new LinearLayout(this);
+        reset = button("Replacer",false); reset.setOnClickListener(v -> surface.queueEvent(renderer::resetAnchor));
+        close = button("Fermer",false); close.setOnClickListener(v -> finish()); controls.addView(actions);
+        arrangeControls();
         FrameLayout.LayoutParams bottom=new FrameLayout.LayoutParams(-1,-2,Gravity.BOTTOM); bottom.bottomMargin=dp(16);root.addView(controls,bottom);
         root.setOnApplyWindowInsetsListener((v,insets)->{top.topMargin=insets.getSystemWindowInsetTop();bottom.bottomMargin=insets.getSystemWindowInsetBottom();header.setLayoutParams(top);controls.setLayoutParams(bottom);return insets;});
         setContentView(root);
     }
+    private void arrangeControls(){
+        if(place.getParent()!=null)((android.view.ViewGroup)place.getParent()).removeView(place);
+        actions.removeAllViews();
+        boolean landscape=getResources().getConfiguration().orientation==Configuration.ORIENTATION_LANDSCAPE;
+        guidance.setTextSize(landscape?14:16);
+        if(landscape)actions.addView(place,new LinearLayout.LayoutParams(0,dp(56),1.6f));
+        else {LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,dp(56));lp.topMargin=dp(10);controls.addView(place,1,lp);}
+        LinearLayout.LayoutParams resetParams=new LinearLayout.LayoutParams(0,dp(56),1);resetParams.setMargins(dp(6),dp(6),dp(3),0);actions.addView(reset,resetParams);
+        LinearLayout.LayoutParams closeParams=new LinearLayout.LayoutParams(0,dp(56),1);closeParams.setMargins(dp(3),dp(6),0,0);actions.addView(close,closeParams);
+    }
+    @Override public void onConfigurationChanged(Configuration config){super.onConfigurationChanged(config);arrangeControls();}
     private int dp(int value){return Math.round(value*getResources().getDisplayMetrics().density);}
     private TextView label(String text,int size){TextView view=new TextView(this);view.setText(text);view.setTextSize(size);view.setTextColor(0xfff3f0e8);view.setPadding(0,dp(4),0,dp(8));return view;}
     private Button button(String text,boolean primary){Button button=new Button(this);button.setText(text);button.setAllCaps(false);button.setTextSize(16);button.setMinHeight(dp(56));button.setTextColor(primary?0xff080e16:0xfff3f0e8);GradientDrawable bg=new GradientDrawable();bg.setColor(primary?0xffe4cf9e:0xaa101c2b);bg.setCornerRadius(dp(12));button.setBackground(bg);LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,dp(56));lp.topMargin=dp(10);button.setLayoutParams(lp);return button;}

@@ -28,7 +28,7 @@
         android:theme="@style/AppTheme">
 
         <meta-data android:name="com.google.ar.core" android:value="optional" />
-        <activity android:name=".ar.HiddenARActivity" android:exported="false" android:theme="@style/AppTheme.NoActionBar" />
+        <activity android:name=".ar.HiddenARActivity" android:configChanges="orientation|screenSize|keyboardHidden" android:exported="false" android:theme="@style/AppTheme.NoActionBar" />
 
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
