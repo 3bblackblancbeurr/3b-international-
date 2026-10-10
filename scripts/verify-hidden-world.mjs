@@ -48,7 +48,7 @@ try{
   await page.getByRole('button',{name:'Voir le portail en 3D',exact:true}).click();await page.locator('.hidden-portal-preview canvas').waitFor();
   await page.waitForTimeout(700);assert.equal(await page.evaluate(()=>window.__cameraCalls),0,'3D preview must not request camera');
   await page.locator('.hidden-spatial-panel').screenshot({path:path.join(out,'portal-'+width+'.png')});
-  assert.equal(await page.getByRole('button',{name:'Placer dans mon espace'}).count(),0,'Native spatial capability is not falsely offered in web');
+  assert.equal(await page.getByRole('button',{name:'Ouvrir le portail AR'}).count(),0,'Native spatial capability is not falsely offered in web');
   await page.getByRole('button',{name:'Fermer l’aperçu',exact:true}).click();assert.equal(await page.locator('.hidden-portal-preview canvas').count(),0);
   await page.getByRole('button',{name:'Ouvrir la caméra',exact:true}).click();await page.waitForFunction(()=>document.querySelector('.hidden-scanner video')?.readyState>=2);
   await page.getByRole('button',{name:'Prendre une photo',exact:true}).click();await page.locator('.hidden-viewfinder img').waitFor();assert.equal(await page.evaluate(()=>document.querySelector('.hidden-scanner video').srcObject),null);
