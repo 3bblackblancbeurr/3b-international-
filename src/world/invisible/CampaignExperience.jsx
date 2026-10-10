@@ -15,7 +15,7 @@ export default function CampaignExperience({save,loaded,loadBlocked,saving,statu
  // Old Missions bookmarks lead to the honest empty catalogue, never to retired challenges.
  const view=requestedView==='missions'?'adventure':views.some(item=>item[0]===requestedView)?requestedView:'adventure';
  const closePanel=useCallback(()=>setPanel(null),[]);
- useEffect(()=>{if(previous.current!==requestedView){previous.current=requestedView;setPanel(null);content.current?.focus({preventScroll:true});}},[requestedView]);
+ useEffect(()=>{if(previous.current!==requestedView){previous.current=requestedView;setPanel(null);content.current?.focus({preventScroll:true});content.current?.scrollIntoView({block:'start',behavior:'instant'});}},[requestedView]);
  function navigate(next){setPanel(null);onViewChange(next);}
  const saveLabel=loadBlocked?'Sauvegarde à récupérer':saving?'Synchronisation…':status?.outcome==='synced'?'Compte synchronisé':status?.outcome==='pending'?'Synchronisation en attente':loaded?'Sauvegarde sur cet appareil':'Chargement de la sauvegarde…';
  const title={settings:'Tes réglages',help:'Comment découvrir le Monde caché ?',story:'Kaïs et les huit héritages',realm:realm?INVISIBLE_REALMS.find(item=>item.id===realm)?.name:''}[panel];
