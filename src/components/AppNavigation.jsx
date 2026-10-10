@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ChevronRight, BookOpen, Boxes, CreditCard, Gamepad2, Globe2, Home, Menu, Compass, Search, ShoppingBag, Sparkles, Trophy, UserRound, Users, LockKeyhole, X, Fingerprint } from "lucide-react";
+import { ArrowLeft, ChevronRight, BookOpen, Boxes, CreditCard, Gamepad2, Globe2, Home, Menu, Compass, Search, ShoppingBag, Sparkles, Trophy, UserRound, Users, LockKeyhole, X, Fingerprint, ScanLine, SlidersHorizontal } from "lucide-react";
 import { getPageHref } from "../lib/navigation.js";
 import { ExperienceControls } from "../design-system/LuxuryExperience.jsx";
 import { Button } from "../design-system/index.jsx";
 import InstallApp from "../install/InstallApp.jsx";
 import SecretClock from "../secret/SecretClock.jsx";
 import CompanionPresenceControl from '../companion/CompanionPresenceControl.jsx';
-import { PRINCIPAL_DESTINATIONS, availableCategories, categoryForPage, itemsForCategory, searchNavigation } from './navigation-menu.js';
+import { PRINCIPAL_DESTINATIONS, availableCategories, categoryForPage, itemsForCategory, searchNavigation, partitionDestinations } from './navigation-menu.js';
 import '../styles/simple-navigation.css';
 
-const ICONS = { home: Home, passport: Fingerprint, loyalty: CreditCard, manga: BookOpen, world3b: Globe2, nosbloc: Boxes, games: Gamepad2, religion: BookOpen, guide: Compass, community: Users, secret: LockKeyhole, sport: Trophy, ia: Sparkles, shop: ShoppingBag, member: UserRound };
+const ICONS = { invisible: ScanLine, home: Home, passport: Fingerprint, loyalty: CreditCard, manga: BookOpen, world3b: Globe2, nosbloc: Boxes, games: Gamepad2, religion: BookOpen, guide: Compass, community: Users, secret: LockKeyhole, sport: Trophy, ia: Sparkles, shop: ShoppingBag, member: UserRound };
 export function SectionIcon({ page, ...props }) {
   const Icon = ICONS[page] || Globe2;
   return <Icon size={22} strokeWidth={1.65} aria-hidden="true" {...props} />;
@@ -38,6 +38,7 @@ export default function AppNavigation({ page, title, menuItems, goTo, secret, op
   const currentCategory = categories.find(item => item.id === category) || categories[0];
   const searching = query.trim().length > 0;
   const matching = searching ? searchNavigation(menuItems, query) : itemsForCategory(menuItems, currentCategory.id);
+  const { available, upcoming } = partitionDestinations(matching);
 
   useEffect(() => { dialog.current?.close(); }, [page]);
   useEffect(() => {
@@ -64,9 +65,9 @@ export default function AppNavigation({ page, title, menuItems, goTo, secret, op
   }, [page, menuItems]);
   // The native modal makes the background inert; no persistent body scroll lock.
 
-  function openMenu({ search = false } = {}) {
+  function openMenu({ search = false, category: requestedCategory } = {}) {
     setQuery("");
-    setCategory(categoryForPage(page, menuItems));
+    setCategory(requestedCategory || categoryForPage(page, menuItems));
     if (!dialog.current?.open) dialog.current?.showModal();
     setIsOpen(true);
     if (search || !window.matchMedia("(max-width: 720px)").matches) {
@@ -105,7 +106,7 @@ export default function AppNavigation({ page, title, menuItems, goTo, secret, op
       <nav className="desktop-navigation" aria-label="Navigation principale">
         {QUICK_LINKS.map(item => <RouteLink key={item.id} page={item.id} goTo={goTo} aria-current={page === item.id ? "page" : undefined}>{item.label}</RouteLink>)}
       </nav>
-      <div className="header-actions">{options && <ExperienceControls options={options} toggleOption={toggleOption} page={page}/>}<span className="network-status is-offline" role="status" hidden={online}>Hors ligne</span><Button variant="ghost" className="menu-trigger" onClick={openMenu} aria-label="Ouvrir le menu" aria-haspopup="dialog" aria-controls="universe-menu" aria-expanded={isOpen} aria-keyshortcuts="/"><Menu size={20} aria-hidden="true" /><span>Menu</span></Button></div>
+      <div className="header-actions">{options && <Button variant="ghost" className="header-settings" aria-label="Paramètres de l’application" data-companion-settings-trigger onClick={() => openMenu({ category: "settings" })}><SlidersHorizontal size={20} aria-hidden="true"/><span>Réglages</span></Button>}<span className="network-status is-offline" role="status" hidden={online}>Hors ligne</span><Button variant="ghost" className="menu-trigger" onClick={openMenu} aria-label="Ouvrir le menu" aria-haspopup="dialog" aria-controls="universe-menu" aria-expanded={isOpen} aria-keyshortcuts="/"><Menu size={20} aria-hidden="true" /><span>Menu</span></Button></div>
     </header>
     {page !== "home" && <div className="page-breadcrumb"><RouteLink page="home" goTo={goTo}><ArrowLeft size={16} aria-hidden="true" /> Accueil</RouteLink><span aria-hidden="true">/</span><span>{title}</span></div>}
     <nav className="mobile-navigation" aria-label="Navigation mobile">
@@ -127,7 +128,7 @@ export default function AppNavigation({ page, title, menuItems, goTo, secret, op
       if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) dialog.current.close();
     }}>
       <div className="app-menu-heading">
-        <div><h2 id="menu-title">Menu</h2><p>Page actuelle : <strong>{title || "Accueil"}</strong></p></div>
+        <div><span className="app-menu-eyebrow">3B INTERNATIONAL</span><h2 id="menu-title">À toi de choisir.</h2><p>Tu es dans <strong>{title || "Accueil"}</strong></p></div>
         <Button variant="ghost" className="app-menu-close" type="button" autoFocus aria-label="Fermer le menu" onClick={() => dialog.current.close()}><X size={22} aria-hidden="true" /></Button>
       </div>
       <div className="app-menu-search">
@@ -141,15 +142,16 @@ export default function AppNavigation({ page, title, menuItems, goTo, secret, op
       <section id="menu-category-content" className="app-menu-content" role={searching ? 'region' : 'tabpanel'} aria-label={searching ? 'Résultats de recherche' : undefined} aria-labelledby={searching ? undefined : 'menu-category-' + currentCategory.id} tabIndex={0}>
         {searching && <p className="app-menu-results" role="status">{matching.length} {matching.length === 1 ? 'rubrique trouvée' : 'rubriques trouvées'}</p>}
         {!searching && currentCategory.id === 'settings' ? <div className="app-menu-settings">
-          {options ? <ExperienceControls options={options} toggleOption={toggleOption} page={page}/> : <CompanionPresenceControl/>}
+          {options ? <ExperienceControls inline options={options} toggleOption={toggleOption} page={page}/> : <CompanionPresenceControl/>}
           {installation && <InstallApp installation={installation}/>}
         </div> : <div className="app-menu-list">
           {!searching && currentCategory.id === 'world' && secret && <div className="app-menu-secret"><SecretClock secret={secret} goTo={navigate} compact /></div>}
-          {matching.map(item => <RouteLink key={item.id} page={item.id} goTo={navigate} className="app-menu-route" data-menu-id={item.id} aria-current={activePage === item.id ? "page" : undefined}>
-            <span className="app-menu-route-copy"><strong>{item.label}</strong><small>{item.description}</small></span>
+          {(searching ? matching : available).map(item => <RouteLink key={item.id} page={item.id} goTo={navigate} className="app-menu-route" data-menu-id={item.id} aria-current={activePage === item.id ? "page" : undefined}>
+            <SectionIcon page={item.id}/><span className="app-menu-route-copy"><strong>{item.label}</strong><small>{item.description}</small></span>
             <span className="app-menu-route-status">{activePage === item.id ? 'Page actuelle' : item.status === 'soon' ? 'En préparation' : item.status === 'preview' ? 'Aperçu' : undefined}</span>
             <ChevronRight size={18} aria-hidden="true" />
           </RouteLink>)}
+          {!searching && upcoming.length > 0 && <details className="app-menu-upcoming"><summary>En préparation <span>{upcoming.length}</span></summary><p>Ces espaces ouvriront plus tard.</p>{upcoming.map(item => <RouteLink key={item.id} page={item.id} goTo={navigate} className="app-menu-route" data-menu-id={item.id}><SectionIcon page={item.id}/><span className="app-menu-route-copy"><strong>{item.label}</strong><small>{item.description}</small></span><ChevronRight size={18} aria-hidden="true"/></RouteLink>)}</details>}
           {matching.length === 0 && <p className="app-menu-empty" role="status">Aucune rubrique trouvée. Essaie « monde », « passeport » ou « boutique ».</p>}
         </div>}
       </section>

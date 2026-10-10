@@ -1,0 +1,140 @@
+:root { --3b-shadow-active-tab: inset 0 -2px var(--3b-champagne); }
+/* One reading hierarchy across the application. Identity cards and scene canvases
+   keep their material design; navigation and editorial containers stay open. */
+.app3b { background: var(--3b-obsidian); }
+.app3b :is(.site-header,.page-breadcrumb,.home-dashboard,.editorial-page,.loyalty-page,.shop3b) { max-width: 1180px; }
+.app3b :is(button,a,summary,input,select,textarea) { touch-action: manipulation; }
+.app3b :is(button,a,summary):focus-visible { outline: 2px solid var(--3b-matrix); outline-offset: 4px; }
+.app3b :is(.site-header,.page-breadcrumb) { border: 0; }
+.app3b .site-header { min-height: 88px; }
+.app3b .header-actions { display: flex; align-items: center; gap: 12px; }
+.app3b :is(.header-settings,.menu-trigger) { min-height: 48px; border: 0; background: transparent; box-shadow: var(--3b-shadow-flat); font-weight: 550; padding-inline: 12px; }
+.app3b .header-settings { color: var(--3b-muted); }
+.app3b .header-settings > span { display: none; }
+.app3b .desktop-navigation a { font-size: 14px; }
+.app3b .page-breadcrumb { margin-block: 4px 24px; }
+.app3b :is(.premium-panel,.guide-distinction article,.guide-levels article,.account-form-panel,.account-summary,.account-options,.account-command-center,.account-command-grid > *, .account-consents,.recovery-panel,.shop-cart,.shop-product,.shop-banner,.shop-loyalty-note,.loyalty-earn-grid article,.loyalty-perks article,.loyalty-card-detail,.boutique-wallet,.boutique-how li,.coming-copy,.coming-status-grid > *) {
+ border: 0; border-radius: var(--3b-radius-flat); background: transparent; box-shadow: var(--3b-shadow-flat); backdrop-filter: none;
+}
+.app3b :is(.premium-panel,.account-form-panel,.account-summary,.shop-cart) { padding: 24px 0; }
+.app3b :is(.premium-panel,.shop-product)::before { display: none; }
+.app3b .compact-card.gm-card { border: 0; border-radius: var(--3b-radius-flat); border-bottom: 1px solid var(--3b-line-soft); box-shadow: var(--3b-shadow-flat); background: transparent; }
+.app3b .compact-card.gm-card:hover { background: var(--3b-hover-surface); transform: none; }
+.app3b :is(.compact-card-icon,.explore-icon) { border: 0; border-radius: var(--3b-radius-flat); background: transparent; box-shadow: var(--3b-shadow-flat); }
+.app3b :is(.gm-button--ghost,.quiet-button,.shop-text-button) { border: 0; box-shadow: var(--3b-shadow-flat); min-height: 48px; }
+.app3b :is(.gm-tabs,.account-tabs,.loyalty-view-switch) { background: transparent; border: 0; border-bottom: 1px solid var(--3b-line-soft); border-radius: var(--3b-radius-flat); gap: 16px; padding: 0; }
+.app3b :is(.gm-tab,.account-tabs button,.loyalty-view-switch button) { min-height: 48px; border: 0; border-radius: var(--3b-radius-flat); background: transparent; color: var(--3b-muted); padding: 10px 0; box-shadow: var(--3b-shadow-flat); }
+.app3b :is(.gm-tab[aria-selected="true"],.account-tabs button.active,.account-tabs button[aria-pressed="true"],.loyalty-view-switch button[aria-pressed="true"]) { color: var(--3b-champagne-highlight); background: transparent; box-shadow: var(--3b-shadow-active-tab); }
+.app3b :is(.editorial-heading,.loyalty-section-heading) { margin-bottom: 24px; }
+.app3b :is(.editorial-page,.loyalty-page) { padding-inline: 0; }
+.app3b :is(.editorial-page p,.account-lead,.loyalty-hero-copy > p) { line-height: 1.7; }
+.app3b :is(.account-form-panel input:not([type="checkbox"]),.account-form-panel select) { min-height: 48px; }
+.app3b .account-tabs { display: flex; flex-wrap: wrap; }
+.app3b .account-entry { gap: clamp(32px,6vw,80px); }
+.app3b .account-command-grid { gap: 0 24px; }
+.app3b .account-command-grid > * { border-bottom: 1px solid var(--3b-line-soft); padding-block: 20px; }
+.app3b .account-options > div { gap: 0 24px; }
+.app3b .account-options button { border: 0; border-radius: var(--3b-radius-flat); border-bottom: 1px solid var(--3b-line-soft); background: transparent; min-height: 52px; text-align: left; }
+.app3b .shop-product { padding-inline: 0; }
+.app3b .shop-country-grid button { min-height: 48px; }
+.app3b .shop-cart { border-top: 1px solid var(--3b-line-soft); }
+.app3b .guide-directory { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 0 32px; }
+.app3b :is(.guide-reference,.guide-faq,.boutique-rules) { border: 0; border-radius: var(--3b-radius-flat); border-top: 1px solid var(--3b-line-soft); background: transparent; margin-block: 24px; padding: 0; }
+.app3b :is(.guide-reference,.guide-faq,.boutique-rules) > summary { min-height: 56px; padding-block: 16px; color: var(--3b-text); cursor: pointer; font-size: 16px; font-weight: 550; }
+.app3b .guide-reference .guide-levels { margin-top: 16px; }
+.app3b .guide-table-wrap { border: 0; border-radius: var(--3b-radius-flat); }
+.app3b .guide-levels article { border-bottom: 1px solid var(--3b-line-soft); }
+
+/* Home: immersive art, then three spacious lists; no nested tile grid. */
+.app3b .home-world-entry { border: 0; border-radius: var(--3b-radius-flat); box-shadow: var(--3b-shadow-flat); min-height: 480px; margin-top: 4px; }
+.app3b .home-world-entry .world-portal-copy { padding: 48px 40px; }
+.app3b .home-world-entry .world-portal-copy > p:not(.eyebrow) { max-width: 380px; }
+.app3b .universe-directory { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 40px; margin-top: 40px; }
+.app3b .universe-group .universe-grid { display: grid; grid-template-columns: minmax(0,1fr); gap: 0; }
+.app3b .universe-group > h2 { font-size: 11px; letter-spacing: .12em; margin-bottom: 12px; color: var(--3b-muted); }
+.app3b .universe-group .compact-card { display: flex; align-items: center; gap: 16px; min-height: 86px; padding: 18px 0; }
+.app3b .universe-group .compact-card-icon { width: 28px; flex: 0 0 28px; color: var(--3b-champagne); }
+.app3b .universe-group .compact-card-copy { display: grid; flex: 1; min-width: 0; gap: 5px; }
+.app3b .universe-group .compact-card-copy strong { font-size: 15px; font-weight: 550; line-height: 1.45; }
+.app3b .universe-group .compact-card-copy > span { display: block; color: var(--3b-muted); font-size: 12px; line-height: 1.5; }
+.app3b .universe-group .compact-card-action { display: flex; flex: 0 0 auto; color: var(--3b-muted); }
+.app3b .universe-group .compact-card-action > span { display: none; }
+.app3b .home-guide-zone { border: 0; margin-top: 32px; padding-block: 20px; }
+.app3b .home-guide-zone h2 { color: var(--3b-muted); font-size: 14px; font-weight: 400; }
+
+/* A single modal, direct settings, always readable row labels. */
+.app3b .app-menu-dialog { border: 0; width: min(680px,calc(100% - 32px)); height: min(700px,calc(var(--app-viewport-height,100dvh) - 40px)); border-radius: var(--3b-radius-hero); }
+.app3b .app-menu-heading { padding: 28px 28px 20px; }
+.app-menu-eyebrow { font-size: 9px; letter-spacing: .18em; color: var(--3b-champagne); }
+.app3b .app-menu-heading h2 { font-size: 30px; font-weight: 550; letter-spacing: -.035em; margin-top: 8px; }
+.app3b .app-menu-heading p { font-size: 12px; }
+.app3b .app-menu-close { width: 48px; min-height: 48px; }
+.app3b .app-menu-search { border: 0; border-radius: var(--3b-radius-flat); border-bottom: 1px solid var(--3b-line-soft); margin-inline: 28px; background: transparent; }
+.app3b .app-menu-search input { min-height: 52px; font-size: 16px; }
+.app3b .app-menu-search:focus-within { outline: 0; border-bottom-color: var(--3b-matrix); }
+.app3b .app-menu-search input:focus-visible { outline: none; }
+.app3b .app-menu-categories { flex-wrap: nowrap; overflow-x: auto; gap: 18px; padding-inline: 28px; scrollbar-width: none; }
+.app3b .app-menu-categories > button { flex: 0 0 auto; min-height: 48px; font-size: 12px; }
+.app3b .app-menu-content { padding-inline: 28px; }
+.app3b .app-menu-route { gap: 16px; min-height: 80px; padding-block: 16px; }
+.app3b .app-menu-route > svg:first-child { flex: 0 0 22px; color: var(--3b-champagne); }
+.app3b .app-menu-route-copy { flex: 1; min-width: 0; }
+.app3b .app-menu-route-copy strong { font-size: 16px; font-weight: 550; }
+.app3b .app-menu-route-copy small { white-space: normal; overflow: visible; text-overflow: clip; font-size: 12px; line-height: 1.5; }
+.app3b .app-menu-route-status { font-size: 10px; max-width: 74px; text-align: right; }
+.app-menu-upcoming { margin-top: 20px; }
+.app-menu-upcoming > summary { cursor: pointer; min-height: 52px; padding-block: 14px; color: var(--3b-muted); font-size: 13px; }
+.app-menu-upcoming > summary > span { margin-left: 8px; }
+.app-menu-upcoming > p { font-size: 12px; color: var(--3b-muted); }
+.app3b .app-menu-footer { padding-inline: 28px; }
+.app3b .luxury-controls-inline { position: static; display: block; width: 100%; }
+.app3b .luxury-controls-inline .luxury-controls-panel { position: static; display: grid; width: 100%; max-width: none; border: 0; border-radius: var(--3b-radius-flat); box-shadow: var(--3b-shadow-flat); padding: 20px 0; background: transparent; }
+.app3b .app-menu-settings .luxury-controls-panel > button { justify-content: space-between; width: 100%; min-height: 56px; border: 0; border-bottom: 1px solid var(--3b-line-soft); border-radius: var(--3b-radius-flat); padding-inline: 0; background: transparent; font-weight: 500; }
+.app3b .app-menu-settings .luxury-controls-panel > button > span { font-size: 12px; color: var(--3b-champagne); }
+
+/* Contextual world menus use the same open sections, away from play controls. */
+.hub-settings :is(.hub-settings-section,.world-quality,.world-control-grid,.hub-settings-shortcuts) { border: 0; border-radius: var(--3b-radius-flat); box-shadow: var(--3b-shadow-flat); background: transparent; }
+.hub-settings .hub-settings-section { border-top: 1px solid var(--3b-line-soft); padding-inline: 0; }
+.hub-settings :is(.hub-settings-toggles button,.hub-settings-shortcuts button,.world-audio-presets button) { min-height: 48px; }
+.hub-settings .world-audio-slider input { min-height: 44px; }
+.passport-tool-dialog { border: 0; }
+.passport-tool-dialog .passport-tool-heading { border: 0; }
+
+@media(max-width:900px) {
+ .app3b .universe-directory { gap: 24px; }
+ .app3b .home-world-entry .world-portal-copy { padding-inline: 24px; }
+}
+@media(max-width:720px) {
+ .app3b { padding-inline: max(20px,env(safe-area-inset-left)); padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
+ .app3b .site-header { min-height: 76px; }
+ .app3b .header-actions .menu-trigger { display: none; }
+ .app3b .header-settings { width: 48px; padding: 0; }
+ .app3b .mobile-navigation { background: var(--3b-header-surface); border: 0; box-shadow: var(--3b-shadow-flat); }
+ .app3b .mobile-navigation :is(a,button) { min-height: 56px; border-radius: var(--3b-radius-flat); background: transparent; font-size: 11px; font-weight: 450; }
+ .app3b .mobile-navigation [aria-current="page"] { background: transparent; }
+ .app3b .universe-directory { grid-template-columns: minmax(0,1fr); gap: 28px; margin-top: 28px; }
+ .app3b .universe-group .compact-card { min-height: 82px; }
+ .app3b .home-world-entry { min-height: 390px; }
+ .app3b .home-world-entry .world-portal-copy { padding: 40px 8px; }
+ .app3b .home-world-entry .world-portal-copy h2 { font-size: clamp(40px,11vw,62px); }
+ .app3b .home-world-entry .world-portal-copy > p:not(.eyebrow) { max-width: 270px; font-size: 14px; }
+ .app3b .home-world-signature { display: none; }
+ .app3b .home-world-live { display: none; }
+ .app3b .guide-directory { grid-template-columns: minmax(0,1fr); }
+ .app3b .app-menu-dialog { width: calc(100% - 16px); height: calc(var(--app-viewport-height,100dvh) - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); max-height: 780px; }
+ .app3b :is(.app-menu-heading,.app-menu-content,.app-menu-categories,.app-menu-footer) { padding-inline: 20px; }
+ .app3b .app-menu-search { margin-inline: 20px; }
+ .app3b .app-menu-heading { padding-top: 22px; padding-bottom: 16px; }
+ .app3b .app-menu-heading h2 { font-size: 28px; }
+ .app3b .app-menu-categories { gap: 16px; }
+ .app3b .app-menu-route-status { display: none; }
+ .app3b .app-menu-route[aria-current="page"] .app-menu-route-copy strong::after { content: ' · ici'; color: var(--3b-muted); font-size: 11px; }
+ .app3b .account-entry { gap: 28px; }
+}
+@media(max-height:500px) {
+ .app3b .app-menu-heading { padding-block: 12px; }
+ .app3b .app-menu-heading p,.app-menu-eyebrow { display: none; }
+ .app3b .app-menu-heading h2 { margin: 0; font-size: 22px; }
+ .app3b .app-menu-search input { min-height: 44px; }
+ .app3b .app-menu-footer { padding-block: 0; }
+}

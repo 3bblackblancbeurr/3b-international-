@@ -54,3 +54,8 @@ export function categoryForPage(page,menuItems){
 export function availableCategories(menuItems){
  return MENU_CATEGORIES.filter(category=>category.id==='settings'||itemsForCategory(menuItems,category.id).length>0);
 }
+
+/** Keep unfinished spaces discoverable without crowding live destinations. */
+export function partitionDestinations(items = []) {
+ return { available: items.filter(item => item.status !== 'soon'), upcoming: items.filter(item => item.status === 'soon') };
+}

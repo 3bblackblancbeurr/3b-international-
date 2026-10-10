@@ -137,7 +137,7 @@ export function useLuxuryRuntime(options, page) {
   }, [page, present]);
 }
 
-export function ExperienceControls({ options, toggleOption, page }) {
+export function ExperienceControls({ options, toggleOption, page, inline = false }) {
   const disclosure = useRef(null);
   const [sensorNotice, setSensorNotice] = useState("");
   const toggleSensor = async () => {
@@ -150,8 +150,9 @@ export function ExperienceControls({ options, toggleOption, page }) {
     } catch (error) { setSensorNotice(error.message || "Capteur indisponible."); }
   };
   useEffect(() => { if (disclosure.current) disclosure.current.open = false; }, [page]);
-  return <details className="luxury-controls" ref={disclosure} onKeyDown={event => { if (event.key === 'Escape') { disclosure.current.open = false; disclosure.current.querySelector('summary')?.focus(); } }}>
-    <summary aria-label="Paramètres de l’application" data-companion-settings-trigger><SlidersHorizontal size={18}/><span>Paramètres</span></summary>
+  const Container = inline ? "section" : "details";
+  return <Container className={inline ? "luxury-controls luxury-controls-inline" : "luxury-controls"} ref={disclosure} onKeyDown={event => { if (event.key === 'Escape') { disclosure.current.open = false; disclosure.current.querySelector('summary')?.focus(); } }}>
+    {!inline && <summary aria-label="Paramètres de l’application" data-companion-settings-trigger><SlidersHorizontal size={18}/><span>Paramètres</span></summary>}
     <div className="luxury-controls-panel">
       <strong>À ton rythme.</strong><p>Une même identité. Ton confort.</p>
       <CompanionPresenceControl/>
@@ -162,7 +163,7 @@ export function ExperienceControls({ options, toggleOption, page }) {
       <Button variant="ghost" onClick={toggleSensor} aria-pressed={options.sensorReflections}>Reflets au mouvement<span>{options.sensorReflections ? "Oui" : "Non"}</span></Button>
       {sensorNotice && <p role="status">{sensorNotice}</p>}
     </div>
-  </details>;
+  </Container>;
 }
 
 export function LuxuryBoot({ onDone, installation }) {
