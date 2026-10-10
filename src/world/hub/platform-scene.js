@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {worldArtMaterials} from '../../design-system/tokens.js';
 import {civicWindowGlow} from './civic-window-light.js';
 import {COUNTRIES} from '../catalog.js';
 import {REFERENCE_GATE_TITLES,paintGateFlag} from './gate-identity.js';
@@ -41,7 +42,7 @@ export function createHubPlatform(save){
  const poolWater=createPremiumWater({region:'hub',lake:{x:0,z:0,r:16},owned});poolWater.setQuality('medium',{allowPlanarReflection:false});configureCivicPoolWater(poolWater);
  const surfaces=createCiteSurfaces(owned),{dark,stone,gold,glass}=surfaces,blue=material('#55c9ef',true),wood=material('#5f4939'),green=material('#315b4b'),water=poolWater.material;
   // Independent inhabited glazing: civic lights never unlock the story's network glass.
-  const inhabitedGlass=new THREE.MeshPhysicalMaterial({color:'#375365',emissive:'#dba76f',emissiveIntensity:civicWindowGlow(1),roughness:.28,metalness:.14,clearcoat:.85,clearcoatRoughness:.13,envMapIntensity:.42});owned.push(inhabitedGlass);
+  const inhabitedGlass=new THREE.MeshPhysicalMaterial({color:worldArtMaterials.civicWindowGlass,emissive:worldArtMaterials.civicWindowEmission,emissiveIntensity:civicWindowGlow(1),roughness:.28,metalness:.14,clearcoat:.85,clearcoatRoughness:.13,envMapIntensity:.42});owned.push(inhabitedGlass);
  function mesh(g,m,x,y,z,sx=1,sy=sx,sz=sx){const o=new THREE.Mesh(g,m);o.position.set(x,y,z);o.scale.set(sx,sy,sz);o.castShadow=o.receiveShadow=true;root.add(o);return o;}
  function ring(r,tube,y,m,arc=Math.PI*2,start=0){const o=mesh(geo(new THREE.TorusGeometry(r,tube,6,96,arc)),m,0,y,0);o.rotation.set(-Math.PI/2,0,start);return o;}
  function sign(text,x,y,z,width=8){

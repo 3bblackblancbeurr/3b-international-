@@ -29,7 +29,7 @@ export const worldRealmArt=Object.freeze({
 export const worldArtMaterials=Object.freeze({
  sunWarm:'#ffbb81',dust:'#e3d5b7',bird:'#303b42',travellerMetal:'#c9ad75',
  monumentStone:'#29353c',monumentGold:'#c9b486',monumentDark:'#121a20',monumentBlue:'#31729a',monumentEmission:'#53b9e5',
- platformGlass:'#071a27',platformEmission:'#009cff'
+ platformGlass:'#071a27',platformEmission:'#009cff',civicWindowGlass:'#375365',civicWindowEmission:'#dba76f'
 });
 export const worldCrowdPalette=Object.freeze({
  base:'#ffffff',
