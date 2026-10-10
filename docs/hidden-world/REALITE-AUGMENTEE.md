@@ -1,0 +1,32 @@
+# Monde caché — module spatial Android
+
+## Ce qui est construit
+
+Le scanner photo reste disponible. Un module Capacitor `HiddenWorldAR` lance une activité Android interne utilisant ARCore 1.56.0. Le menu propose un aperçu 3D sans caméra et, si le plugin est installé et ARCore compatible, un laboratoire de portail spatial. Aucune mission ni énigme n’est ouverte, aucune récompense n’est attribuée.
+
+Le rendu natif utilise OpenGL ES 2 : image caméra ARCore, sol horizontal détecté, ancre spatiale créée à la demande, orientation vers le joueur au placement, socle et anneau champagne, surface animée bleue. Les shaders du portail sont aussi utilisés par l’aperçu web. L’éclairage directionnel HDR est filtré pour éviter les variations brutales. La profondeur automatique, lorsqu’elle existe, masque les pixels virtuels derrière le décor. Une profondeur absente ou âgée de plus de 200 ms n’est jamais utilisée.
+
+La session nécessite un sol suivi et une pose située entre 0,65 et 5 mètres. Les objets disparaissent lors d’une perte de suivi et réapparaissent seulement si leur repère est à nouveau suivi. Un repère arrêté est détaché. L’utilisateur peut replacer ou fermer. La caméra est arrêtée quand l’activité passe en arrière-plan et la session est libérée à sa destruction. Le scanner WebView est arrêté avant le lancement.
+
+## Installation et publication
+
+La mise à jour du site/PWA permet l’aperçu 3D. Elle ne peut pas installer du code natif dans une ancienne application Android. Le module spatial nécessite une nouvelle compilation Android et l’installation de cette version. `mobile-build.yml` compile l’APK de test, le bundle non signé et les tests JUnit. La distribution Play nécessite sa chaîne de signature et sa piste de test existantes. Ne pas présenter une mise à jour Vercel comme une installation du module ARCore.
+
+## Dessins et lieux futurs
+
+Aucune image cible ni coordonnée fictive n’est intégrée. La reconnaissance d’un dessin exige son fichier maître, sa dimension physique et un test de reconnaissance sous les angles/lumières réels. Un placement manuel sur le sol ne prouve pas la présence à un lieu déterminé. Pour une future découverte, la reconnaissance visuelle, la localisation et la validation serveur devront être reliées au catalogue publié avant toute récompense. Le laboratoire ne fournit pas de voie d’attribution de récompenses.
+
+Les personnages ne sont pas ajoutés sous forme de silhouettes provisoires : leurs modèles, textures, animations et interactions doivent être produits et validés avant publication. Le portail procédural est une première scène artistique exploitable pour tester le moteur, pas une certification « AAA ».
+
+## Validation sur Samsung SM-G990B
+
+Compilation et tests automatisés ne remplacent pas un essai réel. Sur le téléphone : autoriser/refuser caméra ; accepter/refuser installation ARCore ; placer/replacer ; marcher latéralement et s’approcher ; vérifier occultation avec un meuble ; changer orientation ; interrompre/reprendre via écran verrouillé et autre application ; revenir au scanner ; essayer lumière faible et surfaces sans texture ; tester 15 minutes pour chauffe et fréquence d’images.
+
+Cibles à mesurer : aucun crash, caméra libérée à la fermeture, contrôle lisible en portrait/paysage, ancrage stable sur sol texturé, occlusion cohérente si profondeur active, 30 images/s soutenues sur le modèle ciblé. Ces mesures sont à établir sur appareil, pas annoncées comme acquises.
+
+Références :
+- https://developers.google.com/ar/develop/java/enable-arcore
+- https://developers.google.com/ar/develop/java/depth/developer-guide
+- https://developers.google.com/ar/develop/java/lighting-estimation/developer-guide
+- https://developers.google.com/ar/privacy-requirements
+- https://github.com/google-ar/arcore-android-sdk/releases/tag/v1.56.0

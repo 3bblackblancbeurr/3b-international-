@@ -9,6 +9,7 @@ public class MainActivity extends BridgeActivity {
         super.onCreate(savedInstanceState);
         registerPlugin(CompanionPlugin.class);
         registerPlugin(ImmersivePlugin.class);
+        registerPlugin(HiddenWorldARPlugin.class);
         ImmersivePlugin.setImmersive(this, true);
     }
 }

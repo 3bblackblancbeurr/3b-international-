@@ -32,7 +32,7 @@ try{
    if(pathname.endsWith('/rpc/secret3b_daily_status'))return json({phase:'waiting',server_now:new Date().toISOString()});
    return route.fulfill({status:503,contentType:'application/json',body:'{"error":"QA service disabled"}'});
   });
-  const page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
+  const page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));page.on('console',message=>{if(message.type()==='error'&&/THREE|shader|WebGL/i.test(message.text()))errors.push(message.text());});
   await page.goto('http://127.0.0.1:5394/#monde-invisible',{waitUntil:'domcontentloaded'});
   await page.locator('.hidden-world').waitFor({timeout:60000});
   assert.equal(await page.locator('[data-testid="riddle-submit"], [data-testid="chest-open"], .invisible-cooperation').count(),0);
@@ -44,7 +44,13 @@ try{
    assert.equal(await page.getByTestId('invisible-nav-'+view).getAttribute('aria-current'),'page');
   }
   await page.getByTestId('invisible-nav-realms').click();assert.equal(await page.locator('.hidden-realm').count(),8);await page.locator('.hidden-realm').first().click();await page.getByRole('dialog').waitFor();await page.keyboard.press('Escape');assert.equal(await page.getByRole('dialog').count(),0);
-  await page.getByTestId('invisible-nav-scanner').click();await page.getByRole('button',{name:'Ouvrir la caméra',exact:true}).click();await page.waitForFunction(()=>document.querySelector('.hidden-scanner video')?.readyState>=2);
+  await page.getByTestId('invisible-nav-scanner').click();
+  await page.getByRole('button',{name:'Voir le portail en 3D',exact:true}).click();await page.locator('.hidden-portal-preview canvas').waitFor();
+  await page.waitForTimeout(700);assert.equal(await page.evaluate(()=>window.__cameraCalls),0,'3D preview must not request camera');
+  await page.locator('.hidden-spatial-panel').screenshot({path:path.join(out,'portal-'+width+'.png')});
+  assert.equal(await page.getByRole('button',{name:'Placer dans mon espace'}).count(),0,'Native spatial capability is not falsely offered in web');
+  await page.getByRole('button',{name:'Fermer l’aperçu',exact:true}).click();assert.equal(await page.locator('.hidden-portal-preview canvas').count(),0);
+  await page.getByRole('button',{name:'Ouvrir la caméra',exact:true}).click();await page.waitForFunction(()=>document.querySelector('.hidden-scanner video')?.readyState>=2);
   await page.getByRole('button',{name:'Prendre une photo',exact:true}).click();await page.locator('.hidden-viewfinder img').waitFor();assert.equal(await page.evaluate(()=>document.querySelector('.hidden-scanner video').srcObject),null);
   await page.getByRole('button',{name:'Effacer l’aperçu'}).click();assert.equal(await page.locator('.hidden-viewfinder img').count(),0);
   await page.getByRole('button',{name:'Ouvrir la caméra',exact:true}).click();await page.waitForFunction(()=>document.querySelector('.hidden-scanner video')?.readyState>=2);await page.evaluate(()=>{window.__testStream=document.querySelector('.hidden-scanner video').srcObject;});await page.getByTestId('invisible-nav-adventure').click();assert.equal(await page.evaluate(()=>window.__testStream.getTracks().every(track=>track.readyState==='ended')),true);
