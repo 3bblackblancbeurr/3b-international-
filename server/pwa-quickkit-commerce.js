@@ -249,12 +249,27 @@ export function createPwaQuickKitCommerce({ env = process.env, stripe: suppliedS
   }
 
   return {
+    availability: wrap("GET", async () => json({
+      mode: config.stripeMode || "off",
+      checkoutConfigured: config.checkoutEnabled,
+      offerState: "in_preparation",
+      amount: 990,
+      currency: "eur",
+      interval: "month",
+    })),
+
     checkout: wrap("POST", async request => {
       requireOrigin(request);
       if (!config.checkoutEnabled) throw new QuickKitCommerceError(503, "Le paiement Pro n’est pas encore activé.");
       const body = await parseJson(request);
       if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(body?.attemptId || "")) {
         throw new QuickKitCommerceError(400, "Identifiant de demande invalide.");
+      }
+      if (body.expectedMode !== undefined && !["test", "live"].includes(body.expectedMode)) {
+        throw new QuickKitCommerceError(400, "Mode de paiement demandé invalide.");
+      }
+      if (body.expectedMode && body.expectedMode !== config.stripeMode) {
+        throw new QuickKitCommerceError(409, "Le mode de paiement a changé. Vérifie à nouveau sa disponibilité.");
       }
       await validatedPrice();
       const session = await stripe().checkout.sessions.create({
@@ -273,7 +288,7 @@ export function createPwaQuickKitCommerce({ env = process.env, stripe: suppliedS
       if (checkoutUrl.origin !== "https://checkout.stripe.com") {
         throw new QuickKitCommerceError(503, "Le paiement n’a pas pu être ouvert.");
       }
-      return json({ url: session.url });
+      return json({ url: session.url, mode: config.stripeMode });
     }),
 
     activate: wrap("POST", async request => {
@@ -307,6 +322,7 @@ export function createPwaQuickKitCommerce({ env = process.env, stripe: suppliedS
       });
       return json({
         active: true,
+        mode: config.stripeMode,
         token,
         status: subscription.status,
         currentPeriodEnd: periodEnd(subscription),
@@ -333,6 +349,7 @@ export function createPwaQuickKitCommerce({ env = process.env, stripe: suppliedS
       const notExpired = !row?.current_period_end || new Date(row.current_period_end).getTime() > Date.now();
       return json({
         active: Boolean(row && ACTIVE.has(row.status) && notExpired),
+        mode: config.stripeMode,
         status: row?.status || null,
         currentPeriodEnd: row?.current_period_end || null,
         cancelAtPeriodEnd: Boolean(row?.cancel_at_period_end),

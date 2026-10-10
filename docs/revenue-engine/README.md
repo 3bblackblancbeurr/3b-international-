@@ -13,6 +13,8 @@ Produit principal immédiatement exploitable.
 - État : UI + API + sécurité SSRF + checkout test + GitHub Action préparés.
 - Règle : aucun paiement live avant activation des entitlements, mentions légales et prix live.
 
+État vérifiable du code au 10 octobre 2026 : l'audit gratuit et l'export JSON existent. Le suivi multi-sites et les rapports premium ne sont pas encore livrés par la page QuickKit ; l'offre Pro est donc présentée comme en préparation, même si le serveur possède déjà un checkout et des droits. Le bouton de disponibilité utilise un GET sans transaction. Seule une démo test, clairement identifiée et déclenchée par un second clic, peut être ouverte depuis cette page. Le contrôle backend des paiements réels reste inchangé.
+
 ### 2. Produit numérique
 Produit futur : PWA Starter Kit Pro.
 
@@ -25,6 +27,8 @@ Contenu prévu :
 - checklist de mise en production.
 
 Prix test cible : 19 € achat unique. Livraison automatique après paiement lorsque le stockage privé et le jeton de téléchargement seront branchés.
+
+La page présente actuellement deux projets de packs (Fix Pack à 9,90 € et React/Vite Starter à 19,90 €). Aucun de ces prix affichés n'a été modifié par cette correction. Le contenu et la livraison des deux packs restent à vérifier : leurs liens servent uniquement à demander d'être prévenu, sans réservation commerciale, commande ou débit. Le prix cible historique de 19 € ci-dessus ne constitue pas un tarif d'achat ouvert.
 
 ### 3. GitHub funnel
 Action réutilisable `PWA QuickKit Audit` ajoutée dans `.github/actions/pwa-quickkit`.

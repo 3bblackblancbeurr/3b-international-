@@ -95,15 +95,41 @@ $('jsonButton').addEventListener('click', () => {
 const PRO_TOKEN_KEY = 'pwa_quickkit_pro_token_v1';
 const proCheckout = document.getElementById('proCheckout');
 const proNote = document.getElementById('proCheckoutNote');
+let proAvailability = null;
+
+async function checkProAvailability() {
+  const response = await fetch('/api/pwa-quickkit-availability', {
+    method: 'GET', headers: { accept: 'application/json' },
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || !['off', 'test', 'live'].includes(data.mode)
+    || typeof data.checkoutConfigured !== 'boolean' || data.offerState !== 'in_preparation') {
+    throw new Error('La disponibilité Pro ne peut pas être vérifiée pour le moment. Aucun paiement n’a été ouvert.');
+  }
+  proAvailability = data;
+  if (data.mode === 'test' && data.checkoutConfigured) {
+    proCheckout.textContent = 'Tester la démo · aucun débit réel';
+    proNote.textContent = 'MODE TEST · Pro est en préparation. La démo simule un abonnement de 9,90 €/mois, sans débit réel et sans accès à des fonctions Pro livrées.';
+  } else {
+    proCheckout.textContent = 'Revérifier la disponibilité Pro';
+    proNote.textContent = data.mode === 'live'
+      ? 'MODE RÉEL · Pro reste en préparation et n’est pas proposé à la vente sur cette page. Aucun abonnement ni paiement n’a été ouvert.'
+      : data.mode === 'test'
+        ? 'MODE TEST · La démo est indisponible pour le moment. Aucun paiement n’a été ouvert.'
+        : 'Pro est indisponible et reste en préparation. Aucun paiement n’a été ouvert.';
+  }
+}
 
 function showProActive(data = {}) {
   if (proCheckout) {
-    proCheckout.textContent = 'Pro actif ✓';
+    proCheckout.textContent = data.mode === 'test' ? 'Démo Pro active · aucun débit réel' : 'Accès Pro actif ✓';
     proCheckout.disabled = true;
   }
   if (proNote) {
     const end = data.currentPeriodEnd ? new Date(data.currentPeriodEnd).toLocaleDateString('fr-FR') : null;
-    proNote.textContent = data.cancelAtPeriodEnd
+    proNote.textContent = data.mode === 'test'
+      ? 'MODE TEST · Activation de démonstration uniquement ; les fonctions Pro restent en préparation.'
+      : data.cancelAtPeriodEnd
       ? `Pro actif jusqu’au ${end || 'terme de la période'} puis résiliation.`
       : `Pro actif${end ? ` · prochaine échéance autour du ${end}` : ''}.`;
   }
@@ -153,26 +179,35 @@ async function activateCheckoutReturn() {
 
 if (proCheckout) {
   proCheckout.addEventListener('click', async () => {
-    const original = proCheckout.textContent;
+    if (proCheckout.disabled) return;
     proCheckout.disabled = true;
     proCheckout.textContent = 'Vérification…';
     try {
+      // An availability check never creates a payment session. A separate,
+      // explicitly labelled click can open the test-only demonstration.
+      if (proAvailability?.mode !== 'test' || !proAvailability.checkoutConfigured) {
+        await checkProAvailability();
+        return;
+      }
       const response = await fetch('/api/pwa-quickkit-checkout', {
         method: 'POST',
         headers: { 'content-type': 'application/json', accept: 'application/json' },
-        body: JSON.stringify({ attemptId: crypto.randomUUID() }),
+        body: JSON.stringify({ attemptId: crypto.randomUUID(), expectedMode: 'test' }),
       });
       const data = await response.json().catch(() => ({}));
-      if (response.ok && data.url) {
-        window.location.assign(data.url);
-        return;
+      if (!response.ok || data.mode !== 'test' || !data.url) {
+        throw new Error(data.error || 'La démo test est indisponible. Aucun paiement réel n’est proposé ici.');
       }
-      if (proNote) proNote.textContent = 'Pro n’est pas encore ouvert. La Correction Express est disponible dès maintenant à partir de 49 €.';
-    } catch {
-      if (proNote) proNote.textContent = 'Pro n’est pas encore ouvert. La Correction Express est disponible dès maintenant à partir de 49 €.';
+      const checkoutUrl = new URL(data.url);
+      if (checkoutUrl.origin !== 'https://checkout.stripe.com') throw new Error('Le lien de démonstration est invalide.');
+      window.location.assign(checkoutUrl.href);
+    } catch (error) {
+      proAvailability = null;
+      proCheckout.textContent = 'Vérifier la disponibilité Pro';
+      if (proNote) proNote.textContent = error.message;
     } finally {
       proCheckout.disabled = false;
-      proCheckout.textContent = original;
+      if (proCheckout.textContent === 'Vérification…') proCheckout.textContent = 'Tester la démo · aucun débit réel';
     }
   });
 }
