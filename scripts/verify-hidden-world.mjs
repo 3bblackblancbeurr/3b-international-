@@ -23,10 +23,7 @@ try{
    const token=[btoa(JSON.stringify({alg:'HS256',typ:'JWT'})),btoa(JSON.stringify({sub:uid,exp:Math.floor(Date.now()/1000)+3600,role:'authenticated'})),'synthetic-hidden-test'].join('.');
    localStorage.setItem('3b_member_auth_v1',JSON.stringify({access_token:token,refresh_token:'synthetic-hidden-test',expires_at:Math.floor(Date.now()/1000)+3600,token_type:'bearer',user:{id:uid,aud:'authenticated',email:'qa@example.invalid'}}));
    localStorage.setItem('threeb_companion_prefs_v1',JSON.stringify({enabled:false}));localStorage.setItem('threeb_companion_living_v1',JSON.stringify({voiceEnabled:false}));
-   window.__spoken=[];window.__speechCancels=0;
-   const voices=[{name:'Français local QA',lang:'fr-FR',localService:true}];
-   Object.defineProperty(window,'speechSynthesis',{configurable:true,value:{getVoices:()=>voices,speak:utterance=>window.__spoken.push(utterance),cancel:()=>window.__speechCancels++,addEventListener(){},removeEventListener(){}}});
-   window.SpeechSynthesisUtterance=function(text){this.text=text;};
+   window.__demoAudio=[];const RealAudio=window.Audio;window.Audio=function(...args){const audio=new RealAudio(...args);if(String(args[0]).includes('/world/living/apparition-ish.mp3'))window.__demoAudio.push(audio);return audio;};
    window.__cameraCalls=0;const original=navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);navigator.mediaDevices.getUserMedia=async options=>{window.__cameraCalls++;return original(options);};
   },{uid});
   await context.route('https://ttvhcezucsbbmnafrotq.supabase.co/**',route=>{
@@ -68,14 +65,14 @@ try{
   await page.locator('.hidden-passage-stage[data-ready="true"]').waitFor({timeout:30000}).catch(async error=>{console.error(await page.locator('.hidden-inline-status').allTextContents(),errors);throw error;});await page.waitForTimeout(350);
   assert.equal(await page.evaluate(()=>window.__cameraCalls),0,'Apparition visit needs no camera');
   await page.locator('.hidden-passage-stage').screenshot({path:path.join(out,'apparition-'+width+'.png')});
-  assert.equal(await page.evaluate(()=>window.__spoken.length),0,'Speech needs an explicit tap');
+  assert.equal(await page.evaluate(()=>window.__demoAudio.length),0,'Speech needs an explicit tap');
   await page.getByRole('button',{name:'Faire parler',exact:true}).click();
-  assert.deepEqual(await page.evaluate(()=>{const u=window.__spoken.at(-1);return {text:u.text,lang:u.lang,local:u.voice.localService};}),{text:'On viendra te chercher, Ish.',lang:'fr-FR',local:true});
-  await page.waitForFunction(()=>document.querySelector('.hidden-echo-status')?.textContent==='On viendra te chercher, Ish.');
-  assert.equal(await page.getByRole('button',{name:'Arrêter la voix',exact:true}).getAttribute('aria-pressed'),'true');
+  await page.getByRole('button',{name:'Arrêter la voix',exact:true}).waitFor();
+  await page.waitForFunction(()=>window.__demoAudio.at(-1)?.currentTime>.05);
+  assert.equal(await page.evaluate(()=>window.__demoAudio.at(-1).muted),false);
+  assert.ok(await page.evaluate(()=>window.__demoAudio.at(-1).duration)>1,'A real decoded speech recording is playing');
   await page.locator('.hidden-passage-stage').screenshot({path:path.join(out,'apparition-speaking-'+width+'.png')});
-  await page.evaluate(()=>window.__spoken.at(-1).onend());await page.getByRole('button',{name:'Faire parler',exact:true}).waitFor();
-
+  await page.getByRole('button',{name:'Faire parler',exact:true}).waitFor({timeout:10000});
   await page.locator('.hidden-echo-toolbar .hidden-effect-settings > summary').click();
   await page.getByRole('button',{name:'Aura activée',exact:true}).click();assert.equal(await page.getByRole('button',{name:'Aura arrêtée',exact:true}).getAttribute('aria-pressed'),'false');
   await page.getByRole('button',{name:'Aura arrêtée',exact:true}).click();
@@ -86,10 +83,10 @@ try{
   await page.waitForFunction(()=>document.querySelector('.hidden-echo-status')?.textContent.includes('te fait un signe'),{},{timeout:15000});
   await page.getByRole('button',{name:'Pause',exact:true}).click();
   await page.locator('.hidden-passage-stage').screenshot({path:path.join(out,'apparition-gesture-'+width+'.png')});
-  await page.getByRole('button',{name:'Faire parler',exact:true}).click();const speechCancels=await page.evaluate(()=>window.__speechCancels);
+  await page.getByRole('button',{name:'Faire parler',exact:true}).click();await page.getByRole('button',{name:'Arrêter la voix',exact:true}).waitFor();
   await page.getByRole('button',{name:'Fermer la visite 3D',exact:true}).click();assert.equal(await page.locator('.hidden-passage-stage canvas').count(),0);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
-  assert.ok(await page.evaluate(()=>window.__speechCancels)>speechCancels,'Closing the scene stops speech');
+  assert.equal(await page.evaluate(()=>window.__demoAudio.at(-1).paused),true,'Closing the scene stops real audio');
   await page.locator('.hidden-photo-tools > summary').click();
   await page.getByRole('button',{name:'Ouvrir la caméra',exact:true}).click();await page.waitForFunction(()=>document.querySelector('.hidden-scanner video')?.readyState>=2);
   await page.getByRole('button',{name:'Prendre une photo',exact:true}).click();await page.locator('.hidden-viewfinder img').waitFor();assert.equal(await page.evaluate(()=>document.querySelector('.hidden-scanner video').srcObject),null);
