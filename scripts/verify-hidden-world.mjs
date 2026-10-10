@@ -45,6 +45,7 @@ try{
   }
   await page.getByTestId('invisible-nav-realms').click();assert.equal(await page.locator('.hidden-realm').count(),8);await page.locator('.hidden-realm').first().click();await page.getByRole('dialog').waitFor();await page.keyboard.press('Escape');assert.equal(await page.getByRole('dialog').count(),0);
   await page.getByTestId('invisible-nav-scanner').click();
+  await page.locator('.hidden-scanner').screenshot({path:path.join(out,'scanner-menu-'+width+'.png')});
   assert.equal(await page.locator('.hidden-camera-portal').count(),0,'No screen-fixed camera overlay');
   await page.getByRole('button',{name:'Passage 3D',exact:true}).click();
   await page.getByRole('button',{name:'Découvrir le passage en 3D',exact:true}).click();await page.locator('.hidden-passage-stage.is-preview canvas').waitFor();
@@ -63,6 +64,9 @@ try{
   await page.locator('.hidden-passage-stage[data-ready="true"]').waitFor({timeout:30000}).catch(async error=>{console.error(await page.locator('.hidden-inline-status').allTextContents(),errors);throw error;});await page.waitForTimeout(350);
   assert.equal(await page.evaluate(()=>window.__cameraCalls),0,'Apparition visit needs no camera');
   await page.locator('.hidden-passage-stage').screenshot({path:path.join(out,'apparition-'+width+'.png')});
+  await page.locator('.hidden-echo-toolbar .hidden-effect-settings > summary').click();
+  await page.getByRole('button',{name:'Aura activée',exact:true}).click();assert.equal(await page.getByRole('button',{name:'Aura arrêtée',exact:true}).getAttribute('aria-pressed'),'false');
+  await page.getByRole('button',{name:'Aura arrêtée',exact:true}).click();
   await page.getByRole('button',{name:'Animations arrêtées',exact:true}).click();await page.waitForTimeout(2000);
   await page.getByRole('button',{name:'Pause',exact:true}).click();assert.equal(await page.getByRole('button',{name:'Reprendre',exact:true}).getAttribute('aria-pressed'),'true');
   await page.locator('.hidden-passage-stage').screenshot({path:path.join(out,'apparition-animated-'+width+'.png')});

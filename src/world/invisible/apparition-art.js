@@ -16,10 +16,20 @@ export function createApparitionArt({onReady=()=>{},onError=()=>{},onPhase=()=>{
  const particlesGeometry=new THREE.BufferGeometry(),points=[];
  for(let i=0;i<150;i++){const angle=i*2.399,rad=.018+((i*17)%101)/101*.09;points.push(Math.cos(angle)*rad,((i*29)%151)/151*.39-.19,Math.sin(angle)*rad);}
  particlesGeometry.setAttribute('position',new THREE.Float32BufferAttribute(points,3));
- const particlesMaterial=new THREE.PointsMaterial({color:0x77dfff,size:.0018,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false});
- const particles=new THREE.Points(particlesGeometry,particlesMaterial);body.add(particles);
+ const aura=new THREE.Group();body.add(aura);
+ const auraUniforms={time:uniforms.time,fade:{value:0}};
+ const particlesMaterial=new THREE.ShaderMaterial({uniforms:auraUniforms,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false,
+  vertexShader:`uniform float time;varying float sparkle;void main(){float seed=position.y*97.+position.x*231.;sparkle=pow(.5+.5*sin(time*1.7+seed),5.);vec4 p=modelViewMatrix*vec4(position,1.);gl_Position=projectionMatrix*p;gl_PointSize=2.+sparkle*3.;}`,
+  fragmentShader:`uniform float fade;varying float sparkle;void main(){vec2 p=gl_PointCoord-.5;float core=exp(-dot(p,p)*48.);float rays=exp(-abs(p.x)*50.)*exp(-abs(p.y)*7.)+exp(-abs(p.y)*50.)*exp(-abs(p.x)*7.);float a=(core*.55+rays*sparkle*.4)*fade;if(a<.003)discard;gl_FragColor=vec4(.4,.83,1.,a);}`});
+ const particles=new THREE.Points(particlesGeometry,particlesMaterial);aura.add(particles);
+ const waveGeometry=new THREE.CylinderGeometry(.102,.085,.39,48,12,true);
+ const waveMaterial=new THREE.ShaderMaterial({uniforms:auraUniforms,transparent:true,side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false,
+  vertexShader:`uniform float time;varying vec2 vUv;void main(){vUv=uv;vec3 p=position;float wave=sin(uv.x*18.85+uv.y*12.-time*.85);p.xz*=1.+wave*.025;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,
+  fragmentShader:`uniform float time;uniform float fade;varying vec2 vUv;void main(){float edge=smoothstep(0.,.15,vUv.y)*(1.-smoothstep(.8,1.,vUv.y));float band=pow(.5+.5*sin(vUv.y*25.13-vUv.x*6.28-time*1.2),22.);float arc=pow(.5+.5*sin(vUv.x*18.85+time*.6),4.);float a=band*arc*edge*fade*.20;if(a<.002)discard;gl_FragColor=vec4(.12,.65,1.,a);}`});
+ const wave=new THREE.Mesh(waveGeometry,waveMaterial);wave.position.y=.005;aura.add(wave);
  const ringGeometry=new THREE.RingGeometry(.047,.0485,64),ringMaterial=new THREE.MeshBasicMaterial({color:0x80ddff,transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false,toneMapped:false});
- const ring=new THREE.Mesh(ringGeometry,ringMaterial);ring.rotation.x=-Math.PI/2;ring.position.y=-.181;body.add(ring);
+ const ring=new THREE.Mesh(ringGeometry,ringMaterial);ring.rotation.x=-Math.PI/2;ring.position.y=-.181;aura.add(ring);
+ const ripples=[0,.5].map(offset=>{const m=ringMaterial.clone(),mesh=new THREE.Mesh(ringGeometry,m);mesh.rotation.x=-Math.PI/2;mesh.position.y=-.1805;aura.add(mesh);return {mesh,offset};});
  const promise=load('/world/living/traveller-0.glb').then(asset=>{
   if(disposed){disposeModel(asset.scene);return;}
   model=asset.scene;
@@ -62,12 +72,14 @@ export function createApparitionArt({onReady=()=>{},onError=()=>{},onPhase=()=>{
   if(pose.clip!==current){const next=actions[pose.clip];next.reset().play();actions[current].crossFadeTo(next,.28,false);current=pose.clip;}
   if(!clock.paused&&animated&&!reduced)mixer.update(dt);
   uniforms.time.value=t;uniforms.fade.value=pose.opacity;body.position.set(pose.x,0,.04+pose.z);body.rotation.y=pose.yaw;
-  particles.rotation.y=t*.12;particles.position.y=pose.phase==='disparition'?(t-9.6)*.015:0;particlesMaterial.opacity=pose.done?0:pose.opacity*.3;
+  const effectTime=animated&&!reduced?t:0;uniforms.time.value=effectTime;
+  particles.rotation.y=effectTime*.12;particles.position.y=pose.phase==='disparition'?(t-9.6)*.015:0;auraUniforms.fade.value=pose.done?0:pose.opacity*.65;
+  for(const {mesh,offset} of ripples){const progress=(effectTime*.24+offset)%1;mesh.scale.setScalar(1.+progress*1.4);mesh.material.opacity=pose.opacity*(1.-progress)*.16;}
   ringMaterial.opacity=pose.opacity*.35;model.visible=pose.opacity>.001;
   if(pose.phase!==lastPhase){lastPhase=pose.phase;onPhase(pose.phase);}
  }
  return {root,promise,update,setDepth(depth,viewport){uniforms.depthOn.value=0;if(!depth||!viewport||viewport.z<=0||viewport.w<=0)return;
   if(depthTexture.image.width!==depth.width||depthTexture.image.height!==depth.height){depthTexture.dispose();depthTexture=new THREE.DataTexture(depth.data.slice(),depth.width,depth.height,THREE.RedFormat,THREE.FloatType);depthTexture.minFilter=depthTexture.magFilter=THREE.NearestFilter;uniforms.depth.value=depthTexture;}else depthTexture.image.data.set(depth.data);
   depthTexture.needsUpdate=true;uniforms.depthMatrix.value.fromArray(depth.matrix);uniforms.depthScale.value=depth.scale;uniforms.viewport.value.copy(viewport);uniforms.depthOn.value=1;
- },replay(){clock.restart();lastTime=null;},setPaused(value){clock.setPaused(value);},setAnimated(value){animated=!!value;clock.restart();lastTime=null;},dispose(){if(disposed)return;disposed=true;depthTexture.dispose();mixer?.stopAllAction();if(model){mixer?.uncacheRoot(model);disposeModel(model);}particlesGeometry.dispose();particlesMaterial.dispose();ringGeometry.dispose();ringMaterial.dispose();materials.forEach(m=>m.dispose());},get ready(){return ready;}};
+ },setAura(value){aura.visible=!!value;},replay(){clock.restart();lastTime=null;},setPaused(value){clock.setPaused(value);},setAnimated(value){animated=!!value;clock.restart();lastTime=null;},dispose(){if(disposed)return;disposed=true;depthTexture.dispose();mixer?.stopAllAction();if(model){mixer?.uncacheRoot(model);disposeModel(model);}particlesGeometry.dispose();particlesMaterial.dispose();waveGeometry.dispose();waveMaterial.dispose();ringGeometry.dispose();ringMaterial.dispose();ripples.forEach(({mesh})=>mesh.material.dispose());materials.forEach(m=>m.dispose());},get ready(){return ready;}};
 }
