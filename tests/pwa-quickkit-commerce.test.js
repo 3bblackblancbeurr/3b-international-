@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createPwaQuickKitCommerce } from '../server/pwa-quickkit-commerce.js';
+import checkoutEndpoint from '../api/pwa-quickkit-checkout.js';
 
 const baseEnv = {
   PWA_QUICKKIT_PUBLIC_URL: 'https://example.com/pwa-quickkit/',
@@ -61,16 +62,16 @@ function commerceFixture({ livemode = false, env = {}, priceMode = livemode, ses
     SUPABASE_SERVICE_ROLE_KEY: 'x'.repeat(40),
     ...env,
   };
-  const calls = { checkout: [], database: [], writes: [] };
+  const calls = { checkout: [], database: [], writes: [], prices: [] };
   const subscription = { id: 'sub_fixture', status: 'active', customer: 'cus_fixture', livemode: subscriptionMode,
     metadata: { integration: INTEGRATION }, current_period_end: Math.floor(Date.now() / 1000) + 86400 };
   const session = { id: 'cs_test_fixture', url: 'https://checkout.stripe.com/c/pay/cs_test_fixture',
     livemode: sessionMode, mode: 'subscription', status: 'complete', payment_status: paymentStatus,
     metadata: { integration: INTEGRATION }, subscription, customer_details: { email: 'buyer@example.com' } };
   const stripe = {
-    prices: { retrieve: async () => ({ active: true, currency: 'eur', unit_amount: 990, type: 'recurring',
+    prices: { retrieve: async id => { calls.prices.push(id); return ({ active: true, currency: 'eur', unit_amount: 990, type: 'recurring',
       livemode: priceMode, recurring: { interval: 'month', interval_count: 1 },
-      product: { active: true, metadata: { project: 'pwa-quickkit' } } }) },
+      product: { active: true, metadata: { project: 'pwa-quickkit' } } }); } },
     checkout: { sessions: {
       create: async (body, options) => { calls.checkout.push({ body, options }); return session; },
       retrieve: async () => session,
@@ -104,6 +105,86 @@ function postRequest(endpoint, body) {
 const checkoutRequest = () => postRequest('checkout', { attemptId: '123e4567-e89b-42d3-a456-426614174000' });
 const statusRequest = () => new Request(ORIGIN + '/api/pwa-quickkit-status', { headers: { authorization: 'Bearer ' + TEST_TOKEN } });
 const webhookRequest = () => postRequest('webhook', {});
+
+test('public availability separates disabled, test and live configuration without financial or database calls', async () => {
+  for (const [options, mode, configured] of [
+    [{ env: { STRIPE_SECRET_KEY: '' } }, 'off', false],
+    [{ env: { PWA_QUICKKIT_CHECKOUT_ENABLED: 'false' } }, 'test', false],
+    [{}, 'test', true],
+    [{ livemode: true, env: { PWA_QUICKKIT_LIVE_APPROVED: '' } }, 'live', false],
+    [{ livemode: true }, 'live', true],
+  ]) {
+    const f = commerceFixture(options);
+    const response = await f.api.availability(new Request(ORIGIN + '/api/pwa-quickkit-checkout'));
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('cache-control'), 'no-store');
+    assert.deepEqual(await response.json(), {
+      mode, checkoutConfigured: configured, offerState: 'in_preparation',
+      amount: 990, currency: 'eur', interval: 'month',
+    });
+    assert.deepEqual(f.calls, { checkout: [], database: [], writes: [], prices: [] });
+  }
+});
+
+test('availability is read-only and rejects POST without opening a session', async () => {
+  const f = commerceFixture();
+  const response = await f.api.availability(postRequest('checkout', {}));
+  assert.equal(response.status, 405);
+  assert.equal(response.headers.get('allow'), 'GET');
+  assert.deepEqual(f.calls, { checkout: [], database: [], writes: [], prices: [] });
+});
+
+test('the existing QuickKit endpoint dispatches read-only GET and preserves fail-closed POST', async t => {
+  const env = {
+    PWA_QUICKKIT_PUBLIC_URL: ORIGIN + '/pwa-quickkit/',
+    PWA_QUICKKIT_CHECKOUT_ENABLED: 'false',
+    STRIPE_SECRET_KEY: '',
+  };
+  const previous = Object.fromEntries(Object.keys(env).map(key => [key, process.env[key]]));
+  t.after(() => {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
+  Object.assign(process.env, env);
+  const response = await checkoutEndpoint.fetch(new Request(ORIGIN + '/api/pwa-quickkit-checkout'));
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('cache-control'), 'no-store');
+  assert.deepEqual(await response.json(), {
+    mode: 'off', checkoutConfigured: false, offerState: 'in_preparation',
+    amount: 990, currency: 'eur', interval: 'month',
+  });
+  assert.equal((await checkoutEndpoint.fetch(checkoutRequest())).status, 503);
+  for (const method of ['PUT', 'DELETE', 'HEAD', 'OPTIONS']) {
+    const rejected = await checkoutEndpoint.fetch(new Request(ORIGIN + '/api/pwa-quickkit-checkout', { method }));
+    assert.equal(rejected.status, 405);
+    assert.equal(rejected.headers.get('allow'), 'GET, POST');
+  }
+});
+
+test('a demonstration cannot silently become a live checkout after configuration changes', async () => {
+  const f = commerceFixture({ livemode: true });
+  const response = await f.api.checkout(postRequest('checkout', {
+    attemptId: '123e4567-e89b-42d3-a456-426614174000', expectedMode: 'test',
+  }));
+  assert.equal(response.status, 409);
+  assert.deepEqual(f.calls, { checkout: [], database: [], writes: [], prices: [] });
+});
+
+test('checkout rejects an unknown requested mode and reports its actual mode in a valid response', async () => {
+  const f = commerceFixture();
+  const invalid = await f.api.checkout(postRequest('checkout', {
+    attemptId: '123e4567-e89b-42d3-a456-426614174000', expectedMode: 'preview',
+  }));
+  assert.equal(invalid.status, 400);
+  assert.equal(f.calls.checkout.length, 0);
+  const valid = await f.api.checkout(postRequest('checkout', {
+    attemptId: '123e4567-e89b-42d3-a456-426614174000', expectedMode: 'test',
+  }));
+  assert.equal((await valid.json()).mode, 'test');
+  assert.equal(f.calls.checkout.length, 1);
+});
 
 test('QuickKit test checkout and explicitly approved live checkout remain usable with secret or restricted keys', async () => {
   for (const livemode of [false, true]) {
