@@ -4,6 +4,7 @@ import {worldArtMaterials} from '../design-system/tokens.js';
 import {artLighting,architecturalBudget} from './art-direction.js';
 import {applyFacadeDetail} from './facade-detail.js';
 import {createStaticInstances} from './static-instances.js';
+import {mergeIndexedGeometries} from './geometry-batch.js';
 import {createCameraObstructionResolver} from './camera-obstruction.js';
 import {createPartyActors} from './party-actors.js';
 import {createCombatTelegraph} from './combat-telegraph.js';
@@ -22,7 +23,6 @@ import {createMovementFrame,followMovement,viewBearing} from './camera-follow.js
 import {combatCue,createCombatEffects} from './combat-effects.js';
 import {LANDMARK_SITE} from './heritage.js';
 import * as THREE from 'three';
-import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {loadWorldModels} from './models.js';
 import {createLivingActor} from './living.js';
 import {DEFAULT_ORBIT,restoreOrbit,rotateOrbit,zoomOrbit,orbitView} from './orbit.js';
@@ -241,7 +241,7 @@ function hubNpcAvatar(item){
  function batchStatic(){
   const dynamic=new Set([avatar,companion,focusRing,waypointRing,effect,...animations.map(a=>a.mesh),...[...itemVisuals.values()].flat()]),groups=new Map();
   for(const m of root.children){if(!m.isMesh||m.isInstancedMesh||dynamic.has(m)||m.material.transparent)continue;const key=m.material.uuid;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(m);}
-  for(const meshes of groups.values())if(meshes.length>2){const geometries=meshes.map(m=>{m.updateMatrix();const g=m.geometry.index?m.geometry.toNonIndexed():m.geometry.clone();return g.applyMatrix4(m.matrix);});const merged=mergeGeometries(geometries);geometries.forEach(g=>g.dispose());if(!merged)continue;const batch=new THREE.Mesh(register(merged),meshes[0].material);batch.castShadow=true;batch.receiveShadow=true;root.add(batch);meshes.forEach(m=>root.remove(m));}
+  for(const meshes of groups.values())if(meshes.length>2){const geometries=meshes.map(m=>{m.updateMatrix();const g=m.geometry.clone();return g.applyMatrix4(m.matrix);});const merged=mergeIndexedGeometries(geometries);geometries.forEach(g=>g.dispose());if(!merged)continue;const batch=new THREE.Mesh(register(merged),meshes[0].material);batch.castShadow=true;batch.receiveShadow=true;root.add(batch);meshes.forEach(m=>root.remove(m));}
  }
  function syncEscort(){if(!models)return;if(save.adventure.companionHidden){escort?.object.removeFromParent();escort?.dispose();escort=null;escortId=null;trail=[];return;}const id=save.adventure.companion||save.team[0]||save.leader;if(escortId===id&&escort)return;escort?.object.removeFromParent();escort?.dispose();escortId=id;escort=createLivingActor(models.living,{reducedMotion,card:id,scale:2,onError});escort.object.position.set(position.x+2,groundY(position.x+2,position.z+2),position.z+2);root.add(escort.object);trail=[];}
  function refreshHubScheduleState(){

@@ -13,7 +13,7 @@ import {addHeritagePlatform} from './heritage-platform.js';
 import {addCivicBuildings} from './civic-buildings.js';
 import {frontierState} from './frontier.js';
 import * as THREE from 'three';
-import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {mergeIndexedGeometries} from './geometry-batch.js';
 import {COUNTRIES,countryById} from './catalog.js';
 import {chapterState} from './chapters.js';
 import {createResident} from './models.js';
@@ -34,7 +34,7 @@ import {wetnessForWeather,advanceWetness} from './wetness.js';
 import {createRealmStreamer} from './realm-streaming.js';
 export const countryPalette=id=>{const b=BIOMES[id]||BIOMES.hub;return[b.sky,b.low,b.high];};
 export function bakeGeometry(source,matrix){
- const geometry=source.index?source.toNonIndexed():source.clone();
+ const geometry=source.clone();
  for(const [name,a] of Object.entries(geometry.attributes))if(!(a.array instanceof Float32Array)){
   const values=new Float32Array(a.count*a.itemSize),read=['getX','getY','getZ','getW'];
   for(let i=0;i<a.count;i++)for(let j=0;j<a.itemSize;j++)values[i*a.itemSize+j]=a[read[j]](i);
@@ -82,7 +82,7 @@ export function createLandscape(models,region,save,onError=console.error){
  function batch(group){
   group.updateMatrixWorld(true);const byMaterial=new Map(),inverse=new THREE.Matrix4().copy(group.matrixWorld).invert();
   group.traverse(o=>{if(!o.isMesh||o.isInstancedMesh||o.isSkinnedMesh||Array.isArray(o.material)||o.material.transparent||o.material.vertexColors)return;const key=o.material.uuid;if(!byMaterial.has(key))byMaterial.set(key,[]);byMaterial.get(key).push(o);});
-  for(const meshes of byMaterial.values())if(meshes.length>1){const geometries=meshes.map(o=>architecturalUV(bakeGeometry(o.geometry,new THREE.Matrix4().multiplyMatrices(inverse,o.matrixWorld)),o.material.userData.worldTexScale)),merged=mergeGeometries(geometries);geometries.forEach(g=>g.dispose());if(!merged)continue;owned.push(merged);const m=new THREE.Mesh(merged,meshes[0].material);m.receiveShadow=true;m.castShadow=true;meshes.forEach(o=>o.removeFromParent());group.add(m);}
+  for(const meshes of byMaterial.values())if(meshes.length>1){const geometries=meshes.map(o=>architecturalUV(bakeGeometry(o.geometry,new THREE.Matrix4().multiplyMatrices(inverse,o.matrixWorld)),o.material.userData.worldTexScale)),merged=mergeIndexedGeometries(geometries);geometries.forEach(g=>g.dispose());if(!merged)continue;owned.push(merged);const m=new THREE.Mesh(merged,meshes[0].material);m.receiveShadow=true;m.castShadow=true;meshes.forEach(o=>o.removeFromParent());group.add(m);}
  }
  function resident(x,z,color,parent=root,kind='traveler',route=null){if(route?.points){route.lengths=route.points.slice(1).map((p,i)=>Math.hypot(p.x-route.points[i].x,p.z-route.points[i].z));route.total=route.lengths.reduce((a,b)=>a+b,0);}const hero=createResident(models.kit,kind,color);hero.object.position.set(x,height(x,z),z);parent.add(hero.object);residents.push({hero,x,z,parent,route,kind,nextGesture:0,phase:residents.length*1.7});return hero;}
  function house(id,x,z,rotation=0,variant=0,parent=root,urban=true){const h=architecture.building(id,variant,{urban}),y=height(x,z),{width,depth}=h.userData.dimensions;h.position.set(x,y,z);h.rotation.y=rotation;parent.add(h);const base=shape(box,mat(biome.rock),x,y-.4,z,width+.4,.8,depth+.4,parent);base.rotation.y=rotation;collisions.push({x,z,width:width+.4,depth:depth+.4,rotation});}

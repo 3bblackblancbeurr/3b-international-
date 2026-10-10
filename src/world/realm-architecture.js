@@ -112,7 +112,7 @@ export function createRealmArchitecture(region){
   }else if(variant===2){
    for(const x of [-4,4]){
     const y=floors>1?6.4:1.15;b(wood,x,y,5.54,2.5,.45,.62,0,3);b(dark,x,y+.25,5.54,2.27,.05,.43,0,1);
-    for(let sprig=0;sprig<5;sprig++)add(bud,sprig%2?leaf:wood,x+(sprig-2)*.42,y+.43+(sprig%2)*.12,5.54,.32,.35,.30,0,1);
+    for(let sprig=0;sprig<5;sprig++)add(bud,leaf.clone().multiplyScalar(sprig%2?1:.82),x+(sprig-2)*.42,y+.43+(sprig%2)*.12,5.54,.32,.35,.30,0,1);
    }
   }
   if(east){

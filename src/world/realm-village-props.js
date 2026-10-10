@@ -19,7 +19,20 @@ export function createVillageFurnitureGeometry(region,biome){
  box(stone,0,.31,1.38,1.8,.62,.76);box(wood,0,.64,1.38,1.50,.04,.56);
  for(const side of [-1,1])box(stone,side*.84,.69,1.38,.13,.17,.84);
  for(const side of [-1,1])box(stone,0,.69,1.38+side*.37,1.8,.17,.12);
- for(let plant=0;plant<3;plant++)piece(new THREE.IcosahedronGeometry(1,1),leaf,(plant-1)*.48,1.02,1.38,.45,.47,.42);
+ // A small pollarded street tree grows from the existing soil inset. Its
+ // opaque crowns, trunk and branches replace the old three spherical shrubs,
+ // stay within the same collision envelope and share the existing one draw.
+ piece(new THREE.CylinderGeometry(1,1,1,6),wood,0,1.68,1.38,.12,2.08,.12);
+ for(const side of [-1,1]){
+  box(wood,side*.42,2.35,1.38,.95,.10,.10);
+  piece(new THREE.CylinderGeometry(1,1,1,5),wood,side*.68,2.61,1.38,.055,.60,.055);
+ }
+ for(let crown=0;crown<9;crown++){
+  const x=((crown%3)-1)*.65,y=2.75+Math.floor(crown/3)*.43,z=1.32+Math.sin(crown*2.4)*.25,tint=leaf.clone().multiplyScalar(.86+(crown%3)*.11);
+  piece(new THREE.IcosahedronGeometry(1,0),tint,x,y,z,.57,.52,.48);
+ }
+ // A few warm blossoms sit above the rim, without transparent leaf cards.
+ for(const x of [-.60,.60])piece(new THREE.IcosahedronGeometry(1,0),new THREE.Color(palette.sun),x,.87,1.22,.13,.13,.13);
  // A single lantern catches reflected light; it is deliberately not a GPU
  // point light. Its stepped cap changes with the architectural region.
  piece(new THREE.CylinderGeometry(1,1,1,8),metal,1.67,2.05,.42,.075,4.1,.075);
