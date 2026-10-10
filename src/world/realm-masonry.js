@@ -18,14 +18,19 @@ export function createRealmMasonryTextures(region){
   const cloud=noise(u*6,v*6,seed+surface*73),wear=noise(u*17,v*17,seed+51),fine=(hash(x,y,seed)-.5)*1.1;
   let value=231+(cloud-.5)*10+fine,bump=.5+(wear-.5)*.007,r=.9;
   if(surface===0||surface===2){
-   const rows=surface===0?4:5,row=Math.floor(v*rows),shift=surface===0?(row%2)*.5:(row%2)*.28,columns=surface===0?2:4;
+   const rows=surface===0?(region==='italie'?5:region==='estonie'?3:4):5,row=Math.floor(v*rows),shift=surface===0?(row%2)*.5:(row%2)*.28,columns=surface===0?(region==='estonie'?3:2):4;
    const xx=u*columns+shift,yy=v*rows,fx=xx-Math.floor(xx),fy=yy-Math.floor(yy),edge=Math.min(fx,1-fx,fy,1-fy),joint=1-smooth(Math.min(1,edge/(surface===0?.026:.038)));
    const slab=hash(Math.floor(xx),row,seed+surface*27),mottle=(cloud-.5)*11+(wear-.5)*4;
-   value=(surface===0?218:183)+(slab-.5)*(surface===0?32:58)+mottle-joint*(surface===0?66:67);
-   bump=.5+(slab-.5)*.009+(wear-.5)*.005-joint*.16;r=(surface===0?.88:.86)+joint*.1+(cloud-.5)*.04;
+   const bevel=1-smooth(Math.min(1,edge/.11)),chip=noise(u*53,v*53,seed+77),edgeWear=bevel*smooth(Math.min(1,chip*1.35));
+   const mineral=noise(u*28+cloud,v*9,seed+83),pore=Math.max(0,.18-hash(x,y,seed+131));
+   value=(surface===0?218:183)+(slab-.5)*(surface===0?32:58)+mottle+(mineral-.5)*7-edgeWear*9-pore*25-joint*(surface===0?66:67);
+   bump=.5+(slab-.5)*.009+(wear-.5)*.006+(mineral-.5)*.005-edgeWear*.025-pore*.028-joint*.16;
+   r=(surface===0?.85:.83)+joint*.13+edgeWear*.05+(cloud-.5)*.055;
   }else if(surface===1){
    // Broad lime-render clouds and restrained pores retain a calm façade.
-   value=236+(cloud-.5)*13+(wear-.5)*5+fine;bump=.5+(wear-.5)*.014;r=.93+(cloud-.5)*.035;
+   const aggregate=noise(u*64,v*64,seed+113),weathered=smooth(Math.max(0,(wear-.58)/.32));
+   value=236+(cloud-.5)*13+(wear-.5)*5+fine-weathered*7;
+   bump=.5+(wear-.5)*.014+(aggregate-.5)*.008;r=.91+(cloud-.5)*.055+weathered*.035;
   }else{
    const plank=Math.floor(u*5),edge=Math.min(u*5-plank,1-(u*5-plank)),joint=1-smooth(Math.min(1,edge/.03));
    const fibre=noise(u*42,v*3,seed+19),grain=Math.sin(u*125+cloud*8)*.5+.5;
@@ -58,7 +63,7 @@ vec4 realmAtlasSample(sampler2D atlas,vec2 p){return textureGrad(atlas,realmAtla
    const source=THREE.ShaderChunk[chunk].replaceAll(`texture2D( ${sampler}, ${varying} )`,`realmAtlasSample(${sampler},${varying})`);shader.fragmentShader=shader.fragmentShader.replace('#include <'+chunk+'>',source);
   }
  };
- material.customProgramCacheKey=()=> '3B-realm-masonry-atlas-v1';
+ material.customProgramCacheKey=()=> '3B-realm-masonry-atlas-v2';
 }
 
 // A metric projection per triangle avoids stretched generic primitive UVs and

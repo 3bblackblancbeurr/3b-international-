@@ -19,6 +19,7 @@ export function addCivicTower({mesh,geo,box,materials,buildings,collisions,camer
  // A visible, accessible entrance must lead to the real lift interaction.
  const entranceZ=z+d/2+.36;
  const decks=[],upperFurniture=[],floorDetails=[],{dark,gold,stone,glass,blue}=materials;
+ const windowGlass=materials.windowGlass||glass;
  const add=(...args)=>{const object=mesh(...args);floorDetails.push(object);return object;};
 
  // Eight structural piers and a glowing lift core make the tower one building.
@@ -54,11 +55,11 @@ export function addCivicTower({mesh,geo,box,materials,buildings,collisions,camer
   const openingX=x-w/2+1.9,openingZ=z-d/2+1.3;
   for(const side of [-1,1]){
    add(box,gold,x+side*w/2,floor.y+.07,z,.14,.18,d);
-   add(box,glass,x+side*(w/2-.12),floor.y+.74,z,.12,1.35,d-.5).castShadow=false;
+   add(box,windowGlass,x+side*(w/2-.12),floor.y+.74,z,.12,1.35,d-.5).castShadow=false;
    add(box,gold,x+side*(w/2-.12),floor.y+1.46,z,.16,.12,d);
   }
   for(const edge of [-1,1]){
-   add(box,glass,x,floor.y+.74,z+edge*(d/2-.12),w-.5,1.35,.12).castShadow=false;
+   add(box,windowGlass,x,floor.y+.74,z+edge*(d/2-.12),w-.5,1.35,.12).castShadow=false;
    add(box,gold,x,floor.y+1.46,z+edge*(d/2-.12),w,.12,.16);
   }
   add(box,dark,openingX,floor.y+.05,openingZ,1.85,.1,2.05);

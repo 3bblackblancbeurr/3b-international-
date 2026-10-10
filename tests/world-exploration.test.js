@@ -8,7 +8,7 @@ import {COUNTRIES} from '../src/world/catalog.js';
 import {createTerrainField,roadDistance} from '../src/world/terrain.js';
 import {compassHeading} from '../src/world/settlements.js';
 import {cameraRelative} from '../src/world/orbit.js';
-import {MeshStandardMaterial,Texture} from 'three';
+import {MeshStandardMaterial,Texture,ShaderLib} from 'three';
 import {prepareTintMaterial} from '../src/world/avatar-material.js';
 
 test('city and countryside discoveries award once per country and survive normalized saves',()=>{
@@ -37,8 +37,8 @@ test('compass heading agrees with forward movement at every camera orientation',
 });
 
 test('avatar fabric preserves shading while removing baked colors and metallic cloth',()=>{
- const m=new MeshStandardMaterial({map:new Texture(),metalness:1,metalnessMap:new Texture()});prepareTintMaterial(m);assert.equal(m.metalness,0);assert.equal(m.metalnessMap,null);const shader={fragmentShader:'#include <map_fragment>'};m.onBeforeCompile(shader);assert.ok(shader.fragmentShader.includes('shade3b'));assert.ok(shader.fragmentShader.includes('sampledDiffuseColor.a'));
- const pattern=new MeshStandardMaterial({map:new Texture()});const old=pattern.onBeforeCompile;prepareTintMaterial(pattern,{pattern:true});assert.equal(pattern.onBeforeCompile,old,'preserves the chosen accent color in patterns');m.map.dispose();pattern.map.dispose();m.dispose();pattern.dispose();
+ const m=new MeshStandardMaterial({map:new Texture(),metalness:1,metalnessMap:new Texture()});prepareTintMaterial(m);assert.equal(m.metalness,0);assert.equal(m.metalnessMap,null);const shader={vertexShader:ShaderLib.standard.vertexShader,fragmentShader:ShaderLib.standard.fragmentShader};m.onBeforeCompile(shader);assert.ok(shader.fragmentShader.includes('shade3b'));assert.ok(shader.fragmentShader.includes('sampledDiffuseColor.a'));
+ const pattern=new MeshStandardMaterial({map:new Texture()});prepareTintMaterial(pattern,{pattern:true});const patterned={vertexShader:ShaderLib.standard.vertexShader,fragmentShader:ShaderLib.standard.fragmentShader};pattern.onBeforeCompile(patterned);assert.ok(patterned.fragmentShader.includes('#include <map_fragment>'),'preserves the chosen accent color in patterns');assert.ok(!patterned.fragmentShader.includes('float shade3b'));m.map.dispose();pattern.map.dispose();m.dispose();pattern.dispose();
 });
 
 test('country streets stay flat, dry and clear of buildings, including bends and crossroads',()=>{

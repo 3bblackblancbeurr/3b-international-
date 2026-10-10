@@ -118,11 +118,11 @@ test('quality selector exposes clear performance tiers while preserving legacy t
 });
 
 
-test('premium ground reacts progressively to weather and adds controlled wear cracks joints and puddle roughness',()=>{
+test('premium ground reacts progressively to weather with natural soil rock and puddle roughness',()=>{
  const ground=read('src/world/natural-ground.js'),landscape=read('src/world/landscape.js');
  assert.match(ground,/surfaceWetness/);
  assert.match(ground,/crackField/);
- assert.match(ground,/urbanJoint/);
+ assert.doesNotMatch(ground,/urbanJoint/,'Natural ground does not acquire a regular paving grid');
  assert.match(ground,/wetMask/);
  assert.match(ground,/roughnessFactor=mix/);
  assert.match(ground,/setWetness/);

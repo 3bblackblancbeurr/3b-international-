@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import {worldArtMaterials} from '../../design-system/tokens.js';
+import {civicWindowGlow} from './civic-window-light.js';
 import {COUNTRIES} from '../catalog.js';
 import {REFERENCE_GATE_TITLES,paintGateFlag} from './gate-identity.js';
 import {gateCrownGeometry,gateInlayGeometry} from './gate-craft.js';
@@ -39,6 +41,8 @@ export function createHubPlatform(save){
  const material=(color,emissive=false)=>{const k=color+emissive;if(!cache.has(k)){const m=new THREE.MeshStandardMaterial({color,roughness:.65,metalness:.32,...(emissive?{emissive:color,emissiveIntensity:.45}:{})});cache.set(k,m);owned.push(m);}return cache.get(k);};
  const poolWater=createPremiumWater({region:'hub',lake:{x:0,z:0,r:16},owned});poolWater.setQuality('medium',{allowPlanarReflection:false});configureCivicPoolWater(poolWater);
  const surfaces=createCiteSurfaces(owned),{dark,stone,gold,glass}=surfaces,blue=material('#55c9ef',true),wood=material('#5f4939'),green=material('#315b4b'),water=poolWater.material;
+  // Independent inhabited glazing: civic lights never unlock the story's network glass.
+  const inhabitedGlass=new THREE.MeshPhysicalMaterial({color:worldArtMaterials.civicWindowGlass,emissive:worldArtMaterials.civicWindowEmission,emissiveIntensity:civicWindowGlow(1),roughness:.28,metalness:.14,clearcoat:.85,clearcoatRoughness:.13,envMapIntensity:.42});owned.push(inhabitedGlass);
  function mesh(g,m,x,y,z,sx=1,sy=sx,sz=sx){const o=new THREE.Mesh(g,m);o.position.set(x,y,z);o.scale.set(sx,sy,sz);o.castShadow=o.receiveShadow=true;root.add(o);return o;}
  function ring(r,tube,y,m,arc=Math.PI*2,start=0){const o=mesh(geo(new THREE.TorusGeometry(r,tube,6,96,arc)),m,0,y,0);o.rotation.set(-Math.PI/2,0,start);return o;}
  function sign(text,x,y,z,width=8){
@@ -171,9 +175,9 @@ export function createHubPlatform(save){
    sign('DUELS • ENTRAÎNEMENT • MULTIJOUEUR',x,5,z-d/2+.4,18);
   }
  }
- const architecture=addPlatformArchitecture({mesh,geo,box,cylinder,sphere,materials:{dark,gold,blue,glass,stone,green,wood},buildings,collisions,cameraSolids,sign,THREE});
+ const architecture=addPlatformArchitecture({mesh,geo,box,cylinder,sphere,materials:{dark,gold,blue,glass,stone,green,wood,windowGlass:inhabitedGlass},buildings,collisions,cameraSolids,sign,THREE});
  const landmarks=addLandmarkCraft({mesh,geo,box,cylinder,materials:{dark,gold,blue,glass,stone},buildings,collisions,cameraSolids,THREE});
- const tower=addCivicTower({mesh,geo,box,materials:{dark,gold,blue,glass,stone},buildings,collisions,cameraSolids,sign});
+ const tower=addCivicTower({mesh,geo,box,materials:{dark,gold,blue,glass,stone,windowGlass:inhabitedGlass},buildings,collisions,cameraSolids,sign});
  cameraSolids.push({id:'central-tower-body',x:0,z:0,width:22,depth:20,bottom:0,top:65});
  const referenceDetails=addReferenceCiteDetails({mesh,geo,box,cylinder,sphere,materials:{dark,gold,blue,glass,stone,green,wood},THREE});
  for(const side of [-1,1])for(const depth of [-1,1])cameraSolids.push({x:side*5.2,z:depth*5.2,width:3.8,depth:3.8,bottom:0,top:depth<0?100:84});
@@ -219,6 +223,23 @@ export function createHubPlatform(save){
   const parts=group.map(o=>{const g=o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone();return g.applyMatrix4(o.matrix);}),merged=mergeGeometries(parts);parts.forEach(g=>g.dispose());
   if(merged){const batch=mesh(geo(merged),group[0].material,0,0,0);batch.castShadow=true;group.forEach(o=>o.removeFromParent());}
  }
+ // The two opaque civic glazing materials share one draw-grouped Mesh. Their
+ // distinct night and story emissions remain independently adjustable, but
+ // a new shader must not increase the Hub's mobile static-mesh allocation.
+ const civicGlassBatches=root.children.filter(o=>o.isMesh&&!dynamic.has(o)&&(o.material===glass||o.material===inhabitedGlass));
+ const networkBatch=civicGlassBatches.find(o=>o.material===glass),inhabitedBatch=civicGlassBatches.find(o=>o.material===inhabitedGlass);
+ if(networkBatch&&inhabitedBatch){
+  const parts=[networkBatch,inhabitedBatch].map(o=>(o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone()).applyMatrix4(o.matrix));
+  const grouped=mergeGeometries(parts,true);parts.forEach(g=>g.dispose());
+  if(!grouped)throw new Error('Civic glass needs compatible position, normal and UV layouts');
+  const shared=mesh(geo(grouped),[glass,inhabitedGlass],0,0,0);
+  shared.castShadow=networkBatch.castShadow||inhabitedBatch.castShadow;
+  shared.receiveShadow=networkBatch.receiveShadow||inhabitedBatch.receiveShadow;
+  for(const old of [networkBatch,inhabitedBatch]){
+   old.removeFromParent();old.geometry.dispose();
+   const at=owned.indexOf(old.geometry);if(at>=0)owned.splice(at,1);
+  }
+ }
  const update=next=>{save=next;const state=platformWorldState(save);communityBanner.visible=state.communityUnited;blooms.forEach(b=>b.visible=state.gardenRestored);glass.emissive.set(state.networkRestored?'#174963':'#000000');glass.emissiveIntensity=state.networkRestored?.4:0;root.userData.worldState=state;const count=new Set(save.seals||[]).size;circleMaster.setProgress(count);}; // gold-master-allow: retain reviewed network-restoration glass emission; docs/hub-reference-art-exceptions.md#network-glass.
  update(save);
  root.scale.set(HUB_SCALE,1.5,HUB_SCALE);
@@ -234,7 +255,7 @@ export function createHubPlatform(save){
    displays.setQuality(mode);spray.setQuality(mode);surfaces.setQuality(mode);fabric.setQuality(mode);gateDistricts.setQuality(mode);vegetation.setQuality(mode);civicDetails.setQuality(mode);environment.setQuality(mode);circleMaster.setQuality(mode);root.userData.quality=mode;
    seaWater.setQuality(mode,{allowPlanarReflection:capabilities.allowPlanarReflection===true});
    poolWater.setQuality(mode,{allowPlanarReflection:false});configureCivicPoolWater(poolWater);
-  },setWeather(weather){environment.setWeather(weather);surfaces.setWeather(weather);vegetation.setWeather(weather);seaWater.setWeather(weather);poolWater.setWeather(weather);},setDaylight(value){environment.setDaylight(value);fabric.setDaylight(value);gateDistricts.setDaylight(value);spray.setDaylight(value);surfaces.setDaylight(value);daylight=value;seaWater.setDaylight(value);poolWater.setDaylight(value);circleMaster.setDaylight(value);fallMaterial.uniforms.day.value=value;blue.emissiveIntensity=.3+(1-daylight)*.3;},
+  },setWeather(weather){environment.setWeather(weather);surfaces.setWeather(weather);vegetation.setWeather(weather);seaWater.setWeather(weather);poolWater.setWeather(weather);},setDaylight(value){environment.setDaylight(value);fabric.setDaylight(value);inhabitedGlass.emissiveIntensity=civicWindowGlow(value);gateDistricts.setDaylight(value);spray.setDaylight(value);surfaces.setDaylight(value);daylight=value;seaWater.setDaylight(value);poolWater.setDaylight(value);circleMaster.setDaylight(value);fallMaterial.uniforms.day.value=value;blue.emissiveIntensity=.3+(1-daylight)*.3;},
   updateDistrict(camera,p){environment.updateView(camera);displays.updateView?.(camera);civicDetails.updateView(camera);fabric.updateView(camera);gateDistricts.updateView(camera);interior=platformInteriorAt(p,worldBuildings);for(const {b,roof} of roofs)roof.visible=interior?.buildingId!==b.buildingId&&!(b.buildingId==='tower_circle'&&tower?.selected!==null);},
   updateCamera(){},renderWaterReflection(renderer,scene,camera,time){return seaWater.renderReflection(renderer,scene,camera,time);},cinematicFocus(){return false;},
   tick(time,dt,position){environment.tick(time);surfaces.tick?.(time);spray.tick(time);vegetation.tick(time);seaWater.update(time);poolWater.update(time);fallMaterial.uniforms.time.value=time;circleMaster.tick(time,Math.hypot(position?.x||0,position?.z||0));},

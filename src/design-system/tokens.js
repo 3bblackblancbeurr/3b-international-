@@ -27,14 +27,24 @@ export const worldRealmArt=Object.freeze({
  estonie:{sun:'#edf2e2',sky:'#b2d7e8',ground:'#546c70',fog:'#aacbd1',night:'#0e263b',stone:'#c0c7ba',cloth:'#446a72'},
 });
 export const worldArtMaterials=Object.freeze({
- sunWarm:'#ffbb81',dust:'#e3d5b7',bird:'#303b42',
+ sunWarm:'#ffbb81',dust:'#e3d5b7',bird:'#303b42',travellerMetal:'#c9ad75',
  monumentStone:'#29353c',monumentGold:'#c9b486',monumentDark:'#121a20',monumentBlue:'#31729a',monumentEmission:'#53b9e5',
- platformGlass:'#071a27',platformEmission:'#009cff'
+ platformGlass:'#071a27',platformEmission:'#009cff',civicWindowGlass:'#375365',civicWindowEmission:'#dba76f'
 });
 export const worldCrowdPalette=Object.freeze({
  base:'#ffffff',
  cloth:Object.freeze(['#23313d','#4b3547','#31483d','#5a4937','#263f54','#504d58','#6a4438','#2d2f35']),
  skin:Object.freeze(['#5c3928','#795039','#9b6b4b','#bd8966','#d6a583','#e4bd9c']),
+});
+
+// Accepted combat feedback and danger shapes share the reviewed world palette.
+export const worldCombatArt=Object.freeze({
+ enemyRealms:Object.freeze({france:'#efc66e',italie:'#ec9970',estonie:'#8bdbed',turquie:'#baa2f2',algerie:'#ecc68a',tunisie:'#79d5e2',maroc:'#e99875',espagne:'#dfbb74'}),
+ enemyDefault:'#dc9b9b',injury:'#ffb69c',guardSpark:'#edfaff',
+ slash:'#fff2cf',echo:'#f0d28f',projectile:'#efd58f',outgoingImpact:'#fff3d6',guardInner:'#94def0',guardOuter:'#badfef',enemyAttack:'#eaaa83',
+ stormBolt:'#a6e4ff',stormCore:'#d7f5ff',stormGlow:'#84cce5',impactParticle:'#fbe4b2',healing:'#a9de98',trap:'#dbacfb',shield:'#9edeee',
+ dangerFill:'#ef8658',strikeEdge:'#ffc49e',areaEdge:'#ef9c69',intentRune:'#ade2cd',windupGauge:'#ffe4be',
+ healingArea:'#84e4ad',shieldArea:'#8cceeb',areaIntent:'#efa86f',
 });
 
 // Cartographic pigments preserve the authored terrain, landmark and route contrast.

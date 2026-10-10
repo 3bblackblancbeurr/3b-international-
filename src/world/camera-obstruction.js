@@ -6,8 +6,13 @@ export function resolveCameraObstruction(target,eye,solids=[],clearance=.65){
  const dx=eye.x-target.x,dy=eye.y-target.y,dz=eye.z-target.z,length=Math.hypot(dx,dy,dz);
  if(length<.001)return {...eye};
  let closest=1;
+ const minX=Math.min(target.x,eye.x),maxX=Math.max(target.x,eye.x),minZ=Math.min(target.z,eye.z),maxZ=Math.max(target.z,eye.z);
  for(const b of solids){
   if(b.enabled===false||![b.x,b.z,b.width,b.depth,b.bottom,b.top].every(Number.isFinite)||b.width<=0||b.depth<=0||b.top<=b.bottom)continue;
+  // Conservative footprint, including the rotated near-plane safety margin.
+  // Distant buildings never need temporary slab arrays or a segment test.
+  const reach=(b.width+b.depth)/2+2;
+  if(b.x+reach<minX||b.x-reach>maxX||b.z+reach<minZ||b.z-reach>maxZ)continue;
   const c=Math.cos(b.rotation||0),s=Math.sin(b.rotation||0),tx=target.x-b.x,tz=target.z-b.z;
   const origin=[tx*c-tz*s,target.y,tx*s+tz*c],delta=[dx*c-dz*s,dy,dx*s+dz*c];
   // Include the near-plane volume above a cornice as well as at its sides.

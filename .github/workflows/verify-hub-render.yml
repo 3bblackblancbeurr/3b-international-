@@ -7,6 +7,7 @@ on:
       - 'scripts/verify-hub-services-browser.mjs'
       - 'scripts/verify-hub-master-browser.mjs'
       - 'scripts/verify-world-gameplay-browser.mjs'
+      - 'scripts/verify-world-master-combat-browser.mjs'
       - 'scripts/verify-realm-journey-browser.mjs'
       - 'scripts/verify-eight-realms-browser.mjs'
       - 'scripts/verify-route-planner-browser.mjs'
@@ -17,6 +18,28 @@ concurrency:
   group: hub-render-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  master-combat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm install --no-save --package-lock=false playwright@1.62.1
+      - run: npx --no-install playwright install --with-deps chromium
+      - name: Check real guardian windup, release, defense and camera on desktop and portrait
+        run: node scripts/verify-world-master-combat-browser.mjs
+        env:
+          MASTER_COMBAT_OUT: ${{ runner.temp }}/world-master-combat
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: world-master-combat
+          path: ${{ runner.temp }}/world-master-combat
+          if-no-files-found: warn
   interface:
     runs-on: ubuntu-latest
     timeout-minutes: 30
