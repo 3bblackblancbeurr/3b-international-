@@ -90,7 +90,7 @@ export function createRealmStreamer({region,field,root,material,coreGround}){
  const tiles=new Map(),owned=[],natural=new Map(),architecture=createRealmArchitecture(region),buildingBatches=[],monumentBatches=[],dummy=new THREE.Object3D();
  const leafAtlas=foliageAtlas(),leafMaterial=new THREE.MeshStandardMaterial({map:leafAtlas,alphaTest:.24,alphaToCoverage:true,vertexColors:true,roughness:.93,side:THREE.DoubleSide}),naturalMaterial=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.98});owned.push(leafMaterial,naturalMaterial);if(leafAtlas)owned.push(leafAtlas);
  const windTime={value:0};windShader(leafMaterial,windTime);
- let profile=realmStreamingProfile(),plan=[],pending=[],activeTile=null,lastKey='',lastPosition={x:0,z:5},lastPoolPosition={x:Infinity,z:Infinity},dirty=true,disposed=false,revision=0,generated=0,visiblePlants=0,visibleBuildings=0,visibleSites=0;
+ let profile=realmStreamingProfile(),plan=[],pending=[],activeTile=null,lastKey='',lastPosition={x:0,z:5},lastSampleX=NaN,lastSampleZ=NaN,lastPoolPosition={x:Infinity,z:Infinity},dirty=true,disposed=false,revision=0,generated=0,visiblePlants=0,visibleBuildings=0,visibleSites=0;
  const work={tileSlices:0,instanceUpdates:0,peakTravelUpdateMs:0,peakTileSliceMs:0,peakRoadMs:0,peakInstanceMs:0,peakCommitMs:0};
  const collisionList=realmStaticObstacles(region),navigationItems=realmNavigationItems(region),travelDestinations=realmTravelItems(region);
  function instance(geometry,mat,max,name){const mesh=new THREE.InstancedMesh(geometry,mat,max);mesh.name=name;mesh.count=0;mesh.castShadow=false;mesh.receiveShadow=true;mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);group.add(mesh);return mesh;}
@@ -187,19 +187,20 @@ export function createRealmStreamer({region,field,root,material,coreGround}){
  let landingPending=true;
  function update(position={x:0,z:5}){
   if(disposed)return;const updateStarted=performance.now(),arrival=landingPending;lastPosition=position;const centre=realmSectorAt(position),key=realmSectorKey(centre.x,centre.z);
+  const moving=!Number.isFinite(lastSampleX)||Math.hypot(position.x-lastSampleX,position.z-lastSampleZ)>.01;lastSampleX=position.x;lastSampleZ=position.z;
   if(key!==lastKey){lastKey=key;reconcile(position,landingPending);landingPending=false;}
   const workStarted=performance.now(),tileBudget=roadTask?2:3,nearSegments=profile.segments[0],vertexBudget=profile.workPerFrame*((nearSegments+1)**2+4*(nearSegments+1));
-  // Small distant tiles may share one slice. Limiting by vertex uploads instead
-  // of tile count clears a distant view faster without increasing the CPU
-  // deadline or the previous two-dense-tiles GPU upload budget.
-  for(let vertices=0;activeTile||pending.length;){
-   if(performance.now()-workStarted>=tileBudget)break;
+  // At rest, small distant tiles may share a slice within the old vertex-upload
+  // budget. Walking also retains its strict one/two-tile limit, including when
+  // callers mutate the same position object instead of returning a new one.
+  for(let vertices=0,completed=0;activeTile||pending.length;){
+   if(performance.now()-workStarted>=tileBudget||moving&&completed>=profile.workPerFrame)break;
    const next=activeTile?.cell||pending[0],segments=profile.segments[next.lod],vertexCount=(segments+1)**2+4*(segments+1);
    if(vertices&&vertices+vertexCount>vertexBudget)break;
    if(!activeTile){const cell=pending.shift();activeTile={cell,task:createRealmTileTask(field,cell.x,cell.z,profile.segments[cell.lod])};}
    const sliceStarted=performance.now(),done=activeTile.task.step({budgetMs:Math.max(.15,tileBudget-(sliceStarted-workStarted))});
    work.tileSlices++;work.peakTileSliceMs=Math.max(work.peakTileSliceMs,performance.now()-sliceStarted);
-   if(!done)break;vertices+=activeTile.task.geometry.attributes.position.count;makeTile(activeTile.cell,activeTile.task.geometry);activeTile=null;
+   if(!done)break;vertices+=activeTile.task.geometry.attributes.position.count;makeTile(activeTile.cell,activeTile.task.geometry);activeTile=null;completed++;
   }
   coreGround.visible=Math.abs(position.x)<1300&&Math.abs(position.z)<1300;
   if(dirty||Math.hypot(position.x-lastPoolPosition.x,position.z-lastPoolPosition.z)>36){updateInstances(position);dirty=false;}

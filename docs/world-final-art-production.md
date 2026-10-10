@@ -25,9 +25,11 @@ Une ligne n'est terminée que lorsque son résultat est visible et vérifié en 
   jardins bas devant les façades, accès et promenades laissés libres. Chaque
   jardin utilise 260 triangles, avec un seul dessin partagé pour tous les jardins
   visibles et aucune texture supplémentaire.
-- Les petits morceaux de terrain lointains peuvent être préparés ensemble dans
-  le même court créneau, sans augmenter la quantité maximale de géométrie
-  envoyée par image. Cela accélère la fin de chargement d'une vue lointaine.
+- À l'arrêt, les petits morceaux de terrain lointains peuvent être préparés
+  ensemble dans le même court créneau, sans augmenter la quantité maximale de
+  géométrie envoyée par image. Pendant la course, la limite stricte d'un ou deux
+  morceaux par image reste en vigueur. Cela accélère la fin de chargement
+  d'une vue lointaine sans alourdir un déplacement.
 
 ## Liste professionnelle
 
