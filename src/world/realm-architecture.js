@@ -25,10 +25,13 @@ export function createRealmArchitecture(region){
  const night={value:0},compileMasonry=material.onBeforeCompile;
  material.onBeforeCompile=shader=>{
   compileMasonry(shader);shader.uniforms.villageNight=night;shader.uniforms.villageWindowColor={value:new THREE.Color(worldArtMaterials.civicWindowEmission)};
-  shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nattribute float realmWindow; varying float vRealmWindow;').replace('#include <begin_vertex>','#include <begin_vertex>\nvRealmWindow=realmWindow;');
-  shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying float vRealmWindow; uniform float villageNight; uniform vec3 villageWindowColor;').replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\ntotalEmissiveRadiance+=villageWindowColor*vRealmWindow*villageNight;');
+  shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nattribute float realmWindow; varying float vRealmWindow; attribute float realmGlazing; varying float vRealmGlazing;').replace('#include <begin_vertex>','#include <begin_vertex>\nvRealmWindow=realmWindow;vRealmGlazing=realmGlazing;');
+  shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying float vRealmWindow; varying float vRealmGlazing; uniform float villageNight; uniform vec3 villageWindowColor;').replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\ntotalEmissiveRadiance+=villageWindowColor*vRealmWindow*villageNight;')
+   .replace('#include <color_fragment>','#include <color_fragment>\nvec3 villageBaseColor=diffuse;\n#if defined( USE_COLOR ) || defined( USE_COLOR_ALPHA )\nvillageBaseColor*=vColor.rgb;\n#endif')
+   .replace('#include <normal_fragment_begin>','#include <normal_fragment_begin>\nvec3 villagePlainNormal=normal;')
+   .replace('#include <lights_physical_fragment>','diffuseColor.rgb=mix(diffuseColor.rgb,villageBaseColor,vRealmGlazing);normal=normalize(mix(normal,villagePlainNormal,vRealmGlazing));roughnessFactor=mix(roughnessFactor,.24,vRealmGlazing);metalnessFactor=mix(metalnessFactor,.16,vRealmGlazing);\n#include <lights_physical_fragment>');
  };
- material.customProgramCacheKey=()=> '3b-realm-masonry-domestic-3';
+ material.customProgramCacheKey=()=> '3b-realm-masonry-domestic-4';
  function builder(palette={wall,roof,wood}){
   const parts=[];
   function add(geometry,color,x,y,z,sx=1,sy=sx,sz=sx,rotation=0,surface=color===palette.wood?3:color===palette.roof?2:color===palette.wall&&plaster?1:0){
@@ -37,7 +40,7 @@ export function createRealmArchitecture(region){
    // A common attribute layout allows boxes, extrusions and open arches to
    // merge without relying on draw-time material arrays.
    for(const key of Object.keys(g.attributes))if(!['position','normal','color'].includes(key))g.deleteAttribute(key);
-   realmMasonryUv(g,surface);g.setAttribute('realmWindow',new THREE.BufferAttribute(new Float32Array(p.count),1));
+   realmMasonryUv(g,surface);g.setAttribute('realmWindow',new THREE.BufferAttribute(new Float32Array(p.count),1));g.setAttribute('realmGlazing',new THREE.BufferAttribute(new Float32Array(p.count),1));
    parts.push(g);return g;
   }
   const b=(color,x,y,z,w,h,d,r=0,surface,window=0)=>{const g=add(box,color,x,y,z,w,h,d,r,surface);if(window)g.attributes.realmWindow.array.fill(window);return g;};
@@ -61,7 +64,7 @@ export function createRealmArchitecture(region){
   b('#655e52',0,h/2,0,w-.75,h,d-.75);b(trim,0,.25,0,w+.3,.5,d+.3);
   for(let face=0;face<4;face++){
    const angle=face*Math.PI/2,span=face%2?d:w,deep=face%2?w:d;
-   const local=(color,x,y,z,ww,hh,dd,window=0)=>{const c=Math.cos(angle),s=Math.sin(angle),g=add(facadeBox,color,x*c+z*s,y,-x*s+z*c,ww,hh,dd,angle);if(window)g.attributes.realmWindow.array.fill(window);return g;};
+   const local=(color,x,y,z,ww,hh,dd,window=0,glazing=false)=>{const c=Math.cos(angle),s=Math.sin(angle),g=add(facadeBox,color,x*c+z*s,y,-x*s+z*c,ww,hh,dd,angle);if(window)g.attributes.realmWindow.array.fill(window);if(glazing)g.attributes.realmGlazing.array.fill(1);return g;};
    for(let floor=0;floor<floors;floor++){
     const y=floor*5.6;local(wall,0,y+.35,deep/2,span,.7,.55);local(wall,0,y+5.1,deep/2,span,1,.55);
     // A continuous plinth and deep cornice give the facade real occlusion.
@@ -71,7 +74,7 @@ export function createRealmArchitecture(region){
     for(let i=0;i<=3;i++)local(wall,(i-1.5)*span/3,y+2.9,deep/2,.95,4.5,.55);
     for(let i=0;i<3;i++){
      const x=(i-1)*span/3,door=floor===0&&face===0&&i===1,wh=door?4.8:3.5,wy=y+(door?2.5:2.7);
-     local(door?wood:worldArtMaterials.civicWindowGlass,x,wy,deep/2-.19,2.4,wh,.08,!door&&(face+floor+i+variant)%3!==0?.7+(i%2)*.25:0);
+     local(door?wood:worldArtMaterials.civicWindowGlass,x,wy,deep/2-.19,2.4,wh,.08,!door&&(face+floor+i+variant)%3!==0?.7+(i%2)*.25:0,!door);
      for(const side of [-1,1])local(trim,x+side*1.32,wy,deep/2+.12,.19,wh+.2,.3);
      local(trim,x,wy+wh/2+.1,deep/2+.13,2.9,.22,.36);
      if(!door){local(trim,x,wy-wh/2-.1,deep/2+.22,2.9,.24,.7);local(wood,x,wy,deep/2-.05,.07,wh,.1);local(wood,x,wy+.2,deep/2-.05,2.4,.07,.1);}
@@ -123,7 +126,7 @@ export function createRealmArchitecture(region){
   }
   else{
    const rise=region==='estonie'?4.6:region==='france'?3.5:region==='italie'?1.75:region==='espagne'?2.2:2.65;
-   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute([-6.6,0,-5.6,6.6,0,-5.6,6.6,0,5.6,-6.6,0,5.6,0,rise,-5.6,0,rise,5.6],3));g.setIndex([0,4,5,0,5,3,4,1,2,4,2,5,0,1,4,3,5,2]);g.computeVertexNormals();add(g,roof,0,h+.15,0);g.dispose();
+   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute([-6.6,0,-5.6,6.6,0,-5.6,6.6,0,5.6,-6.6,0,5.6,0,rise,-5.6,0,rise,5.6],3));g.setIndex([0,5,4,0,3,5,4,2,1,4,5,2,0,4,1,3,2,5]);const roofFaces=g.toNonIndexed();roofFaces.computeVertexNormals();add(roofFaces,roof,0,h+.15,0);roofFaces.dispose();g.dispose();
    b(trim,0,h,0,w+.9,.3,d+.9);b(wall,3.5,h+rise*.64+1.1,.6,.9,2.2,.9);b(trim,3.5,h+rise*.64+2.26,.6,1.12,.18,1.12);
    b(roof,0,h+rise+.20,0,.22,.22,11.6);
    if(terracotta){
@@ -134,7 +137,13 @@ export function createRealmArchitecture(region){
    if(region==='france')for(const side of [-1,1]){b(wall,side*3.15,h+1.32,0,1.65,2.1,1.45);b(wood,side*3.15,h+1.37,.74,.87,1.25,.08);b(trim,side*3.15,h+2.45,0,1.86,.19,1.67);}
    if(timberFrame)for(const side of [-1,1]){b(wood,side*6.48,h+.23,0,.22,.24,11.6);b(wood,side*3.05,h+rise*.45,-5.65,.16,.26,.18);}
   }
-  const geometry=finish();geometry.userData={region,variant,identity:['residence','workshop','garden-home'][variant],masterFacade:true,roofProfile:east?'terrace':region==='estonie'?'steep-gable':terracotta?'tile-gable':'gable',balconies:balconies&&floors>1,timberFrame};templates.set(key,geometry);return geometry;
+  const geometry=finish(),positions=geometry.attributes.position,colours=geometry.attributes.color;
+  // Subtle dirt at the foot of the wall anchors it in the ground. Roofs and
+  // glazing retain their authored colour; this is material wear, not lighting.
+  for(let i=0;i<positions.count;i++)if(!geometry.attributes.realmGlazing.getX(i)){
+   const wear=1-.11*Math.max(0,1-Math.max(0,positions.getY(i))/1.25);colours.setXYZ(i,colours.getX(i)*wear,colours.getY(i)*wear,colours.getZ(i)*wear);
+  }
+  geometry.userData={region,variant,identity:['residence','workshop','garden-home'][variant],masterFacade:true,roofProfile:east?'terrace':region==='estonie'?'steep-gable':terracotta?'tile-gable':'gable',balconies:balconies&&floors>1,timberFrame};templates.set(key,geometry);return geometry;
  }
  function monument(kind){
   if(templates.has(kind))return templates.get(kind);

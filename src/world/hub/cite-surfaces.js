@@ -7,21 +7,39 @@ export function createCiteSurfaces(owned){
  const day={value:1},wet={value:.06},textures={},loads=[],loader=typeof document!=='undefined'?new THREE.TextureLoader():null;let wetTarget=.06,lastTime=null;
  function texture(name,path,color=false){
   if(!loader)return null;let done;loads.push(new Promise(resolve=>{done=resolve;}));
-  const t=loader.load(path,()=>done(),undefined,()=>{const fallback=document.createElement('canvas');fallback.width=fallback.height=1;const ctx=fallback.getContext('2d');ctx.fillStyle=name==='normal'?'#8080ff':'#a0a0a0';ctx.fillRect(0,0,1,1);t.image=fallback;t.needsUpdate=true;done();});
+  const t=loader.load(path,()=>done(),undefined,()=>{const fallback=document.createElement('canvas');fallback.width=fallback.height=1;const ctx=fallback.getContext('2d');ctx.fillStyle=name.toLowerCase().includes('normal')?'#8080ff':'#a0a0a0';ctx.fillRect(0,0,1,1);t.image=fallback;t.needsUpdate=true;done();});
   t.wrapS=t.wrapT=THREE.RepeatWrapping;t.minFilter=THREE.LinearMipmapLinearFilter;t.magFilter=THREE.LinearFilter;t.anisotropy=4;if(color)t.colorSpace=THREE.SRGBColorSpace;owned.push(t);textures[name]=t;return t;
  }
 
  const paving=texture('paving','/world/paris/textures/cobblestone_floor_08_Diffuse.jpg',true),normal=texture('normal','/world/paris/textures/cobblestone_floor_08_nor_gl.jpg'),rough=texture('rough','/world/paris/textures/cobblestone_floor_08_Rough.jpg');
+ const wall=texture('wall','/world/paris/textures/plastered_wall_02_Diffuse.jpg',true),wallNormal=texture('wallNormal','/world/paris/textures/plastered_wall_02_nor_gl.jpg'),wallRough=texture('wallRough','/world/paris/textures/plastered_wall_02_Rough.jpg');
  const dark=new THREE.MeshPhysicalMaterial({color:'#101d2b',roughness:.37,metalness:.58,clearcoat:.35,clearcoatRoughness:.3});
  applyFacadeDetail(dark,{daylight:day,crafted:true});
  const gold=new THREE.MeshPhysicalMaterial({color:'#cba364',roughness:.25,metalness:.92,clearcoat:.24});
  const glass=new THREE.MeshPhysicalMaterial({color:'#173c52',roughness:.2,metalness:.18,clearcoat:1,clearcoatRoughness:.08,envMapIntensity:.4});
- const stone=new THREE.MeshStandardMaterial({color:'#8c989b',roughness:.85,metalness:.03,map:paving,normalMap:normal,normalScale:new THREE.Vector2(.55,.55),roughnessMap:rough});
+ const stone=new THREE.MeshStandardMaterial({color:'#8c989b',roughness:.85,metalness:.03,map:wall,normalMap:wallNormal,normalScale:new THREE.Vector2(.38,.38),roughnessMap:wallRough});
  const cliff=new THREE.MeshStandardMaterial({color:'#43515a',roughness:.94,metalness:.04});
  const deck=new THREE.MeshStandardMaterial({color:'#8b929a',roughness:.88,metalness:.02,map:paving,normalMap:normal,normalScale:new THREE.Vector2(.65,.65),roughnessMap:rough,polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1});
  function surfaceShader(m,kind){m.onBeforeCompile=shader=>{
   shader.uniforms.citeDay=day;shader.uniforms.citeWet=wet;
   shader.vertexShader='varying vec3 citeP;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvec4 citeLocal=vec4(position,1.);\n#ifdef USE_INSTANCING\nciteLocal=instanceMatrix*citeLocal;\n#endif\nciteP=(modelMatrix*citeLocal).xyz;');
+  if(kind==='stone'){
+   shader.vertexShader='varying vec2 citeWallUv;\n'+shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+    vec3 citeWallNormal=normal;
+    #ifdef USE_INSTANCING
+    citeWallNormal=mat3(instanceMatrix)*citeWallNormal;
+    #endif
+    citeWallNormal=normalize(mat3(modelMatrix)*citeWallNormal);
+    vec4 citeWallPoint=vec4(position,1.);
+    #ifdef USE_INSTANCING
+    citeWallPoint=instanceMatrix*citeWallPoint;
+    #endif
+    vec3 citeWorldPoint=(modelMatrix*citeWallPoint).xyz;
+    vec3 citeAxis=abs(citeWallNormal);
+    citeWallUv=(citeAxis.y>max(citeAxis.x,citeAxis.z)?citeWorldPoint.xz:citeAxis.x>citeAxis.z?citeWorldPoint.zy:citeWorldPoint.xy)/3.2;
+   `);
+   shader.fragmentShader='varying vec2 citeWallUv;\n'+shader.fragmentShader;
+  }
   shader.fragmentShader='varying vec3 citeP;uniform float citeDay;uniform float citeWet;\n'+shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
    float grain=fract(sin(dot(floor(citeP.xz*7.),vec2(12.9898,78.233)))*43758.5453);
    float grainPixel=max(fwidth(citeP.x*7.),fwidth(citeP.z*7.));
@@ -48,7 +66,10 @@ export function createCiteSurfaces(owned){
    float poolMask=smoothstep(.58,.91,poolNoise)*citeWet;
    roughnessFactor=mix(roughnessFactor,.16,poolMask*.85);
    roughnessFactor=mix(roughnessFactor,.48,citeWet*.2);`);
- };m.customProgramCacheKey=()=> '3b-cite-pbr-'+kind+'-v4';}
+  if(kind==='stone')for(const [chunk,varying]of [['map_fragment','vMapUv'],['normal_fragment_maps','vNormalMapUv'],['roughnessmap_fragment','vRoughnessMapUv']]){
+   shader.fragmentShader=shader.fragmentShader.replace('#include <'+chunk+'>',THREE.ShaderChunk[chunk].replaceAll(varying,'citeWallUv'));
+  }
+ };m.customProgramCacheKey=()=> '3b-cite-pbr-'+kind+'-v5';}
  surfaceShader(stone,'stone');surfaceShader(deck,'deck');surfaceShader(cliff,'cliff');
  for(const m of [dark,gold,glass,stone,cliff,deck])owned.push(m);
  return{dark,gold,glass,stone,cliff,deck,ready:Promise.all(loads),setDaylight(value){day.value=value;},setWeather(value){wetTarget=wetnessForWeather(value);},tick(time){if(lastTime!==null)wet.value=advanceWetness(wet.value,wetTarget,time-lastTime);lastTime=time;},get wetness(){return wet.value;},setQuality(mode){for(const t of Object.values(textures))t.anisotropy=mode==='fluid'?2:4;}};
