@@ -5,6 +5,7 @@ import {COUNTRIES} from '../catalog.js';
 import {REFERENCE_GATE_TITLES,paintGateFlag} from './gate-identity.js';
 import {gateCrownGeometry,gateInlayGeometry} from './gate-craft.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {mergeIndexedGeometries} from '../geometry-batch.js';
 import {HUB_PLATFORM,HUB_SCALE,platformBuilding,platformWalls,platformInteriorAt,platformPortal} from './platform-layout.js';
 import {addCiteVegetation} from './cite-vegetation.js';
 import {addCivicDetailScene} from './civic-detail-scene.js';
@@ -220,7 +221,7 @@ export function createHubPlatform(save){
  root.updateMatrixWorld(true);const groups=new Map();
  for(const o of root.children)if(o.isMesh&&!dynamic.has(o)&&!o.material.transparent){const k=o.material.uuid;if(!groups.has(k))groups.set(k,[]);groups.get(k).push(o);}
  for(const group of groups.values())if(group.length>1){
-  const parts=group.map(o=>{const g=o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone();return g.applyMatrix4(o.matrix);}),merged=mergeGeometries(parts);parts.forEach(g=>g.dispose());
+  const parts=group.map(o=>{const g=o.geometry.clone();return g.applyMatrix4(o.matrix);}),merged=mergeIndexedGeometries(parts);parts.forEach(g=>g.dispose());
   if(merged){const batch=mesh(geo(merged),group[0].material,0,0,0);batch.castShadow=true;group.forEach(o=>o.removeFromParent());}
  }
  // The two opaque civic glazing materials share one draw-grouped Mesh. Their
@@ -229,8 +230,8 @@ export function createHubPlatform(save){
  const civicGlassBatches=root.children.filter(o=>o.isMesh&&!dynamic.has(o)&&(o.material===glass||o.material===inhabitedGlass));
  const networkBatch=civicGlassBatches.find(o=>o.material===glass),inhabitedBatch=civicGlassBatches.find(o=>o.material===inhabitedGlass);
  if(networkBatch&&inhabitedBatch){
-  const parts=[networkBatch,inhabitedBatch].map(o=>(o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone()).applyMatrix4(o.matrix));
-  const grouped=mergeGeometries(parts,true);parts.forEach(g=>g.dispose());
+  const parts=[networkBatch,inhabitedBatch].map(o=>o.geometry.clone().applyMatrix4(o.matrix));
+  const grouped=mergeIndexedGeometries(parts,true);parts.forEach(g=>g.dispose());
   if(!grouped)throw new Error('Civic glass needs compatible position, normal and UV layouts');
   const shared=mesh(geo(grouped),[glass,inhabitedGlass],0,0,0);
   shared.castShadow=networkBatch.castShadow||inhabitedBatch.castShadow;

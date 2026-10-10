@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {bakeCrowdHuman,crowdHumanMaterial} from './crowd-human-model.js';
-import {createCivilianRoutes,civilianRoutine,civilianRoutePoint,nearbyCivilianRoutes} from './ambient-civilian-routes.js';
+import {createCivilianRoutes,civilianRoutine,civilianHeading,civilianRoutePoint,nearbyCivilianRoutes} from './ambient-civilian-routes.js';
 import {obstacleDistance} from './collision.js';
 import {worldCrowdPalette} from '../design-system/tokens.js';
 
@@ -42,8 +42,9 @@ export function createAmbientCrowd(root,items,options={}){
   models.push({baked,material,batches});lastUpdate=-Infinity;update(lastTime,lastPlayer,lastStamp);
  }
  const {cloth,skin}=worldCrowdPalette,agents=Array.from({length:maximum},(_,index)=>{
-  const route=routes[index%routes.length],width=Math.max(2,Math.min(7,Number(route.width)||5));
-  return{route,routeReady:false,phase:localRoutes?hash(index,1):.03+hash(index,1)*.94,speed:.42+hash(index,2)*.58,offset:(hash(index,3)-.5)*(localRoutes?Math.min(3.6,width*.7):Math.min(1.2,width*.2)),pause:3+hash(index,9)*7,activity:['looking','chatting','resting'][index%3],scale:.88+hash(index,4)*.22,cloth:cloth[Math.floor(hash(index,5)*cloth.length)],skin:skin[Math.floor(hash(index,6)*skin.length)],lod:1,visible:false};
+  const social=localRoutes&&index%8<2,routeIndex=social?index-index%2:index,rhythm=routeIndex;
+  const route=routes[routeIndex%routes.length],width=Math.max(2,Math.min(7,Number(route.width)||5));
+  return{route,social,routeIndex,routeReady:false,phase:localRoutes?hash(rhythm,1):.03+hash(index,1)*.94,speed:.42+hash(rhythm,2)*.58,offset:social?(index%2?-.85:.85):(hash(index,3)-.5)*(localRoutes?Math.min(3.6,width*.7):Math.min(1.2,width*.2)),pause:3+hash(rhythm,9)*7,activity:['looking','chatting','resting'][index%3],scale:.88+hash(index,4)*.22,cloth:cloth[Math.floor(hash(index,5)*cloth.length)],skin:skin[Math.floor(hash(index,6)*skin.length)],lod:1,visible:false};
  });
  const dummy=new THREE.Object3D(),clothColor=new THREE.Color(),skinColor=new THREE.Color();
 
@@ -69,10 +70,10 @@ export function createAmbientCrowd(root,items,options={}){
      // Realm relay travel teleports the player across many kilometres. Reassign
      // the old invisible territory pool immediately, including reduced-motion
      // mode, instead of waiting another frame for visibility hysteresis.
-     if(distance>budget.maxDistance+48){agent.route=localCandidates[index%localCandidates.length];agent.visible=false;}
+     if(distance>budget.maxDistance+48){agent.route=localCandidates[agent.routeIndex%localCandidates.length];agent.visible=false;}
     }else if(!agent.routeReady||(!agent.visible&&distance>budget.maxDistance+36)){
      // Hub walking keeps visible citizens fixed; only offscreen actors relocate.
-     agent.route=localCandidates[index%localCandidates.length];agent.routeReady=true;agent.visible=false;
+     agent.route=localCandidates[agent.routeIndex%localCandidates.length];agent.routeReady=true;agent.visible=false;
     }
    }
    const pose=civilianRoutine(agent,time,budget.moving);let {x,z}=pose;
@@ -81,7 +82,7 @@ export function createAmbientCrowd(root,items,options={}){
    if(agent.offset&&agent.route.obstacles.some(o=>obstacleDistance(pose,o)<.5)){const centre=civilianRoutine({...agent,offset:0},time,budget.moving);x=centre.x;z=centre.z;}
    const playerDistance=Math.hypot(x-(player.x||0),z-(player.z||0));agent.visible=playerDistance<budget.maxDistance+(agent.visible?12:0);if(!agent.visible)continue;
    const model=models[index%models.length],distance=Math.hypot(x-(viewer.x||0),z-(viewer.z||0));if(agent.lod===0&&distance>68)agent.lod=1;else if(agent.lod===1&&distance<55)agent.lod=0;const batch=model.batches[agent.lod],slot=batch.count++;
-   const y=Number(groundY(x,z))||0,heading=Math.atan2(pose.dx*pose.direction,pose.dz*pose.direction);visible++;
+   const y=Number(groundY(x,z))||0,heading=civilianHeading(agent,pose,player,budget.moving);visible++;
    dummy.position.set(x,y,z);dummy.rotation.set(0,heading,0);dummy.scale.set(agent.scale,agent.scale,agent.scale);dummy.updateMatrix();batch.mesh.setMatrixAt(slot,dummy.matrix);
    batch.attrs.phase.setX(slot,hash(index,7));batch.attrs.speed.setX(slot,agent.speed/1.6);batch.attrs.travel.setX(slot,pose.speed/agent.scale);batch.attrs.gait.setX(slot,pose.gait);
    skinColor.set(agent.skin);clothColor.set(agent.cloth);batch.attrs.skin.setXYZ(slot,skinColor.r,skinColor.g,skinColor.b);batch.attrs.cloth.setXYZ(slot,clothColor.r,clothColor.g,clothColor.b);

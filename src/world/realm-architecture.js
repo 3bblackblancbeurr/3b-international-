@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {mergeGeometries,mergeVertices} from 'three/addons/utils/BufferGeometryUtils.js';
+import {worldRealmArt,worldArtMaterials} from '../design-system/tokens.js';
 import {REALM_COURT_COLUMNS} from './realm-layout.js';
 import {createRealmMasonryTextures,installRealmMasonryAtlas,realmMasonryUv} from './realm-masonry.js';
 
@@ -14,37 +15,53 @@ const STYLES={
  * cores and distinct roof silhouettes; instances add no material draw calls. */
 export function createRealmArchitecture(region){
  const [wall,trim,roof,wood]=STYLES[region]||STYLES.france,geometries=[],templates=new Map();
- const box=new THREE.BoxGeometry(1,1,1),cylinder=new THREE.CylinderGeometry(1,1,1,12),sphere=new THREE.SphereGeometry(1,12,8),cone=new THREE.ConeGeometry(1,1,12),matrix=new THREE.Matrix4(),dummy=new THREE.Object3D();
+ const box=new THREE.BoxGeometry(1,1,1),cylinder=new THREE.CylinderGeometry(1,1,1,12),sphere=new THREE.SphereGeometry(1,12,8),cone=new THREE.ConeGeometry(1,1,12),bud=new THREE.IcosahedronGeometry(1,0),matrix=new THREE.Matrix4(),dummy=new THREE.Object3D();
+ // The back of facade details is buried in the solid house. Reuse a five-face
+ // box there, then index shared vertices once: richer silhouettes cost less memory.
+ const facadeBox=box.toNonIndexed();for(const [name,a] of Object.entries(facadeBox.attributes))facadeBox.setAttribute(name,new THREE.BufferAttribute(a.array.slice(0,-6*a.itemSize),a.itemSize));
  const surfaces=createRealmMasonryTextures(region);
  const material=new THREE.MeshStandardMaterial({vertexColors:true,roughness:1,metalness:0,map:surfaces.map,normalMap:surfaces.normalMap,roughnessMap:surfaces.roughnessMap,normalScale:new THREE.Vector2(.42,.42)});material.name='3B · masonry, recessed façades and regional roofs';installRealmMasonryAtlas(material);
  const plaster=['maroc','algerie','tunisie'].includes(region);
- function builder(){
+ const night={value:0},compileMasonry=material.onBeforeCompile;
+ material.onBeforeCompile=shader=>{
+  compileMasonry(shader);shader.uniforms.villageNight=night;shader.uniforms.villageWindowColor={value:new THREE.Color(worldArtMaterials.civicWindowEmission)};
+  shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nattribute float realmWindow; varying float vRealmWindow;').replace('#include <begin_vertex>','#include <begin_vertex>\nvRealmWindow=realmWindow;');
+  shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying float vRealmWindow; uniform float villageNight; uniform vec3 villageWindowColor;').replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\ntotalEmissiveRadiance+=villageWindowColor*vRealmWindow*villageNight;');
+ };
+ material.customProgramCacheKey=()=> '3b-realm-masonry-domestic-3';
+ function builder(palette={wall,roof,wood}){
   const parts=[];
-  function add(geometry,color,x,y,z,sx=1,sy=sx,sz=sx,rotation=0,surface=color===wood?3:color===roof?2:color===wall&&plaster?1:0){
+  function add(geometry,color,x,y,z,sx=1,sy=sx,sz=sx,rotation=0,surface=color===palette.wood?3:color===palette.roof?2:color===palette.wall&&plaster?1:0){
    const g=geometry.index?geometry.toNonIndexed():geometry.clone();dummy.position.set(x,y,z);dummy.rotation.set(0,rotation,0);dummy.scale.set(sx,sy,sz);dummy.updateMatrix();matrix.copy(dummy.matrix);g.applyMatrix4(matrix);
    const p=g.attributes.position,tint=new THREE.Color(color),colors=new Float32Array(p.count*3);for(let i=0;i<p.count;i++)colors.set([tint.r,tint.g,tint.b],i*3);g.setAttribute('color',new THREE.BufferAttribute(colors,3));
    // A common attribute layout allows boxes, extrusions and open arches to
    // merge without relying on draw-time material arrays.
    for(const key of Object.keys(g.attributes))if(!['position','normal','color'].includes(key))g.deleteAttribute(key);
-   realmMasonryUv(g,surface);
+   realmMasonryUv(g,surface);g.setAttribute('realmWindow',new THREE.BufferAttribute(new Float32Array(p.count),1));
    parts.push(g);return g;
   }
-  const b=(color,x,y,z,w,h,d,r=0,surface)=>add(box,color,x,y,z,w,h,d,r,surface);
+  const b=(color,x,y,z,w,h,d,r=0,surface,window=0)=>{const g=add(box,color,x,y,z,w,h,d,r,surface);if(window)g.attributes.realmWindow.array.fill(window);return g;};
   function arch(x,z,width=6.2,height=9.5,depth=3,color=wall){
    const r=width/2,t=.65,s=new THREE.Shape();s.absarc(0,0,r,0,Math.PI,false);s.lineTo(-r+t,0);s.absarc(0,0,r-t,Math.PI,0,true);s.closePath();
    const g=new THREE.ExtrudeGeometry(s,{depth,bevelEnabled:false,curveSegments:10});add(g,color,x,height-r,z-depth/2);g.dispose();
   }
-  function finish(){const g=mergeGeometries(parts);parts.forEach(p=>p.dispose());g.computeBoundingBox();g.computeBoundingSphere();geometries.push(g);return g;}
+  function finish(){const merged=mergeGeometries(parts),g=mergeVertices(merged,1e-6);merged.dispose();parts.forEach(p=>p.dispose());g.computeBoundingBox();g.computeBoundingSphere();geometries.push(g);return g;}
   return{add,b,arch,finish};
  }
- function house(floors=1){
-  const key='house-'+floors;if(templates.has(key))return templates.get(key);
-  const {add,b,finish}=builder(),w=12,d=10,h=floors*5.6,east=['maroc','algerie','tunisie'].includes(region);
+ function house(floors=1,variant=0){
+  variant=Math.abs(Math.trunc(variant)||0)%3;
+  const base=STYLES[region]||STYLES.france,art=worldRealmArt[region]||worldRealmArt.france;
+  // Three authored identities share one atlas. Colour is baked into each
+  // reusable mesh, rather than adding materials or fetching extra textures.
+  const wall=new THREE.Color(base[0]).lerp(new THREE.Color(variant===1?art.sun:art.cloth),variant===1?.16:variant===2?.22:0);
+  const roof=new THREE.Color(base[2]).multiplyScalar(variant===1?.83:variant===2?1.08:1),wood=new THREE.Color(base[3]).lerp(new THREE.Color(variant===1?art.ground:art.cloth),variant?.36:0);
+  const key='house-'+floors+'-'+variant;if(templates.has(key))return templates.get(key);
+  const {add,b,finish}=builder({wall,roof,wood}),w=12,d=10,h=floors*5.6,east=['maroc','algerie','tunisie'].includes(region);
   const timberFrame=region==='estonie'||region==='turquie',balconies=['italie','espagne','turquie'].includes(region),terracotta=region==='italie'||region==='espagne';
   b('#655e52',0,h/2,0,w-.75,h,d-.75);b(trim,0,.25,0,w+.3,.5,d+.3);
   for(let face=0;face<4;face++){
    const angle=face*Math.PI/2,span=face%2?d:w,deep=face%2?w:d;
-   const local=(color,x,y,z,ww,hh,dd)=>{const c=Math.cos(angle),s=Math.sin(angle);return b(color,x*c+z*s,y,-x*s+z*c,ww,hh,dd,angle);};
+   const local=(color,x,y,z,ww,hh,dd,window=0)=>{const c=Math.cos(angle),s=Math.sin(angle),g=add(facadeBox,color,x*c+z*s,y,-x*s+z*c,ww,hh,dd,angle);if(window)g.attributes.realmWindow.array.fill(window);return g;};
    for(let floor=0;floor<floors;floor++){
     const y=floor*5.6;local(wall,0,y+.35,deep/2,span,.7,.55);local(wall,0,y+5.1,deep/2,span,1,.55);
     // A continuous plinth and deep cornice give the facade real occlusion.
@@ -54,7 +71,7 @@ export function createRealmArchitecture(region){
     for(let i=0;i<=3;i++)local(wall,(i-1.5)*span/3,y+2.9,deep/2,.95,4.5,.55);
     for(let i=0;i<3;i++){
      const x=(i-1)*span/3,door=floor===0&&face===0&&i===1,wh=door?4.8:3.5,wy=y+(door?2.5:2.7);
-     local(door?wood:'#253e46',x,wy,deep/2-.19,2.4,wh,.08);
+     local(door?wood:worldArtMaterials.civicWindowGlass,x,wy,deep/2-.19,2.4,wh,.08,!door&&(face+floor+i+variant)%3!==0?.7+(i%2)*.25:0);
      for(const side of [-1,1])local(trim,x+side*1.32,wy,deep/2+.12,.19,wh+.2,.3);
      local(trim,x,wy+wh/2+.1,deep/2+.13,2.9,.22,.36);
      if(!door){local(trim,x,wy-wh/2-.1,deep/2+.22,2.9,.24,.7);local(wood,x,wy,deep/2-.05,.07,wh,.1);local(wood,x,wy+.2,deep/2-.05,2.4,.07,.1);}
@@ -80,6 +97,24 @@ export function createRealmArchitecture(region){
    }
    local(trim,0,h,deep/2+.12,span+.45,.4,.68);
   }
+  // Readable domestic details: doors have panels and a handle, gutters have
+  // actual volume, and an upper-storey planter casts its own small shadow.
+  const dark=new THREE.Color(art.ground).multiplyScalar(.48),leaf=new THREE.Color(art.cloth).lerp(new THREE.Color(worldRealmArt.italie.cloth),.65);
+  for(const x of [-.6,.6])for(const y of [1.25,3.3])b(wood,x,y,5.02,.84,1.52,.11,0,3);
+  b(worldArtMaterials.travellerMetal,.81,2.5,5.13,.12,.32,.10);
+  b(trim,0,.14,5.44,3,.28,.65);
+  if(!east)for(const side of [-1,1]){b(roof,side*6.27,h-.23,0,.18,.18,10.7,0,2);b(roof,side*6.15,h/2,-4.8,.12,h,.12,0,2);}
+  if(variant===1){
+   // Workshop canopy and blank craft plaque. No invented language or shop UI.
+   for(let stripe=0;stripe<7;stripe++)b(stripe%2?trim:wood,(stripe-3)*.43,4.48,5.76,.43,.14,1.35,0,3);
+   for(const x of [-1.52,1.52])b(wood,x,4.12,6.33,.10,.64,.10,0,3);
+   b(wood,-4.25,4.65,5.40,1.16,.72,.14,0,3);b(worldArtMaterials.travellerMetal,-4.25,4.65,5.49,.42,.36,.04);
+  }else if(variant===2){
+   for(const x of [-4,4]){
+    const y=floors>1?6.4:1.15;b(wood,x,y,5.54,2.5,.45,.62,0,3);b(dark,x,y+.25,5.54,2.27,.05,.43,0,1);
+    for(let sprig=0;sprig<5;sprig++)add(bud,leaf.clone().multiplyScalar(sprig%2?1:.82),x+(sprig-2)*.42,y+.43+(sprig%2)*.12,5.54,.32,.35,.30,0,1);
+   }
+  }
   if(east){
    b(roof,0,h+.2,0,w+.7,.5,d+.7);for(const side of [-1,1]){b(trim,side*w/2,h+.85,0,.4,1.3,d+.5);b(trim,0,h+.85,side*d/2,w+.5,1.3,.4);}
    if(region==='maroc')for(const side of [-1,1])for(let merlon=0;merlon<7;merlon++)b(wall,(merlon-3)*1.7,h+1.67,side*d/2,.65,.65,.50);
@@ -99,7 +134,7 @@ export function createRealmArchitecture(region){
    if(region==='france')for(const side of [-1,1]){b(wall,side*3.15,h+1.32,0,1.65,2.1,1.45);b(wood,side*3.15,h+1.37,.74,.87,1.25,.08);b(trim,side*3.15,h+2.45,0,1.86,.19,1.67);}
    if(timberFrame)for(const side of [-1,1]){b(wood,side*6.48,h+.23,0,.22,.24,11.6);b(wood,side*3.05,h+rise*.45,-5.65,.16,.26,.18);}
   }
-  const geometry=finish();geometry.userData={region,masterFacade:true,roofProfile:east?'terrace':region==='estonie'?'steep-gable':terracotta?'tile-gable':'gable',balconies:balconies&&floors>1,timberFrame};templates.set(key,geometry);return geometry;
+  const geometry=finish();geometry.userData={region,variant,identity:['residence','workshop','garden-home'][variant],masterFacade:true,roofProfile:east?'terrace':region==='estonie'?'steep-gable':terracotta?'tile-gable':'gable',balconies:balconies&&floors>1,timberFrame};templates.set(key,geometry);return geometry;
  }
  function monument(kind){
   if(templates.has(kind))return templates.get(kind);
@@ -156,5 +191,5 @@ export function createRealmArchitecture(region){
   }
   const geometry=finish();geometry.userData={guardianCourt:true,clearRadius:40,columnRadius:47};templates.set(key,geometry);return geometry;
  }
- let disposed=false;return{material,house,monument,guardianCourt,surfaces:surfaces.diagnostics,dispose(){if(disposed)return;disposed=true;for(const geometry of geometries)geometry.dispose();for(const g of [box,cylinder,sphere,cone])g.dispose();material.dispose();surfaces.dispose();}};
+ let disposed=false;return{material,house,monument,guardianCourt,setDaylight(value){const day=Math.max(0,Math.min(1,Number(value)||0));night.value=Math.max(0,Math.min(1,(.55-day)/.35))*.85;},surfaces:surfaces.diagnostics,dispose(){if(disposed)return;disposed=true;for(const geometry of geometries)geometry.dispose();for(const g of [box,facadeBox,cylinder,sphere,cone,bud])g.dispose();material.dispose();surfaces.dispose();}};
 }

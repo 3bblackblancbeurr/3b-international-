@@ -81,6 +81,14 @@ export function sprintIntent(stick,enteredAt,now,{sprintThreshold=TOUCH_SPRINT_T
 export const QUALITY_MODES=['auto','fluid','detail'];
 export function createQualityController(mode='auto'){
  let value=1,slow=0,fast=0;
+ function sample(fps,seconds){
+   if(mode!=='auto'||!Number.isFinite(fps)||fps<=0||!Number.isFinite(seconds)||seconds<=0)return false;
+   seconds=Math.min(seconds,2);
+   slow=fps<45?slow+seconds:0;fast=fps>57?fast+seconds:0;
+   if(slow>=2&&value>.6){value=Math.max(.6,value-.12);slow=fast=0;return true;}
+   if(fast>=12&&value<1){value=Math.min(1,value+.06);slow=fast=0;return true;}
+   return false;
+ }
  return {
   profile(){return mode==='fluid'||mode==='auto'&&value<=.7?'light':'high';},
   setMode(next){mode=QUALITY_MODES.includes(next)?next:'auto';value=1;slow=fast=0;},
@@ -89,13 +97,9 @@ export function createQualityController(mode='auto'){
    const pixels=mode==='fluid'?850000:3000000;
    return Math.max(.5,Math.min(dpr,cap,Math.sqrt(pixels/Math.max(1,width*height)))*(mode==='auto'?value:1));
   },
-  sample(fps,seconds){
-   if(mode!=='auto'||!Number.isFinite(fps)||fps<=0||!Number.isFinite(seconds)||seconds<=0)return false;
-   seconds=Math.min(seconds,2);
-   slow=fps<45?slow+seconds:0;fast=fps>57?fast+seconds:0;
-   if(slow>=2&&value>.6){value=Math.max(.6,value-.12);slow=fast=0;return true;}
-   if(fast>=12&&value<1){value=Math.min(1,value+.06);slow=fast=0;return true;}
-   return false;
-  }
+  sample,
+  // Count real completed frames before rounding a display label. One frame
+  // every several seconds is severe load, not an invalid zero-FPS sample.
+  sampleFrames(frames,seconds){return Number.isInteger(frames)&&frames>0?sample(frames/seconds,seconds):false;}
  };
 }

@@ -129,7 +129,11 @@ export function realmCampaignPosition(region,index=0){
 export function realmTravelItems(region){return realmSites(region).map(site=>({id:site.id+':relay',type:'realmTravel',region,name:site.name,label:site.name,...site.arrival,range:6,site:site.id,province:site.province,description:site.context,unlocked:true}));}
 export function realmNavigationItems(region){return realmSites(region).map(site=>({id:site.id,type:'realmSite',region,name:site.name,...site.campaign,range:6,province:site.province,kind:site.kind,description:site.context}));}
 export function realmCivilianRoadItems(region){
- return realmSites(region).filter(s=>s.kind!=='terminal'&&s.kind!=='guardianCourt').flatMap(s=>[-1,0,1].map(i=>({id:s.id+':civilian:'+i,type:'hubRoad',kind:'street',width:5,from:{x:s.x+i*9,z:s.z-28},to:{x:s.x+i*9,z:s.z+29}})));
+ return realmSites(region).filter(s=>s.kind!=='terminal'&&s.kind!=='guardianCourt').flatMap(s=>[
+  ...[-9,0,9].map(x=>({id:s.id+':civilian:'+x,width:4,from:{x:s.x+x,z:s.z-28},to:{x:s.x+x,z:s.z+29}})),
+  ...[-21,21].map(x=>({id:s.id+':promenade:'+x,width:3,from:{x:s.x+x,z:s.z-43},to:{x:s.x+x,z:s.z+43}})),
+  ...[-8,28].map(z=>({id:s.id+':crossing:'+z,width:2.8,from:{x:s.x-21,z:s.z+z},to:{x:s.x+21,z:s.z+z}})),
+ ].map(route=>({...route,type:'hubRoad',kind:'street'})));
 }
 export function realmPositionValid(region,point,padding=.9){
  const size=realmDimensions(region);return !!size&&!!point&&Number.isFinite(point.x)&&Number.isFinite(point.z)&&Math.hypot(point.x,point.z)<=size.radius-padding&&!realmStaticObstacles(region).some(b=>obstacleDistance(point,b)<padding);

@@ -1,3 +1,28 @@
+/** Scene-owned broad phase. Rebuild after structural scenery changes; enabled
+ * flags remain live. A camera arm usually visits only one or two city cells. */
+export function createCameraObstructionResolver(solids=[]){
+ const size=32,cells=new Map(),fallback=[];
+ for(const b of solids){
+  const reach=(b.width+b.depth)/2+2;
+  if(![b.x,b.z,reach].every(Number.isFinite)||reach<0||reach>size*16){fallback.push(b);continue;}
+  for(let x=Math.floor((b.x-reach)/size);x<=Math.floor((b.x+reach)/size);x++)for(let z=Math.floor((b.z-reach)/size);z<=Math.floor((b.z+reach)/size);z++){
+   const key=x+':'+z;let bucket=cells.get(key);if(!bucket){bucket=[];cells.set(key,bucket);}bucket.push(b);
+  }
+ }
+ let lastKey='',candidates=solids;
+ const resolve=(target,eye,clearance)=>{
+  if(!target||!eye)return resolveCameraObstruction(target,eye,solids,clearance);
+  const x0=Math.floor(Math.min(target.x,eye.x)/size),x1=Math.floor(Math.max(target.x,eye.x)/size),z0=Math.floor(Math.min(target.z,eye.z)/size),z1=Math.floor(Math.max(target.z,eye.z)/size);
+  // Cinematic long arms and malformed inputs retain the complete safe path.
+  if(![x0,x1,z0,z1].every(Number.isFinite)||(x1-x0+1)*(z1-z0+1)>256)return resolveCameraObstruction(target,eye,solids,clearance);
+  const key=x0+':'+x1+':'+z0+':'+z1;
+  if(key!==lastKey){const found=new Set(fallback);for(let x=x0;x<=x1;x++)for(let z=z0;z<=z1;z++)for(const b of cells.get(x+':'+z)||[])found.add(b);candidates=[...found];lastKey=key;}
+  return resolveCameraObstruction(target,eye,candidates,clearance);
+ };
+ Object.defineProperty(resolve,'diagnostics',{get:()=>({solids:solids.length,candidates:candidates.length,cells:cells.size})});
+ return resolve;
+}
+
 // Segment versus oriented building boxes. Shorten the camera arm immediately
 // on entry; the caller's existing smoothing eases it back out. No player teleport.
 export function resolveCameraObstruction(target,eye,solids=[],clearance=.65){
