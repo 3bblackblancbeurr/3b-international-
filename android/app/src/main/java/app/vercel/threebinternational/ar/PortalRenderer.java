@@ -105,7 +105,7 @@ public final class PortalRenderer implements GLSurfaceView.Renderer {
                     if(PortalPolicy.validPlacement(hit.getDistance(),normal[1],plane.isPoseInPolygon(hit.getHitPose()))){candidate=hit;break;}
                 }
                 if(placeRequested.getAndSet(false)&&(candidate!=null||recognized!=null)){
-                    anchor=recognized!=null?recognized.createAnchor(recognized.getCenterPose()):candidate.createAnchor();Pose cp=camera.getPose(),ap=anchor.getPose();yaw=PortalPolicy.facingYaw(cp.tx(),cp.tz(),ap.tx(),ap.tz());
+                    anchor=recognized!=null?recognized.createAnchor(recognized.getCenterPose()):candidate.createAnchor();Pose cp=camera.getPose(),ap=anchor.getPose();float[] az=ap.getZAxis();yaw=PortalPolicy.localFacingYaw(cp.tx(),cp.tz(),ap.tx(),ap.tz(),az[0],az[2]);
                 }
             }else placeRequested.set(false);
             if(anchor!=null&&anchor.getTrackingState()==TrackingState.STOPPED){resetAnchor();guidance.show("Repère perdu. Choisis une nouvelle surface.",false);return;}
@@ -120,7 +120,7 @@ public final class PortalRenderer implements GLSurfaceView.Renderer {
         }catch(Exception error){broken=true;fail.accept("Le suivi spatial s’est interrompu. Ferme les autres applications caméra puis réessaie.");}
     }
     private void anchoredModel(Pose pose,float angle){
-        Matrix.setIdentityM(model,0);Matrix.translateM(model,0,pose.tx(),pose.ty(),pose.tz());Matrix.rotateM(model,0,(float)Math.toDegrees(angle),0,1,0);
+        pose.toMatrix(model,0);Matrix.rotateM(model,0,(float)Math.toDegrees(angle),0,1,0);
     }
     private void drawCamera(Frame frame){
         GLES20.glDisable(GLES20.GL_DEPTH_TEST);GLES20.glDisable(GLES20.GL_BLEND);GLES20.glDepthMask(false);

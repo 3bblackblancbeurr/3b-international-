@@ -16,6 +16,9 @@ public final class PortalPolicy {
     public static float facingYaw(float cameraX, float cameraZ, float anchorX, float anchorZ) {
         return (float)Math.atan2(cameraX - anchorX, cameraZ - anchorZ);
     }
+    public static float localFacingYaw(float cameraX, float cameraZ, float anchorX, float anchorZ, float anchorZx, float anchorZz) {
+        return facingYaw(cameraX,cameraZ,anchorX,anchorZ)-(float)Math.atan2(anchorZx,anchorZz);
+    }
     public static float lightIntensity(float estimate) {
         return Float.isFinite(estimate) ? Math.max(0.35f, Math.min(1.8f, estimate)) : 1f;
     }
