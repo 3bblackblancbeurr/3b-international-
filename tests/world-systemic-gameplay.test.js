@@ -476,6 +476,6 @@ test('runtime surfaces use contextual prompts multimodal feedback and remappable
  assert.match(hud,/play-context-actions/);
  assert.match(hud,/onContextAction/);
  assert.match(page,/scene\.current\?\.combatAction\(kind\)/);
- assert.match(controls,/if\(e\.field\)onFieldAction\?\.\(kind\)/);
+ assert.match(controls,/if\(e\.field\)\s*\{?\s*onFieldAction\?\.\(kind\)/);
  assert.match(field,/onFieldAction=\{onFieldAction\}/);
 });
