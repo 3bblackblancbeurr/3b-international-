@@ -34,6 +34,7 @@ try{
   await nav.getByRole('button',{name:'Ouvrir le menu',exact:true}).click();
   const dialog=page.locator('#universe-menu');await dialog.waitFor({state:'visible'});
   check(`Dialog fits viewport ${viewport.width}`,await dialog.evaluate(e=>{const r=e.getBoundingClientRect();return r.left>=0&&r.top>=0&&r.right<=innerWidth+1&&r.bottom<=innerHeight+1;}));
+  await page.screenshot({path:out+'/menu-principal-'+viewport.width+'.png'});
   check(`Category names fit without horizontal scrolling ${viewport.width}`,await dialog.locator('.app-menu-categories').evaluate(e=>e.scrollWidth<=e.clientWidth+1));
   await dialog.getByRole('tab',{name:'Monde',exact:true}).click();
   check(`Hidden world accessible ${viewport.width}`,await dialog.locator('[data-menu-id="invisible"]').isVisible());
