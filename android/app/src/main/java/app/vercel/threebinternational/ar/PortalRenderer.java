@@ -45,6 +45,7 @@ public final class PortalRenderer implements GLSurfaceView.Renderer {
     private final AtomicBoolean placeRequested=new AtomicBoolean();
     private Anchor anchor;
     private float yaw;
+    private boolean wallPlacement, manualPlacement, cameraPreview;
     private int width=1,height=1,rotation=-1,cameraTexture,depthTexture,cameraProgram,portalProgram;
     private boolean depthReady,broken;
     private int depthWidth,depthHeight;
@@ -61,7 +62,7 @@ public final class PortalRenderer implements GLSurfaceView.Renderer {
     public void setSession(Session value){session=value;depthEnabled=value!=null&&value.getConfig().getDepthMode()==com.google.ar.core.Config.DepthMode.AUTOMATIC;textureBound=false;if(value==null)placeRequested.set(false);}
     public void setTargets(Set<String> targets){imageTargets=targets;}
     public void requestPlacement(){placeRequested.set(true);}
-    public void resetAnchor(){if(anchor!=null){anchor.detach();anchor=null;}placeRequested.set(false);}
+    public void resetAnchor(){if(anchor!=null){anchor.detach();anchor=null;}placeRequested.set(false);cameraPreview=false;wallPlacement=false;manualPlacement=false;}
 
     @Override public void onSurfaceCreated(GL10 ignored,EGLConfig config){
         try{
@@ -87,8 +88,16 @@ public final class PortalRenderer implements GLSurfaceView.Renderer {
             Frame frame=active.update();if(frame.getTimestamp()==0)return;
             drawCamera(frame);
             Camera camera=frame.getCamera();
-            if(camera.getTrackingState()!=TrackingState.TRACKING){placeRequested.set(false);guidance.show("Suivi interrompu. Bouge doucement dans un endroit bien éclairé.",false);return;}
-            camera.getViewMatrix(view,0);camera.getProjectionMatrix(projection,0,.05f,30f);
+            boolean tracking=camera.getTrackingState()==TrackingState.TRACKING;
+            camera.getProjectionMatrix(projection,0,.05f,30f);
+            if(!tracking){
+                if(anchor==null&&placeRequested.getAndSet(false))cameraPreview=true;
+                if(cameraPreview){drawCameraPreview();guidance.show("Aperçu caméra : le portail suit le téléphone. Replacer pour essayer l’ancrage.",false);}
+                else guidance.show("Vise aussi un bord de porte ou un meuble pour aider le suivi. Tu peux déjà afficher un aperçu.",anchor==null);
+                return;
+            }
+            camera.getViewMatrix(view,0);
+            if(cameraPreview){drawCameraPreview();guidance.show("Aperçu caméra : le portail suit le téléphone. Replacer pour essayer l’ancrage.",false);return;}
             updateDepth(frame);updateLight(frame);
             HitResult candidate=null;AugmentedImage recognized=null;
             if(anchor==null&&!imageTargets.isEmpty())for(AugmentedImage image:frame.getUpdatedTrackables(AugmentedImage.class)){
@@ -100,24 +109,59 @@ public final class PortalRenderer implements GLSurfaceView.Renderer {
                 for(HitResult hit:frame.hitTest(width*.5f,height*.5f)){
                     if(!(hit.getTrackable() instanceof Plane))continue;
                     Plane plane=(Plane)hit.getTrackable();
-                    if(plane.getTrackingState()!=TrackingState.TRACKING||plane.getType()!=Plane.Type.HORIZONTAL_UPWARD_FACING)continue;
+                    if(plane.getTrackingState()!=TrackingState.TRACKING)continue;
                     float[] normal=hit.getHitPose().getYAxis();
-                    if(PortalPolicy.validPlacement(hit.getDistance(),normal[1],plane.isPoseInPolygon(hit.getHitPose()))){candidate=hit;break;}
+                    boolean inside=plane.isPoseInPolygon(hit.getHitPose());
+                    boolean wall=plane.getType()==Plane.Type.VERTICAL&&PortalPolicy.validWallPlacement(hit.getDistance(),normal[1],inside);
+                    boolean floor=plane.getType()==Plane.Type.HORIZONTAL_UPWARD_FACING&&PortalPolicy.validPlacement(hit.getDistance(),normal[1],inside);
+                    if(wall||floor){candidate=hit;break;}
                 }
-                if(placeRequested.getAndSet(false)&&(candidate!=null||recognized!=null)){
-                    anchor=recognized!=null?recognized.createAnchor(recognized.getCenterPose()):candidate.createAnchor();Pose cp=camera.getPose(),ap=anchor.getPose();float[] az=ap.getZAxis();yaw=PortalPolicy.localFacingYaw(cp.tx(),cp.tz(),ap.tx(),ap.tz(),az[0],az[2]);
+                if(placeRequested.getAndSet(false)){
+                    Pose cp=camera.getPose();
+                    wallPlacement=candidate!=null&&((Plane)candidate.getTrackable()).getType()==Plane.Type.VERTICAL;
+                    manualPlacement=candidate==null&&recognized==null;
+                    if(wallPlacement){
+                        Pose hit=candidate.getHitPose();float[] normal=hit.getYAxis();
+                        if(normal[0]*(cp.tx()-hit.tx())+normal[2]*(cp.tz()-hit.tz())<0){normal[0]=-normal[0];normal[2]=-normal[2];}
+                        float angle=(float)Math.atan2(normal[0],normal[2]);
+                        anchor=candidate.getTrackable().createAnchor(uprightPose(hit.getTranslation(),angle));yaw=0;
+                    }else if(manualPlacement){
+                        float[] position=cp.transformPoint(new float[]{0,0,-PortalPolicy.MANUAL_DISTANCE});
+                        float angle=PortalPolicy.facingYaw(cp.tx(),cp.tz(),position[0],position[2]);
+                        anchor=active.createAnchor(uprightPose(position,angle));yaw=0;
+                    }else{
+                        anchor=recognized!=null?recognized.createAnchor(recognized.getCenterPose()):candidate.createAnchor();
+                        Pose ap=anchor.getPose();float[] az=ap.getZAxis();yaw=PortalPolicy.localFacingYaw(cp.tx(),cp.tz(),ap.tx(),ap.tz(),az[0],az[2]);
+                    }
                 }
             }else placeRequested.set(false);
             if(anchor!=null&&anchor.getTrackingState()==TrackingState.STOPPED){resetAnchor();guidance.show("Repère perdu. Choisis une nouvelle surface.",false);return;}
             if(anchor!=null&&anchor.getTrackingState()==TrackingState.TRACKING){
-                anchoredModel(anchor.getPose(),yaw);drawVirtual(shadowMesh,2,false);drawVirtual(baseMesh,0,true);drawVirtual(frameMesh,0,true);drawVirtual(discMesh,1,true);
-                guidance.show("Le passage est placé. Déplace-toi doucement pour l’observer.",false);
+                anchoredModel(anchor.getPose(),yaw);
+                Matrix.scaleM(model,0,PortalPolicy.SMALL_SCALE,PortalPolicy.SMALL_SCALE,PortalPolicy.SMALL_SCALE);
+                if(wallPlacement||manualPlacement)Matrix.translateM(model,0,0,-1.15f,wallPlacement?.15f:0);
+                if(manualPlacement)depthReady=false; // The manually chosen distance is not a measured wall.
+                if(!wallPlacement&&!manualPlacement){drawVirtual(shadowMesh,2,false);drawVirtual(baseMesh,0,true);}
+                drawVirtual(frameMesh,0,true);drawVirtual(discMesh,1,true);
+                guidance.show(wallPlacement?"Petit portail ancré au mur. Déplace-toi doucement.":manualPlacement?"Portail ancré à 55 cm lors du placement. Distance choisie, mur non mesuré.":"Petit portail placé sur la surface. Déplace-toi doucement.",false);
             }else if(anchor==null&&recognized!=null){
                 recognized.getCenterPose().toMatrix(model,0);drawVirtual(reticleMesh,3,false);guidance.show("Dessin reconnu. Place le portail sur ce repère.",true);
             }else if(anchor==null&&candidate!=null){
-                candidate.getHitPose().toMatrix(model,0);drawVirtual(reticleMesh,3,false);guidance.show("Sol trouvé. Garde de l’espace devant toi, puis place le portail.",true);
-            }else guidance.show(anchor==null?"Vise un sol dégagé à 1–5 mètres et bouge doucement.":"Le repère se retrouve. Patiente sans déplacer le portail.",false);
+                candidate.getHitPose().toMatrix(model,0);drawVirtual(reticleMesh,3,false);guidance.show(((Plane)candidate.getTrackable()).getType()==Plane.Type.VERTICAL?"Mur trouvé. Affiche le petit portail ici.":"Surface trouvée. Affiche le petit portail ici.",true);
+            }else guidance.show(anchor==null?"Vise le mur à courte distance. Sans repère, le bouton place le portail à 55 cm.":"Le repère se retrouve. Patiente, ou appuie sur Replacer.",anchor==null);
         }catch(Exception error){broken=true;fail.accept("Le suivi spatial s’est interrompu. Ferme les autres applications caméra puis réessaie.");}
+    }
+    private static Pose uprightPose(float[] position,float angle){
+        return new Pose(position,new float[]{0,(float)Math.sin(angle/2),0,(float)Math.cos(angle/2)});
+    }
+    private void drawCameraPreview(){
+        // Explicit head-locked visual test, never reported as a detected wall or spatial anchor.
+        Matrix.setIdentityM(view,0);Matrix.setIdentityM(model,0);
+        Matrix.multiplyMV(lightEye,0,view,0,lightWorld,0);
+        Matrix.translateM(model,0,0,0,-PortalPolicy.MANUAL_DISTANCE);
+        Matrix.scaleM(model,0,PortalPolicy.SMALL_SCALE,PortalPolicy.SMALL_SCALE,PortalPolicy.SMALL_SCALE);
+        Matrix.translateM(model,0,0,-1.15f,0);depthReady=false;
+        drawVirtual(frameMesh,0,true);drawVirtual(discMesh,1,true);
     }
     private void anchoredModel(Pose pose,float angle){
         pose.toMatrix(model,0);Matrix.rotateM(model,0,(float)Math.toDegrees(angle),0,1,0);

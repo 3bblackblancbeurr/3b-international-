@@ -51,7 +51,7 @@ public class HiddenARActivity extends Activity {
         controls = new LinearLayout(this); controls.setOrientation(LinearLayout.VERTICAL); controls.setPadding(dp(20),dp(20),dp(20),dp(24));
         controls.setBackground(new GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP,new int[]{0xff080e16,0x00080e16}));
         guidance = label("Ouverture du regard…",16); guidance.setGravity(Gravity.CENTER); controls.addView(guidance);
-        place = button("Placer le portail", true); place.setEnabled(false); place.setOnClickListener(v -> renderer.requestPlacement()); controls.addView(place);
+        place = button("Afficher le petit portail", true); place.setEnabled(false); place.setOnClickListener(v -> renderer.requestPlacement()); controls.addView(place);
         actions = new LinearLayout(this);
         reset = button("Replacer",false); reset.setOnClickListener(v -> surface.queueEvent(renderer::resetAnchor));
         close = button("Fermer",false); close.setOnClickListener(v -> finish()); controls.addView(actions);
@@ -98,7 +98,7 @@ public class HiddenARActivity extends Activity {
                 config.setLightEstimationMode(Config.LightEstimationMode.ENVIRONMENTAL_HDR);
                 boolean depth=session.isDepthModeSupported(Config.DepthMode.AUTOMATIC);
                 config.setDepthMode(depth?Config.DepthMode.AUTOMATIC:Config.DepthMode.DISABLED);
-                config.setPlaneFindingMode(Config.PlaneFindingMode.HORIZONTAL);
+                config.setPlaneFindingMode(Config.PlaneFindingMode.HORIZONTAL_AND_VERTICAL);
                 renderer.setTargets(ImageTargetRegistry.configure(session,config,getAssets()));
                 session.configure(config);
                 capabilities.setText(depth?"Suivi spatial · lumière HDR · profondeur":"Suivi spatial · lumière HDR · profondeur indisponible");
