@@ -10,7 +10,7 @@ La session nécessite un sol suivi et une pose située entre 0,65 et 5 mètres. 
 
 ## Installation et publication
 
-La mise à jour du site/PWA permet l’aperçu 3D. Elle ne peut pas installer du code natif dans une ancienne application Android. Le module spatial nécessite une nouvelle compilation Android et l’installation de cette version. `mobile-build.yml` compile l’APK de test, le bundle non signé et les tests JUnit. La distribution Play nécessite sa chaîne de signature et sa piste de test existantes. Ne pas présenter une mise à jour Vercel comme une installation du module ARCore.
+La mise à jour du site/PWA permet l’aperçu 3D. Elle ne peut pas installer du code natif dans une ancienne application Android. Le module spatial nécessite une nouvelle compilation Android et l’installation de cette version. `mobile-build.yml` compile l’APK de test, le bundle non signé et les tests JUnit. L’APK debug utilise le paquet séparé `app.vercel.threebinternational.arpreview` et le nom « 3B — Portail AR (test) » : il s’installe à côté de l’application officielle, sans la désinstaller ni effacer ses données. Le compte 3B se reconnecte séparément dans cette version. La distribution Play nécessite sa chaîne de signature et sa piste de test existantes. Ne pas présenter une mise à jour Vercel comme une installation du module ARCore.
 
 ## Dessins et lieux futurs
 
