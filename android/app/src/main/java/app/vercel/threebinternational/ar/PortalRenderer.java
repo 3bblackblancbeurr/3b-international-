@@ -8,6 +8,7 @@ import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
 import android.os.SystemClock;
 import com.google.ar.core.Anchor;
+import com.google.ar.core.AugmentedImage;
 import com.google.ar.core.Camera;
 import com.google.ar.core.Coordinates2d;
 import com.google.ar.core.Frame;
@@ -23,6 +24,8 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Set;
+import java.util.Collections;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import javax.microedition.khronos.egl.EGLConfig;
@@ -37,12 +40,14 @@ public final class PortalRenderer implements GLSurfaceView.Renderer {
     private final Guidance guidance;
     private final Consumer<String> fail;
     private volatile Session session;
-    private volatile boolean textureBound;
+    private volatile boolean textureBound, depthEnabled;
+    private volatile Set<String> imageTargets=Collections.emptySet();
     private final AtomicBoolean placeRequested=new AtomicBoolean();
     private Anchor anchor;
     private float yaw;
     private int width=1,height=1,rotation=-1,cameraTexture,depthTexture,cameraProgram,portalProgram;
     private boolean depthReady,broken;
+    private int depthWidth,depthHeight;
     private final float[] projection=new float[16],view=new float[16],model=new float[16],depthUV=new float[9];
     private final FloatBuffer quad=buffer(new float[]{-1,-1,1,-1,-1,1,1,1}),cameraUV=buffer(new float[8]);
     private final FloatBuffer uvBasis=buffer(new float[]{-1,-1,1,-1,-1,1}),depthCoords=buffer(new float[6]);
@@ -53,7 +58,8 @@ public final class PortalRenderer implements GLSurfaceView.Renderer {
     private final long started=SystemClock.elapsedRealtime();
 
     public PortalRenderer(Activity activity,Guidance guidance,Consumer<String> fail){this.activity=activity;this.guidance=guidance;this.fail=fail;}
-    public void setSession(Session value){session=value;textureBound=false;if(value==null)placeRequested.set(false);}
+    public void setSession(Session value){session=value;depthEnabled=value!=null&&value.getConfig().getDepthMode()==com.google.ar.core.Config.DepthMode.AUTOMATIC;textureBound=false;if(value==null)placeRequested.set(false);}
+    public void setTargets(Set<String> targets){imageTargets=targets;}
     public void requestPlacement(){placeRequested.set(true);}
     public void resetAnchor(){if(anchor!=null){anchor.detach();anchor=null;}placeRequested.set(false);}
 
@@ -61,12 +67,12 @@ public final class PortalRenderer implements GLSurfaceView.Renderer {
         try{
             cameraProgram=program("camera");portalProgram=program("portal");
             int[] textures=new int[2];GLES20.glGenTextures(2,textures,0);cameraTexture=textures[0];depthTexture=textures[1];
-            GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,cameraTexture);textureParameters(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
+            GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,cameraTexture);textureParameters(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,GLES20.GL_TEXTURE_MIN_FILTER,GLES20.GL_LINEAR);GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,GLES20.GL_TEXTURE_MAG_FILTER,GLES20.GL_LINEAR);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D,depthTexture);textureParameters(GLES20.GL_TEXTURE_2D);
             // A valid transparent depth texture even before the first depth frame.
             GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D,0,GLES20.GL_RGBA,1,1,0,GLES20.GL_RGBA,GLES20.GL_UNSIGNED_BYTE,ByteBuffer.allocateDirect(4));
             frameMesh=torus();discMesh=disc();baseMesh=pedestal();shadowMesh=ground(1.45f);reticleMesh=ground(.2f);
-            textureBound=false;rotation=-1;
+            textureBound=false;rotation=-1;depthWidth=depthHeight=0;
         }catch(Exception error){broken=true;fail.accept("Le rendu spatial ne peut pas être initialisé sur cet appareil.");}
     }
     @Override public void onSurfaceChanged(GL10 ignored,int w,int h){width=w;height=h;rotation=-1;GLES20.glViewport(0,0,w,h);}
@@ -84,7 +90,12 @@ public final class PortalRenderer implements GLSurfaceView.Renderer {
             if(camera.getTrackingState()!=TrackingState.TRACKING){placeRequested.set(false);guidance.show("Suivi interrompu. Bouge doucement dans un endroit bien éclairé.",false);return;}
             camera.getViewMatrix(view,0);camera.getProjectionMatrix(projection,0,.05f,30f);
             updateDepth(frame);updateLight(frame);
-            HitResult candidate=null;
+            HitResult candidate=null;AugmentedImage recognized=null;
+            if(anchor==null&&!imageTargets.isEmpty())for(AugmentedImage image:frame.getUpdatedTrackables(AugmentedImage.class)){
+                if(!imageTargets.contains(image.getName())||image.getTrackingState()!=TrackingState.TRACKING||image.getTrackingMethod()!=AugmentedImage.TrackingMethod.FULL_TRACKING)continue;
+                Pose ip=image.getCenterPose(),cp=camera.getPose();float distance=(float)Math.sqrt(Math.pow(ip.tx()-cp.tx(),2)+Math.pow(ip.ty()-cp.ty(),2)+Math.pow(ip.tz()-cp.tz(),2));
+                if(PortalPolicy.validPlacement(distance,ip.getYAxis()[1],true)){recognized=image;break;}
+            }
             if(anchor==null){
                 for(HitResult hit:frame.hitTest(width*.5f,height*.5f)){
                     if(!(hit.getTrackable() instanceof Plane))continue;
@@ -93,14 +104,16 @@ public final class PortalRenderer implements GLSurfaceView.Renderer {
                     float[] normal=hit.getHitPose().getYAxis();
                     if(PortalPolicy.validPlacement(hit.getDistance(),normal[1],plane.isPoseInPolygon(hit.getHitPose()))){candidate=hit;break;}
                 }
-                if(placeRequested.getAndSet(false)&&candidate!=null){
-                    anchor=candidate.createAnchor();Pose cp=camera.getPose(),ap=anchor.getPose();yaw=PortalPolicy.facingYaw(cp.tx(),cp.tz(),ap.tx(),ap.tz());
+                if(placeRequested.getAndSet(false)&&(candidate!=null||recognized!=null)){
+                    anchor=recognized!=null?recognized.createAnchor(recognized.getCenterPose()):candidate.createAnchor();Pose cp=camera.getPose(),ap=anchor.getPose();yaw=PortalPolicy.facingYaw(cp.tx(),cp.tz(),ap.tx(),ap.tz());
                 }
             }else placeRequested.set(false);
             if(anchor!=null&&anchor.getTrackingState()==TrackingState.STOPPED){resetAnchor();guidance.show("Repère perdu. Choisis une nouvelle surface.",false);return;}
             if(anchor!=null&&anchor.getTrackingState()==TrackingState.TRACKING){
                 anchoredModel(anchor.getPose(),yaw);drawVirtual(shadowMesh,2,false);drawVirtual(baseMesh,0,true);drawVirtual(frameMesh,0,true);drawVirtual(discMesh,1,true);
                 guidance.show("Le passage est placé. Déplace-toi doucement pour l’observer.",false);
+            }else if(anchor==null&&recognized!=null){
+                recognized.getCenterPose().toMatrix(model,0);drawVirtual(reticleMesh,3,false);guidance.show("Dessin reconnu. Place le portail sur ce repère.",true);
             }else if(anchor==null&&candidate!=null){
                 candidate.getHitPose().toMatrix(model,0);drawVirtual(reticleMesh,3,false);guidance.show("Sol trouvé. Garde de l’espace devant toi, puis place le portail.",true);
             }else guidance.show(anchor==null?"Vise un sol dégagé à 1–5 mètres et bouge doucement.":"Le repère se retrouve. Patiente sans déplacer le portail.",false);
@@ -118,7 +131,7 @@ public final class PortalRenderer implements GLSurfaceView.Renderer {
     }
     private void updateDepth(Frame frame){
         depthReady=false;
-        if(session==null||session.getConfig().getDepthMode()==com.google.ar.core.Config.DepthMode.DISABLED)return;
+        if(!depthEnabled)return;
         try(Image image=frame.acquireDepthImage16Bits()){
             if(!PortalPolicy.freshDepth(frame.getTimestamp(),image.getTimestamp()))return;
             int w=image.getWidth(),h=image.getHeight(),size=w*h*4;
@@ -126,7 +139,7 @@ public final class PortalRenderer implements GLSurfaceView.Renderer {
             depthPixels.clear();Image.Plane p=image.getPlanes()[0];ByteBuffer input=p.getBuffer();int start=input.position();
             for(int y=0;y<h;y++)for(int x=0;x<w;x++){int offset=start+y*p.getRowStride()+x*p.getPixelStride();depthPixels.put(input.get(offset)).put(input.get(offset+1)).put((byte)0).put((byte)255);}
             depthPixels.flip();GLES20.glActiveTexture(GLES20.GL_TEXTURE1);GLES20.glBindTexture(GLES20.GL_TEXTURE_2D,depthTexture);
-            GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D,0,GLES20.GL_RGBA,w,h,0,GLES20.GL_RGBA,GLES20.GL_UNSIGNED_BYTE,depthPixels);
+            if(depthWidth!=w||depthHeight!=h){GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D,0,GLES20.GL_RGBA,w,h,0,GLES20.GL_RGBA,GLES20.GL_UNSIGNED_BYTE,depthPixels);depthWidth=w;depthHeight=h;}else GLES20.glTexSubImage2D(GLES20.GL_TEXTURE_2D,0,0,0,w,h,GLES20.GL_RGBA,GLES20.GL_UNSIGNED_BYTE,depthPixels);
             uvBasis.position(0);depthCoords.position(0);frame.transformCoordinates2d(Coordinates2d.OPENGL_NORMALIZED_DEVICE_COORDINATES,uvBasis,Coordinates2d.TEXTURE_NORMALIZED,depthCoords);
             float x=depthCoords.get(0),y=depthCoords.get(1),dx=(depthCoords.get(2)-x)/2,dy=(depthCoords.get(3)-y)/2,ex=(depthCoords.get(4)-x)/2,ey=(depthCoords.get(5)-y)/2;
             depthUV[0]=dx;depthUV[1]=dy;depthUV[2]=0;depthUV[3]=ex;depthUV[4]=ey;depthUV[5]=0;depthUV[6]=x+dx+ex;depthUV[7]=y+dy+ey;depthUV[8]=1;depthReady=true;

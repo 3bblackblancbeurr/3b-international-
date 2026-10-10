@@ -29,7 +29,7 @@ public class HiddenARActivity extends Activity {
     private TextView guidance, capabilities;
     private Button place;
     private Session session;
-    private boolean installRequested, resumed, permissionRequested, failed;
+    private boolean installRequested, resumed, permissionRequested, failed, running;
     private String lastGuidance = "";
 
     @Override public void onCreate(Bundle state) {
@@ -71,7 +71,7 @@ public class HiddenARActivity extends Activity {
     }
     @Override protected void onResume(){super.onResume();resumed=true;openSession();}
     private void openSession(){
-        if(!resumed||failed)return;
+        if(!resumed||failed||running)return;
         if(ContextCompat.checkSelfPermission(this,Manifest.permission.CAMERA)!=PackageManager.PERMISSION_GRANTED){
             if(!permissionRequested){permissionRequested=true;ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.CAMERA},71);}return;
         }
@@ -85,13 +85,14 @@ public class HiddenARActivity extends Activity {
                 boolean depth=session.isDepthModeSupported(Config.DepthMode.AUTOMATIC);
                 config.setDepthMode(depth?Config.DepthMode.AUTOMATIC:Config.DepthMode.DISABLED);
                 config.setPlaneFindingMode(Config.PlaneFindingMode.HORIZONTAL);
+                renderer.setTargets(ImageTargetRegistry.configure(session,config,getAssets()));
                 session.configure(config);
                 capabilities.setText(depth?"Suivi spatial · lumière HDR · profondeur":"Suivi spatial · lumière HDR · profondeur indisponible");
             }
-            session.resume();renderer.setSession(session);surface.onResume();
+            session.resume();renderer.setSession(session);surface.onResume();running=true;
         } catch(Exception error){fail("Le regard spatial est indisponible. Vérifie les Services Google Play pour la RA et l’accès à la caméra.");}
     }
     @Override public void onRequestPermissionsResult(int requestCode,String[] permissions,int[] grants){super.onRequestPermissionsResult(requestCode,permissions,grants);if(requestCode==71){if(grants.length>0&&grants[0]==PackageManager.PERMISSION_GRANTED)openSession();else fail("Autorisation caméra refusée. Tu peux continuer avec l’aperçu photo.");}}
-    @Override protected void onPause(){resumed=false;surface.onPause();renderer.setSession(null);if(session!=null)session.pause();super.onPause();}
+    @Override protected void onPause(){resumed=false;running=false;surface.onPause();renderer.setSession(null);if(session!=null)session.pause();super.onPause();}
     @Override protected void onDestroy(){if(session!=null){renderer.resetAnchor();session.close();session=null;}getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);super.onDestroy();}
 }

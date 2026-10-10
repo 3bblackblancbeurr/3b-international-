@@ -9,6 +9,10 @@ public final class PortalPolicy {
         return Float.isFinite(distance) && distance >= MIN_DISTANCE && distance <= MAX_DISTANCE
             && Float.isFinite(normalY) && normalY >= (float)Math.cos(Math.toRadians(20)) && inPolygon;
     }
+    public static boolean validImageTarget(String id, String file, float width) {
+        return id != null && id.matches("[a-z0-9-]{1,80}") && file != null && file.matches("[a-z0-9-]{1,80}\\.(png|jpg|jpeg)")
+            && Float.isFinite(width) && width >= 0.03f && width <= 2f;
+    }
     public static float facingYaw(float cameraX, float cameraZ, float anchorX, float anchorZ) {
         return (float)Math.atan2(cameraX - anchorX, cameraZ - anchorZ);
     }
