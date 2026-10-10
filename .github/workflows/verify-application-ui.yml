@@ -1,0 +1,36 @@
+name: Verify Application Navigation
+on:
+  pull_request:
+    paths: ['src/components/AppNavigation.jsx', 'src/components/navigation-menu.js', 'src/components/GuidePage.jsx', 'src/design-system/LuxuryExperience.jsx', 'src/styles/application-ui.css', 'src/main.jsx', 'tests/application-menu.test.js', 'scripts/verify-application-ui.mjs', '.github/workflows/verify-application-ui.yml']
+  push:
+    branches: [main]
+    paths: ['src/styles/application-ui.css', 'src/components/AppNavigation.jsx', 'src/components/navigation-menu.js']
+permissions:
+  contents: read
+concurrency:
+  group: application-ui-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  navigation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: node --test tests/application-menu.test.js tests/home-premium-navigation.test.js tests/navigation-links.test.js tests/member-navigation.test.js tests/luxury-experience.test.js tests/companion-preferences.test.js
+      - run: npm run build
+      - run: npm install --no-save --package-lock=false @playwright/test@1.56.1
+      - run: npx playwright install --with-deps chromium
+      - run: node scripts/verify-application-ui.mjs
+        env:
+          APP_UI_OUT: artifacts/application-ui
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: application-ui-browser
+          path: artifacts/application-ui/
+          retention-days: 7

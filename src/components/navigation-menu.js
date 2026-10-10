@@ -15,10 +15,10 @@ export const NAV_GROUPS=Object.freeze([
 ]);
 
 export const MENU_CATEGORIES=Object.freeze([
- {id:'principal',label:'Principal',ids:['home','passport','world3b','shop']},
- {id:'world',label:'Monde et jeux',ids:['world3b','invisible','secret','games','nosbloc','arena']},
+ {id:'principal',label:'Essentiel',ids:['home','passport','world3b','shop']},
+ {id:'world',label:'Monde',ids:['world3b','invisible','secret','games','nosbloc','arena']},
  {id:'account',label:'Compte',ids:['member','passport','loyalty','control']},
- {id:'discover',label:'Découvrir',ids:['guide','community','manga','religion','sport','ia']},
+ {id:'discover',label:'Autres',ids:['guide','community','manga','religion','sport','ia']},
  {id:'settings',label:'Réglages',ids:[]},
 ]);
 
@@ -53,4 +53,9 @@ export function categoryForPage(page,menuItems){
 
 export function availableCategories(menuItems){
  return MENU_CATEGORIES.filter(category=>category.id==='settings'||itemsForCategory(menuItems,category.id).length>0);
+}
+
+/** Keep unfinished spaces discoverable without crowding live destinations. */
+export function partitionDestinations(items = []) {
+ return { available: items.filter(item => item.status !== 'soon'), upcoming: items.filter(item => item.status === 'soon') };
 }

@@ -11,6 +11,7 @@ import "./styles/luxury-v2.css";
 import "./styles/home-app.css";
 import "./styles/launch-premium.css";
 import "./styles/companion-premium.css";
+import "./styles/application-ui.css";
 import { setupNativeApp } from './native/runtime.js';
 import { captureAppOpen } from './lib/analytics.js';
 import AppUpdateManager from "./update/AppUpdateManager.jsx";

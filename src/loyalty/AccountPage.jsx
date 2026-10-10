@@ -404,9 +404,9 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
    </div>
   </div>}
 
-  <section className="account-options">
-   <h2>À ta façon.</h2><p>Réglages d’affichage sur cet appareil.</p>
+  <details className="account-options">
+   <summary>Réglages d’affichage</summary><p>Personnalise l’animation et le confort sur cet appareil.</p>
    <div>{Object.entries(options).map(([key,value])=><button key={key} aria-pressed={value} onClick={()=>toggleOption(key)}>{OPTION_LABELS[key]} <strong>{value?'Activé':'Désactivé'}</strong></button>)}</div>
-  </section>
+  </details>
  </section>;
 }
