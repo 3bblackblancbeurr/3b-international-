@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'vite';
+import {blankSave} from '../src/world/rules.js';
+import {applyWorldAction} from '../src/world/engine.js';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
 const modulePath=process.env.PLAYWRIGHT_MODULE||'playwright';
@@ -12,10 +14,24 @@ try{browser=await chromium.launch({headless:true,args:['--use-fake-device-for-me
 const out=process.env.HIDDEN_WORLD_TEST_OUT||'work/hidden-world';
 await mkdir(out,{recursive:true});
 try{
+ const uid='11111111-1111-4111-8111-111111111111';
+ const profile={user_id:uid,name:'Voyageur QA',handle:'qa_hidden',country:'France',xp:1800,points:100,passport_state:'active',passport_public_id:'22222222-2222-4222-8222-222222222222',passport_version:1,theme:'heir',created_at:'2026-01-01T00:00:00Z'};
  for(const width of [390,844,1440]){
+  let world=blankSave();const sequences=new Map();
   const context=await browser.newContext({viewport:{width,height:width===844?390:900},permissions:['camera'],reducedMotion:'reduce'});
-  await context.addInitScript(()=>{localStorage.setItem('threeb_companion_prefs_v1',JSON.stringify({enabled:false}));localStorage.setItem('threeb_companion_living_v1',JSON.stringify({voiceEnabled:false}));window.__cameraCalls=0;const original=navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);navigator.mediaDevices.getUserMedia=async options=>{window.__cameraCalls++;return original(options);};});
-  await context.route('https://ttvhcezucsbbmnafrotq.supabase.co/**',route=>route.fulfill({status:503,contentType:'application/json',body:'{"error":"QA offline guest"}'}));
+  await context.addInitScript(({uid})=>{
+   const token=[btoa(JSON.stringify({alg:'HS256',typ:'JWT'})),btoa(JSON.stringify({sub:uid,exp:Math.floor(Date.now()/1000)+3600,role:'authenticated'})),'synthetic-hidden-test'].join('.');
+   localStorage.setItem('3b_member_auth_v1',JSON.stringify({access_token:token,refresh_token:'synthetic-hidden-test',expires_at:Math.floor(Date.now()/1000)+3600,token_type:'bearer',user:{id:uid,aud:'authenticated',email:'qa@example.invalid'}}));
+   localStorage.setItem('threeb_companion_prefs_v1',JSON.stringify({enabled:false}));localStorage.setItem('threeb_companion_living_v1',JSON.stringify({voiceEnabled:false}));
+   window.__cameraCalls=0;const original=navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);navigator.mediaDevices.getUserMedia=async options=>{window.__cameraCalls++;return original(options);};
+  },{uid});
+  await context.route('https://ttvhcezucsbbmnafrotq.supabase.co/**',route=>{
+   const pathname=new URL(route.request().url()).pathname,json=body=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
+   if(pathname.endsWith('/member-api'))return json({profile,events:[],inventory:[],entitlements:[],identity_claims_complete:true});
+   if(pathname.endsWith('/world-engine')){const body=route.request().postDataJSON();let sequence=sequences.get(body.device)||0;for(const item of body.commands){if(item.seq<=sequence)continue;world=applyWorldAction(world,item.action);sequence=item.seq;}sequences.set(body.device,sequence);return json({data:world,sequence,revision:1,rejected:[],legacy:false});}
+   if(pathname.endsWith('/rpc/secret3b_daily_status'))return json({phase:'waiting',server_now:new Date().toISOString()});
+   return route.fulfill({status:503,contentType:'application/json',body:'{"error":"QA service disabled"}'});
+  });
   const page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
   await page.goto('http://127.0.0.1:5394/#monde-invisible',{waitUntil:'domcontentloaded'});
   await page.locator('.hidden-world').waitFor({timeout:60000});
