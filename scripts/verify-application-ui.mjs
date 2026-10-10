@@ -28,7 +28,8 @@ try{
   await page.goto(origin+'/#accueil');await page.locator('.home-app-hub').waitFor();
   const nav=page.locator(viewport.width<=720?'.mobile-navigation':'.site-header');
   check(`Visible labeled navigation ${viewport.width}`,await nav.isVisible());
-  check(`Home contains no framed directory tiles ${viewport.width}`,await page.locator('.universe-card').evaluateAll(items=>items.every(e=>getComputedStyle(e).borderTopWidth==='0px'&&getComputedStyle(e).borderLeftWidth==='0px')));
+  await page.screenshot({path:out+'/home-'+viewport.width+'.png'});
+  check(`Home contains no framed directory tiles ${viewport.width}`,await page.locator('.universe-card').evaluateAll(items=>items.every(e=>getComputedStyle(e).borderRightWidth==='0px'&&getComputedStyle(e).borderLeftWidth==='0px'&&getComputedStyle(e).borderRadius==='0px')));
   await page.screenshot({path:out+'/home-'+viewport.width+'.png'});
   await nav.getByRole('button',{name:'Ouvrir le menu',exact:true}).click();
   const dialog=page.locator('#universe-menu');await dialog.waitFor({state:'visible'});
