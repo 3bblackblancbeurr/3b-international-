@@ -138,3 +138,15 @@ html[data-luxury="v2"] body .hub-settings .world-audio-slider input { min-height
  html[data-luxury="v2"] body .app3b[data-page] .app-menu-search input { min-height: 44px; }
  html[data-luxury="v2"] body .app3b[data-page] .app-menu-footer { padding-block: 0; }
 }
+
+/* Access and command surfaces are mounted outside the shared app shell. */
+html[data-luxury="v2"] body .intro3b-card[aria-labelledby="passport-access-title"] { width: min(520px,100%); min-width: 0; border: 0; border-radius: var(--3b-radius-flat); background: transparent; box-shadow: var(--3b-shadow-flat); padding: 32px 20px; }
+html[data-luxury="v2"] body .intro3b-card[aria-labelledby="passport-access-title"]::before { display: none; }
+html[data-luxury="v2"] body #passport-access-title { font-size: clamp(28px,7vw,40px); line-height: 1.15; text-transform: none; letter-spacing: -.035em; }
+html[data-luxury="v2"] body .intro3b-card[aria-labelledby="passport-access-title"] .gm-button { min-height: 48px; width: 100%; white-space: normal; line-height: 1.5; }
+html[data-luxury="v2"] body .intro3b-card[aria-labelledby="passport-access-title"] .gm-button--ghost { border: 0; }
+html[data-luxury="v2"] body .control-page :is(.control-section,.control-setting-toggle,.control-module-settings,.control-module-settings-grid > button) { border: 0; border-radius: var(--3b-radius-flat); background: transparent; box-shadow: var(--3b-shadow-flat); }
+html[data-luxury="v2"] body .control-page .control-section { border-top: 1px solid var(--3b-line-soft); }
+html[data-luxury="v2"] body .control-page .control-setting-toggle { min-height: 64px; border-bottom: 1px solid var(--3b-line-soft); }
+html[data-luxury="v2"] body .control-page .control-module-settings-grid > button { min-height: 48px; }
+html[data-luxury="v2"] body .control-page .control-dock button { min-height: 48px; }

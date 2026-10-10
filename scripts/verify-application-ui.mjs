@@ -64,6 +64,19 @@ try{
   }
   await context.close();
  }
+ const guestContext=await browser.newContext({viewport:{width:320,height:700},reducedMotion:'reduce'});
+ await guestContext.route('**/*',route=>new URL(route.request().url()).origin===origin?route.continue():route.abort());
+ const guest=await guestContext.newPage();guest.on('pageerror',e=>errors.push(e.message));
+ await guest.goto(origin+'/#boutique');await guest.locator('#passport-access-title').waitFor();
+ check('Guest access gate remains readable',await guest.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+ check('Guest access gate keeps three clear choices',await guest.locator('[aria-labelledby="passport-access-title"] button').count()===3);
+ await guest.screenshot({path:out+'/access-320.png'});
+ await guest.getByRole('button',{name:'Compte / activation',exact:true}).click();await guest.locator('.account-entry').waitFor();
+ check('Guest account form remains accessible',await guest.locator('.account-tabs').isVisible());
+ await guest.getByRole('button',{name:'Créer un compte',exact:true}).click();
+ check('Registration retains identity and consent controls',await guest.locator('input[type="checkbox"]').count()>=3);
+ await guest.screenshot({path:out+'/registration-320.png'});
+ await guestContext.close();
  check('No unhandled rendering errors',errors.length===0);
  await writeFile(out+'/results.json',JSON.stringify({checks:results.length,results,errors},null,2));
 }finally{await browser.close();await server.close();}
