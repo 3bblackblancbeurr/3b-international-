@@ -5,7 +5,7 @@ import WorldPortalCard from './WorldPortalCard.jsx';
 import CompactCard from './CompactCard.jsx';
 import PassportNexus from './PassportNexus.jsx';
 import { useLuxury } from '../design-system/LuxuryExperience.jsx';
-import { Building2 } from 'lucide-react';
+import { Building2, ScanLine, ArrowUpRight } from 'lucide-react';
 import {Button} from '../design-system/index.jsx';
 
 const GUIDE_ID = 'guide';
@@ -16,12 +16,13 @@ export default function HomePage({goTo,menuItems,member,installation}){
  const secondaryGroups=NAV_GROUPS.map(group=>({
   ...group,
   items:group.ids
-   .filter(id=>id!==GUIDE_ID&&id!=='world3b')
+   .filter(id=>id!==GUIDE_ID&&id!=='world3b'&&id!=='invisible')
    .map(id=>menuItems.find(item=>item.id===id))
    .filter(item=>item&&item.status!=='soon'),
  })).filter(group=>group.items.length>0);
 
  return <section className="home-dashboard home-dashboard-simplified home-app-hub">
+  <div className="home-entry-actions"><RouteLink page="scanner" goTo={goTo} className="home-scanner-direct"><ScanLine size={24} aria-hidden="true"/><span><strong>Ouvrir le scanner</strong><small>Faire apparaître une scène autour de toi</small></span><ArrowUpRight size={20} aria-hidden="true"/></RouteLink></div>
   <WorldPortalCard goTo={goTo}/>
 
   <section className="universe-directory" aria-label="Les espaces 3B">

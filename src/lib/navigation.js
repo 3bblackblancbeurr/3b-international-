@@ -33,11 +33,12 @@ function cleanTransientParams(url) {
 }
 
 export function getPageHref(page, location = window.location) {
-  const target = Object.hasOwn(PAGE_HASHES, page) ? page : "home";
+  const target = page === "scanner" ? "invisible" : Object.hasOwn(PAGE_HASHES, page) ? page : "home";
   const url = new URL(location.href);
   cleanTransientParams(url);
   if (url.pathname.startsWith("/jeux/")) url.pathname = "/";
   url.hash = PAGE_HASHES[target];
+  if (page === "scanner") url.searchParams.set("invisibleView", "scanner");
   return `${url.pathname}${url.search}${url.hash}`;
 }
 

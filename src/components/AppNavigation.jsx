@@ -6,7 +6,7 @@ import { Button } from "../design-system/index.jsx";
 import InstallApp from "../install/InstallApp.jsx";
 import SecretClock from "../secret/SecretClock.jsx";
 import CompanionPresenceControl from '../companion/CompanionPresenceControl.jsx';
-import { PRINCIPAL_DESTINATIONS, availableCategories, categoryForPage, itemsForCategory, searchNavigation, partitionDestinations } from './navigation-menu.js';
+import { PRINCIPAL_DESTINATIONS, availableCategories, categoryForPage, itemsForCategory, searchNavigation } from './navigation-menu.js';
 import '../styles/simple-navigation.css';
 
 const ICONS = { invisible: ScanLine, home: Home, passport: Fingerprint, loyalty: CreditCard, manga: BookOpen, world3b: Globe2, nosbloc: Boxes, games: Gamepad2, religion: BookOpen, guide: Compass, community: Users, secret: LockKeyhole, sport: Trophy, ia: Sparkles, shop: ShoppingBag, member: UserRound };
@@ -27,7 +27,7 @@ export function RouteLink({ page, goTo, children, ...props }) {
 
 const QUICK_LINKS = PRINCIPAL_DESTINATIONS;
 
-export default function AppNavigation({ page, title, menuItems, goTo, secret, options, toggleOption, installation }) {
+export default function AppNavigation({ page, title, menuItems, goTo, secret, options, toggleOption, installation, immersive = false }) {
   const dialog = useRef(null), searchInput = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -38,9 +38,18 @@ export default function AppNavigation({ page, title, menuItems, goTo, secret, op
   const currentCategory = categories.find(item => item.id === category) || categories[0];
   const searching = query.trim().length > 0;
   const matching = searching ? searchNavigation(menuItems, query) : itemsForCategory(menuItems, currentCategory.id);
-  const { available, upcoming } = partitionDestinations(matching);
+
 
   useEffect(() => { dialog.current?.close(); }, [page]);
+  useEffect(() => {
+    const request = event => openMenu({ category: event.detail?.category });
+    window.addEventListener('threeb:open-app-menu', request);
+    return () => window.removeEventListener('threeb:open-app-menu', request);
+  }, [page, menuItems]);
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('threeb:app-menu-state', { detail: { open: isOpen } }));
+    return () => window.dispatchEvent(new CustomEvent('threeb:app-menu-state', { detail: { open: false } }));
+  }, [isOpen]);
   useEffect(() => {
     const update = () => setOnline(navigator.onLine);
     window.addEventListener('online', update);
@@ -98,21 +107,21 @@ export default function AppNavigation({ page, title, menuItems, goTo, secret, op
       event.preventDefault();
       document.getElementById("main-content")?.focus();
     }}>Aller au contenu</a>
-    <header className="site-header">
+    {!immersive && <header className="site-header">
       <RouteLink page="home" goTo={goTo} className="brand-link" aria-label="3B International — Accueil">
         <span className="brand-wordmark" aria-hidden="true">3B</span>
         <span className="brand-name">INTERNATIONAL</span>
       </RouteLink>
       <nav className="desktop-navigation" aria-label="Navigation principale">
-        {QUICK_LINKS.map(item => <RouteLink key={item.id} page={item.id} goTo={goTo} aria-current={page === item.id ? "page" : undefined}>{item.label}</RouteLink>)}
+        {QUICK_LINKS.map(item => <RouteLink key={item.id} page={item.id === "invisible" ? "scanner" : item.id} goTo={goTo} aria-current={page === item.id ? "page" : undefined}>{item.label}</RouteLink>)}
       </nav>
       <div className="header-actions">{options && <Button variant="ghost" className="header-settings" aria-label="Paramètres de l’application" data-companion-settings-trigger onClick={() => openMenu({ category: "settings" })}><SlidersHorizontal size={20} aria-hidden="true"/><span>Réglages</span></Button>}<span className="network-status is-offline" role="status" hidden={online}>Hors ligne</span><Button variant="ghost" className="menu-trigger" onClick={openMenu} aria-label="Ouvrir le menu" aria-haspopup="dialog" aria-controls="universe-menu" aria-expanded={isOpen} aria-keyshortcuts="/"><Menu size={20} aria-hidden="true" /><span>Menu</span></Button></div>
-    </header>
-    {page !== "home" && <div className="page-breadcrumb"><RouteLink page="home" goTo={goTo}><ArrowLeft size={16} aria-hidden="true" /> Accueil</RouteLink><span aria-hidden="true">/</span><span>{title}</span></div>}
-    <nav className="mobile-navigation" aria-label="Navigation mobile">
-      {QUICK_LINKS.map(item => <RouteLink key={item.id} page={item.id} goTo={goTo} aria-current={page === item.id ? "page" : undefined}><SectionIcon page={item.id} /><span>{item.label}</span></RouteLink>)}
+    </header>}
+    {!immersive && page !== "home" && <div className="page-breadcrumb"><RouteLink page="home" goTo={goTo}><ArrowLeft size={16} aria-hidden="true" /> Accueil</RouteLink><span aria-hidden="true">/</span><span>{title}</span></div>}
+    {!immersive && <nav className="mobile-navigation" aria-label="Navigation mobile">
+      {QUICK_LINKS.map(item => <RouteLink key={item.id} page={item.id === "invisible" ? "scanner" : item.id} goTo={goTo} aria-current={page === item.id ? "page" : undefined}><SectionIcon page={item.id} /><span>{item.label}</span></RouteLink>)}
       <Button variant="ghost" type="button" onClick={openMenu} aria-label="Ouvrir le menu" aria-haspopup="dialog" aria-controls="universe-menu" aria-expanded={isOpen} className={!QUICK_LINKS.some(item => item.id === page) ? "section-active" : undefined}><Menu size={22} strokeWidth={1.65} aria-hidden="true" /><span>Menu</span></Button>
-    </nav>
+    </nav>}
     <dialog id="universe-menu" ref={dialog} className="app-menu-dialog" aria-labelledby="menu-title" onClose={event => { if (event.target === dialog.current) setIsOpen(Boolean(dialog.current.open)); }} onCancel={event => { if (event.target !== dialog.current) return; event.preventDefault(); dialog.current?.close(); }} onKeyDown={event => {
       if (event.target.closest('dialog') !== dialog.current) return;
       if (event.key === "Escape") { event.preventDefault(); dialog.current.close(); }
@@ -146,12 +155,12 @@ export default function AppNavigation({ page, title, menuItems, goTo, secret, op
           {installation && <InstallApp installation={installation}/>}
         </div> : <div className="app-menu-list">
           {!searching && currentCategory.id === 'world' && secret && <div className="app-menu-secret"><SecretClock secret={secret} goTo={navigate} compact /></div>}
-          {(searching ? matching : available).map(item => <RouteLink key={item.id} page={item.id} goTo={navigate} className="app-menu-route" data-menu-id={item.id} aria-current={activePage === item.id ? "page" : undefined}>
+          {matching.map(item => <RouteLink key={item.id} page={item.target || item.id} goTo={navigate} className="app-menu-route" data-menu-id={item.id} aria-current={activePage === item.id ? "page" : undefined}>
             <SectionIcon page={item.id}/><span className="app-menu-route-copy"><strong>{item.label}</strong><small>{item.description}</small></span>
-            <span className="app-menu-route-status">{activePage === item.id ? 'Page actuelle' : item.status === 'soon' ? 'En préparation' : item.status === 'preview' ? 'Aperçu' : undefined}</span>
+            <span className="app-menu-route-status">{activePage === item.id ? 'Page actuelle' : item.status === 'preview' ? 'Aperçu' : undefined}</span>
             <ChevronRight size={18} aria-hidden="true" />
           </RouteLink>)}
-          {!searching && upcoming.length > 0 && <details className="app-menu-upcoming"><summary>En préparation <span>{upcoming.length}</span></summary><p>Ces espaces ouvriront plus tard.</p>{upcoming.map(item => <RouteLink key={item.id} page={item.id} goTo={navigate} className="app-menu-route" data-menu-id={item.id}><SectionIcon page={item.id}/><span className="app-menu-route-copy"><strong>{item.label}</strong><small>{item.description}</small></span><ChevronRight size={18} aria-hidden="true"/></RouteLink>)}</details>}
+
           {matching.length === 0 && <p className="app-menu-empty" role="status">Aucune rubrique trouvée. Essaie « monde », « passeport » ou « boutique ».</p>}
         </div>}
       </section>

@@ -36,6 +36,17 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
   const prefs = useCompanionPreferences();
   const [worldPresence,setWorldPresence]=useState(()=>{try{return localStorage.getItem('3b-world-app-companion')==='1';}catch{return false;}});
   useEffect(()=>{const change=event=>setWorldPresence(event.detail?.visible===true);window.addEventListener('threeb:world-companion',change);return()=>window.removeEventListener('threeb:world-companion',change);},[]);
+  const [inputFocused,setInputFocused]=useState(false);
+  const [applicationMenuOpen,setApplicationMenuOpen]=useState(false);
+  useEffect(()=>{
+    const update=()=>{const active=document.activeElement;setInputFocused(Boolean(active?.matches('input,textarea,select,[contenteditable="true"]')&&!active.closest('#companion3b-panel')));};
+    const menu=event=>setApplicationMenuOpen(event.detail?.open===true);
+    document.addEventListener('focusin',update);document.addEventListener('focusout',update);
+    window.addEventListener('threeb:app-menu-state',menu);update();
+    return()=>{document.removeEventListener('focusin',update);document.removeEventListener('focusout',update);window.removeEventListener('threeb:app-menu-state',menu);};
+  },[]);
+  // Form comfort is temporary: keep the user's presence preference untouched.
+  const formComfort=page==='member'||inputFocused||applicationMenuOpen||page==='invisible';
   const worldFocusMode=page==='world3b'&&!worldPresence;
   const { capabilities, busy, status: nativeStatus } = useCompanionNativePresence();
   const [living, setLiving] = useState(readLivingPrefs);
@@ -63,7 +74,7 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
     nativeReducedMotion: capabilities?.reducedMotion === true,
   });
   const { mode, lowPower, reducedMotion, visible:behaviorVisible, online } = behavior;
-  const visible=behaviorVisible&&!worldFocusMode;
+  const visible=behaviorVisible&&!worldFocusMode&&!formComfort;
   const voice = useCompanionVoice({ enabled: prefs.enabled && living.voiceEnabled, visible, personality: living.personality, voiceId: living.voiceId, voiceStyle: living.voiceStyle });
   const stopVoice = useCallback(() => {
     window.dispatchEvent(new CustomEvent('threeb:companion-voice-stop'));
@@ -90,7 +101,7 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
     showReply({ pose: scene.kind, message: companionSceneLine(scene.kind, living.personality, turnRef.current++, recentRef.current) }, { automatic: true });
   }, [living.personality, showReply]);
   const stage = useCompanionStage({
-    shellRef, enabled: prefs.enabled&&!worldFocusMode, visible, reducedMotion, lowPower, discreet: prefs.reducedPresence,
+    shellRef, enabled: prefs.enabled&&!worldFocusMode&&!formComfort, visible, reducedMotion, lowPower, discreet: prefs.reducedPresence,
     paused: panelOpen || focused || focusMode || ['secret', 'reward', 'celebrate', 'notification', 'sleep'].includes(mode),
     autonomous: living.initiative, batterySaver: prefs.batterySaver, page, personality: living.personality, onScene: onStageScene,
   });
@@ -139,7 +150,7 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
     window.dispatchEvent(new CustomEvent('threeb:companion-speaking', { detail: { speaking: voice.speaking } }));
     return () => { if (voice.speaking) window.dispatchEvent(new CustomEvent('threeb:companion-speaking', { detail: { speaking: false } })); };
   }, [voice.speaking]);
-  useEffect(() => { if (stage.suspended || !prefs.enabled || !living.voiceEnabled) stopVoice(); }, [stage.suspended, prefs.enabled, living.voiceEnabled, stopVoice]);
+  useEffect(() => { if (formComfort || stage.suspended || !prefs.enabled || !living.voiceEnabled) stopVoice(); }, [formComfort, stage.suspended, prefs.enabled, living.voiceEnabled, stopVoice]);
 
   const updateLiving = useCallback(patch => {
     setLiving(current => {
@@ -283,7 +294,7 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
     document.querySelector('[data-companion-settings-trigger]')?.focus({ preventScroll: true });
   }
 
-  if (!prefs.enabled||worldFocusMode) return null;
+  if (!prefs.enabled||worldFocusMode||formComfort) return null;
 
   return <>
     <Button ref={shellRef} type="button" variant="ghost" className="companion3b-shell companion3b-living-shell"

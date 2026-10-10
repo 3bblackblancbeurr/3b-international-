@@ -17,7 +17,8 @@ test('App uses one Passport gate with no Passport 2 rule', () => {
   assert.match(app, /const hasPassport = hasPassportAccess\(loyalty\.passport\)/);
   assert.match(app, /const needsPassport = !loyalty\.loading && !hasPassport/);
   assert.match(app, /Passeport 3B requis/);
-  assert.match(app, /y compris au Monde du 3B/);
+  assert.match(app, /descriptions\[page\]/);
+  assert.match(app, /Continue avec ton Passeport/);
   assert.doesNotMatch(app, /Passeport 2/);
   assert.doesNotMatch(app, /passportLevel/);
 });

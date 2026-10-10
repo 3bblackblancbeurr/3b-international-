@@ -11,7 +11,7 @@ import PublicIdentityBadge from '../components/PublicIdentityBadge.jsx';
 import PassportAppearanceSettings from '../passport/PassportAppearance.jsx';
 import './boutique-loyalty.css';
 import {RewardStats} from './LoyaltyPage.jsx';
-import {OPTION_LABELS} from '../lib/member.js';
+import {openApplicationMenu} from '../components/application-menu-events.js';
 import TurnstileField from './TurnstileField.jsx';
 import {Button} from '../design-system/index.jsx';
 import {captchaChallengeReducer} from './captcha-state.js';
@@ -397,16 +397,13 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
     <BoutiqueCard/>
     <h2>Ton compte, ton identité 3B.</h2>
     <p><strong>Retrouve ton 3B.</strong> Connecte-toi au même compte pour retrouver ton Passeport, tes récompenses et ta progression synchronisée.</p>
-    <p><strong>Tes informations civiles restent privées.</strong> Les déclarer ne suffit pas à obtenir le statut “identité vérifiée” : celui-ci nécessite un contrôle externe accepté.</p>
+    <details className="account-identity-help"><summary>Identité et récupération du compte</summary><p><strong>Tes informations civiles restent privées.</strong> Les déclarer ne suffit pas à obtenir le statut “identité vérifiée” : celui-ci nécessite un contrôle externe accepté.</p>
     <p><strong>Garde un moyen de revenir.</strong> Confirme ton e-mail et conserve ta clé de secours hors ligne pour récupérer ton compte.</p>
-    {legacy?.isRegistered&&<p>Ton ancien profil local reste sur cet appareil et pourra être repris sans effacer tes sauvegardes.</p>}
+    {legacy?.isRegistered&&<p>Ton ancien profil local reste sur cet appareil et pourra être repris sans effacer tes sauvegardes.</p>}</details>
     <button onClick={()=>goTo('passport')}>Découvrir mon Passeport</button>
    </div>
   </div>}
 
-  <details className="account-options">
-   <summary>Réglages d’affichage</summary><p>Personnalise l’animation et le confort sur cet appareil.</p>
-   <div>{Object.entries(options).map(([key,value])=><button key={key} aria-pressed={value} onClick={()=>toggleOption(key)}>{OPTION_LABELS[key]} <strong>{value?'Activé':'Désactivé'}</strong></button>)}</div>
-  </details>
+  <div className="account-settings-link"><Button variant="ghost" onClick={()=>openApplicationMenu('settings')}>Réglages de l’application <span aria-hidden="true">↗</span></Button><p>Affichage, sons et compagnon au même endroit.</p></div>
  </section>;
 }

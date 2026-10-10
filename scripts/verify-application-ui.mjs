@@ -28,7 +28,7 @@ try{
   await page.goto(origin+'/#accueil');await page.locator('.home-app-hub').waitFor();
   const nav=page.locator(viewport.width<=720?'.mobile-navigation':'.site-header');
   check(`Visible labeled navigation ${viewport.width}`,await nav.isVisible());
-  await page.screenshot({path:out+'/home-'+viewport.width+'.png'});
+  check(`Scanner link reaches the exact view ${viewport.width}`,await page.locator('.home-scanner-direct').getAttribute('href')==='/?invisibleView=scanner#monde-invisible');
   check(`Home contains no framed directory tiles ${viewport.width}`,await page.locator('.universe-card').evaluateAll(items=>items.every(e=>getComputedStyle(e).borderRightWidth==='0px'&&getComputedStyle(e).borderLeftWidth==='0px'&&getComputedStyle(e).borderRadius==='0px')));
   await page.screenshot({path:out+'/home-'+viewport.width+'.png'});
   await nav.getByRole('button',{name:'Ouvrir le menu',exact:true}).click();
@@ -36,16 +36,19 @@ try{
   check(`Dialog fits viewport ${viewport.width}`,await dialog.evaluate(e=>{const r=e.getBoundingClientRect();return r.left>=0&&r.top>=0&&r.right<=innerWidth+1&&r.bottom<=innerHeight+1;}));
   await page.screenshot({path:out+'/menu-principal-'+viewport.width+'.png'});
   check(`Category names fit without horizontal scrolling ${viewport.width}`,await dialog.locator('.app-menu-categories').evaluate(e=>e.scrollWidth<=e.clientWidth+1));
+  console.log('MENU_TABS',JSON.stringify(await dialog.locator('.app-menu-categories button').evaluateAll(buttons=>buttons.map(button=>{const range=document.createRange();range.selectNodeContents(button);return {label:button.textContent,width:button.clientWidth,scroll:button.scrollWidth,font:getComputedStyle(button).font,padding:getComputedStyle(button).paddingInline,rects:[...range.getClientRects()].map(rect=>({top:rect.top,width:rect.width}))};}))));
+  check(`Category labels remain on one readable line ${viewport.width}`,await dialog.locator('.app-menu-categories button').evaluateAll(buttons=>buttons.every(button=>{const range=document.createRange();range.selectNodeContents(button);return new Set([...range.getClientRects()].map(rect=>Math.round(rect.top))).size<=1&&button.scrollWidth<=button.clientWidth+1;})));
   await dialog.getByRole('tab',{name:'Monde',exact:true}).click();
   check(`Hidden world accessible ${viewport.width}`,await dialog.locator('[data-menu-id="invisible"]').isVisible());
-  check(`Unfinished games initially collapsed ${viewport.width}`,!(await dialog.locator('[data-menu-id="games"]').isVisible()));
-  await dialog.locator('.app-menu-upcoming > summary').click();
-  check(`Unfinished games remain discoverable ${viewport.width}`,await dialog.locator('[data-menu-id="games"]').isVisible());
+  check(`Unfinished games omitted from current menu ${viewport.width}`,await dialog.locator('[data-menu-id="games"]').count()===0);
+  await dialog.getByRole('searchbox').fill('jeux');
+  check(`Search only shows open destinations ${viewport.width}`,await dialog.locator('.app-menu-route').count()===0);
   await dialog.getByRole('searchbox').fill('caché');
   check(`Accent tolerant search ${viewport.width}`,await dialog.locator('.app-menu-route').count()===1);
   await dialog.getByRole('button',{name:'Effacer la recherche'}).click();
   await dialog.getByRole('tab',{name:'Réglages',exact:true}).click();
   check(`Settings open directly ${viewport.width}`,await dialog.getByRole('button',{name:/Sons de l’interface/}).isVisible());
+  check(`All display options centralized ${viewport.width}`,await dialog.getByRole('button',{name:/Effet Matrix bleu/}).isVisible()&&await dialog.getByRole('button',{name:/Introduction cinématique/}).isVisible());
   const motion=dialog.getByRole('button',{name:/Réduire les mouvements/}),old=await motion.getAttribute('aria-pressed');
   await motion.click();check(`Settings toggle ${viewport.width}`,await motion.getAttribute('aria-pressed')!==old);
   await dialog.getByRole('tab',{name:'Compte',exact:true}).click();
@@ -59,6 +62,20 @@ try{
    await page.goto(origin+'/#'+hash);await page.locator('#main-content').waitFor();
    await page.waitForTimeout(200);
    check(`No horizontal overflow ${hash} ${viewport.width}`,await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+   if(hash==='membre'){
+    check(`No duplicate account display switches ${viewport.width}`,await page.locator('.account-options').count()===0);
+    await page.locator('.account-settings-link button').click();
+    check(`Account opens shared settings ${viewport.width}`,await dialog.getByRole('tab',{name:'Réglages',exact:true}).getAttribute('aria-selected')==='true');
+    await dialog.getByRole('button',{name:'Fermer le menu'}).click();
+   }
+   if(hash==='monde-invisible'){
+    await page.getByRole('button',{name:'Ouvrir le menu',exact:true}).click();
+    check(`Hidden world opens shared application menu ${viewport.width}`,await dialog.isVisible());
+    await dialog.getByRole('tab',{name:'Réglages',exact:true}).click();
+    check(`Hidden world exposes same display settings ${viewport.width}`,await dialog.getByRole('button',{name:/Effet Matrix bleu/}).isVisible());
+    await dialog.getByRole('button',{name:'Fermer le menu'}).click();
+    check(`Hidden world return retains local navigation ${viewport.width}`,await page.locator('[data-testid="invisible-nav-scanner"]').isVisible());
+   }
    if(hash==='guide'){
     check(`Guide reference folded ${viewport.width}`,await page.locator('.guide-reference:not([open])').count()===2);
     await page.locator('.guide-reference > summary').first().click();check(`Guide reference expands ${viewport.width}`,await page.locator('.guide-reference[open]').count()===1);
@@ -70,12 +87,26 @@ try{
  const guestContext=await browser.newContext({viewport:{width:320,height:700},reducedMotion:'reduce'});
  await guestContext.route('**/*',route=>new URL(route.request().url()).origin===origin?route.continue():route.abort());
  const guest=await guestContext.newPage();guest.on('pageerror',e=>errors.push(e.message));
- await guest.goto(origin+'/#boutique');await guest.locator('#passport-access-title').waitFor();
- check('Guest access gate remains readable',await guest.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
- check('Guest access gate keeps three clear choices',await guest.locator('[aria-labelledby="passport-access-title"] button').count()===3);
+ await guest.goto(origin+'/#boutique');await guest.locator('.shop3b').waitFor();
+ check('Guest can discover the shop before registering',await guest.locator('#passport-access-title').count()===0);
+ check('Shop copy contains no seller implementation instructions',!await guest.locator('.shop3b').innerText().then(text=>/paramètres vendeur|vérifiés côté serveur/.test(text)));
+ await guest.goto(origin+'/#guide');await guest.locator('.guide-page').waitFor();
+ check('Guest can read the guide before registering',await guest.locator('#passport-access-title').count()===0);
+ await guest.goto(origin+'/#accueil');await guest.locator('.home-scanner-direct').click();await guest.locator('#hidden-scanner-title').waitFor();
+ check('Guest home scanner link opens the scanner directly',new URL(guest.url()).searchParams.get('invisibleView')==='scanner');
+ check('Camera waits for explicit action',await guest.locator('video').evaluateAll(items=>items.every(e=>!e.srcObject)));
+ check('Companion leaves scanner unobstructed',await guest.locator('.companion3b-shell').count()===0);
+ await guest.getByRole('button',{name:'Ouvrir le menu',exact:true}).click();
+ check('Shared menu works on the guest camera route',await guest.locator('#universe-menu').isVisible());
+ await guest.locator('#universe-menu').getByRole('button',{name:'Fermer le menu'}).click();
+ await guest.goto(origin+'/#monde-3b');await guest.locator('#passport-access-title').waitFor();
+ check('World preview explains the destination before account activation',await guest.locator('.route-preview-lead').innerText().then(text=>text.includes('Kaïs')));
+ check('World progression still requires Passport',await guest.locator('.world-shell').count()===0);
+ check('Guest preview remains readable',await guest.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
  await guest.screenshot({path:out+'/access-320.png'});
- await guest.getByRole('button',{name:'Compte / activation',exact:true}).click();await guest.locator('.account-entry').waitFor();
+ await guest.getByRole('button',{name:'Me connecter ou créer mon compte',exact:true}).click();await guest.locator('.account-entry').waitFor();
  check('Guest account form remains accessible',await guest.locator('.account-tabs').isVisible());
+ check('Companion leaves account forms unobstructed',await guest.locator('.companion3b-shell').count()===0);
  await guest.getByRole('button',{name:'Créer un compte',exact:true}).click();
  check('Registration retains identity and consent controls',await guest.locator('input[type="checkbox"]').count()>=3);
  await guest.screenshot({path:out+'/registration-320.png'});

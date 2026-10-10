@@ -1,7 +1,7 @@
 name: Verify Application Navigation
 on:
   pull_request:
-    paths: ['src/components/AppNavigation.jsx', 'src/components/navigation-menu.js', 'src/components/GuidePage.jsx', 'src/design-system/LuxuryExperience.jsx', 'src/styles/application-ui.css', 'src/main.jsx', 'tests/application-menu.test.js', 'scripts/verify-application-ui.mjs', '.github/workflows/verify-application-ui.yml']
+    paths: ['src/components/AppNavigation.jsx', 'src/components/navigation-menu.js', 'src/components/GuidePage.jsx', 'src/design-system/LuxuryExperience.jsx', 'src/styles/application-ui.css', 'src/main.jsx', 'src/App.jsx', 'src/components/HomePage.jsx', 'src/components/application-menu-events.js', 'src/lib/navigation.js', 'src/loyalty/AccountPage.jsx', 'src/companion/CompanionLayer.jsx', 'src/world/WorldPage.jsx', 'src/world/WorldSettingsPanel.jsx', 'src/world/invisible/CampaignExperience.jsx', 'src/shop/ShopPage.jsx', 'tests/application-menu.test.js', 'scripts/verify-application-ui.mjs', '.github/workflows/verify-application-ui.yml']
   push:
     branches: [main]
     paths: ['src/styles/application-ui.css', 'src/components/AppNavigation.jsx', 'src/components/navigation-menu.js']

@@ -197,6 +197,7 @@ export default function BrokenCircle3D({variant='stone'}){
     let resizeObserver=null;
     let intersectionObserver=null;
     let visible=true;
+    let applicationMenuOpen=false;
     let running=false;
     let reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const motionQuery=window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -209,12 +210,13 @@ export default function BrokenCircle3D({variant='stone'}){
     };
 
     const start=()=>{
-      if(disposed||running||!renderer||document.hidden||!visible)return;
+      if(disposed||running||!renderer||document.hidden||!visible||applicationMenuOpen)return;
       running=true;
       lastTime=performance.now();
       frame=requestAnimationFrame(renderLoop);
     };
 
+    const onApplicationMenu=event=>{applicationMenuOpen=event.detail?.open===true;if(applicationMenuOpen)stop();else start();};
     const onMotionChange=(event)=>{reducedMotion=event.matches;};
     const onVisibility=()=>{if(document.hidden)stop();else start();};
 
@@ -594,6 +596,7 @@ export default function BrokenCircle3D({variant='stone'}){
 
       motionQuery.addEventListener?.('change',onMotionChange);
       document.addEventListener('visibilitychange',onVisibility);
+      window.addEventListener('threeb:app-menu-state',onApplicationMenu);
 
       mount.dataset.state='ready';
       resize();
@@ -608,6 +611,7 @@ export default function BrokenCircle3D({variant='stone'}){
       stop();
       motionQuery.removeEventListener?.('change',onMotionChange);
       document.removeEventListener('visibilitychange',onVisibility);
+      window.removeEventListener('threeb:app-menu-state',onApplicationMenu);
       resizeObserver?.disconnect();
       intersectionObserver?.disconnect();
       delete mount.dataset.state;

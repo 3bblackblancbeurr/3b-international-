@@ -373,15 +373,15 @@ export default function App() {
     );
   }
 
-  const passportAllowed = new Set(["home", "passport", "member", "religion", "control"]);
+  const passportAllowed = new Set(["home", "passport", "member", "religion", "control", "shop", "guide", "invisible"]);
   const needsPassport = !loyalty.loading && !hasPassport && !passportAllowed.has(page);
 
   if (needsPassport) {
     return (
-      <>
-        <CompanionLayer goTo={goTo} page={page} secretPhase={secret.phase} memberRegistered={member.isRegistered} />
-        <PassportAccessGate goTo={goTo} options={options} />
-      </>
+      <div className="app3b" data-page={page} data-glow={options.premiumGlow} data-matrix={options.matrix}>
+        <AppNavigation page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} secret={secret} options={options} toggleOption={toggleOption} installation={installation}/>
+        <main id="main-content" tabIndex={-1}><PassportAccessGate goTo={goTo} options={options} page={page} title={currentPageTitle}/></main>
+      </div>
     );
   }
 
@@ -392,7 +392,7 @@ export default function App() {
 
       <CompanionLayer goTo={goTo} page={page} secretPhase={secret.phase} memberRegistered={member.isRegistered} />
 
-      {!['world3b','arena','game','control','invisible'].includes(page) && <AppNavigation page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} secret={secret} options={options} toggleOption={toggleOption} installation={installation} />}
+      <AppNavigation immersive={['world3b','arena','game','control','invisible'].includes(page)} page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} secret={secret} options={options} toggleOption={toggleOption} installation={installation} />
       <main id="main-content" tabIndex={-1}>
       <div className="route-announcer" aria-live="polite" aria-atomic="true">{currentPageTitle}</div>
       <Suspense fallback={<AppLoadingState label={`Ouverture · ${currentPageTitle}`} />}>
@@ -560,19 +560,19 @@ function RemoteGamePage({ slug, onBack }) {
 }
 
 
-function PassportAccessGate({ goTo, options }) {
-  return (
-    <main className="intro3b" data-glow={options.premiumGlow} data-matrix={options.matrix}>
-      <div className="intro3b-background" aria-hidden="true" />
-      <div className={options.matrix ? "intro3b-matrix active" : "intro3b-matrix"} aria-hidden="true" />
-      <section className="intro3b-card" aria-labelledby="passport-access-title">
-        <p className="eyebrow">ACCÈS 3B</p>
-        <h1 id="passport-access-title">Passeport 3B requis</h1>
-        <p>Un seul Passeport 3B donne accès à l’écosystème 3B, y compris au Monde du 3B.</p>
-        <Button variant="champagne" className="primary-button" onClick={() => goTo("passport")}>Ouvrir mon Passeport 3B</Button>
-        <Button variant="ghost" className="ghost-button" onClick={() => goTo("member")}>Compte / activation</Button>
-        <Button variant="ghost" className="ghost-button" onClick={() => goTo("home")}>Retour à l’accueil</Button>
-      </section>
-    </main>
-  );
+function PassportAccessGate({ goTo, page, title }) {
+  const descriptions = {
+    world3b: 'Explore la Cité des Huit Héritages, rencontre ses Gardiens et fais évoluer ton aventure avec Kaïs.',
+    loyalty: 'Retrouve tes cartes, tes points et les avantages liés à ton compte 3B.',
+    secret: 'Retrouve les ouvertures du Secret 3B et les règles de chaque découverte.',
+    arena: 'Entraîne ton personnage et découvre les activités du Monde 3B.',
+  };
+  return <section className="route-preview" aria-labelledby="passport-access-title">
+    <p className="eyebrow">DÉCOUVRIR 3B</p>
+    <h1 id="passport-access-title">{title || 'Ton univers 3B'}</h1>
+    <p className="route-preview-lead">{descriptions[page] || 'Cet espace rassemble les activités et les avantages de ton compte 3B.'}</p>
+    {page==='world3b'&&<img className="route-preview-art" src="/invisible/eight-kingdoms-v3.jpg" alt="L’univers des huit héritages de Kaïs" width="1672" height="941"/>}
+    <div className="route-preview-access"><h2>Continue avec ton Passeport</h2><p>Un seul Passeport 3B relie ton identité, ta progression et tes récompenses. Passeport 3B requis pour participer à cet espace.</p></div>
+    <div className="route-preview-actions"><Button variant="champagne" className="primary-button" onClick={()=>goTo('member')}>Me connecter ou créer mon compte</Button><Button variant="ghost" className="ghost-button" onClick={()=>goTo('passport')}>Découvrir le Passeport</Button><Button variant="ghost" onClick={()=>goTo('home')}>Retour à l’accueil</Button></div>
+  </section>;
 }
