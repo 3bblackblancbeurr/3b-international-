@@ -58,7 +58,7 @@ test('every remote relay has actual rendered, raycastable land within bounded mo
 });
 test('territory guidance remains sparse and civilian routines stay on the village aisles',()=>{
  for(const region of IDS){const obstacles=realmStaticObstacles(region),radius=worldRadiusFor(region),start=realmTravelItems(region)[0],end=realmTravelItems(region).at(-1),began=performance.now(),path=findPath(start,end,obstacles,radius);assert.ok(path.length,region+' remote route');assert.ok(performance.now()-began<1000,region+' bounded journey search');
-  const routes=createCivilianRoutes(realmCivilianRoadItems(region),{obstacles});assert.equal(routes.length,45);for(const route of routes)for(const time of [0,20,90,210]){const p=civilianRoutine({route,phase:.13,speed:.8,offset:.5,pause:5,activity:'looking'},time,true);assert.ok(!obstacles.some(o=>obstacleDistance(p,o)<.6),region+' civilian wall clearance');}
+  const routes=createCivilianRoutes(realmCivilianRoadItems(region),{obstacles});assert.ok(routes.length>=105,'Villagers use longitudinal paths, side walks and crossings');for(const route of routes)for(const time of [0,20,90,210]){const p=civilianRoutine({route,phase:.13,speed:.8,offset:.5,pause:5,activity:'looking'},time,true);assert.ok(!obstacles.some(o=>obstacleDistance(p,o)<.6),region+' civilian wall clearance');}
   for(const mode of ['fluid','auto','detail']){const profile=realmStreamingProfile(mode,{desktopClass:false});assert.ok(realmSectorPlan(end,radius,profile).length<=profile.maxTiles);}
  }
 });

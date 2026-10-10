@@ -35,7 +35,7 @@ try{
  server=await createServer({logLevel:'error',server:{host:'127.0.0.1',port,strictPort:true,watch:{ignored:['**/scripts/.*fixture*','**/outputs/**']}},plugins:[{name:'private-eight-realms-fixture',transform(code,id){if(id.split('?')[0].endsWith('/src/world/scene.js'))return injectQa(code);},configureServer(s){s.middlewares.use('/__eight-realms-qa',handler);}}]});await server.listen();
  browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{}),args:['--no-sandbox','--disable-dev-shm-usage','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
  const regions=(process.env.EIGHT_REALMS_REGIONS||'france,algerie,maroc,tunisie,espagne,italie,turquie,estonie').split(',');
- for(const region of regions){const context=await browser.newContext({viewport:{width:960,height:600},deviceScaleFactor:1}),errors=[];await context.addInitScript(()=>{Object.defineProperty(navigator,'deviceMemory',{get:()=>4});const NativeDate=Date;window.Date=class extends NativeDate{constructor(...args){super(...(args.length?args:['2026-10-08T12:30:00']));}static now(){return new NativeDate('2026-10-08T12:30:00').getTime();}};localStorage.setItem('3b-world-camera',JSON.stringify({version:2,yaw:0,pitch:.34,distance:34}));});
+ for(const region of regions){const context=await browser.newContext({viewport:{width:960,height:600},deviceScaleFactor:1}),errors=[];await context.addInitScript(()=>{Object.defineProperty(navigator,'deviceMemory',{get:()=>4});const NativeDate=Date;window.Date=class extends NativeDate{constructor(...args){super(...(args.length?args:['2026-10-08T'+(window.qaTime||'12:30:00')]));}static now(){return new NativeDate('2026-10-08T'+(window.qaTime||'12:30:00')).getTime();}};localStorage.setItem('3b-world-camera',JSON.stringify({version:2,yaw:0,pitch:.34,distance:34}));});
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());const page=await context.newPage();page.setDefaultTimeout(120000);page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
   const result={region,ok:false,arrivals:[]};report.results.push(result);
   try{
@@ -64,6 +64,22 @@ try{
     await page.locator('canvas').focus();await page.keyboard.down('s');try{await page.waitForFunction(p=>Math.hypot(game.qaRealmState().position.x-p.x,game.qaRealmState().position.z-p.z)>1.8,before.position,{timeout:60000});}finally{await page.keyboard.up('s');}
     await page.waitForTimeout(450);const after=await page.evaluate(()=>game.qaRealmState()),floorAfter=await page.evaluate(p=>game.qaTerrainAt(p),after.position);assert.ok(finiteState(after));assert.ok(Math.hypot(after.position.x-before.position.x,after.position.z-before.position.z)>1.8,'Native keyboard moved the real avatar');assert.ok(floorAfter.hit&&floorAfter.difference<1.5);assert.ok(Math.abs(after.avatar.y-after.height)<.05,'Avatar feet use streamed height');
     result.arrivals.push({site:site.id,name:site.name,settleMs,building:landing.building,view:landing.view,positionBefore:before.position,positionAfter:after.position,height:after.height,ground:floorAfter,stream:after.stream,guardians:site.kind==='guardianCourt'?after.guardians:undefined,crowd:{visible:after.crowd.visible,count:after.crowd.count,drawCalls:after.crowd.drawCalls},render:after.render,renderer:after.renderer});
+    if(!surfaceClose&&!site.major&&['france','estonie'].includes(region)){
+     const close=await page.evaluate(site=>{
+      const homes=qa.buildings.filter(b=>b.site===site.id),home=homes.find(b=>b.variant%3===1)||homes[0],outward={x:Math.sin(home.rotation),z:Math.cos(home.rotation)};
+      return{x:home.x+outward.x*(home.depth/2+10),z:home.z+outward.z*(home.depth/2+10),view:{yaw:Math.atan2(outward.x,outward.z),pitch:.27,distance:18}};
+     },site);
+     assert.equal(await page.evaluate(p=>game.relocateRealm({region:qa.save.region,x:p.x,z:p.z}),close),true);
+     await page.evaluate(p=>game.qaSurfaceLook(p.view),close);
+     await page.waitForFunction(()=>game.qaRealmState().stream.pendingSectors===0,undefined,{timeout:settleTimeout});
+     await capture(page,resolve(out,region+'-domestic-day.png'));
+     await page.evaluate(()=>{window.qaTime='21:30:00';});
+     await page.waitForFunction(()=>qa.snapshot?.time.daylight<.3,undefined,{timeout:60000});
+     await capture(page,resolve(out,region+'-domestic-night.png'));
+     await page.evaluate(()=>{window.qaTime='12:30:00';});
+     await page.waitForFunction(()=>qa.snapshot?.time.daylight>.8,undefined,{timeout:60000});
+    }
+
    }
    const fixtureErrors=await page.evaluate(()=>qa.errors);assert.deepEqual([...errors,...fixtureErrors],[],'No script, shader or asset errors');const save=await page.evaluate(()=>qa.save);assert.equal(save.xp,0);assert.equal(save.shards,25);result.ok=true;console.log(region+': PASS');
   }catch(error){result.error=error.message;result.errors=errors;report.errors.push(region+': '+error.message);await capture(page,resolve(out,region+'-failure.png')).catch(()=>{});console.error(region+': FAIL '+error.message);}

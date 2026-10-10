@@ -4,7 +4,7 @@ import {worldArtMaterials} from '../design-system/tokens.js';
 import {artLighting,architecturalBudget} from './art-direction.js';
 import {applyFacadeDetail} from './facade-detail.js';
 import {createStaticInstances} from './static-instances.js';
-import {resolveCameraObstruction} from './camera-obstruction.js';
+import {createCameraObstructionResolver} from './camera-obstruction.js';
 import {createPartyActors} from './party-actors.js';
 import {createCombatTelegraph} from './combat-telegraph.js';
 import {createWorldPost} from './postprocessing.js';
@@ -79,7 +79,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-36,right:36,top:36,bottom:-36,near:1,far:130});sun.shadow.bias=-.0004;sun.shadow.normalBias=.025;sun.shadow.radius=3;sun.shadow.camera.updateProjectionMatrix();
  const cameraTarget=new THREE.Vector3(),desiredTarget=new THREE.Vector3(),desiredCamera=new THREE.Vector3(),sunOffset=new THREE.Vector3(-38,54,35),ray=new THREE.Raycaster(),pointer=new THREE.Vector2(),screenPoint=new THREE.Vector3();
  const screenAnchor=p=>{screenPoint.copy(p);screenPoint.y+=4.5;screenPoint.project(camera);return{x:(screenPoint.x+1)*50,y:(1-screenPoint.y)*50};};
- let staticInstances=null,ambientCrowd=null,cameraSolids=[],itemsById=new Map();
+ let staticInstances=null,ambientCrowd=null,cameraSolids=[],resolveCamera=createCameraObstructionResolver(),itemsById=new Map();
  let root=new THREE.Group(),resources=[],animations=[],obstacles=[],items=[],portalItems=[],portalFrames=[],region=save.region,worldRadius=worldRadiusFor(save.region),position={x:0,z:5},heading=180,target=null,waypoint=null,route=[];
  let paused=false,presentation=null,npcConversationId=null,disposed=false,held=null,stick={x:0,z:0},keys=new Set(),controls=loadControlBindings(),moving=false,elapsed=0,last=performance.now(),report=0,raf,frames=0,frameTime=0,qualityWarmupUntil=0,fps=60,shadowAt=0;
  let avatar,companion,focusRing,waypointRing,effect,cinematicFx=null,portalMaterials=[],cooldowns=new Map(),itemVisuals=new Map(),cameraMode=0,feedbackAt=-100,feedbackAction='';
@@ -438,6 +438,7 @@ function hubNpcAvatar(item){
   for(const item of items)if(['hubDistrictLandmark','hubHeritageFacility','hubSkybridge','hubVerticalConnector','hubTransitLink','hubDistrictTerrace','hubHeritagePlatform','hubTransport'].includes(item.type)){
    for(const visual of itemVisuals.get(item.id)||[])visual.traverse(o=>{if(!o.isMesh||!['BoxGeometry','CylinderGeometry'].includes(o.geometry?.type))return;cameraBounds.setFromObject(o);const size=new THREE.Vector3();cameraBounds.getSize(size);if(size.y<2||size.x<1.2||size.z<1.2)return;cameraSolids.push({x:(cameraBounds.min.x+cameraBounds.max.x)/2,z:(cameraBounds.min.z+cameraBounds.max.z)/2,width:size.x,depth:size.z,bottom:cameraBounds.min.y,top:cameraBounds.max.y,rotation:0});});
   }
+  resolveCamera=createCameraObstructionResolver(cameraSolids);
   baseHubObstacles=region==='hub'?obstacles:null;report=0;needsRender=true;batchStatic();if(region==='hub')staticInstances=createStaticInstances(root,itemVisuals,{exclude:[...portalFrames.map(p=>p.frame.group),...hubVehicles.map(v=>v.vehicle),...hubNpcActors.map(a=>a.object),...actors.map(a=>a.controller.object),...animations.map(a=>a.mesh)]});applyArtLighting();last=performance.now();frames=0;frameTime=0;qualityWarmupUntil=last+3000;
  }
  function applyArtLighting(){
@@ -681,7 +682,7 @@ function hubNpcAvatar(item){
     }desiredTarget.set(shot.x,baseY+focusLift,shot.z);desiredCamera.set(shot.x+Math.sin(a)*radius,baseY+cameraLift,shot.z+Math.cos(a)*radius);if(shot.endCamera&&shot.endTarget){const returnBlend=cinematicReturnBlend(age,{waterReveal});desiredCamera.lerp(shot.endCamera,returnBlend);desiredTarget.lerp(shot.endTarget,returnBlend);}if(Number.isFinite(shot.fovStart)){camera.fov=shot.fovStart+(shot.fovEnd-shot.fovStart)*ease;camera.updateProjectionMatrix();}}
 
   cameraImpulseLayer.remove(camera.position);
-  const smoothing=1-Math.exp(-dt*(reducedMotion?20:7));camera.position.lerp(desiredCamera,smoothing);cameraTarget.lerp(desiredTarget,smoothing);if(!shot||shot.cinematic&&!shot.major&&!shot.heritage){const eye=resolveCameraObstruction(cameraTarget,camera.position,cameraSolids);camera.position.copy(eye);}cameraImpulseLayer.apply(camera.position,cameraTarget,cameraImpulse.sample(elapsed),{enabled:!shot&&!orbitHeld});camera.lookAt(cameraTarget);landscape.updateCamera(camera.position,cameraTarget,!shot?.heritage);
+  const smoothing=1-Math.exp(-dt*(reducedMotion?20:7));camera.position.lerp(desiredCamera,smoothing);cameraTarget.lerp(desiredTarget,smoothing);if(!shot||shot.cinematic&&!shot.major&&!shot.heritage){const eye=resolveCamera(cameraTarget,camera.position);camera.position.copy(eye);}cameraImpulseLayer.apply(camera.position,cameraTarget,cameraImpulse.sample(elapsed),{enabled:!shot&&!orbitHeld});camera.lookAt(cameraTarget);landscape.updateCamera(camera.position,cameraTarget,!shot?.heritage);
   portraitLight.position.copy(camera.position);portraitLight.position.y+=5;portraitLight.target.position.copy(avatar.position);portraitLight.target.position.y+=1.5;
   if(shot?.cinematic&&cinematicFx){
    const p=Math.max(0,Math.min(1,1-(shot.until-now)/shot.duration)),fade=Math.sin(Math.PI*p),baseY=groundY(shot.x,shot.z),scale=shot.kind==='world-opening'?10:shot.heritage?8:shot.kind==='final-combat-intro'?5.2:shot.kind==='guardian-intro'?3.8:shot.kind==='memory-fragment'?1.8:2.8;

@@ -67,7 +67,7 @@ export function createRealmStreamer({region,field,root,material,coreGround}){
  let profile=realmStreamingProfile(),plan=[],pending=[],lastKey='',lastPosition={x:0,z:5},lastPoolPosition={x:Infinity,z:Infinity},dirty=true,disposed=false,revision=0,generated=0,visiblePlants=0,visibleBuildings=0,visibleSites=0;
  const collisionList=realmStaticObstacles(region),navigationItems=realmNavigationItems(region),travelDestinations=realmTravelItems(region);
  function instance(geometry,mat,max,name){const mesh=new THREE.InstancedMesh(geometry,mat,max);mesh.name=name;mesh.count=0;mesh.castShadow=false;mesh.receiveShadow=true;mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);group.add(mesh);return mesh;}
- for(const floors of [1,2]){const mesh=instance(architecture.house(floors),architecture.material,96,'Province houses · '+floors+' storeys');mesh.castShadow=true;buildingBatches.push({floors,mesh});}
+ for(const floors of [1,2])for(let variant=0;variant<3;variant++){const mesh=instance(architecture.house(floors,variant),architecture.material,96,'Province houses · '+floors+' storeys · '+variant);mesh.castShadow=true;buildingBatches.push({floors,variant,mesh});}
  function plantBatches(type){
   if(natural.has(type))return natural.get(type);
   const palette=FLORA_PALETTES[region]||FLORA_PALETTES.france,plant=createPlantGeometry(type,realm.layout.seed,palette),low=lowPlant(type,palette);owned.push(plant.wood,plant.leaves,low);
@@ -106,7 +106,7 @@ export function createRealmStreamer({region,field,root,material,coreGround}){
   visibleSites=closeSites.length;visibleBuildings=0;for(const b of buildingBatches)b.mesh.count=0;
   furniture.count=0;for(const p of furniturePlacements.filter(p=>ids.has(p.site)).slice(0,24)){dummy.position.set(p.x,field.height(p.x,p.z),p.z);dummy.rotation.set(0,p.rotation,0);dummy.scale.setScalar(1);dummy.updateMatrix();furniture.setMatrixAt(furniture.count++,dummy.matrix);}
   for(const home of realm.layout.buildings.filter(b=>ids.has(b.site)).slice(0,profile.buildingInstances)){
-   const batch=buildingBatches.find(b=>b.floors===home.floors);dummy.position.set(home.x,field.height(home.x,home.z),home.z);dummy.rotation.set(0,home.rotation,0);dummy.scale.set(home.width/12,1,home.depth/10);dummy.updateMatrix();batch.mesh.setMatrixAt(batch.mesh.count++,dummy.matrix);visibleBuildings++;
+   const batch=buildingBatches.find(b=>b.floors===home.floors&&b.variant===home.variant%3);dummy.position.set(home.x,field.height(home.x,home.z),home.z);dummy.rotation.set(0,home.rotation,0);dummy.scale.set(home.width/12,1,home.depth/10);dummy.updateMatrix();batch.mesh.setMatrixAt(batch.mesh.count++,dummy.matrix);visibleBuildings++;
   }
   for(const b of monumentBatches){b.mesh.count=distance(b.site)<profile.siteDistance+100?1:0;if(b.mesh.count){const p=b.site.monument||b.site;dummy.position.set(p.x,field.height(p.x,p.z),p.z);dummy.rotation.set(0,0,0);dummy.scale.setScalar(1);dummy.updateMatrix();b.mesh.setMatrixAt(0,dummy.matrix);}}
   for(const mesh of [...natural.values()].flatMap(b=>[b.wood,b.leaves,b.low]).concat(rocks,furniture,buildingBatches.map(b=>b.mesh),monumentBatches.map(b=>b.mesh))){mesh.instanceMatrix.needsUpdate=true;if(mesh.count)mesh.computeBoundingSphere();}
@@ -146,6 +146,7 @@ export function createRealmStreamer({region,field,root,material,coreGround}){
  return{group,collisions:collisionList,navigationItems,travelDestinations,get walkSurfaces(){return[coreGround,...tiles.values()].map(t=>t.mesh||t);},
   get cameraSolids(){return collisionList.map(b=>({...b,bottom:field.height(b.x,b.z),top:field.height(b.x,b.z)+(b.height||20)}));},
   get collisionRevision(){return revision;},update,tick(time){windTime.value=Number.isFinite(time)?time:0;},ensureLanding(position){lastKey='';landingPending=true;update(position);},
+  setDaylight(value){architecture.setDaylight(value);},
   setQuality(mode,capabilities){profile=realmStreamingProfile(mode,capabilities);lastKey='';update(lastPosition);},
   get diagnostics(){const meshes=[];group.traverse(o=>{if(o.isMesh&&(!o.isInstancedMesh||o.count))meshes.push(o);});return{region,radius:field.radius,areaHubRatio:realm.layout.areaHubRatio,sectorSize:SIZE,activeSectors:tiles.size,pendingSectors:pending.length,maxSectors:profile.maxTiles,generatedSectors:generated,terrainTriangles:[...tiles.values()].reduce((n,t)=>n+t.mesh.geometry.drawRange.count/3,0),natureInstances:visiblePlants,maxNatureInstances:profile.naturalInstances,buildingInstances:visibleBuildings,activeSettlements:visibleSites,settlements:realm.sites.length-2,travelRelays:travelDestinations.length,drawCalls:meshes.length,position:{...lastPosition},realTerrain:true};},
   dispose(){if(disposed)return;disposed=true;group.removeFromParent();for(const tile of tiles.values())tile.mesh.geometry.dispose();tiles.clear();roadMesh?.geometry.dispose();for(const b of natural.values())for(const mesh of [b.wood,b.leaves,b.low])mesh.dispose();for(const b of buildingBatches)b.mesh.dispose();for(const b of monumentBatches)b.mesh.dispose();rocks.dispose();furniture.dispose();owned.forEach(o=>o.dispose());architecture.dispose();}

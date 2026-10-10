@@ -80,11 +80,25 @@ export function nearbyCivilianRoutes(routes=[],position={x:0,z:0},radius=210,lim
  * No mission IDs, interaction bubbles, saved progression or skeleton per person. */
 export function civilianRoutine(agent,time,moving=true){
  const travel=agent.route.length/agent.speed,pause=agent.pause||4,cycle=2*(travel+pause),clock=positiveModulo(agent.phase*cycle+(moving?time:0),cycle);
- let t,direction,remaining;
- if(clock<travel){t=clock/travel;direction=1;remaining=Math.min(clock,travel-clock);}
- else if(clock<travel+pause){t=1;direction=1;remaining=0;}
- else if(clock<2*travel+pause){t=1-(clock-travel-pause)/travel;direction=-1;remaining=Math.min(clock-travel-pause,2*travel+pause-clock);}
- else{t=0;direction=-1;remaining=0;}
- const gait=moving?Math.min(1,Math.max(0,remaining/.4)):0;
- return{...civilianRoutePoint(agent.route,t,agent.offset||0),t,direction,gait,activity:gait>.1?'walking':agent.activity||'looking',speed:agent.speed*gait};
+ const ramp=Math.min(.6,travel*.1),distanceAt=elapsed=>elapsed<ramp?elapsed*elapsed/(2*ramp):elapsed>travel-ramp?travel-ramp-(travel-elapsed)**2/(2*ramp):elapsed-ramp/2;
+ let t,direction,remaining,pauseTime=null;
+ if(clock<travel){t=distanceAt(clock)/(travel-ramp);direction=1;remaining=Math.min(clock,travel-clock);}
+ else if(clock<travel+pause){t=1;direction=1;remaining=0;pauseTime=clock-travel;}
+ else if(clock<2*travel+pause){const elapsed=clock-travel-pause;t=1-distanceAt(elapsed)/(travel-ramp);direction=-1;remaining=Math.min(elapsed,travel-elapsed);}
+ else{t=0;direction=-1;remaining=0;pauseTime=clock-2*travel-pause;}
+ const gait=moving?Math.min(1,Math.max(0,remaining/ramp)):0;
+ return{...civilianRoutePoint(agent.route,t,agent.offset||0),t,direction,gait,pauseTime,pauseDuration:pause,activity:gait>.1?'walking':agent.activity||'looking',speed:agent.route.length/(travel-ramp)*gait};
+}
+
+/** Pauses have a purpose: companions face each other, a nearby visitor draws
+ * a glance, then the body turns towards the return walk before it starts. */
+export function civilianHeading(agent,pose,visitor,moving=true){
+ const heading=Math.atan2(pose.dx*pose.direction,pose.dz*pose.direction);
+ if(!moving||pose.pauseTime===null)return heading;
+ const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
+ const turn=(from,to,t)=>from+Math.atan2(Math.sin(to-from),Math.cos(to-from))*smooth(t);
+ let attention=agent.social?Math.atan2(pose.dz*Math.sign(agent.offset),-pose.dx*Math.sign(agent.offset)):heading+.28;
+ if(visitor&&Math.hypot(visitor.x-pose.x,visitor.z-pose.z)<7)attention=Math.atan2(visitor.x-pose.x,visitor.z-pose.z);
+ const looking=turn(heading,attention,pose.pauseTime/.8);
+ return turn(looking,heading+Math.PI,(pose.pauseTime-pose.pauseDuration+.8)/.8);
 }

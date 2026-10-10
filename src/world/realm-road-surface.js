@@ -57,7 +57,7 @@ export function createRealmRoadGeometry(field,segments,sites){
   strip({x:site.x,z:site.z-51},{x:site.x,z:site.z+54},18,1,.085);
   for(const side of [-1,1]){
    strip({x:site.x+side*21,z:site.z-49},{x:site.x+side*21,z:site.z+47},3.4,1,.085);
-   for(const z of [-30,24])strip({x:site.x+side*8,z:site.z+z},{x:site.x+side*22,z:site.z+z},2.8,1,.105);
+   for(const z of [-30,-8,28])strip({x:site.x+side*8,z:site.z+z},{x:site.x+side*22,z:site.z+z},2.8,1,.105);
   }
  }
  if(!p.length)return null;
