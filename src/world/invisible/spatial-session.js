@@ -1,8 +1,9 @@
 import {validPoseMatrix} from './xr-session.js';
 import {placementFromHit,manualPlacement,multiplyRigid} from './spatial-placement.js';
+import {readApparitionDepth} from './apparition-depth.js';
 const quiet=fn=>{try{fn?.();}catch{/* Native handles can already be invalid after interruption. */}};
 const end=async session=>{try{await session?.end();}catch{/* Session already ended. */}};
-export function createSpatialSession({xr=globalThis.navigator?.xr,overlayRoot,attachSession,onState=()=>{},onPose=()=>{},onCandidate=()=>{},onLight=()=>{},makeTransform=(position,orientation)=>new globalThis.XRRigidTransform(position,orientation)}={}){
+export function createSpatialSession({xr=globalThis.navigator?.xr,overlayRoot,attachSession,onState=()=>{},onPose=()=>{},onCandidate=()=>{},onLight=()=>{},onDepth=()=>{},makeTransform=(position,orientation)=>new globalThis.XRRigidTransform(position,orientation)}={}){
  let generation=0,placementGeneration=0,session=null,source=null,reference=null,anchor=null,offset=null,kind=null,phase='idle',requested=false,pending=false,lightProbe=null,lastState='',listeners=[];
  const emit=(next,message,canPlace=false,surface=null)=>{phase=next;const key=next+message+canPlace+surface;if(key!==lastState){lastState=key;onState({phase:next,message,canPlace,surface});}};
  function listen(target,type,handler){target.addEventListener?.(type,handler);listeners.push(()=>target.removeEventListener?.(type,handler));}
@@ -15,7 +16,7 @@ export function createSpatialSession({xr=globalThis.navigator?.xr,overlayRoot,at
   const ticket=++generation;emit('starting','Autorise le regard spatial sur ton téléphone.');let next;
   try{
    // No await before requestSession: retain the button's user activation.
-   next=await xr.requestSession('immersive-ar',{requiredFeatures:['local','hit-test','anchors','dom-overlay'],optionalFeatures:['light-estimation'],domOverlay:{root:overlayRoot}});
+   next=await xr.requestSession('immersive-ar',{requiredFeatures:['local','hit-test','anchors','dom-overlay'],optionalFeatures:['light-estimation','depth-sensing'],depthSensing:{usagePreference:['cpu-optimized'],dataFormatPreference:['float32']},domOverlay:{root:overlayRoot}});
    if(ticket!==generation){await end(next);return false;}
    if(!next.domOverlayState)throw Error('Les commandes dans la caméra ne sont pas disponibles.');
    session=next;listen(next,'end',()=>{if(ticket!==generation)return;generation++;release();emit('idle','Le passage est fermé.');});
@@ -38,6 +39,7 @@ export function createSpatialSession({xr=globalThis.navigator?.xr,overlayRoot,at
  function frame(frame){
   if(!session||!source||!reference||frame?.session!==session)return;
   try{
+   onDepth(readApparitionDepth(frame,session,reference));
    const viewer=validPoseMatrix(frame.getViewerPose(reference)?.transform?.matrix);
    if(!viewer){requested=false;onPose(null);onCandidate(null);emit('tracking-lost','Le suivi est perdu. Vise un bord de porte ou un meuble et bouge doucement.');return;}
    if(lightProbe&&frame.getLightEstimate)quiet(()=>{const estimate=frame.getLightEstimate(lightProbe);if(estimate)onLight(estimate);});
