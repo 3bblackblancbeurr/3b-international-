@@ -3,10 +3,17 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 public class PortalPolicyTest {
  @Test public void onlySafeNearbyGroundCanReceivePortal(){
-  assertTrue(PortalPolicy.validPlacement(2f,1f,true));
-  for(float distance:new float[]{0,.64f,5.01f,Float.NaN,Float.POSITIVE_INFINITY})assertFalse(PortalPolicy.validPlacement(distance,1f,true));
-  assertFalse(PortalPolicy.validPlacement(2f,0f,true));assertFalse(PortalPolicy.validPlacement(2f,-1f,true));assertFalse(PortalPolicy.validPlacement(2f,1f,false));
+  assertTrue(PortalPolicy.validPlacement(.55f,1f,true));
+  for(float distance:new float[]{0,.24f,1.51f,Float.NaN,Float.POSITIVE_INFINITY})assertFalse(PortalPolicy.validPlacement(distance,1f,true));
+  assertFalse(PortalPolicy.validPlacement(.55f,0f,true));assertFalse(PortalPolicy.validPlacement(.55f,-1f,true));assertFalse(PortalPolicy.validPlacement(.55f,1f,false));
  }
+ @Test public void nearbyWallsDoNotRequireAnUpwardNormal(){
+  assertTrue(PortalPolicy.validWallPlacement(.3f,0f,true));assertTrue(PortalPolicy.validWallPlacement(.9f,.1f,true));
+  for(float distance:new float[]{.24f,1.51f,Float.NaN})assertFalse(PortalPolicy.validWallPlacement(distance,0f,true));
+  assertFalse(PortalPolicy.validWallPlacement(.55f,1f,true));assertFalse(PortalPolicy.validWallPlacement(.55f,0f,false));
+  assertFalse(PortalPolicy.validWallPlacement(.55f,Float.NaN,true));
+ }
+ @Test public void compactPortalFitsAtManualDistance(){assertTrue(PortalPolicy.HEIGHT*PortalPolicy.SMALL_SCALE<.33f);assertTrue(PortalPolicy.MANUAL_DISTANCE<1f);}
  @Test public void futureDrawingTargetsAreBoundedBundledFiles(){assertTrue(PortalPolicy.validImageTarget("drawing-1","drawing-1.png",.2f));assertFalse(PortalPolicy.validImageTarget("drawing-1","../foreign.png",.2f));assertFalse(PortalPolicy.validImageTarget("drawing-1","https://remote/image.jpg",.2f));assertFalse(PortalPolicy.validImageTarget("drawing-1","drawing-1.png",Float.NaN));assertFalse(PortalPolicy.validImageTarget("drawing-1","drawing-1.png",0));}
  @Test public void portalFacesViewerAtPlacementWithoutFollowingLaterMotion(){assertEquals(0f,PortalPolicy.facingYaw(0,2,0,0),.0001f);assertEquals(Math.PI/2,PortalPolicy.facingYaw(2,0,0,0),.0001);}
  @Test public void orientationRemainsRelativeToTheTrackedAnchor(){assertEquals(-Math.PI/2,PortalPolicy.localFacingYaw(0,2,0,0,1,0),.0001);}
