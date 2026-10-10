@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import {cinemaProfile} from './cinematic-director.js';
 import {createLivingActor} from './living.js';
+import {campaignPerson} from './journey-presence.js';
+import {createStoryRelic} from './story-relic.js';
 
 /** Visualise the authoritative boss state. This object never awards damage,
  * invulnerability, a seal or a new elemental/totem ability. */
@@ -73,17 +75,18 @@ export function createRealmMarker(item,{groundY=()=>0,library,reducedMotion=fals
  if(library&&human){
   const count=item.mode==='escort'?3:1;
   for(let i=0;i<count;i++){
-   const actor=createLivingActor(library,{scale:2.05,reducedMotion,onError,avatar:{body:i%2?'femme':'homme',style:i%2?'mystique':'voyageur',color:(item.region?.length+i)%6,skin:(i+2)%5,hair:i+1}});
+   const actor=createLivingActor(library,{scale:2.05,reducedMotion,onError,avatar:count===1?campaignPerson(item):{body:i%2?'femme':'homme',style:i%2?'mystique':'voyageur',color:(item.region?.length+i)%6,skin:(i+2)%5,hair:i+1}});
    actor.object.position.set(count===1?1.5:i===0?0:i===1?-1.4:1.4,0,i?1.5:0);root.add(actor.object);actors.push(actor);
   }
   figure.position.x=-1.4;
  }
+ const relic=createStoryRelic(item);if(relic){root.add(relic.root);figure.visible=false;}
  let previousTime=0,oldPoint={x:item.x,z:item.z};
  return {root,update(next){Object.assign(item,next);root.position.set(item.x,groundY(item.x,item.z),item.z);},tick(time,position,{reducedMotion=false}={}){
   const dt=Math.min(.1,Math.max(0,time-previousTime));previousTime=time;root.visible=Math.hypot(position.x-item.x,position.z-item.z)<260;if(!root.visible)return;
   figure.rotation.y=reducedMotion?0:time*.2;figure.position.y=1.45+(reducedMotion?0:Math.sin(time*1.1)*.08);
   if(trialBands.length){const challenge=item.campaign;trialMaterial.color.set(challenge?.safe?'#83c6bb':'#c9a569');trialMaterial.opacity=challenge?.started ? .32 : .16;trialBands.forEach(band=>band.visible=challenge?.integrity>0);}
   const dx=item.x-oldPoint.x,dz=item.z-oldPoint.z;
-  actors.forEach(actor=>{actor.update(dt,dx,dz,Math.hypot(dx,dz));if(item.mode!=='escort')actor.object.rotation.y=Math.atan2(position.x-item.x,position.z-item.z);});oldPoint={x:item.x,z:item.z};
- },dispose(){root.removeFromParent();actors.forEach(actor=>actor.dispose());owned.forEach(resource=>resource.dispose());}};
+  actors.forEach(actor=>{const nearby=Math.hypot(position.x-item.x,position.z-item.z)<14;actor.setAttention(nearby?{x:position.x,y:groundY(position.x,position.z)+3.4,z:position.z}:null);actor.setActivity?.(nearby&&item.mode!=='escort'?'Talk':null);actor.update(dt,dx,dz,Math.hypot(dx,dz));if(nearby&&item.mode!=='escort')actor.face(position.x-item.x-actor.object.position.x,position.z-item.z-actor.object.position.z,dt);});oldPoint={x:item.x,z:item.z};
+ },dispose(){relic?.dispose();root.removeFromParent();actors.forEach(actor=>actor.dispose());owned.forEach(resource=>resource.dispose());}};
 }

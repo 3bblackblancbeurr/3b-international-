@@ -61,7 +61,7 @@ function injectQa(code){
 }
 
 function handler(_req,res){
- res.setHeader('Content-Type','text/html');res.end(`<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;width:100%;height:100%;background:#102331}canvas{width:100%;height:100%;display:block}button{position:fixed;right:8px;bottom:8px}</style><canvas tabindex="0"></canvas><button id="guard">Garde QA</button><script type="module">
+ res.setHeader('Content-Type','text/html');res.end(`<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;width:100%;height:100%;background:#102331}canvas{width:100%;height:100%;display:block}button{position:fixed;right:8px;bottom:8px}</style><canvas tabindex="0"></canvas><button id="guard">Garde QA</button><button id="strike" style="bottom:60px">Frappe QA</button><script type="module">
 import {createWorldScene} from '/src/world/scene.js';
 import {blankSave,makeEncounter} from '/src/world/rules.js';
 import {cardById} from '/src/world/catalog.js';
@@ -72,7 +72,7 @@ const save=blankSave();save.region='france';save.adventure.avatar.created=true;s
 save.adventure.values.france={...save.adventure.values.france,completed:true};
 window.qa={ready:false,errors:[],snapshot:null,save,inputs:[],consumeInput:false,returnedInput:null,court:realmLayout('france').sites.find(s=>s.kind==='guardianCourt')};
 window.game=createWorldScene(document.querySelector('canvas'),{save,onSnapshot:s=>qa.snapshot=s,onInteract:()=>{},onActivity:()=>{},onError:e=>qa.errors.push(String(e)),onLoadState:busy=>qa.ready=!busy,onCombatStep:input=>{
- qa.inputs.push(input);if(qa.consumeInput){qa.consumeInput=false;qa.returnedInput=qa.accept(input);}
+ qa.inputs.push(input);if(qa.consumeInput){const continuous=qa.consumeInput==='continuous';qa.returnedInput=qa.accept(input);if(!continuous&&input.kind)qa.consumeInput=false;}
 }});game.setQuality('auto');
 qa.begin=()=>{
  const before=qa.save,next=structuredClone(before),guardian=qa.snapshot.mapItems.find(i=>i.type==='guardian');if(!guardian)throw Error('Canonical guardian item unavailable');
@@ -89,7 +89,7 @@ qa.accept=(input={x:0,z:0})=>{
  qa.save=after;game.setSave(after);game.feedback('field',action,before,after);
  return {input,field:after.adventure.encounter.field,hp:after.adventure.encounter.hp,cue};
 };
-document.querySelector('#guard').onclick=()=>game.combatAction('guard');
+document.querySelector('#guard').onclick=()=>game.combatAction('guard');document.querySelector('#strike').onclick=()=>game.combatAction('strike');
 </script></html>`);
 }
 
@@ -153,11 +153,24 @@ try{
    const immediate=await state(page);assert.equal(immediate.guardian.animation,'GuardianAttack','Accepted release plays synchronously, before any render tick');
    assert.equal(immediate.actions.filter(a=>a.actor==='hero'&&a.name==='Hit').length,0,'A blocked impact does not invent a Hero Hit animation');
    assert.equal(immediate.actions.filter(a=>a.actor===immediate.guardian.id&&a.name==='GuardianAttack').length,1,'One accepted enemy release dispatches exactly one attack');
-   await page.evaluate(()=>{qa.consumeInput=true;});await page.locator('#guard').click();const returned=await advance(page,1,.01),acceptedInput=await page.evaluate(()=>qa.returnedInput);
+   await page.evaluate(()=>{qa.consumeInput=true;});await page.locator('#guard').click();const returned=await advance(page,3,.1),acceptedInput=await page.evaluate(()=>qa.returnedInput);
    assert.equal(acceptedInput?.input.kind,'guard','Real scene combat input callback accepted the returned guard');assert.equal(acceptedInput.field.last,'guard');
    assert.equal(returned.guardian.animation,'GuardianAttack','Immediate following player feedback does not erase the enemy release');assert.equal(returned.threat.active,false);checkCamera(returned);
    assert.equal(returned.actions.filter(a=>a.actor==='hero'&&a.name==='Hit').length,0);result.release={accepted:released,immediate,returnedInput:acceptedInput,afterPlayerInput:returned};result.captures.push(await capture(page,profile.name+'-release'));result.checks.push('synchronous single release survives actual returned player input; no fake Hit on defense');
    const releasedPose=await advance(page,1,.18);assert.equal(releasedPose.guardian.animation,'GuardianAttack');assert.ok(heldDistance(extended.guardian.bones,releasedPose.guardian.bones)>.04,'Release changes the imported physical arm pose');checkCamera(releasedPose);
+   console.log(profile.name+': early real input becomes the next distinct combo stroke');
+   await page.evaluate(()=>{
+    const next=structuredClone(qa.save),e=next.adventure.encounter;e.enemy=e.enemyMax=900;e.guardianStep=1;e.guardianFlag=false;
+    Object.assign(e.field,{phase:'pursuit',recover:5000,windup:0,cooldown:220,combo:1,comboUntil:e.field.time+1800});
+    qa.save=next;game.setSave(next);qa.consumeInput='continuous';
+   });
+   await page.locator('#strike').click();const early=await advance(page,1,.1);
+   assert.equal(early.field.combo,1,'Buffered press cannot cut recovery short');
+   const second=await advance(page,2,.1);assert.equal(second.field.combo,2);assert.ok(second.actions.some(a=>a.actor==='hero'&&a.name==='Attack2'));
+   await advance(page,3,.1);await page.locator('#strike').click();const third=await advance(page,3,.1);
+   assert.equal(third.field.combo,3);assert.equal(third.actions.filter(a=>a.actor==='hero'&&a.name==='Attack3').length,1);
+   await page.evaluate(()=>qa.consumeInput=false);await advance(page,1,.18);
+   result.combo={second:second.field,third:third.field};result.captures.push(await capture(page,profile.name+'-combo'));result.checks.push('early real button input waits for canonical recovery and plays distinct second and third strokes once');
    console.log(profile.name+': camera clearance and bounded native zoom');
    await page.locator('canvas').hover();await page.mouse.wheel(0,200000);await page.waitForFunction(()=>game.qaCombatState().camera.orbit.distance===52,undefined,{timeout:10000,polling:100});const far=await advance(page,5);checkCamera(far,{framed:false});
    await page.mouse.wheel(0,-200000);await page.waitForFunction(()=>game.qaCombatState().camera.orbit.distance===10,undefined,{timeout:10000,polling:100});const near=await advance(page,5);checkCamera(near,{framed:false});result.cameraBounds={far:far.camera,near:near.camera};result.captures.push(await capture(page,profile.name+'-camera-near'));result.checks.push('native wheel reaches both bounded zoom limits; manual camera remains finite and above terrain');

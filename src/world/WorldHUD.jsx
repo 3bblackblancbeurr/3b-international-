@@ -19,6 +19,7 @@ import './hub/hub-hud.css';
 import {readHudPreferences,writeHudPreferences} from './hud-preferences.js';
 import {activeCampaignSnapshot} from './campaign-runtime.js';
 import {CampaignChallenge} from './RealmJourney.jsx';
+import {journeyPresence} from './journey-presence.js';
 
 const phaseLabels={dawn:'Aube',morning:'Matin',day:'Jour',afternoon:'Après-midi',dusk:'Crépuscule',evening:'Soir',night:'Nuit'};
 
@@ -27,7 +28,7 @@ export const WorldHUD=memo(function WorldHUD({snapshot,save,panel,onPanel,onInte
  const mapItems=useMemo(()=>isHub&&snapshot.mapItems?snapshot.mapItems:worldRuntimeItems(snapshot.region,save),[isHub,snapshot.region,snapshot.mapItems,save]);
  const hubGoal=isHub?platformNextObjective(mapItems,save):null;
  const hubObjective=isHub?createHubObjectiveModel(snapshot,hubGoal,mapItems):null;
- const campaign=activeCampaignSnapshot(save),campaignItem=mapItems.find(item=>item.type==='campaignObjective'&&item.id===campaign?.objective);
+ const campaign=useMemo(()=>activeCampaignSnapshot(save),[save]),campaignItem=mapItems.find(item=>item.type==='campaignObjective'&&item.id===campaign?.objective);
  const [arrival,setArrival]=useState(false),[actionMenu,setActionMenu]=useState(false),[layoutOpen,setLayoutOpen]=useState(false),[hud,setHud]=useState(readHudPreferences),[dismissedNear,setDismissedNear]=useState(null);
  const showWidget=id=>setHud(current=>writeHudPreferences({...current,[id]:!current[id]}));
  const closeWidget=id=>setHud(current=>writeHudPreferences({...current,[id]:false}));
@@ -78,6 +79,7 @@ export const WorldHUD=memo(function WorldHUD({snapshot,save,panel,onPanel,onInte
    buttons[event.key==='Home'?0:event.key==='End'?buttons.length-1:(current+(event.key==='ArrowDown'?1:-1)+buttons.length)%buttons.length]?.focus();
   }else if(event.key==='Tab')setActionMenu(false);
  };
+ const storyBeat=journeyPresence(campaign,campaign?.target&&snapshot.position?Math.hypot(campaign.target.x-snapshot.position.x,campaign.target.z-snapshot.position.z):Infinity);
  const playerName=save.adventure?.avatar?.name||'Voyageur',companionName=cardById[snapshot.companion]?.name||'Compagnon';
  return <div className={'play-hud'+(isHub?' hub-hud':'')+(snapshot.waypoint&&snapshot.remaining>7?' has-waypoint':'')+(panel?' is-hidden':'')+(!loaded?' is-loading':'')+(notificationVisible?' has-notification':'')+(near?' has-interaction':'')} aria-hidden={panel?true:undefined} aria-busy={!loaded||undefined} inert={panel?true:undefined} data-input={input}>
   <nav className="play-top" aria-label="Navigation du monde"><div className="hub-top-start"><Button variant="ghost" className="play-button" aria-label="Journal et objectif" title="Journal et objectif" disabled={isHub&&!loaded} onClick={()=>onPanel('journal')}><BookOpen size={20} aria-hidden="true"/></Button>{isHub&&<Button variant="ghost" className="play-button hub-help-trigger" aria-label="Premiers pas dans la cité" aria-expanded={guideOpen} title="Premiers pas" disabled={!loaded} onClick={()=>{setHud(current=>writeHudPreferences({...current,missions:true}));setGuideOpen(value=>!hud.missions||!value);}}><HelpCircle size={20} aria-hidden="true"/></Button>}</div><span className="play-region">{country?.name||'Cité des Huit Héritages'}</span><div><Button variant="ghost" className="play-button" aria-label="Affichage du jeu" aria-expanded={layoutOpen} title="Afficher ou masquer les informations" onClick={()=>setLayoutOpen(value=>!value)}><Eye size={20} aria-hidden="true"/></Button><Button variant="ghost" className="play-button" aria-label="Ouvrir la carte" title="Carte" disabled={isHub&&!loaded} onClick={openMap}><Map size={20} aria-hidden="true"/></Button><Button variant="ghost" className="play-button" aria-label="Pause et options" title="Pause" onClick={()=>onPanel('pause')}><Menu size={23} aria-hidden="true"/></Button></div></nav>
@@ -96,7 +98,7 @@ export const WorldHUD=memo(function WorldHUD({snapshot,save,panel,onPanel,onInte
    </>}
   </aside>}
   {loaded&&hud.missions&&!panel&&campaign?.started&&<CampaignChallenge current={campaign} onAction={onCampaignAction} onPlay={onPlay} onCompanionGuard={onCompanionGuard} onJournal={()=>onPanel('campaign')} onNavigate={point=>onNavigate({id:'campaign:guide',name:'Étape en cours',...point})}/>}
-  {loaded&&hud.missions&&!panel&&!campaign?.started&&campaignItem&&<aside className="realm-challenge"><header><button onClick={()=>onPanel('journal')}>{campaign.title}</button><button aria-label="Masquer les missions" onClick={()=>closeWidget('missions')}>×</button></header><p>{campaign.name}</p><div className="realm-challenge-actions"><Button variant="ghost" onClick={()=>onNavigate(campaignItem)}>Repérer l’étape</Button>{!isHub&&<Button variant="ghost" onClick={()=>onNavigate(mapItems.filter(item=>item.type==='realmTravel').sort((a,b)=>Math.hypot(a.x-snapshot.position.x,a.z-snapshot.position.z)-Math.hypot(b.x-snapshot.position.x,b.z-snapshot.position.z))[0])}>Rejoindre un relais</Button>}</div></aside>}
+  {loaded&&hud.missions&&!panel&&!campaign?.started&&campaignItem&&<aside className="realm-challenge"><header><Button variant="ghost" onClick={()=>onPanel('journal')}>{campaign.title}</Button><Button variant="ghost" aria-label="Masquer les missions" onClick={()=>closeWidget('missions')}>×</Button></header><p>{campaign.name}</p>{storyBeat&&<p className="journey-presence"><strong>{storyBeat.speaker}</strong><span>{storyBeat.text}</span></p>}<div className="realm-challenge-actions"><Button variant="ghost" onClick={()=>onNavigate(campaignItem)}>Repérer l’étape</Button>{!isHub&&<Button variant="ghost" onClick={()=>onNavigate(mapItems.filter(item=>item.type==='realmTravel').sort((a,b)=>Math.hypot(a.x-snapshot.position.x,a.z-snapshot.position.z)-Math.hypot(b.x-snapshot.position.x,b.z-snapshot.position.z))[0])}>Rejoindre un relais</Button>}</div></aside>}
   {arrival&&hud.details&&loaded&&!notificationVisible&&<div className="play-arrival" key={snapshot.region}><span>LES HUIT PORTES</span><h1>{country?.title||'Cité des Huit Héritages'}</h1><i/>{country&&<p className="arrival-landmark">{HERITAGE[country.id]?.name}</p>}</div>}
   {hud.details&&<Button variant="ghost" className="play-profile" aria-label={playerName+', niveau '+levelFor(save.xp)+'. Ouvrir l’équipe'} title="Équipe et progression" disabled={isHub&&!loaded} onClick={()=>onPanel('team')}><span>{playerName.slice(0,1).toUpperCase()}</span><small>{levelFor(save.xp)}</small></Button>}
   {hud.companion&&snapshot.companion&&<Button variant="ghost" className="play-companion" aria-label={companionName+' · ouvrir les compagnons'} disabled={isHub&&!loaded} onClick={()=>onPanel('collection')}><CompanionPortrait id={snapshot.companion}/><span><small>À tes côtés</small><strong>{companionName}</strong></span></Button>}
