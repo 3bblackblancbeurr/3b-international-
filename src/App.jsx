@@ -392,7 +392,7 @@ export default function App() {
 
       <CompanionLayer goTo={goTo} page={page} secretPhase={secret.phase} memberRegistered={member.isRegistered} />
 
-      {!['world3b','arena','game','control'].includes(page) && <AppNavigation page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} secret={secret} options={options} toggleOption={toggleOption} installation={installation} />}
+      {!['world3b','arena','game','control','invisible'].includes(page) && <AppNavigation page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} secret={secret} options={options} toggleOption={toggleOption} installation={installation} />}
       <main id="main-content" tabIndex={-1}>
       <div className="route-announcer" aria-live="polite" aria-atomic="true">{currentPageTitle}</div>
       <Suspense fallback={<AppLoadingState label={`Ouverture · ${currentPageTitle}`} />}>

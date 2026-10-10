@@ -36,6 +36,7 @@ try{
   await page.goto('http://127.0.0.1:5394/#monde-invisible',{waitUntil:'domcontentloaded'});
   await page.locator('.hidden-world').waitFor({timeout:60000});
   assert.equal(await page.locator('[data-testid="riddle-submit"], [data-testid="chest-open"], .invisible-cooperation').count(),0);
+  assert.equal(await page.locator('.site-header,.mobile-navigation').count(),0,'The hidden world uses one dedicated menu without global navigation overlay');
   assert.equal(await page.evaluate(()=>window.__cameraCalls),0);
   for(const view of ['realms','journal','scanner','adventure']){
    await page.getByTestId('invisible-nav-'+view).click();await page.getByTestId('invisible-view-'+view).waitFor();
