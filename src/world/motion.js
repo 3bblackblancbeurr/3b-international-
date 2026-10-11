@@ -80,21 +80,35 @@ export function sprintIntent(stick,enteredAt,now,{sprintThreshold=TOUCH_SPRINT_T
 
 export const QUALITY_MODES=['auto','fluid','detail'];
 export function createQualityController(mode='auto'){
- let value=1,slow=0,fast=0;
+ mode=QUALITY_MODES.includes(mode)?mode:'auto';
+ let value=1,slow=0,fast=0,fluidFallback=false;
+ const renderMode=()=>mode==='auto'&&fluidFallback?'fluid':mode;
  function sample(fps,seconds){
    if(mode!=='auto'||!Number.isFinite(fps)||fps<=0||!Number.isFinite(seconds)||seconds<=0)return false;
    seconds=Math.min(seconds,2);
    slow=fps<45?slow+seconds:0;fast=fps>57?fast+seconds:0;
-   if(slow>=2&&value>.6){value=Math.max(.6,value-.12);slow=fast=0;return true;}
-   if(fast>=12&&value<1){value=Math.min(1,value+.06);slow=fast=0;return true;}
+   if(slow>=2&&value>.6){
+    value=Math.max(.6,value-.12);slow=fast=0;
+    if(value<=.7)fluidFallback=true;
+    return true;
+   }
+   if(fast>=12&&value<1){
+    value=Math.min(1,value+.06);slow=fast=0;
+    // Keep the lighter scene while resolution recovers: a small improvement
+    // must not immediately restore shadows, effects and terrain work.
+    if(value>=.94)fluidFallback=false;
+    return true;
+   }
    return false;
  }
  return {
   profile(){return mode==='fluid'||mode==='auto'&&value<=.7?'light':'high';},
-  setMode(next){mode=QUALITY_MODES.includes(next)?next:'auto';value=1;slow=fast=0;},
+  renderMode,
+  setMode(next){mode=QUALITY_MODES.includes(next)?next:'auto';value=1;slow=fast=0;fluidFallback=false;},
   ratio(width,height,dpr=1){
-   const cap=mode==='fluid'?1:1.75;
-   const pixels=mode==='fluid'?850000:3000000;
+   const fluid=renderMode()==='fluid';
+   const cap=fluid?1:1.75;
+   const pixels=fluid?850000:3000000;
    return Math.max(.5,Math.min(dpr,cap,Math.sqrt(pixels/Math.max(1,width*height)))*(mode==='auto'?value:1));
   },
   sample,
