@@ -8,6 +8,7 @@ on:
       - 'scripts/verify-hub-master-browser.mjs'
       - 'scripts/verify-world-gameplay-browser.mjs'
       - 'scripts/verify-world-master-combat-browser.mjs'
+      - 'scripts/verify-world-adaptive-quality-browser.mjs'
       - 'scripts/verify-realm-journey-browser.mjs'
       - 'scripts/verify-eight-realms-browser.mjs'
       - 'scripts/verify-route-planner-browser.mjs'
@@ -73,7 +74,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [gestures, journey, routes, audio]
+        suite: [gestures, journey, routes, audio, quality]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
@@ -103,6 +104,11 @@ jobs:
         run: node scripts/verify-world-audio-browser.mjs
         env:
           AUDIO_OUT: artifacts/realm-gameplay/audio
+      - name: Check adaptive scene budgets and recovery in both phone orientations
+        if: matrix.suite == 'quality'
+        run: node scripts/verify-world-adaptive-quality-browser.mjs
+        env:
+          QUALITY_OUT: artifacts/realm-gameplay/quality
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
         with:
