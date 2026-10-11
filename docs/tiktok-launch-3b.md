@@ -45,7 +45,7 @@ Le Passeport n'est pas un bouton d'entrée du Monde : ne pas monter une séquenc
 5. Habitants et transport ; Boutique dans son état réel.
 6. Carton final : /qr-decouvrir-3b.svg et 3b-international.vercel.app/decouvrir-3b.html.
 
-Les valeurs des portes visibles sur la référence sont : France — Culture, Espagne — Passion, Maroc — Créativité, Italie — Élégance, Turquie — Résilience, Tunisie — Ambition, Algérie — Loyauté, Estonie — Innovation.
+Pour les légendes, captures et annonces, respecter les huit valeurs canoniques : France — Justice (Céliane), Algérie — Loyauté (Yliane), Maroc — Noblesse (Naël), Tunisie — Courage (Soraya), Espagne — Passion (Diego), Italie — Espoir (Alessio), Turquie — Foi (Émir), Estonie — Sagesse (Eira). Si un ancien visuel de référence affiche d'autres valeurs, ne pas reprendre ces libellés dans la vidéo finale.
 
 ## Validation avant publication
 
