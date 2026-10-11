@@ -32,6 +32,11 @@ export default function HomePage({goTo,menuItems,member,installation}){
    </section>)}
   </section>
 
+  <section className="home-guide-zone" aria-labelledby="home-software-title">
+   <div><h2 id="home-software-title">Logiciels 3B</h2><p>Images en lot et outils pour créateurs.</p></div>
+   <Button as="a" href="/logiciels-3b.html" variant="ghost" className="home-guide-button">Découvrir les logiciels <span aria-hidden="true">↗</span></Button>
+  </section>
+
   <section className="home-guide-zone" aria-labelledby="home-guide-title">
    <div><h2 id="home-guide-title">Besoin d’un repère ?</h2></div>
    <Button as={RouteLink} page="guide" goTo={goTo} variant="ghost" className="home-guide-button">Le guide 3B <span aria-hidden="true">↗</span></Button>
