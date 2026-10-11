@@ -96,8 +96,8 @@ test('automatic quality still reduces rendering load below one frame per second 
  const q=createQualityController('auto'),ratio=()=>q.ratio(1280,800,1),start=ratio();
  assert.equal(Math.round(1/3),0,'The old display label loses a real slow-frame sample');
  assert.equal(q.sampleFrames(1,3),true);assert.ok(ratio()<start,'A multi-second frame must trigger load reduction');
- for(let i=0;i<8;i++)q.sampleFrames(1,3);assert.equal(ratio(),.6,'Repeated stalls reach the existing lower bound');
+ for(let i=0;i<8;i++)q.sampleFrames(1,3);const floor=createQualityController('fluid').ratio(1280,800,1)*.6;assert.equal(ratio(),floor,'Repeated stalls reach the fluid pixel budget at the existing adaptive lower bound');
  for(const [frames,seconds] of [[0,3],[-1,3],[NaN,3],[1,0],[1,Infinity],[1,-3]])assert.equal(q.sampleFrames(frames,seconds),false);
- for(let i=0;i<12;i++)q.sampleFrames(60,1);assert.ok(ratio()>.6,'Sustained recovery still restores quality gradually');
+ for(let i=0;i<12;i++)q.sampleFrames(60,1);assert.ok(ratio()>floor,'Sustained recovery still restores quality gradually');
  const fluid=createQualityController('fluid');assert.equal(fluid.sampleFrames(1,3),false,'Explicit user quality remains fixed');
 });
