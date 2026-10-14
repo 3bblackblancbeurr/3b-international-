@@ -177,12 +177,13 @@ export function createRealmStreamer({region,field,root,material,coreGround}){
  function reconcile(position,landing=false){
   plan=realmSectorPlan(position,field.radius,profile);const desired=new Set(plan.map(c=>c.key));
   for(const [key,tile] of tiles)if(!desired.has(key)){tile.mesh.removeFromParent();tile.mesh.geometry.dispose();tiles.delete(key);refreshBorders(tile);dirty=true;revision++;}
-  pending=plan.filter(c=>!tiles.has(c.key)||tiles.get(c.key).lod!==c.lod);
+  const needsTile=c=>!tiles.has(c.key)||tiles.get(c.key).lod!==c.lod||tiles.get(c.key).mesh.geometry.userData.realmSegments!==profile.segments[c.lod];
+  pending=plan.filter(needsTile);
   if(activeTile&&!pending.some(c=>c.key===activeTile.cell.key&&c.lod===activeTile.cell.lod)){activeTile.task.cancel();activeTile=null;}
   // A discontinuous arrival gets a complete local landing neighbourhood before
   // control resumes. Walking normally only refreshes one/two tiles per frame.
   const centre=realmSectorAt(position);if(landing)for(const cell of pending.filter(c=>Math.abs(c.x-centre.x)<=1&&Math.abs(c.z-centre.z)<=1))makeTile(cell);
-  pending=pending.filter(c=>(!tiles.has(c.key)||tiles.get(c.key).lod!==c.lod)&&c.key!==activeTile?.cell.key);buildRoads(landing);dirty=true;
+  pending=pending.filter(c=>needsTile(c)&&c.key!==activeTile?.cell.key);buildRoads(landing);dirty=true;
  }
  let landingPending=true;
  function update(position={x:0,z:5}){
@@ -212,7 +213,12 @@ export function createRealmStreamer({region,field,root,material,coreGround}){
   get cameraSolids(){return collisionList.map(b=>({...b,bottom:field.height(b.x,b.z),top:field.height(b.x,b.z)+(b.height||20)}));},
   get collisionRevision(){return revision;},update,tick(time){windTime.value=Number.isFinite(time)?time:0;},ensureLanding(position){activeTile?.task.cancel();activeTile=null;lastKey='';landingPending=true;update(position);},
   setDaylight(value){architecture.setDaylight(value);},
-  setQuality(mode,capabilities){activeTile?.task.cancel();activeTile=null;profile=realmStreamingProfile(mode,capabilities);lastKey='';update(lastPosition);},
+  setQuality(mode,capabilities){
+   const next=realmStreamingProfile(mode,capabilities);
+   // Pixel-only adjustments and resize observers must not restart terrain work.
+   if(JSON.stringify(next)===JSON.stringify(profile))return;
+   activeTile?.task.cancel();activeTile=null;profile=next;lastKey='';update(lastPosition);
+  },
   get diagnostics(){const meshes=[];group.traverse(o=>{if(o.isMesh&&(!o.isInstancedMesh||o.count))meshes.push(o);});return{region,radius:field.radius,areaHubRatio:realm.layout.areaHubRatio,sectorSize:SIZE,activeSectors:tiles.size,pendingSectors:pending.length+(activeTile?1:0),pendingRoadSurface:!!roadTask,work:{...work},maxSectors:profile.maxTiles,generatedSectors:generated,terrainTriangles:[...tiles.values()].reduce((n,t)=>n+t.mesh.geometry.drawRange.count/3,0),natureInstances:visiblePlants,maxNatureInstances:profile.naturalInstances,buildingInstances:visibleBuildings,activeSettlements:visibleSites,settlements:realm.sites.length-2,travelRelays:travelDestinations.length,drawCalls:meshes.length,position:{...lastPosition},realTerrain:true};},
   dispose(){if(disposed)return;disposed=true;activeTile?.task.cancel();activeTile=null;roadTask?.cancel();roadTask=null;group.removeFromParent();for(const tile of tiles.values())tile.mesh.geometry.dispose();tiles.clear();roadMesh?.geometry.dispose();for(const b of natural.values())for(const mesh of [b.wood,b.leaves,b.low])mesh.dispose();for(const b of buildingBatches)b.mesh.dispose();for(const b of monumentBatches)b.mesh.dispose();rocks.dispose();furniture.dispose();gardens.dispose();owned.forEach(o=>o.dispose());architecture.dispose();}
  };

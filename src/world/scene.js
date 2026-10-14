@@ -27,6 +27,7 @@ import {loadWorldModels} from './models.js';
 import {createLivingActor} from './living.js';
 import {DEFAULT_ORBIT,restoreOrbit,rotateOrbit,zoomOrbit,orbitView} from './orbit.js';
 import {createIndexedMotion,pointerStick,joystickProfile,sprintIntent,createQualityController,createMotionSmoother} from './motion.js';
+import {createFrameHealth} from './frame-health.js';
 import {movementHeading} from './heading.js';
 import {COUNTRIES,countryById,cardById} from './catalog.js';
 import {createPortalFrame} from './portals.js';
@@ -68,7 +69,7 @@ import {createPremiumVisualResources,premiumVisualKey} from './premium-visual-re
 
 export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,onError,onLoadState,onStep,onCombatStep,onGameplay,onCampaignStep}){
  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});
- const quality=createQualityController();renderer.setPixelRatio(1);renderer.outputColorSpace=THREE.SRGBColorSpace;
+ const quality=createQualityController(),frameHealth=createFrameHealth();let qualityWindowMoving=false;renderer.setPixelRatio(1);renderer.outputColorSpace=THREE.SRGBColorSpace;
  renderer.localClippingEnabled=true;
  renderer.toneMapping=THREE.AgXToneMapping;renderer.toneMappingExposure=1.04;
  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;renderer.shadowMap.autoUpdate=false;
@@ -558,7 +559,8 @@ function hubNpcAvatar(item){
    needsRender=true;
   }
   if(!paused&&!shot){
-   if(now<qualityWarmupUntil){frames=0;frameTime=0;}else{frames++;frameTime+=rawDt;}if(frameTime>=1){fps=Math.round(frames/frameTime);if(quality.sampleFrames(frames,frameTime))resize();frames=0;frameTime=0;}
+   qualityWindowMoving=qualityWindowMoving||moving||!!held?.drag||!!target||keys.size>0;
+   if(now<qualityWarmupUntil){frames=0;frameTime=0;qualityWindowMoving=false;}else{frames++;frameTime+=rawDt;}if(frameTime>=1){fps=Math.round(frames/frameTime);if(quality.sampleFrames(frames,frameTime,{allowRecovery:!qualityWindowMoving}))resize();frames=0;frameTime=0;qualityWindowMoving=false;}
    if(lifeInteraction.active){const pose=lifeInteraction.sample(elapsed);position={x:pose.x,z:pose.z};heading=pose.heading;hero?.setPose?.(pose.pose,{seatHeight:pose.seatHeight});hero?.face?.(Math.sin(pose.heading*Math.PI/180),Math.cos(pose.heading*Math.PI/180),dt);moving=false;}else if(contextTraversal){
     const current=contextTraversal,previous=position,pose=traversalPose(current.plan,now-current.started);
     position={x:pose.x,z:pose.z};traversalLift=pose.lift;dx=position.x-previous.x;dz=position.z-previous.z;travelled=Math.hypot(dx,dz);moving=!pose.done;
@@ -744,13 +746,15 @@ function hubNpcAvatar(item){
   waypointRing.visible=!!waypoint&&!paused&&distance(position,waypoint)>7;if(waypoint)waypointRing.position.set(waypoint.x,groundY(waypoint.x,waypoint.z)+.1,waypoint.z);
   effect.visible=!lastCombat&&age<.65;if(effect.visible){effect.position.set(avatar.position.x,avatar.position.y+.15,avatar.position.z);effect.scale.setScalar(1+age*6);effect.material.opacity=Math.max(0,1-age/.65)*.7;effect.material.color.set(feedbackAction==='guard'?'#a2dff0':'#ffe0a0');}
   if(renderer.shadowMap.enabled&&(shadowInvalidated||now-shadowAt>=shadowInterval)){renderer.shadowMap.needsUpdate=true;shadowAt=now;shadowInvalidated=false;}
-  sky.update(camera,reducedMotion?0:elapsed,dt);landscape?.renderWaterReflection?.(renderer,scene,camera,elapsed);renderer.info.reset();post.render(dt);report-=dt;
+  sky.update(camera,reducedMotion?0:elapsed,dt);const renderStarted=performance.now();landscape?.renderWaterReflection?.(renderer,scene,camera,elapsed);renderer.info.reset();post.render(dt);const renderFinished=performance.now();
+  if(!paused&&!shot&&now>=qualityWarmupUntil)frameHealth.sample({gapMs:rawDt*1000,updateMs:renderStarted-now,renderMs:renderFinished-renderStarted,moving});
+  report-=dt;
   if(report<=0||needsRender){
    report=(moving||held?.drag)?.1:.4;
    const evolution=hubEvolutionState(hubPlan,{seals:save.seals,restoredRegions:Object.entries(save.adventure.chapters||{}).filter(([,c])=>c.restored===3).map(([id])=>id)});
    const hubEvolution=region==='hub'?{...evolution,restored:evolution.restoredCount,liberated:evolution.liberatedCount,total:8}:null;
    const hubDistrict=region==='hub'?hubPlan.districts.map(d=>({...d,distance:Math.hypot(position.x-PLATFORM_DISTRICTS[d.id].x,position.z-PLATFORM_DISTRICTS[d.id].z)})).sort((a,b)=>a.distance-b.distance)[0]?.name:null;
-    onSnapshot({routePlanning:routePlanner.status().pending,mapItems:readCache.map(items,region,landscape),streaming:landscape?.streamingDiagnostics||null,campaign:readCache.campaign(save),guardians:actors.filter(a=>a.creature).map(a=>({id:a.itemId,...a.controller.snapshotGuardian?.()})),towerFloor:landscape?.towerFloor||null,lifeInteraction:lifePose?{title:lifePose.title,detail:lifePose.detail,caption:lifePose.caption}:null,cartography:landscape.cartography||null,route:target?[{...target},...route.map(p=>({...p}))]:[],architecture:landscape.architectureDiagnostics,interior:landscape.interior?.id||null,time:worldTime,weather,combat:opponent?{queued:combatBuffer.kind,distance:combatDistance,hero:screenAnchor(avatar.position),enemy:screenAnchor(opponentPosition)}:null,cinematic:shot?{title:shot.title,detail:shot.detail}:null,companion:escortId,region,district:hubDistrict||districtAt(region,position,(x,z)=>toLandscape(region,x,z)),hubEvolution,position:{...position},gameplay:{airborne:!!playFrame.airborne,lift:playFrame.lift||0,action:playFrame.action||null},heading,camera:{...orbit,yaw:viewBearing(camera.position,cameraTarget),follow:cameraFollow,actualDistance:camera.position.distanceTo(cameraTarget)},near:closest,moving,fps,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,graphics:{instancing:staticInstances?.diagnostics||null,crowd:ambientCrowd?.diagnostics||null,fogFar:scene.fog?.far,transmission:architecturalBudget(qualityMode,visualCapabilities().desktopClass).transmission},ambientOcclusion:post.enabled,resolution:Math.round(renderer.getPixelRatio()*100),waypoint,remaining:waypoint?Math.round(distance(position,waypoint)):null,joystick:held?.drag?{x:held.x,y:held.y,dx:stick.x*26,dy:stick.z*26}:null});
+    onSnapshot({performance:frameHealth.snapshot(),routePlanning:routePlanner.status().pending,mapItems:readCache.map(items,region,landscape),streaming:landscape?.streamingDiagnostics||null,campaign:readCache.campaign(save),guardians:actors.filter(a=>a.creature).map(a=>({id:a.itemId,...a.controller.snapshotGuardian?.()})),towerFloor:landscape?.towerFloor||null,lifeInteraction:lifePose?{title:lifePose.title,detail:lifePose.detail,caption:lifePose.caption}:null,cartography:landscape.cartography||null,route:target?[{...target},...route.map(p=>({...p}))]:[],architecture:landscape.architectureDiagnostics,interior:landscape.interior?.id||null,time:worldTime,weather,combat:opponent?{queued:combatBuffer.kind,distance:combatDistance,hero:screenAnchor(avatar.position),enemy:screenAnchor(opponentPosition)}:null,cinematic:shot?{title:shot.title,detail:shot.detail}:null,companion:escortId,region,district:hubDistrict||districtAt(region,position,(x,z)=>toLandscape(region,x,z)),hubEvolution,position:{...position},gameplay:{airborne:!!playFrame.airborne,lift:playFrame.lift||0,action:playFrame.action||null},heading,camera:{...orbit,yaw:viewBearing(camera.position,cameraTarget),follow:cameraFollow,actualDistance:camera.position.distanceTo(cameraTarget)},near:closest,moving,fps,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,graphics:{instancing:staticInstances?.diagnostics||null,crowd:ambientCrowd?.diagnostics||null,fogFar:scene.fog?.far,transmission:architecturalBudget(qualityMode,visualCapabilities().desktopClass).transmission},ambientOcclusion:post.enabled,resolution:Math.round(renderer.getPixelRatio()*100),waypoint,remaining:waypoint?Math.round(distance(position,waypoint)):null,joystick:held?.drag?{x:held.x,y:held.y,dx:stick.x*26,dy:stick.z*26}:null});
   }
   needsRender=false;
  }

@@ -83,10 +83,10 @@ export function createQualityController(mode='auto'){
  mode=QUALITY_MODES.includes(mode)?mode:'auto';
  let value=1,slow=0,fast=0,fluidFallback=false;
  const renderMode=()=>mode==='auto'&&fluidFallback?'fluid':mode;
- function sample(fps,seconds){
+ function sample(fps,seconds,{allowRecovery=true}={}){
    if(mode!=='auto'||!Number.isFinite(fps)||fps<=0||!Number.isFinite(seconds)||seconds<=0)return false;
    seconds=Math.min(seconds,2);
-   slow=fps<45?slow+seconds:0;fast=fps>57?fast+seconds:0;
+   slow=fps<45?slow+seconds:0;fast=allowRecovery&&fps>57?fast+seconds:0;
    if(slow>=2&&value>.6){
     value=Math.max(.6,value-.12);slow=fast=0;
     if(value<=.7)fluidFallback=true;
@@ -114,6 +114,6 @@ export function createQualityController(mode='auto'){
   sample,
   // Count real completed frames before rounding a display label. One frame
   // every several seconds is severe load, not an invalid zero-FPS sample.
-  sampleFrames(frames,seconds){return Number.isInteger(frames)&&frames>0?sample(frames/seconds,seconds):false;}
+  sampleFrames(frames,seconds,options){return Number.isInteger(frames)&&frames>0?sample(frames/seconds,seconds,options):false;}
  };
 }
