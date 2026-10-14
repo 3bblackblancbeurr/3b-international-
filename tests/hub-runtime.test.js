@@ -91,3 +91,12 @@ test('active mission characters cannot disappear behind mobile limits or daytime
  assert.equal(runtime.meta.npcsTotal,24);
  assert.equal(runtime.meta.npcsActive,18);
 });
+
+test('the next unlocked mission giver remains reachable throughout the rotating mobile roster',()=>{
+ const hubState={missions:{first_steps:{status:'completed',claimed:true},first_echo:{status:'available'}}};
+ for(let day=0;day<28;day++){
+  const dateKey=new Date(Date.UTC(2026,9,1+day)).toISOString().slice(0,10);
+  const roster=selectHubNpcRoster(npcs,18,{missions,hubState,eventContext:{dateKey,hour:12,day:4,weather:'clear'}});
+  assert.equal(roster.length,18);assert.ok(roster.some(row=>row.npc.id==='ines_varga'),dateKey);
+ }
+});

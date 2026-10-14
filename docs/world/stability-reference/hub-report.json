@@ -1,0 +1,42 @@
+[
+  {
+    "region": "hub",
+    "device": "844×390, mobile input, DPR 1",
+    "gpu": "SwiftShader software",
+    "movement": {
+      "before": {
+        "x": 13.6,
+        "z": 64.6
+      },
+      "after": {
+        "x": 13.902555829536043,
+        "z": 66.21514106682262
+      },
+      "performance": {
+        "frames": 15,
+        "movingFrames": 1,
+        "stalls": 0,
+        "maxGapMs": 125,
+        "p95Ms": 17031,
+        "updatePeakMs": 7,
+        "renderPeakMs": 39,
+        "windowFrames": 15
+      }
+    },
+    "view": {
+      "eye": [
+        110,
+        130,
+        150
+      ],
+      "target": [
+        0,
+        75,
+        0
+      ],
+      "name": "Cercle Brisé et tour civique"
+    },
+    "quality": "auto",
+    "errors": []
+  }
+]

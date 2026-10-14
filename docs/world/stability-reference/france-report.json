@@ -1,0 +1,75 @@
+[
+  {
+    "region": "france",
+    "device": "844×390, mobile input, DPR 1",
+    "gpu": "SwiftShader software",
+    "movement": {
+      "before": {
+        "x": 0,
+        "z": 5
+      },
+      "after": {
+        "x": -0.6073271833224883,
+        "z": 6.140922769387552
+      },
+      "performance": {
+        "frames": 20,
+        "movingFrames": 1,
+        "stalls": 0,
+        "maxGapMs": 106,
+        "p95Ms": 1832,
+        "updatePeakMs": 8,
+        "renderPeakMs": 26,
+        "windowFrames": 20
+      }
+    },
+    "view": {
+      "eye": [
+        1172.1325223461695,
+        82.40226868179457,
+        2888.4019448208537
+      ],
+      "target": [
+        1082.1325223461695,
+        16.40226868179456,
+        2788.4019448208537
+      ],
+      "name": "Hameau du Rivage · Hauts des Alpes"
+    },
+    "quality": "auto",
+    "stream": {
+      "region": "france",
+      "radius": 3437.9531701289943,
+      "areaHubRatio": 50,
+      "sectorSize": 256,
+      "activeSectors": 44,
+      "pendingSectors": 0,
+      "pendingRoadSurface": false,
+      "work": {
+        "tileSlices": 93,
+        "instanceUpdates": 25,
+        "peakTravelUpdateMs": 10.899999999906868,
+        "peakTileSliceMs": 8.600000000093132,
+        "peakRoadMs": 26.899999999906868,
+        "peakInstanceMs": 1.3999999999068677,
+        "peakCommitMs": 1.1999999997206032
+      },
+      "maxSectors": 49,
+      "generatedSectors": 83,
+      "terrainTriangles": 25600,
+      "natureInstances": 320,
+      "maxNatureInstances": 320,
+      "buildingInstances": 6,
+      "activeSettlements": 1,
+      "settlements": 15,
+      "travelRelays": 17,
+      "drawCalls": 54,
+      "position": {
+        "x": 1082.1325223461695,
+        "z": 2788.4019448208537
+      },
+      "realTerrain": true
+    },
+    "errors": []
+  }
+]
