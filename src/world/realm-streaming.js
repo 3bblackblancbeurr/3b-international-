@@ -211,7 +211,7 @@ export function createRealmStreamer({region,field,root,material,coreGround}){
  update(lastPosition);
  return{group,collisions:collisionList,navigationItems,travelDestinations,get walkSurfaces(){return[coreGround,...tiles.values()].map(t=>t.mesh||t);},
   get cameraSolids(){return collisionList.map(b=>({...b,bottom:field.height(b.x,b.z),top:field.height(b.x,b.z)+(b.height||20)}));},
-  get collisionRevision(){return revision;},update,tick(time){windTime.value=Number.isFinite(time)?time:0;},ensureLanding(position){activeTile?.task.cancel();activeTile=null;lastKey='';landingPending=true;update(position);},
+  get collisionRevision(){return revision;},get pendingWork(){return pending.length+(activeTile?1:0)+(roadTask?1:0);},update,tick(time){windTime.value=Number.isFinite(time)?time:0;},ensureLanding(position){activeTile?.task.cancel();activeTile=null;lastKey='';landingPending=true;update(position);},
   setDaylight(value){architecture.setDaylight(value);},
   setQuality(mode,capabilities){
    const next=realmStreamingProfile(mode,capabilities);

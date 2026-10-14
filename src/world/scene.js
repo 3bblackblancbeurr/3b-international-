@@ -69,7 +69,7 @@ import {createPremiumVisualResources,premiumVisualKey} from './premium-visual-re
 
 export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,onError,onLoadState,onStep,onCombatStep,onGameplay,onCampaignStep}){
  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});
- const quality=createQualityController(),frameHealth=createFrameHealth();let qualityWindowMoving=false;renderer.setPixelRatio(1);renderer.outputColorSpace=THREE.SRGBColorSpace;
+ const quality=createQualityController('auto',{targetFps:window.matchMedia('(pointer: coarse)').matches?30:60}),frameHealth=createFrameHealth();let qualityWindowMoving=false,qualityWindowStalled=false,qualityLongTime=0,qualityGraceUntil=0,qualityTransitionAt=-Infinity,previousMovingForHealth=false;renderer.setPixelRatio(1);renderer.outputColorSpace=THREE.SRGBColorSpace;
  renderer.localClippingEnabled=true;
  renderer.toneMapping=THREE.AgXToneMapping;renderer.toneMappingExposure=1.04;
  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;renderer.shadowMap.autoUpdate=false;
@@ -258,7 +258,7 @@ function hubNpcAvatar(item){
   }
   if(region!=='hub')return;const latest=worldRuntimeItems('hub',save,{weather}),byId=new Map(latest.filter(item=>item.type==='hubNpc').map(item=>[item.id,item]));for(const actor of hubNpcActors){const next=byId.get(actor.item.id);if(!next)continue;const nextX=next.x,nextZ=next.z,{x:_nextX,z:_nextZ,...scheduleState}=next;if(Math.hypot(actor.item.homeX-nextX,actor.item.homeZ-nextZ)>10){const path=findPath({x:actor.object.position.x,z:actor.object.position.z},next,obstacles,worldRadius);actor.walkTarget=path.shift()||null;actor.walkRoute=path;}Object.assign(actor.item,scheduleState,{homeX:nextX,homeZ:nextZ});}needsRender=true;}
  function cancelContextTraversal(){if(!contextTraversal)return;const resolve=contextTraversal.resolve;contextTraversal=null;traversalLift=0;try{resolve(false);}catch{}needsRender=true;}
- function rebuild(nextRegion){endLifeInteraction();cancelContextTraversal();
+ function rebuild(nextRegion){previousMovingForHealth=false;endLifeInteraction();cancelContextTraversal();
   const previousRegion=region;
   onLoadState?.(true);
   realmEffects?.dispose();realmEffects=null;for(const marker of realmMarkers.values())marker.dispose();realmMarkers.clear();campaignClock=0;
@@ -452,13 +452,15 @@ function hubNpcAvatar(item){
   sunOffset.copy(light.keyDirection).multiplyScalar(72);sky.setLighting(light);shadowInvalidated=true;
   portraitLight.intensity=.20+.10*light.day;if(scene.fog){scene.fog.color.set(light.palette.fog).lerp(new THREE.Color(light.palette.night),1-light.day);scene.fog.near=light.fogNear;scene.fog.far=light.fogFar;}
  }
- let landscapeQualityKey='';
+ let landscapeQualityKey='',viewportWidth=0,viewportHeight=0;
  function resize(){
   const {width,height}=canvas.getBoundingClientRect();if(!width||!height)return;
   // AUTO must lower the scene's work as well as its pixel count. All consumers
   // use the same effective mode, with recovery hysteresis in the controller.
   const mode=quality.renderMode();qualityMode=mode;const capabilities=visualCapabilities(mode);
-  renderer.setPixelRatio(quality.ratio(width,height,devicePixelRatio||1));renderer.setSize(width,height,false);
+  const ratio=quality.ratio(width,height,devicePixelRatio||1);
+  const resized=width!==viewportWidth||height!==viewportHeight||ratio!==renderer.getPixelRatio();
+  if(resized){renderer.setDrawingBufferSize(width,height,ratio);viewportWidth=width;viewportHeight=height;qualityTransitionAt=performance.now();qualityGraceUntil=qualityTransitionAt+1500;}
   needsRender=true;camera.aspect=width/height;camera.updateProjectionMatrix();
   post.resize(width,height,renderer.getPixelRatio(),mode,capabilities);sky.setQuality(mode,capabilities);
   shadowInterval=masterRenderBudget(mode,capabilities).shadowInterval;
@@ -471,7 +473,7 @@ function hubNpcAvatar(item){
   renderer.shadowMap.enabled=mode!=='fluid';const size=capabilities.shadowMapSize;
   if(sun.shadow.mapSize.x!==size){sun.shadow.mapSize.set(size,size);sun.shadow.map?.dispose();sun.shadow.map=null;}
   landscape?.setQuality(mode,capabilities);ambientCrowd?.setQuality(mode);
-  landscapeQualityKey=key;shadowInvalidated=true;
+  landscapeQualityKey=key;shadowInvalidated=true;qualityTransitionAt=performance.now();qualityGraceUntil=qualityTransitionAt+1500;
  }
  const observer=new ResizeObserver(resize);observer.observe(canvas);
  function cancelRoutePlan(){routeEpoch++;routePlanner.cancel();}
@@ -542,14 +544,14 @@ function hubNpcAvatar(item){
  function keydown(e){if(e.defaultPrevented||e.target.isContentEditable||(([' ','Enter'].includes(e.key))&&e.target.closest?.('button,a,[role=button]')))return;if(paused||transportRide||contextTraversal||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;const key=e.key.toLowerCase(),handled=['moveForward','moveBackward','moveLeft','moveRight','interact','sprint','cameraToggle',...Object.keys(PLAY_ACTIONS)].some(action=>controlMatches(controls,action,key));if(!handled)return;const playKind=Object.keys(PLAY_ACTIONS).find(action=>controlMatches(controls,action,key));if(playKind){if(presentation==='encounter'&&playKind!=='jump')return;e.preventDefault();if(!e.repeat){const accepted=gameplayAction(playKind);if(accepted&&playKind==='guard')gameplay.setGuardHeld(true);}return;}e.preventDefault();if(controlMatches(controls,'cameraToggle',key)){if(!e.repeat)toggleCamera();return;}if(['moveForward','moveBackward','moveLeft','moveRight'].some(action=>controlMatches(controls,action,key)))endLifeInteraction();cancelRoutePlan();keys.add(key);target=null;route=[];onActivity();if(controlMatches(controls,'interact',key)&&!e.repeat)interact();}
  function keyup(e){keys.delete(e.key.toLowerCase());if(controlMatches(controls,'guard',e.key.toLowerCase()))gameplay.setGuardHeld(false);}
  function interact(){if(paused||transportRide||contextTraversal)return;const closest=nearestInteraction(position,interactionItems());if(closest){clearInput();battleTarget=closest;onActivity();onInteract(closest);}}
- const hidden=()=>{clearInput();last=performance.now();frameTime=frames=0;needsRender=true;};
+ const hidden=()=>{previousMovingForHealth=false;qualityWindowMoving=qualityWindowStalled=false;qualityLongTime=0;clearInput();last=performance.now();frameTime=frames=0;needsRender=true;};
  const lost=e=>{e.preventDefault();paused=true;onError('Le rendu 3D a été interrompu. Recharge le monde pour reprendre ta sauvegarde.');};
  canvas.addEventListener('wheel',wheel,{passive:false});canvas.addEventListener('contextmenu',context);canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',up);canvas.addEventListener('lostpointercapture',up);canvas.addEventListener('webglcontextlost',lost);
  window.addEventListener('keydown',keydown);window.addEventListener('keyup',keyup);window.addEventListener('blur',clearInput);document.addEventListener('visibilitychange',hidden);
  function tick(now){
   now=performance.now();
   if(disposed)return;raf=requestAnimationFrame(tick);const rawDt=Math.max(0,(now-last)/1000);last=now;
-  const cinematic=presentation==='encounter',fieldCombat=cinematic&&!!save.adventure.encounter?.field&&!save.adventure.encounter?.result;if(shot&&now>=shot.until){if(shot.cinematic)post.setCinematic(null);if(Number.isFinite(shot.fovEnd)){camera.fov=shot.fovEnd;camera.updateProjectionMatrix();}shot=null;}if(document.hidden||!models||!avatar||(paused&&!cinematic&&!shot&&!needsRender&&!npcConversationId))return;
+  const cinematic=presentation==='encounter',fieldCombat=cinematic&&!!save.adventure.encounter?.field&&!save.adventure.encounter?.result;if(shot&&now>=shot.until){if(shot.cinematic)post.setCinematic(null);if(Number.isFinite(shot.fovEnd)){camera.fov=shot.fovEnd;camera.updateProjectionMatrix();}shot=null;}if(document.hidden||!models||!avatar||(paused&&!cinematic&&!shot&&!needsRender&&!npcConversationId)){previousMovingForHealth=false;return;}
   const dt=Math.min(rawDt,.25);elapsed+=dt;if(!paused&&!shot){playFrame=gameplay.update(dt);if(playFrame.landed)onGameplay?.('land');}else playFrame={lift:0,guard:0};for(const {frame,item} of portalFrames)frame.tick(Math.hypot(position.x-item.x,position.z-item.z),dt,{reducedMotion});sceneWetness.value=advanceWetness(sceneWetness.value,sceneWetnessTarget,dt);let travelled=0,dx=0,dz=0;
   if(now-lastWorldTimeAt>=1000){
    lastWorldTimeAt=now;const clockNow=new Date();worldTime=worldTimeSnapshot(clockNow);sceneDaylight.value=worldTime.daylight;const nextScheduleKey=region==='hub'?hubScheduleClockKey(clockNow):'';if(nextScheduleKey&&nextScheduleKey!==lastHubScheduleKey){lastHubScheduleKey=nextScheduleKey;refreshHubScheduleState();}const nextWeather=worldWeatherForDate(region,clockNow);if(nextWeather!==weather){weather=nextWeather;weatherState=weatherProfile(weather);sceneWetnessTarget=wetnessForWeather(weather);landscape?.setWeather?.(weather);refreshHubScheduleState();if(weatherFx){weatherFx.visible=weatherState.precipitation;weatherFx.material.opacity=weatherState.opacity;weatherFx.material.size=weather==='snow'?.26:.08;weatherFx.material.color.set(weather==='snow'?'#ffffff':'#b9dcff');}}landscape?.setDaylight?.(worldTime.daylight);sky.setAtmosphere?.({daylight:worldTime.daylight,weather});
@@ -559,8 +561,9 @@ function hubNpcAvatar(item){
    needsRender=true;
   }
   if(!paused&&!shot){
-   qualityWindowMoving=qualityWindowMoving||moving||!!held?.drag||!!target||keys.size>0;
-   if(now<qualityWarmupUntil){frames=0;frameTime=0;qualityWindowMoving=false;}else{frames++;frameTime+=rawDt;}if(frameTime>=1){fps=Math.round(frames/frameTime);if(quality.sampleFrames(frames,frameTime,{allowRecovery:!qualityWindowMoving}))resize();frames=0;frameTime=0;qualityWindowMoving=false;}
+   qualityWindowMoving=qualityWindowMoving||moving||!!held?.drag||!!target||keys.size>0;qualityWindowStalled=qualityWindowStalled||rawDt>=.25;if(rawDt>=.25)qualityLongTime+=rawDt;
+   const settlingTerrain=now<qualityTransitionAt+8000&&landscape?.streamingBusy;
+   if(now<Math.max(qualityWarmupUntil,qualityGraceUntil)||settlingTerrain){frames=0;frameTime=0;qualityWindowMoving=qualityWindowStalled=false;qualityLongTime=0;}else{frames++;frameTime+=rawDt;}if(frameTime>=1){fps=Math.round(frames/frameTime);if(quality.sampleFrames(frames,frameTime,{allowRecovery:!qualityWindowMoving,windowStalled:qualityWindowStalled,severeOverload:frames>=2&&frames/frameTime<5&&qualityLongTime>=frameTime*.5}))resize();frames=0;frameTime=0;qualityWindowMoving=qualityWindowStalled=false;qualityLongTime=0;}
    if(lifeInteraction.active){const pose=lifeInteraction.sample(elapsed);position={x:pose.x,z:pose.z};heading=pose.heading;hero?.setPose?.(pose.pose,{seatHeight:pose.seatHeight});hero?.face?.(Math.sin(pose.heading*Math.PI/180),Math.cos(pose.heading*Math.PI/180),dt);moving=false;}else if(contextTraversal){
     const current=contextTraversal,previous=position,pose=traversalPose(current.plan,now-current.started);
     position={x:pose.x,z:pose.z};traversalLift=pose.lift;dx=position.x-previous.x;dz=position.z-previous.z;travelled=Math.hypot(dx,dz);moving=!pose.done;
@@ -746,8 +749,8 @@ function hubNpcAvatar(item){
   waypointRing.visible=!!waypoint&&!paused&&distance(position,waypoint)>7;if(waypoint)waypointRing.position.set(waypoint.x,groundY(waypoint.x,waypoint.z)+.1,waypoint.z);
   effect.visible=!lastCombat&&age<.65;if(effect.visible){effect.position.set(avatar.position.x,avatar.position.y+.15,avatar.position.z);effect.scale.setScalar(1+age*6);effect.material.opacity=Math.max(0,1-age/.65)*.7;effect.material.color.set(feedbackAction==='guard'?'#a2dff0':'#ffe0a0');}
   if(renderer.shadowMap.enabled&&(shadowInvalidated||now-shadowAt>=shadowInterval)){renderer.shadowMap.needsUpdate=true;shadowAt=now;shadowInvalidated=false;}
-  sky.update(camera,reducedMotion?0:elapsed,dt);const renderStarted=performance.now();landscape?.renderWaterReflection?.(renderer,scene,camera,elapsed);renderer.info.reset();post.render(dt);const renderFinished=performance.now();
-  if(!paused&&!shot&&now>=qualityWarmupUntil)frameHealth.sample({gapMs:rawDt*1000,updateMs:renderStarted-now,renderMs:renderFinished-renderStarted,moving});
+  sky.update(camera,reducedMotion?0:elapsed,dt);const renderStarted=performance.now();renderer.info.reset();landscape?.renderWaterReflection?.(renderer,scene,camera,elapsed);post.render(dt);const renderFinished=performance.now();
+  if(!paused&&!shot&&now>=qualityWarmupUntil){frameHealth.sample({gapMs:rawDt*1000,updateMs:renderStarted-now,renderMs:renderFinished-renderStarted,moving:moving||previousMovingForHealth,context:rawDt>=.25?{timeMs:Math.round(elapsed*1000),region,quality:qualityMode,ratio:renderer.getPixelRatio(),programs:renderer.info.programs?.length||0,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures}:null});previousMovingForHealth=moving;}else previousMovingForHealth=false;
   report-=dt;
   if(report<=0||needsRender){
    report=(moving||held?.drag)?.1:.4;
@@ -775,7 +778,7 @@ function hubNpcAvatar(item){
   setMoveInput(value){if(paused||transportRide||contextTraversal)return;cancelRoutePlan();endLifeInteraction();stick={x:Number(value?.x)||0,z:Number(value?.z)||0};target=null;route=[];onActivity();needsRender=true;},
   combatAction,
   canBattle(action){return !['strike','power','wait'].includes(action)||combatDistance<=(action==='power'?22:action==='wait'?8:7.5);},
-  setPaused(value){if(value)endLifeInteraction();paused=value;needsRender=true;last=performance.now();frames=frameTime=0;if(value){clearInput();cancelContextTraversal();}},
+  setPaused(value){previousMovingForHealth=false;qualityWindowMoving=qualityWindowStalled=false;qualityLongTime=0;if(value)endLifeInteraction();paused=value;needsRender=true;last=performance.now();frames=frameTime=0;if(value){clearInput();cancelContextTraversal();}},
   setPresentation(value){presentation=value;if(value!=='encounter'){combatFx.clear();clearCameraImpulse();for(const actor of actors)actor.controller.setGuardianAnticipation?.(false);}needsRender=true;},
   performTraversal(actionId,item){
    if(paused||transportRide||contextTraversal||!isPhysicalTraversalAction(actionId)||save.adventure.encounter?.field)return Promise.resolve(false);

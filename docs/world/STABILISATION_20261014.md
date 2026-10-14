@@ -32,10 +32,10 @@ Sources primaires consultées :
 
 ## Collaboration Claude
 
-Accès vérifié : Claude ouvre une page de connexion dans le navigateur disponible.
-Le PC blackblancbeur est hors ligne. Aucune réponse de Claude n'a été obtenue ;
-aucune validation ne lui est attribuée. Lorsqu'un accès est disponible, lui faire
-relire le diff, les rapports et les captures avant d'ajouter d'autres systèmes.
+Trois revues ont été obtenues auprès de Claude dans la session connectée :
+contrôleur mobile, seconde lecture des garde-fous, méthode de référence artistique.
+Claude a travaillé sur les extraits et résultats transmis ; il n'a pas inspecté
+indépendamment le dépôt ni testé le téléphone. Voir `REVUE_CLAUDE_MOBILE_20261014.md`.
 
 ## Références reproductibles
 
@@ -89,7 +89,7 @@ de 18 PNJ sur mobile. Le parcours complet et 28 dates de rotation sont testés.
 | Lot | Livrable et critère de sortie | État |
 |---|---|---|
 | Stabilisation | Parcours Samsung sans les gels signalés ; mesures conservées | Candidat, validation réelle à faire |
-| Référence artistique | Hub et village approuvés à hauteur du joueur, jour/nuit | Capture et comparaison à terminer |
+| Référence artistique | Hub et village approuvés à hauteur du joueur, jour/nuit | Quatre vues fixes livrées, direction artistique et téléphone à valider |
 | Hub | Portails, intérieurs, habitants, transports, missions et récompenses accessibles | Inventaire existant à revalider, guidage vers la mission suivante corrigé |
 | France | Kaïs : arrivée → missions → combat → récompense → sauvegarde → retour Hub | Tests de campagne existants, acceptance bout en bout à refaire |
 | Plateforme | Passeport unique, commandes, menus, compagnon et installation cohérents | Audit séparé à mener sans régression |
@@ -110,5 +110,37 @@ artistique. Aucune régression visuelle globale n'est prétendue résolue ici.
 
 Branche locale `codex/world-stability-reference-20261014`. L'envoi initial a été refusé faute d'autorisation explicite. Le propriétaire
 a ensuite autorisé explicitement l'envoi et la poursuite du travail le
-14 octobre 2026. Publication de la branche et contrôles distants en cours.
+14 octobre 2026. Première version publiée dans la PR #532 ; ses sept workflows ont réussi.
+Seconde passe préparée après trois revues Claude, nouveaux contrôles à suivre.
 La validation Samsung reste à effectuer avant de qualifier le candidat de stable.
+
+## Seconde passe mobile et références à hauteur du joueur
+
+Le contrôleur vise maintenant 30 images/s sur les appareils à pointeur tactile.
+Ce seuil est une cible de décision de qualité, pas un plafonnement du rendu.
+Un 30 FPS constant garde sa résolution. Une surcharge doit persister trois
+fenêtres avant une baisse ; les gels isolés sont enregistrés séparément.
+Les paliers de résolution sont absolus, sans multiplication supplémentaire au
+passage fluide. La reprise attend une période sans déplacement et un délai
+30–120 secondes ; les transitions de profil lourd sont espacées de 60 secondes.
+La période de stabilisation après changement attend le terrain jusqu'à 8 secondes,
+mais ne masque pas les gels dans le diagnostic après le chargement initial.
+
+Le relevé téléchargeable dans Pause et options → État du rendu conserve au plus
+20 événements (écart, simulation CPU, soumission du rendu CPU, région, qualité,
+résolution, programmes, géométries et textures). Les temps CPU ne mesurent pas
+le GPU. Aucun compte, identité ou contenu de sauvegarde n'est exporté.
+Les compteurs de rendu incluent maintenant la réflexion.
+
+Validation seconde passe : suite complète 2 433 réussis, aucun échec, un ignoré ;
+33 tests ciblés réussis après les derniers garde-fous ; navigateur portrait et
+paysage réussi, y compris stabilité simulée à 30 FPS, surcharge, reprise,
+modes manuels et export JSON dans le menu paysage. Ces fenêtres synthétiques
+vérifient la décision du contrôleur ; elles ne sont pas un benchmark du Samsung.
+
+`france-reference/` contient quatre vues du vrai Hameau du Rivage · Hauts des Alpes :
+ensemble, rue, place et entrée. Mode fluide explicite, 844×390, DPR 1, heure fixe.
+Les budgets et l'état du streaming sont dans `report.json`. Le village demeure
+clairsemé : cette base fixe rend les prochaines améliorations comparables et
+n'est pas une validation artistique AAA. Aucun agrandissement du monde n'a été
+engagé avant la validation téléphone.

@@ -6,6 +6,11 @@ import WorldSaveStatus from './WorldSaveStatus.jsx';
 import {CONTROL_ACTIONS,CONTROL_KEY_CHOICES,controlLabel} from './control-bindings.js';
 import {WORLD_AUDIO_PRESETS} from './audio-director.js';
 const keyName=key=>({shift:'Maj',' ':'Espace',arrowup:'↑',arrowdown:'↓',arrowleft:'←',arrowright:'→'}[key]||key.toUpperCase());
+function downloadPerformance(snapshot){
+ const report={version:1,region:snapshot.region,fps:snapshot.fps,resolution:snapshot.resolution,drawCalls:snapshot.drawCalls,triangles:snapshot.triangles,performance:snapshot.performance};
+ const url=URL.createObjectURL(new Blob([JSON.stringify(report,null,2)],{type:'application/json'})),link=document.createElement('a');
+ link.href=url;link.download='3B-diagnostic-fluidite.json';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
 export default function WorldSettingsPanel({uid,save,saveStatus,saveMessage,rewardMessage,snapshot,onPanel,onResume,onFullscreen,onCamera,onExit,onInvisible,onAccount,onSync,onExport,onImport,sound,onSound,haptics,onHaptics,soundCaptions,onSoundCaptions,difficulty,onDifficulty,quality,onQuality,sensitivity,onSensitivity,onFollow,audioMix,onAudio,onAudioPreset,controls,onControl,onControlProfile,onEditTouchLayout,companionVisible,onCompanion}){
  return <div className="hub-settings">
   <div className="hub-settings-intro"><span className="world-kicker">CITÉ DES HUIT HÉRITAGES</span><h3>À ton rythme.</h3><p>Reprends ton exploration ou ajuste ton confort de jeu.</p></div>
@@ -34,7 +39,7 @@ export default function WorldSettingsPanel({uid,save,saveStatus,saveMessage,rewa
    <div className="world-actions"><Button variant="neutral" onClick={onExport}><Download size={18}/>Télécharger ma sauvegarde</Button>{!uid&&<label className="world-import">Restaurer une copie invitée<input type="file" accept=".json,application/json" onChange={onImport}/></label>}<Button variant="neutral" onClick={onAccount}><Users size={18}/>{uid?'Mon compte 3B':'Jouer avec mon compte 3B'}</Button><Button variant="neutral" onClick={()=>onPanel('hubOpening')}><Play size={18}/>Revoir l’ouverture</Button></div>
    <div className="world-quality"><label htmlFor="world-difficulty">Défis des rencontres</label><select id="world-difficulty" value={difficulty} onChange={e=>onDifficulty(e.target.value)}><option value="adventure">Aventure</option><option value="expert">Expert</option></select><p>Ce réglage s’applique aux prochaines rencontres.</p></div>
   </details>
-  <details className="hub-settings-section"><summary>État du rendu</summary><p>{snapshot.fps||'—'} images/s · {snapshot.drawCalls||'—'} appels de rendu · résolution {snapshot.resolution||100} %. Les performances dépendent de ton appareil.</p>{snapshot.performance?.movingFrames>0&&<p>Pendant tes déplacements : {snapshot.performance.stalls} ralentissement{snapshot.performance.stalls===1?'':'s'} de 250 ms ou plus · délai maximal entre deux images : {snapshot.performance.maxGapMs} ms. Mesures locales de cette session, hors chargement et pause.</p>}</details>
+  <details className="hub-settings-section"><summary>État du rendu</summary><p>{snapshot.fps||'—'} images/s · {snapshot.drawCalls||'—'} appels de rendu · résolution {snapshot.resolution||100} %. Les performances dépendent de ton appareil.</p>{snapshot.performance?.movingFrames>0&&<p>Pendant tes déplacements : {snapshot.performance.stalls} ralentissement{snapshot.performance.stalls===1?'':'s'} de 250 ms ou plus · délai maximal entre deux images : {snapshot.performance.maxGapMs} ms. Mesures locales de cette session, hors chargement et pause.</p>}{snapshot.performance&&<><p>Le relevé reste sur ton appareil et ne contient ni identité ni sauvegarde de partie.</p><Button variant="neutral" onClick={()=>downloadPerformance(snapshot)}><Download size={16}/>Télécharger le relevé de fluidité</Button></>}</details>
   <footer><Button variant="ghost" onClick={onExit}><ArrowLeft size={18}/>Retour à l’application</Button></footer>
  </div>;
 }
