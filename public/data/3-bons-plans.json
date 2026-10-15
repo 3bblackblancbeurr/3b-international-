@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "publishedAt": "2026-10-15T15:23:00Z",
+  "publishedAt": "2026-10-15T15:30:24.389338Z",
   "deals": [
     {
       "id": "auchan-bienvenue-octobre20-202610",
@@ -43,6 +43,48 @@
       "source": "Action Logement",
       "url": "https://www.actionlogement.fr/logement",
       "verifiedAt": "2026-10-15T15:23:00Z",
+      "expiresAt": null
+    },
+    {
+      "id": "ter-aura-illico-solidaire",
+      "category": "transport",
+      "kind": "aide",
+      "title": "TER illico SOLIDAIRE : 75 % de réduction",
+      "price": "Carte gratuite · billets −75 %",
+      "benefit": "Réduction sur le tarif normal TER en Auvergne-Rhône-Alpes, pour les personnes éligibles.",
+      "conditions": "Sous conditions de ressources ou de statut : recherche d’emploi, insertion, contrat aidé notamment. Demande avec justificatifs et validation nécessaire. Carte personnelle valable un an ; billet minimum 1,20 €. Voyager avec carte valide et billet. Consulter toutes les conditions officielles.",
+      "location": "Auvergne-Rhône-Alpes · trains et autocars TER, Cars Région Express",
+      "source": "TER SNCF",
+      "url": "https://www.ter.sncf.com/auvergne-rhone-alpes/tarifs-cartes/cartes-reduction/illico-solidaire",
+      "verifiedAt": "2026-10-15T15:30:24.389338Z",
+      "expiresAt": null
+    },
+    {
+      "id": "louvre-gratuite-publics-eligibles",
+      "category": "loisirs",
+      "kind": "aide",
+      "title": "Louvre : entrée gratuite pour les publics éligibles",
+      "price": "Entrée à 0 € sous conditions",
+      "benefit": "Une sortie culturelle sans payer le billet pour les moins de 18 ans, certains jeunes de 18 à 25 ans et certains demandeurs d’emploi.",
+      "conditions": "Moins de 18 ans : toutes nationalités. De 18 à 25 ans : résidents ou ressortissants EEE. Demandeurs d’emploi : résidence EEE, attestation France Travail ou équivalent de moins de six mois et pièce d’identité. Justificatifs requis ; réservation de créneau recommandée même en gratuité, selon disponibilité. Frais de déplacement non inclus.",
+      "location": "Paris · musée du Louvre",
+      "source": "Musée du Louvre",
+      "url": "https://www.louvre.fr/visiter/horaires-tarifs",
+      "verifiedAt": "2026-10-15T15:30:24.389338Z",
+      "expiresAt": null
+    },
+    {
+      "id": "bitwarden-personnel-gratuit",
+      "category": "maison",
+      "kind": "offre",
+      "title": "Bitwarden : gérer ses mots de passe gratuitement",
+      "price": "Offre individuelle à 0 €",
+      "benefit": "Un gestionnaire de mots de passe utilisable sans souscrire à l’offre Premium payante.",
+      "conditions": "Choisir le plan individuel gratuit. Création d’un compte nécessaire. Les fonctionnalités Premium et les offres professionnelles sont distinctes et payantes. Ce service gratuit existe déjà : il ne s’agit pas d’une nouvelle promotion temporaire.",
+      "location": "France · en ligne, ordinateur et mobile",
+      "source": "Bitwarden",
+      "url": "https://bitwarden.com/pricing/",
+      "verifiedAt": "2026-10-15T15:30:24.389338Z",
       "expiresAt": null
     }
   ]

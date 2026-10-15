@@ -14,9 +14,11 @@ L’actualisation éditoriale nécessite une recherche réelle sur sources offic
 
 ## État au 15 octobre 2026
 
-Trois fiches initiales sourcées : code de bienvenue Auchan, Easybreath Decathlon et accès au logement abordable Action Logement (dispositif, pas annonce). Les autres catégories restent vides.
+Six fiches initiales sourcées : bienvenue Auchan, Easybreath Decathlon, Action Logement, TER illico SOLIDAIRE, gratuités Louvre et Bitwarden individuel gratuit. Les dispositifs et services permanents ne sont pas présentés comme de nouvelles promotions. Le quota de trois par catégorie est un maximum, pas une invitation à remplir avec des offres faibles.
 
-La création de l’automatisation quotidienne a échoué : too_many_active_automations, 15 tâches actives sur 15. Aucune veille existante n’a été modifiée. Il faut que le propriétaire choisisse une tâche à remplacer ou libère un emplacement ; ne pas présenter l’actualisation comme activée avant confirmation de l’outil.
+Après échec de création d’une nouvelle tâche (15 tâches actives sur 15), la mission quotidienne a été ajoutée au suivi existant « Finalisation complète 3B », id 6aa5d584cb7081919847a066099e1703, avec confirmation de succès le 15/10/2026. Son périmètre antérieur est conservé, sa cadence reste quotidienne (créneau habituel du matin, Europe/Paris). La nouvelle mission est explicitement autorisée à publier uniquement public/data/3-bons-plans.json, puis à vérifier le contenu réellement servi. Aucune autre veille n’a été désactivée.
+
+Interface et flux initial vérifiés en production au commit 5cfbf80f4aa55339d004f073e25cf258953facdb, avant l’enrichissement à six fiches. Build Vite réussi ; 26 tests ciblés passent après adaptation de l’ancien test de liste des routes publiques. Contrôle visuel navigateur non disponible dans cet environnement. Une première suite générale a trouvé uniquement ce test de liste obsolète (2479 tests réussis, 1 échec, 1 ignoré) ; cet échec a été corrigé et revérifié dans la suite ciblée.
 
 ## Vérifications
 
