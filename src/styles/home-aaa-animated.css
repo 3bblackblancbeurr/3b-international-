@@ -1,0 +1,261 @@
+/* 3B International — approved cinematic homepage, independently animated Broken Circle.
+   Art from the owner's approved screenshot is split into a STATIC city and a
+   TRANSPARENT rotating monument. The app's scanner, routes, and story stay real controls.
+   No second WebGL renderer runs on the home screen (Xiaomi / Samsung friendly). */
+
+html[data-luxury="v2"] body .app3b[data-page="home"] {
+  background:radial-gradient(ellipse at 50% 0%,rgb(10 30 49 / .7),transparent 64%),var(--3b-obsidian);
+}
+html[data-luxury="v2"] body .app3b[data-page="home"] .site-header {
+  background:transparent;
+  border-bottom:0;
+}
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-app-hub {
+  width:min(960px,100%);
+  max-width:960px;
+  padding-top:0;
+}
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-entry-actions {
+  margin:8px auto 10px;
+  width:min(100%,900px);
+}
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-scanner-direct {
+  position:relative;
+  display:flex;
+  align-items:center;
+  gap:18px;
+  min-height:86px;
+  padding:18px clamp(18px,4vw,34px);
+  border:1px solid rgba(var(--3b-champagne-rgb),.42);
+  border-radius:var(--3b-radius-hero);
+  color:var(--3b-text);
+  background:linear-gradient(120deg,rgb(24 42 60 / .90),rgb(9 17 28 / .88));
+  box-shadow:var(--3b-shadow-contact);
+  text-decoration:none;
+  backdrop-filter:blur(12px);
+}
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-scanner-direct > svg:first-child {
+  flex-shrink:0;
+  width:43px;
+  height:43px;
+  padding:9px;
+  border:1px solid var(--3b-champagne);
+  border-radius:var(--3b-radius-circle);
+  color:var(--3b-champagne-highlight);
+}
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-scanner-direct span {
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-scanner-direct strong {
+  font-weight:700;
+  font-size:clamp(15px,3.4vw,21px);
+  line-height:1.2;
+}
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-scanner-direct small {
+  font-size:clamp(10px,2.45vw,13px);
+  line-height:1.45;
+  color:var(--3b-text-on-art);
+}
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-scanner-direct > svg:last-child {
+  margin-left:auto;
+  width:32px;
+  height:32px;
+  flex-shrink:0;
+  color:var(--3b-champagne);
+}
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-entry {
+  isolation:isolate;
+  display:block;
+  min-height:0;
+  height:auto;
+  width:100%;
+  margin:0 0 32px;
+  padding:0;
+  gap:0;
+  border:0;
+  border-radius:var(--3b-radius-hero);
+  overflow:hidden;
+  background:linear-gradient(180deg,rgb(4 16 28 / .95),var(--3b-obsidian));
+  box-shadow:var(--3b-shadow-deep);
+}
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-entry::before,
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-entry::after {
+  display:none!important;
+  content:none!important;
+}
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-art {
+  position:relative;
+  isolation:isolate;
+  display:block;
+  width:100%;
+  aspect-ratio:864 / 810;
+  height:auto;
+  margin:0;
+  overflow:hidden;
+  background:radial-gradient(circle at 50% 40%,rgb(37 81 107 / .65),transparent 60%),rgb(4 15 25);
+  pointer-events:none;
+}
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-artwork {
+  position:absolute;
+  z-index:0;
+  inset:0;
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:fill;
+  transform:none;
+  animation:none;
+}
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-rotating-circle,
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-ring-fallback {
+  position:absolute;
+  z-index:1;
+  left:50%;
+  top:40.123%;
+  display:block;
+  width:75.232%;
+  height:auto;
+  aspect-ratio:1;
+  object-fit:contain;
+  transform:translate(-50%,-50%) rotate(0deg);
+  transform-origin:50% 50%;
+  backface-visibility:hidden;
+  will-change:transform;
+  animation:threebMenuBrokenCircleTurn 34s linear infinite;
+}
+@keyframes threebMenuBrokenCircleTurn {
+  from { transform:translate(-50%,-50%) rotate(0deg); }
+  to { transform:translate(-50%,-50%) rotate(360deg); }
+}
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-ring-fallback {
+  border-radius:var(--3b-radius-circle);
+  background:repeating-conic-gradient(
+    from 8deg,
+    var(--3b-champagne-highlight) 0deg,
+    rgb(146 148 145) 22deg,
+    rgb(92 107 118) 34deg,
+    transparent 35deg 44deg
+  );
+  -webkit-mask:radial-gradient(circle,transparent 0 53%,black 54% 78%,transparent 79%);
+  mask:radial-gradient(circle,transparent 0 53%,black 54% 78%,transparent 79%);
+  filter:drop-shadow(0 0 10px rgba(var(--3b-champagne-rgb),.32));
+}
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-art[data-visible="false"] :is(.home-aaa-rotating-circle,.home-aaa-ring-fallback),
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-art[data-covered="true"] :is(.home-aaa-rotating-circle,.home-aaa-ring-fallback),
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-art[data-motion="reduced"] :is(.home-aaa-rotating-circle,.home-aaa-ring-fallback) {
+  animation-play-state:paused;
+}
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-overlay.world-portal-copy {
+  position:relative;
+  z-index:2;
+  display:block;
+  align-self:auto;
+  width:100%;
+  max-width:none;
+  padding:12px clamp(14px,7vw,64px) 32px;
+  margin:0;
+  background:linear-gradient(180deg,rgb(3 13 23 / .05),rgb(3 10 18 / .82) 20%,rgb(3 9 16 / .95));
+  text-shadow:none;
+}
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-accessible {
+  position:absolute!important;
+  width:1px!important;
+  height:1px!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:hidden!important;
+  clip-path:inset(50%)!important;
+  white-space:nowrap!important;
+}
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-actions.world-portal-actions {
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  width:min(100%,600px);
+  margin:0 auto;
+  gap:12px;
+}
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-actions .surface-button.gm-button {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:16px;
+  min-height:64px;
+  width:100%;
+  padding:13px 20px;
+  font-size:clamp(16px,3vw,22px);
+  font-weight:750;
+  color:var(--3b-gold-ink);
+  text-decoration:none;
+  border:1px solid var(--3b-champagne-highlight);
+  border-radius:var(--3b-radius-pill);
+  background:var(--3b-gold-metal);
+  box-shadow:var(--3b-shadow-city-entry);
+}
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-actions .gm-button--ghost {
+  display:flex;
+  justify-content:center;
+  gap:12px;
+  min-height:55px;
+  width:100%;
+  font-weight:580;
+  font-size:clamp(13px,2.5vw,16px);
+  border:1px solid rgba(var(--3b-champagne-rgb),.23);
+  border-radius:var(--3b-radius-pill);
+  color:var(--3b-text);
+  background:rgb(4 12 21 / .76);
+}
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-actions :is(a,button):focus-visible {
+  outline:2px solid var(--3b-matrix);
+  outline-offset:4px;
+}
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-actions .home-aaa-native {
+  min-height:46px;
+  font-size:12px;
+}
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-ui-message {
+  padding-top:12px;
+  font-size:12px;
+  color:var(--3b-champagne-highlight);
+}
+@media (max-width:720px) {
+  html[data-luxury="v2"] body .app3b[data-page="home"] .home-app-hub {
+    width:100%;
+    padding-top:0;
+  }
+  html[data-luxury="v2"] body .app3b[data-page="home"] .home-entry-actions {
+    margin:4px 0 8px;
+  }
+  html[data-luxury="v2"] body .app3b[data-page="home"] .home-scanner-direct {
+    min-height:72px;
+    padding:12px 14px;
+    gap:12px;
+    border-radius:var(--3b-radius-card);
+  }
+  html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-entry {
+    min-height:0;
+    margin-bottom:24px;
+    border-radius:var(--3b-radius-card);
+  }
+  html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-overlay.world-portal-copy {
+    padding:12px 12px 22px;
+  }
+  html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-actions .surface-button.gm-button {
+    min-height:58px;
+    font-size:17px;
+  }
+  html[data-luxury="v2"] body .app3b[data-page="home"] .mobile-navigation {
+    border:1px solid rgba(var(--3b-champagne-rgb),.20);
+    border-radius:var(--3b-radius-hero) var(--3b-radius-hero) 0 0;
+    background:rgb(3 10 19 / .94);
+    backdrop-filter:blur(14px);
+  }
+}
+@media (prefers-reduced-motion:reduce) {
+  html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-rotating-circle,
+  html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-ring-fallback { animation:none; }
+}
