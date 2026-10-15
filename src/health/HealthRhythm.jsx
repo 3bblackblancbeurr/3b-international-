@@ -60,3 +60,4 @@ export default function HealthRhythm({ data, date, onSetTarget, onOpenSteps, onO
       <p className="h-rhythm-foot">Total du téléphone prioritaire, sinon saisie manuelle, sinon estimation clairement signalée. Un jour vide n’entre pas dans la moyenne. Le repère est conservé uniquement avec ton journal local.</p>
     </div>
   </section>;
+}
