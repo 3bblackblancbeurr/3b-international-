@@ -56,7 +56,7 @@ function cleanProperties(properties) {
 
 export function capture3BEvent(event, properties = {}) {
   const normalizedEvent = String(event || "").trim();
-  if (typeof window === "undefined" || !projectToken || privacySignalEnabled() || !ALLOWED_EVENTS.has(normalizedEvent)) return false;
+  if (typeof window === "undefined" || window.location.hash === "#sante" || properties.page === "health" || !projectToken || privacySignalEnabled() || !ALLOWED_EVENTS.has(normalizedEvent)) return false;
 
   const payload = {
     api_key: projectToken,

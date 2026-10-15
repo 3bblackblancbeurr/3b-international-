@@ -26,6 +26,7 @@ function platform() {
 
 export function useTraffic(page) {
   useEffect(() => {
+    if (page === 'health') return;
     const id = sessionId();
     const install = installId();
     let disposed = false;

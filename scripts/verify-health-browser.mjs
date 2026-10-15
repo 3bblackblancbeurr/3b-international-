@@ -1,0 +1,45 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import { createRequire } from 'node:module';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+const require = createRequire(import.meta.url);
+const { chromium } = require('playwright');
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const output = process.env.HEALTH_QA_DIR || '/tmp/3b-health-qa';
+await fs.mkdir(output, { recursive: true });
+import { createServer } from 'vite';
+const server=await createServer({root,server:{host:'127.0.0.1',port:5188}});await server.listen();
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH || undefined,args:['--no-sandbox']});
+const context=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true,timezoneId:'Europe/Paris',locale:'fr-FR'});
+const page=await context.newPage();page.setDefaultTimeout(12000);const errors=[],requests=[],checks=[];
+page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(r.method()==='POST')requests.push({url:r.url(),body:r.postData()});});
+const nav=()=>page.getByRole('navigation',{name:'Les espaces Santé 3B'});
+const closeSheet=()=>page.getByRole('button',{name:'Fermer la fiche',exact:true}).click();
+const noOverflow=async()=>assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+try{
+await page.goto('http://127.0.0.1:5188/#sante');await page.getByRole('heading',{name:'Santé.',exact:true}).waitFor();await noOverflow();
+assert.equal(await page.evaluate(()=>localStorage.getItem('threeb_health_local_v1')),null);checks.push('Public route without Passport; local journal off by default');
+await page.getByRole('button',{name:'Ajouter : Verres d’eau',exact:true}).click();
+await page.getByRole('button',{name:'Ajouter : Fruits & légumes',exact:true}).click();
+assert.equal(await page.evaluate(()=>localStorage.getItem('threeb_health_local_v1')),null);
+await page.getByRole('button',{name:'Mon journal et mes données'}).click();await page.getByRole('button',{name:'J’accepte de sauvegarder sur cet appareil'}).click();await closeSheet();
+assert.ok(await page.evaluate(()=>localStorage.getItem('threeb_health_local_v1')));await page.reload();await page.getByRole('heading',{name:'Santé.',exact:true}).waitFor();
+assert.equal(await page.locator('output[aria-label="Verres d’eau"]').innerText(),'1');checks.push('Opt-in journal persists across reload');
+await page.getByRole('button',{name:'Compléter',exact:true}).click();await page.getByLabel('Pas du jour · total manuel').fill('4321');await page.getByLabel('Minutes d’activité').fill('25');await page.getByLabel('Heures de sommeil estimées').fill('7.5');await closeSheet();
+await page.screenshot({path:output+'/health-mobile.png',fullPage:true});
+assert.match(await page.locator('.h-metrics').innerText(),/4.?321/);checks.push('Daily measurements editable with real persistence');
+await nav().getByRole('button',{name:'Manger',exact:true}).click();await page.getByRole('searchbox').fill('carotte');assert.ok(await page.locator('.h-food-item').count()>0);await page.locator('.h-food-item').filter({has:page.getByRole('heading',{name:'Carotte',exact:true})}).click();await page.getByRole('dialog').getByRole('heading',{name:'Carotte',exact:true}).waitFor();await page.getByRole('button',{name:'Garder en favori'}).click();await page.getByRole('button',{name:'Fermer la fiche'}).press('Escape');assert.equal(await page.locator('dialog[open]').count(),0);checks.push('Search, food details, favorites and Escape');
+await page.getByRole('button',{name:'Repas',exact:true}).click();await page.getByRole('button',{name:'Végétariens',exact:true}).click();assert.ok(await page.locator('.h-recipe-list>button').count()>0);
+await page.locator('.h-recipe-list>button').first().click();await page.getByLabel('Personnes',{exact:true}).selectOption('4');await page.getByRole('button',{name:'Prévoir ce repas',exact:true}).click();await closeSheet();await page.getByRole('button',{name:'Ma semaine',exact:true}).click();assert.ok(await page.locator('.h-shopping-item').count()>0);await page.locator('.h-shopping-item input').first().check();
+const dlPromise=page.waitForEvent('download');await page.getByRole('button',{name:'Télécharger la liste'}).click();const download=await dlPromise;assert.equal(download.suggestedFilename(),'3B-liste-de-courses.txt');checks.push('Vegetarian recipe scaling, meal planner, shopping aggregation and download');
+await nav().getByRole('button',{name:'Bouger',exact:true}).click();await page.getByRole('button',{name:'Démarrer une session'}).click();await page.getByText(/Aucune donnée de mouvement reçue|Accès aux mouvements refusé|Capteur indisponible ici/).waitFor({timeout:10000});assert.match(await page.locator('.h-step-number').innerText(),/≈ 0/);checks.push('No fabricated steps; unsupported sensor fallback');
+await nav().getByRole('button',{name:'Récupérer',exact:true}).click();await page.getByRole('button',{name:'Commencer',exact:true}).click();await page.getByRole('button',{name:'Pause',exact:true}).click();await page.getByLabel('Début du repos').fill('2026-10-14T23:00');await page.getByLabel('Fin du repos').fill('2026-10-15T07:00');await page.getByRole('button',{name:'Reporter cette durée'}).click();await page.waitForFunction(()=>document.querySelector('.h-sleep-tool input[type=number]')?.value==='8');checks.push('Breathing controls and sleep crossing midnight');
+await nav().getByRole('button',{name:'Corps',exact:true}).click();await page.locator('.h-guides>button').first().click();assert.ok(await page.getByText('À savoir pour toi',{exact:true}).isVisible());await closeSheet();checks.push('Body-care guide and cautions');
+for(const width of [360,390,768,1440]){await page.setViewportSize({width,height:900});for(const label of ['Aujourd’hui','Manger','Bouger','Récupérer','Corps']){await nav().getByRole('button',{name:label,exact:true}).click();await noOverflow();}checks.push(`All 5 tabs fit ${width}px`);}
+await nav().getByRole('button',{name:'Aujourd’hui',exact:true}).click();await page.screenshot({path:output+'/health-desktop.png',fullPage:true});
+await page.getByRole('button',{name:'Mon journal et mes données'}).click();await page.getByRole('button',{name:'Effacer mon journal et désactiver la sauvegarde'}).click();await page.getByRole('button',{name:'Oui, effacer',exact:true}).click();await closeSheet();assert.equal(await page.evaluate(()=>localStorage.getItem('threeb_health_local_v1')),null);checks.push('Confirmed journal deletion and opt-out');
+assert.equal(requests.filter(r=>/posthog|app_presence_ping|app_install_ping/.test(r.url)).length,0);checks.push('No page analytics or presence telemetry in health route');
+assert.deepEqual(errors,[]);
+await fs.writeFile(output+'/health-ui-results.json',JSON.stringify({checks,errors},null,2));console.log(JSON.stringify({passed:checks.length,checks,errors},null,2));
+}catch(error){console.error('CHECKS COMPLETED',JSON.stringify(checks));console.error(await page.locator('body').innerText());await page.screenshot({path:output+'/health-ui-failure.png',fullPage:true});throw error;}finally{await browser.close();await server.close();}
