@@ -47,3 +47,32 @@ test('Passport JSON input rejects arrays, null, invalid JSON and unexpected cont
  await assert.rejects(readPassportBody(source.request),error=>error.status===415);
  assert.equal(source.reads(),0);
 });
+
+test('overflow returns 413 even when underlying cancellation rejects or never settles',{timeout:1000},async()=>{
+ for(const cancel of [()=>Promise.reject(Error('cancel failed')),()=>new Promise(()=>{})]){
+  const body=new ReadableStream({start(controller){controller.enqueue(encoder.encode('12345678'));},cancel});
+  await assert.rejects(readPassportText({body},7),error=>error.status===413);
+  assert.equal(body.locked,false);
+ }
+});
+
+test('a stalled or partial body times out without accepting truncated input',{timeout:1000},async()=>{
+ for(const partial of ['', '{"action":']){
+  let cancelled=false;
+  const body=new ReadableStream({start(controller){if(partial)controller.enqueue(encoder.encode(partial));},cancel(){cancelled=true;return new Promise(()=>{});}});
+  await assert.rejects(readPassportText({body},8192,{timeoutMs:15}),error=>error.status===408);
+  assert.equal(cancelled,true);assert.equal(body.locked,false);
+ }
+});
+
+test('request abort before or during a pending read releases the reader',{timeout:1000},async()=>{
+ for(const alreadyAborted of [true,false]){
+  const controller=new AbortController();let cancelled=false;
+  const body=new ReadableStream({cancel(){cancelled=true;}});
+  if(alreadyAborted)controller.abort();
+  const result=readPassportText({body,signal:controller.signal},8192,{timeoutMs:500});
+  if(!alreadyAborted)controller.abort();
+  await assert.rejects(result,error=>error.status===400);
+  assert.equal(cancelled,true);assert.equal(body.locked,false);
+ }
+});

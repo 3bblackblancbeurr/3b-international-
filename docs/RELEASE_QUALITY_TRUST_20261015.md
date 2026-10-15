@@ -20,7 +20,7 @@ Base : `5acc27c74dbba1419ccad4890719e51b6c6ac826` (PR #534). Cette livraison am�
 - Lecture bornée des demandes et rejet d'UTF-8 invalide ; authentification avant chargement des clés pour les opérations protégées de reconnaissance.
 - Démarrage et résultats de vérification d'identité atomiques, verrouillés sur le profil. Refus des événements obsolètes, doublons, mauvaises références, absence de consentement et états révoqués.
 - Migration réelle `20261015120046_passport_identity_attempt_transactions_v1` appliquée. Texte relu dans l'historique et identique au dépôt ; trois RPC exécutables uniquement par le rôle serveur.
-- Edge `passport-idv` v3 et `passport-recognition` v2 actives. Les cinq fichiers de chaque fonction ont été relus après déploiement et correspondent aux sources.
+- Edge `passport-idv` v4 et `passport-recognition` v3 actives. Les cinq fichiers de chaque fonction ont été relus après déploiement et correspondent aux sources.
 - Sept contrôles HTTP réels passent : authentification manquante, origine refusée, tailles excessives et métadonnées publiques précisant `official_recognition: false`.
 - Aucune activation fournisseur, aucun contrat et aucune certification ne sont créés par cette livraison.
 
@@ -28,7 +28,7 @@ Base : `5acc27c74dbba1419ccad4890719e51b6c6ac826` (PR #534). Cette livraison am�
 
 | Contrôle | Résultat |
 |---|---|
-| Suite complète Node | 2 472 tests : 2 471 réussis, 0 échec, 1 ignoré |
+| Suite complète Node avant seconde revue | 2 472 tests : 2 471 réussis, 0 échec, 1 ignoré |
 | Compilation production | Réussie ; avertissement existant de taille de certains bundles |
 | Navigation navigateur, 320/390/844/1440 px | 130 contrôles réussis, aucune erreur de rendu non gérée |
 | Accueil, récit et arrêt du rendu | 18 contrôles réussis, aucune erreur JavaScript |
@@ -39,6 +39,12 @@ Base : `5acc27c74dbba1419ccad4890719e51b6c6ac826` (PR #534). Cette livraison am�
 | Préparation Passeport | Fondations statiques valides ; activation externe non prête |
 
 La navigation locale utilise un compte synthétique et des services simulés. Le worker a été exécuté dans Chromium, y compris son bundle compilé ; ces mesures ne sont pas des performances sur téléphone réel. Les scénarios SQL PGlite ne constituent pas une épreuve de concurrence PostgreSQL multi-connexions ni une recette IDnow authentifiée.
+
+## Seconde revue avant publication
+
+Une revue contradictoire avec Claude, autorisée par le propriétaire, a examiné des extraits techniques sans secret ni donnée de membre. Deux échanges ont conduit à renforcer le lecteur HTTP : échéance globale de dix secondes, interruption du client, annulation du flux sans attente et maintien du code 413 même si l’annulation échoue. La file PNJ isole désormais les erreurs des notifications, et sa destruction fonctionne aussi lorsque la méthode est détachée.
+
+Les cinq nouveaux tests couvrent les erreurs de notifications, la suppression suivie immédiatement d’un nouveau trajet, les annulations de flux défaillantes, les corps partiels bloqués et l’interruption avant/pendant lecture. Les 31 tests ciblés associés et les 17 tests identité/transactions passent ; la compilation finale réussit. Claude n’a relevé aucun bloqueur démontrable sur les extraits corrigés. Ce verdict est limité : il n’est ni un audit complet ni une validation de performance sur téléphone.
 
 ## Conditions restant à remplir
 

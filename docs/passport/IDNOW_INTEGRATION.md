@@ -73,11 +73,13 @@ Le RPC de résultat négatif accepte seulement des couples état/code d'erreur p
 
 Les webhooks sont limités à **30 000 octets pendant leur lecture**, avant la vérification cryptographique, sans chargement préalable d'un corps de taille arbitraire. Les demandes JSON du membre sont limitées à 8 192 octets et aux champs attendus. Un encodage UTF-8 invalide est refusé.
 
+La lecture a également une échéance globale de dix secondes (réponse 408) et réagit à l’interruption du client. L’annulation du flux ne retarde jamais le refus, même si sa promesse échoue ou reste en attente ; un dépassement conserve son code 413. Un flux partiel interrompu n’est jamais accepté comme texte complet.
+
 ## Ordre de livraison du correctif du 15 octobre 2026
 
 La migration `20261015120046_passport_identity_attempt_transactions_v1.sql` est **appliquée le 15 octobre 2026** sur le projet 3B. Son texte a été relu depuis l'historique réel et comparé au fichier versionné. Les droits serveur des trois fonctions ont été vérifiés. Elle ne modifie pas les preuves ni les profils existants et n'active aucun fournisseur.
 
-`passport-idv` version 3 et `passport-recognition` version 2 ont ensuite été déployées. Les cinq fichiers de chaque fonction correspondent aux sources du dépôt. Les contrôles HTTP sans compte confirment les refus d'authentification, d'origine et de taille excessive. Cela ne remplace pas le parcours fournisseur authentifié ci-dessous ; aucune clé fournisseur ni porte d'activation n'a été changée.
+`passport-idv` version 4 et `passport-recognition` version 3 ont ensuite été déployées. Les cinq fichiers de chaque fonction correspondent aux sources du dépôt. Les contrôles HTTP sans compte confirment les refus d'authentification, d'origine et de taille excessive. Cela ne remplace pas le parcours fournisseur authentifié ci-dessous ; aucune clé fournisseur ni porte d'activation n'a été changée.
 
 1. Pour tout nouvel environnement de recette, appliquer cette migration et vérifier les privilèges des trois fonctions.
 2. Déployer ensuite la version correspondante de `passport-idv` dans cet environnement. Ne pas déployer cette Edge Function avant ses RPC : les démarrages et résultats négatifs seraient refusés.

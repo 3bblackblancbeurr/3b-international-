@@ -2,17 +2,27 @@ export class PassportFailure extends Error {
   constructor(status,message){super(message);this.status=status;}
 }
 
-export async function readPassportText(req,limit=24576) {
+export async function readPassportText(req,limit=24576,{timeoutMs=10000}={}) {
   const reader=req.body?.getReader(),decoder=new TextDecoder('utf-8',{fatal:true});
-  let text='',bytes=0;
-  if(reader) try {
-    while(true){const chunk=await reader.read();if(chunk.done)break;bytes+=chunk.value.byteLength;if(bytes>limit){await reader.cancel();throw new PassportFailure(413,'Demande trop volumineuse.');}text+=decoder.decode(chunk.value,{stream:true});}
+  if(!reader)return '';
+  let text='',bytes=0,timer,interrupted=null,rejectInterruption;
+  const cancel=()=>{try{void reader.cancel().catch(()=>{});}catch{}};
+  const interruption=new Promise((_,reject)=>{rejectInterruption=reject;});
+  const stop=problem=>{if(interrupted)return;interrupted=problem;rejectInterruption(problem);cancel();};
+  const aborted=()=>stop(new PassportFailure(400,'Demande interrompue.'));
+  const deadline=Number.isFinite(timeoutMs)&&timeoutMs>0?timeoutMs:10000;
+  try {
+    timer=setTimeout(()=>stop(new PassportFailure(408,'Délai de lecture dépassé.')),deadline);
+    req.signal?.addEventListener('abort',aborted,{once:true});
+    if(req.signal?.aborted)aborted();
+    while(true){const chunk=await Promise.race([reader.read(),interruption]);if(interrupted)throw interrupted;if(chunk.done)break;bytes+=chunk.value.byteLength;if(bytes>limit)throw new PassportFailure(413,'Demande trop volumineuse.');text+=decoder.decode(chunk.value,{stream:true});}
     text+=decoder.decode();
   } catch(error) {
+    cancel();
+    if(interrupted)throw interrupted;
     if(error instanceof PassportFailure)throw error;
-    await reader.cancel().catch(()=>{});
     throw new PassportFailure(400,'Demande invalide.');
-  } finally {reader.releaseLock();}
+  } finally {clearTimeout(timer);req.signal?.removeEventListener('abort',aborted);reader.releaseLock();}
   return text;
 }
 

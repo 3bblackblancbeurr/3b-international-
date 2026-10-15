@@ -4,12 +4,18 @@ import {createRoutePlanner} from '../route-planner.js';
 // A dedicated, serial worker keeps player navigation independent and bounds
 // worker count. Waiting residents stand still until their collision-safe route
 // is ready; obsolete schedules and destroyed scenes can never install a path.
-export function createNpcRouteScheduler({planner=createRoutePlanner(),onUpdate=()=>{},timeoutMs=10000}={}){
+export function createNpcRouteScheduler({planner=createRoutePlanner(),onUpdate=()=>{},onError=()=>{},timeoutMs=10000}={}){
  const queued=new Map(),latest=new Map();let active=null,disposed=false;
  const timeout=Number.isFinite(timeoutMs)&&timeoutMs>0?timeoutMs:10000;
+ const report=problem=>{try{onError(problem);}catch{}};
+ const notify=()=>{try{onUpdate();}catch(problem){report(problem);}};
  const finish=job=>{
   if(latest.get(job.actor)!==job)return;
-  latest.delete(job.actor);job.actor.routePending=false;onUpdate();
+  latest.delete(job.actor);job.actor.routePending=false;notify();
+ };
+ const clear=()=>{
+  queued.clear();for(const actor of latest.keys())actor.routePending=false;
+  latest.clear();planner.cancel();notify();
  };
  async function pump(){
   if(active||disposed)return;
@@ -25,9 +31,10 @@ export function createNpcRouteScheduler({planner=createRoutePlanner(),onUpdate=(
    if(!disposed&&latest.get(job.actor)===job&&job.valid()){
     job.actor.walkTarget=points[0]||null;job.actor.walkRoute=points.slice(1);
    }
-  }catch{
+  }catch(problem){
    // Ambient route failure must not freeze the frame with a synchronous retry.
    // The resident retains the normal collision-constrained routine fallback.
+   if(problem?.name!=='AbortError')report(problem);
   }finally{clearTimeout(timer);finish(job);active=null;void pump();}
  }
  return{
@@ -38,11 +45,8 @@ export function createNpcRouteScheduler({planner=createRoutePlanner(),onUpdate=(
    if(active?.actor===actor)planner.cancel();
    void pump();return true;
   },
-  clear(){
-   queued.clear();for(const actor of latest.keys())actor.routePending=false;
-   latest.clear();planner.cancel();onUpdate();
-  },
-  dispose(){if(disposed)return;disposed=true;this.clear();planner.dispose();},
+  clear,
+  dispose(){if(disposed)return;disposed=true;try{clear();}finally{planner.dispose();}},
   get pending(){return latest.size;},
  };
 }

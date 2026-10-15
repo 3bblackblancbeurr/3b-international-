@@ -85,6 +85,31 @@ test('blocked workers release every resident without attempting a main-thread se
  assert.ok(actors.every(actor=>!actor.routePending&&actor.walkTarget===null));scheduler.dispose();
 });
 
+test('throwing UI and error observers cannot strand later residents or prevent detached disposal',async()=>{
+ let notifications=0,errors=0;
+ const {scheduler,planner,workers,reply}=harness({onUpdate(){notifications++;throw Error('UI callback failed');},onError(){errors++;throw Error('observer failed');}});
+ const actors=[0,1].map(x=>({position:{x,z:0}}));
+ for(const actor of actors)scheduler.schedule(actor,{request:request(actor,{x:20,z:0})});
+ reply([{x:20,z:0}]);await flush();
+ assert.equal(workers[0].messages.length,2);
+ reply([{x:20,z:0}]);await flush();
+ assert.equal(scheduler.pending,0);assert.ok(actors.every(actor=>!actor.routePending&&actor.walkTarget.x===20));
+ const {dispose}=scheduler;dispose();dispose();
+ assert.equal(planner.status().disposed,true);assert.equal(workers[0].terminated,true);
+ assert.equal(notifications,3);assert.equal(errors,3);
+});
+
+test('clear and immediate reschedule preserve the new request before cancellation settles',async()=>{
+ const {scheduler,workers,reply}=harness(),actor={position:{x:0,z:0}};
+ scheduler.schedule(actor,{request:request(actor,{x:10,z:0})});
+ const old=workers[0],packet=old.messages[0];scheduler.clear();
+ scheduler.schedule(actor,{request:request(actor,{x:-10,z:0})});
+ old.onmessage({data:{id:packet.id,path:[{x:999,z:0}]}});
+ await flush();assert.equal(actor.routePending,true);assert.equal(workers.length,2);
+ reply([{x:-10,z:0}]);await flush();
+ assert.deepEqual(actor.walkTarget,{x:-10,z:0});assert.equal(scheduler.pending,0);scheduler.dispose();
+});
+
 test('worker route transfer retains the authored collision path around a wall',async()=>{
  const {scheduler,workers,reply}=harness(),actor={position:{x:-8,z:0}},destination={x:8,z:0},obstacles=[{x:0,z:0,width:3,depth:10}];
  scheduler.schedule(actor,{request:request(actor,destination,obstacles)});
