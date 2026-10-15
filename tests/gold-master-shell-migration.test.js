@@ -21,7 +21,7 @@ test("home actions use the shared Gold Master Button", () => {
 });
 
 test("World portal actions use the shared Gold Master Button", () => {
-  assert.ok(world.includes("import {Button}"));
+  assert.match(world, /import\s*\{\s*Button\s*\}\s*from\s*['"]\.\.\/design-system\/index\.jsx['"]/);
   assert.ok(world.includes("as={RouteLink}"));
   assert.ok(world.includes('className="surface-button"'));
   assert.equal(world.includes("<button"), false);

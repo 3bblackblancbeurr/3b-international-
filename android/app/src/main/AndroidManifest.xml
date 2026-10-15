@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- The rest of 3B keeps API 24 compatibility. Health SDK access is isolated
+         inside ThreeBHealthPlugin.Api28 and never loaded below Android 9. -->
+    <uses-sdk tools:overrideLibrary="androidx.health.connect.client" />
+    <uses-permission android:name="android.permission.health.READ_STEPS" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <queries>
+        <package android:name="com.google.android.apps.healthdata" />
+    </queries>
 
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Requested by the WebView only after an explicit camera/GPS action. -->
@@ -28,6 +39,47 @@
         android:theme="@style/AppTheme">
 
         <meta-data android:name="com.google.ar.core" android:value="optional" />
+        <!-- The SDK's optional pre-Android14 broker must also stay disabled below
+             API28 so Android24/25 cannot instantiate its API26 classes. -->
+        <service android:name="androidx.health.platform.client.impl.sdkservice.HealthDataSdkService"
+            android:enabled="@bool/health_connect_enabled" tools:replace="android:enabled" />
+        <activity android:name=".health.HealthPrivacyActivity" android:exported="true"
+            android:theme="@style/AppTheme.NoActionBar">
+            <intent-filter>
+                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+            </intent-filter>
+        </activity>
+        <activity-alias android:name=".health.HealthPermissionUsageActivity"
+            android:exported="true" android:targetActivity=".health.HealthPrivacyActivity"
+            android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
+                <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".health.HealthOnboardingActivity"
+            android:exported="true" android:targetActivity=".health.HealthPrivacyActivity"
+            android:permission="com.google.android.apps.healthdata.permission.START_ONBOARDING">
+            <intent-filter>
+                <action android:name="androidx.health.ACTION_SHOW_ONBOARDING" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".health.HealthPlatformOnboardingActivity"
+            android:exported="true" android:targetActivity=".health.HealthPrivacyActivity"
+            android:permission="android.permission.health.START_ONBOARDING">
+            <intent-filter>
+                <action android:name="android.health.connect.action.SHOW_ONBOARDING" />
+            </intent-filter>
+        </activity-alias>
+        <receiver android:name=".health.HealthReminderReceiver" android:exported="false" />
+        <receiver android:name=".health.HealthReminderRestoreReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+        </receiver>
         <activity android:name=".ar.HiddenARActivity" android:configChanges="orientation|screenSize|keyboardHidden" android:exported="false" android:theme="@style/AppTheme.NoActionBar" />
 
         <activity

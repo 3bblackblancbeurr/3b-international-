@@ -69,18 +69,39 @@ test("worker lifecycle checks the server and a confirmed current build clears ev
 });
 
 
-test("home portal renders an architectural atmospheric scene and the real 3D Broken Circle", async () => {
-  const [portal, circle3d, homeCss] = await Promise.all([
+test("home portal renders the approved scene with a separate animated Broken Circle", async () => {
+  const [portal, artwork, artworkCss] = await Promise.all([
     readFile(new URL("src/components/WorldPortalCard.jsx", root), "utf8"),
-    readFile(new URL("src/components/BrokenCircle3D.jsx", root), "utf8"),
-    readFile(new URL("src/styles/home-app.css", root), "utf8"),
+    readFile(new URL("src/components/HomeCinematicArtwork.jsx", root), "utf8"),
+    readFile(new URL("src/styles/home-aaa-animated.css", root), "utf8"),
   ]);
 
   assert.doesNotMatch(portal,/hub-cite-origine\.webp/,"the rejected photo plate must not return");
-  assert.match(portal,/home-world-atmosphere/);
-  assert.match(portal,/<BrokenCircle3D variant="menu"\/>/);
-  assert.match(portal, /BrokenCircle3D/);
-  assert.doesNotMatch(portal, /home-world-ring-svg|home-world-ring-rotor|home-world-ring-fragments/);
+  assert.match(portal, /<HomeCinematicArtwork\s*\/>/);
+  assert.doesNotMatch(portal, /<BrokenCircle3D|home-world-ring-svg|home-world-ring-rotor|home-world-ring-fragments/);
+  const scene = artwork.match(/MENU_SCENE_URL\s*=\s*['"]([^'"]+)['"]/);
+  const ring = artwork.match(/MENU_RING_URL\s*=\s*['"]([^'"]+)['"]/);
+  assert.ok(scene && ring, "both independent visual sources must exist");
+  assert.notEqual(scene[1], ring[1], "only the ring layer may rotate");
+  assert.match(artwork, /className="home-aaa-artwork"[\s\S]*?src=\{sceneFailed \? OFFLINE_SCENE : MENU_SCENE_URL\}/);
+  assert.match(artwork, /className="home-aaa-rotating-circle"[\s\S]*?src=\{MENU_RING_URL\}/);
+  assert.match(artwork, /home-aaa-ring-fallback/);
+  assert.match(artworkCss, /\.home-aaa-artwork\s*\{[^}]*animation:none/s);
+  assert.match(artworkCss, /@keyframes threebMenuBrokenCircleTurn/);
+  assert.match(artworkCss, /rotate\(360deg\)/);
+  assert.match(artwork, /IntersectionObserver/);
+  assert.match(artwork, /visibilitychange/);
+  assert.match(artwork, /const motionAllowed\s*=\s*!policy\.reduced\s*;/);
+  for (const condition of ['data-visible="false"', 'data-covered="true"', 'data-motion="reduced"']) {
+    assert.ok(artworkCss.includes(condition), `missing animation pause condition: ${condition}`);
+  }
+});
+
+test("standalone WebGL Broken Circle retains its geometry, rendering and fallback safeguards", async () => {
+  const [circle3d, homeCss] = await Promise.all([
+    readFile(new URL("src/components/BrokenCircle3D.jsx", root), "utf8"),
+    readFile(new URL("src/styles/home-app.css", root), "utf8"),
+  ]);
 
   assert.match(circle3d, /await import\('three'\)/);
   assert.match(circle3d, /limestone-color\.webp/);
