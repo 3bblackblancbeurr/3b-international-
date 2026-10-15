@@ -1,6 +1,7 @@
 import { LuxuryBoot, useLuxuryRuntime } from "./design-system/LuxuryExperience.jsx";
 import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 
+const DealsPage = lazy(() => import("./deals/DealsPage.jsx"));
 const ShopPage = lazy(() => import("./shop/ShopPage.jsx"));
 const AiPage = lazy(() => import("./ai/AiPage.jsx"));
 const PremierSecretPage = lazy(() => import("./secret/PremierSecretPage.jsx"));
@@ -51,6 +52,7 @@ const ArenaExperience=lazy(()=>import('./arena/ArenaPage.jsx'));
 const NosblocPage=lazy(()=>import('./nosbloc/NosblocPremiumPage.jsx'));
 
 const BASE_MENU_ITEMS = [
+  { id: "deals", label: "3 bons plans", description: "Des offres datées et sourcées pour le quotidien." },
   { id: "guide", label: "Guide & XP", description: "Les repères pour commencer." },
   {
     id: "passport",
@@ -373,7 +375,7 @@ export default function App() {
     );
   }
 
-  const passportAllowed = new Set(["home", "passport", "member", "religion", "control", "shop", "guide", "invisible"]);
+  const passportAllowed = new Set(["home", "passport", "member", "religion", "control", "shop", "guide", "invisible", "deals"]);
   const needsPassport = !loyalty.loading && !hasPassport && !passportAllowed.has(page);
 
   if (needsPassport) {
@@ -439,6 +441,7 @@ export default function App() {
       )}
 
       {page === "sport" && <SportPage goTo={goTo} />}
+      {page === "deals" && <DealsPage />}
       {page === "control" && <ControlCenterPage goTo={goTo} />}
       {["ia", "ia-textile", "ia-trio"].includes(page) && <ComingSoon goTo={goTo} eyebrow="CRÉATION · 3B" title="Espace textile & IA" description="L’atelier textile, la maroquinerie et les outils IA 3B sont en cours de finition pour une expérience mobile plus lisible et plus fiable." />}
       {page === "shop" && <ShopPage key={route.search} goTo={goTo} reducedMotion={options.reducedMotion || !options.animations} />}
