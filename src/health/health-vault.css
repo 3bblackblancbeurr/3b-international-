@@ -1,0 +1,24 @@
+/* 3B PRIVACY — responsive, sans téléchargement de police ni télémétrie */
+.h-vault{position:relative;overflow:hidden;border:1px solid #d5bf9155;border-radius:22px;padding:clamp(20px,4vw,30px);background:radial-gradient(ellipse at 95% 2%,#4b6e5840,transparent 58%),linear-gradient(140deg,#122722,#0a1517 72%);box-shadow:0 22px 55px #020b0b35;color:#f4f1e9}
+.h-vault:before{content:"";position:absolute;inset:0 0 auto;height:2px;background:linear-gradient(90deg,transparent,#e3cd92,#99b9a1,transparent);pointer-events:none}
+.h-vault-title{display:flex;align-items:center;gap:16px;margin-bottom:14px}
+.h-vault-emblem{display:grid;place-items:center;flex:0 0 58px;height:58px;border-radius:17px;color:#f0d7a4;background:linear-gradient(145deg,#213c33,#14221e);border:1px solid #d5bf914b;box-shadow:inset 0 1px 0 #ffffff20,0 12px 20px #0003}
+.h-vault-title small{font-size:10px!important;letter-spacing:.2em;color:#dfc89a}
+.h-vault-title h3{margin:2px 0 0;font-weight:550;font-size:clamp(21px,3vw,28px)}
+.h-vault p{font-size:14px;line-height:1.65;color:#b7cdc0}
+.h-vault-warning,.h-vault-success{display:flex;align-items:flex-start;gap:9px;border-radius:12px;padding:12px 14px}
+.h-vault-warning{background:#6a3f133b;color:#f3cf9f!important;border:1px solid #c69c4c55}
+.h-vault-success{background:#245d493c;color:#c5e8ce!important;border:1px solid #8fbd9d55}
+.h-vault-warning svg,.h-vault-success svg{flex-shrink:0;margin-top:3px}
+.h-vault-form{display:grid;gap:15px;max-width:540px;margin:20px 0}
+.h-vault-form .h-field{display:grid;gap:7px;font-size:13px;color:#e2d9bf}
+.h-vault .h-field input{width:100%;min-height:48px;padding:12px 14px;border-radius:12px;background:#071310;color:#f4f1e9;border:1px solid #c4d8cc55;font:inherit}
+.h-vault .h-field input:focus-visible{outline:2px solid #e0cb96;outline-offset:2px}
+.h-vault-form .h-primary{justify-self:start;display:inline-flex;align-items:center;gap:9px;min-height:46px;padding:11px 20px}
+.h-vault-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:18px 0 5px}
+.h-vault-actions button{display:inline-flex;align-items:center;gap:8px;min-height:44px}
+.h-vault-error{color:#ffb9b9!important;font-weight:600}
+.h-vault-caution{font-size:12px!important;color:#a8bdb2!important}
+.h-vault-forget{border-top:1px solid #d5bf9133;margin-top:22px;padding-top:10px}
+.h-vault-lock{max-width:720px;margin:5vh auto;padding:15px}
+@media(max-width:600px){.h-vault{border-radius:16px;padding:20px 16px}.h-vault-title{gap:12px}.h-vault-emblem{flex-basis:48px;height:48px}.h-vault-actions>*{flex:1;justify-content:center}}
