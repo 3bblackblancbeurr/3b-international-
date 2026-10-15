@@ -21,6 +21,7 @@ Projet Supabase **3b discuter**, région **eu-west-1 (Irlande)**, au 15/10/2026 
 - Deux buckets de stockage observés (**destin-media** et **studio-3b**) sont **privés**, sans garantie sur les fichiers ni les autres canaux d'accès.
 - `member_identity_claims` : politiques explicites refusant `anon` et `authenticated`. Le service possède néanmoins des droits privilégiés à contrôler.
 - Les recommandations Supabase signalent 3 fonctions `SECURITY DEFINER` exécutables en tant qu'anonyme et 15 accessibles aux membres. Inspection partielle : accès d'administration conditionnés, sessions et limites de débit dans plusieurs fonctions. Ce ne sont pas automatiquement des fuites. **Ne pas retirer des droits de production sans tests fonctionnels spécifiques ; continuer la revue par fonction.**
+- **Correction en production appliquée et vérifiée le 15/10/2026 :** sur `public.threeb_prestige_profiles`, les rôles `anon` et `authenticated` avaient tous les privilèges PostgreSQL malgré une politique RLS de lecture propriétaire uniquement. Les autorisations `ALL` ont été révoquées pour ces deux rôles, puis `SELECT` seulement restitué à `authenticated`. Résultat vérifié : `anon SELECT/TRUNCATE=false`, `authenticated SELECT=true, UPDATE/TRUNCATE=false`. La politique RLS `threeb_prestige_read_own` est conservée. Une validation fonctionnelle du panneau prestige reste recommandée ; ne pas ouvrir d'autres privilèges sans justification.
 - Protection Supabase contre les mots de passe divulgués désactivée ; selon la documentation officielle **réservée au plan Pro ou supérieur** → **EN ATTENTE DE VALIDATION DU COÛT**, sans achat automatique.
 - Application publique hébergée chez Vercel, avec plusieurs en-têtes de sécurité déjà présents (CSP, HSTS, X-Frame-Options, Permissions-Policy), dont la compatibilité métier doit être maintenue.
 
@@ -75,3 +76,15 @@ L'envoi d'événements d'ouverture et de navigation à PostHog Europe passe dés
 - [Supabase — notices et correctifs](https://supabase.com/docs/guides/database/database-linter)
 
 **Suivi :** vérifier CI GitHub et recette fonctionnelle ; tant qu'ils ne sont pas verts et approuvés, ne pas revendiquer la fonction en production.
+
+### Correctif DCL réellement exécuté (référence de reprise, **ne pas ré-exécuter automatiquement**)
+
+```sql
+BEGIN;
+REVOKE ALL PRIVILEGES ON TABLE public.threeb_prestige_profiles FROM anon;
+REVOKE ALL PRIVILEGES ON TABLE public.threeb_prestige_profiles FROM authenticated;
+GRANT SELECT ON TABLE public.threeb_prestige_profiles TO authenticated;
+COMMIT;
+```
+
+Changement appliqué directement et vérifié sur le projet actif ; ce bloc est documentaire. Aucune migration artificielle n'a été ajoutée à l'historique (évite de désynchroniser les migrations existantes). Prévoir la réconciliation formelle du schéma avant le prochain déploiement de base.
