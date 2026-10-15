@@ -55,6 +55,8 @@ import {isAutoHubMission} from './hub/mission-signals.js';
 import {worldCinematicEvents} from './cinematic-events.js';
 import {cinematicSeenCommand} from './cinematic-persistence.js';
 import {storyCinematicPresentation} from './story-cinematic.js';
+import narrationManifest from './narration-manifest.json';
+import {narratedCinematic} from './narrated-cinematic.js';
 import {CinematicOverlay} from './CinematicOverlay.jsx';
 import DigitalStorePanel from '../store/DigitalStorePanel.jsx';
 import {loadDigitalStore} from '../store/digital-store-client.js';
@@ -179,9 +181,9 @@ function WorldSession({uid,goTo}){
  useEffect(()=>{scene.current?.setPremiumCodes?.(premiumCodes);},[premiumCodes]);
  useEffect(()=>{
   if(storyCinematic||!cinematicQueue.length||assetsLoading||!scene.current)return;
-  const event=cinematicQueue[0],presentation=storyCinematicPresentation(event);setCinematicQueue(queue=>queue.slice(1));
+  const event=cinematicQueue[0],presentation=narratedCinematic(storyCinematicPresentation(event),narrationManifest);setCinematicQueue(queue=>queue.slice(1));
   if(!presentation){cinematicKeys.current.delete(event.key);return;}
-  setStoryCinematic(presentation);scene.current?.playCinematicShot?.(presentation.kind,presentation.context,presentation.duration);audio.current?.cinematic?.(presentation.kind);audio.current?.state(presentation.audioState);audio.current?.speak(presentation.title+'. '+presentation.detail,{character:presentation.voiceCharacter});
+  setStoryCinematic(presentation);
  },[cinematicQueue,storyCinematic,assetsLoading,worldRequested]);
  function chime(){audio.current?.event('reward');}
  function updateAudioMix(key,value){const next={...audioMix,[key]:Math.max(0,Math.min(1,Number(value)))};setAudioMix(next);try{localStorage.setItem('3b-world-audio-mix',JSON.stringify(next));}catch{}}
@@ -189,7 +191,7 @@ function WorldSession({uid,goTo}){
  function toggleSound(){const next=!sound;try{localStorage.setItem('3b-world-sound',next?'1':'0');}catch{}if(!audio.current)audio.current=createWorldAudio();audio.current.setMix(audioMix);audio.current.enable(next,saveRef.current.region);setSound(next);}
  function finishStoryCinematic(){
   const current=storyCinematic;if(!current)return;
-  scene.current?.skipCinematic();const seenCommand=cinematicSeenCommand(current);if(seenCommand)act(seenCommand);cinematicKeys.current.delete(current.key);setStoryCinematic(null);
+  audio.current?.stopSpeech?.();scene.current?.skipCinematic();const seenCommand=cinematicSeenCommand(current);if(seenCommand)act(seenCommand);cinematicKeys.current.delete(current.key);setStoryCinematic(null);
  }
  function sync(){
   if(!loaded)return Promise.resolve(null);
@@ -427,7 +429,7 @@ function WorldSession({uid,goTo}){
   <div className="world-rotate-device" role="status"><RotateCcw/><strong>Tourne ton téléphone</strong><span>Le Monde du 3B se joue en horizontal.</span></div>
   <canvas ref={canvas} className="world-canvas" tabIndex={0} inert={!!error||touchEdit||(!!panel&&!fieldCombat)||cityOpen||!!storyCinematic} aria-label={"Monde 3D. Glisse à gauche pour avancer, à droite pour tourner la caméra. "+controlLabel(controls,'interact')+" pour interagir."}/>
   <div className="world-vignette"/>
-  {storyCinematic&&<CinematicOverlay key={storyCinematic.key} presentation={storyCinematic} onDone={finishStoryCinematic} onSkip={finishStoryCinematic}/>} 
+  {storyCinematic&&<CinematicOverlay key={storyCinematic.key} presentation={storyCinematic} audioDirector={audio.current} sceneDirector={scene.current} onDone={finishStoryCinematic} onSkip={finishStoryCinematic}/>}
   {panel==='encounter'&&snapshot.combat&&combatImpact&&<div className="combat-impact-layer" aria-hidden="true" key={combatImpact.key}>{combatImpact.outgoing>0&&<b className="impact-enemy" style={{left:snapshot.combat.enemy.x+'%',top:snapshot.combat.enemy.y+'%'}}>−{combatImpact.outgoing}</b>}{(combatImpact.incoming>0||combatImpact.healing>0)&&<b className={combatImpact.healing?'impact-heal':'impact-hero'} style={{left:snapshot.combat.hero.x+'%',top:snapshot.combat.hero.y+'%'}}>{combatImpact.healing?'+'+combatImpact.healing:'−'+combatImpact.incoming}</b>}</div>}
   <WorldHUD onCompanionGuard={()=>{if(!saveRef.current.adventure.companion||saveRef.current.adventure.companionHidden)act({type: 'companion',id:saveRef.current.adventure.companion||saveRef.current.leader});act({type: 'companionOrder',value: 'guard'});}} onCampaignAction={runCampaign} onPlay={playAction} onNavigate={navigate} snapshot={snapshot} save={save} panel={error?'failure':touchEdit?'touchEdit':panel} onPanel={value=>{if(saveUsable.current&&!error)setPanel(value);}} onInteract={()=>scene.current?.interact()} onContextAction={(item,id)=>interact(item,id)} onGuide={()=>scene.current?.waypoint(snapshot.waypoint,true)} onGuideTo={item=>scene.current?.waypoint(item,true)} onCancelGuide={cancelGuidance} notificationVisible={!!notice} loaded={loaded&&!assetsLoading} controls={controls}/>
   {loaded&&!assetsLoading&&!error&&!storyCinematic&&!cityOpen&&(!panel||fieldCombat)&&<WorldPlayControls onAction={playAction} onMove={moveInput} onGuardHeld={onGuardHeld} controls={controls} combat={fieldCombat} editMode={touchEdit} onSaveLayout={()=>{setTouchEdit(false);announce('Disposition tactile enregistrée sur cet appareil.');}} onCancelLayout={()=>setTouchEdit(false)}/>}
@@ -462,7 +464,7 @@ function WorldSession({uid,goTo}){
    {panel==='paris'&&<ParisJournal save={save} residentId={franceResident} act={act} onNavigate={navigateTo} onPanel={setPanel}/>}
    {panel==='camp'&&<FrontierPanel save={save} act={act} onNavigate={navigateTo}/>}
    {panel==='arena'&&<ArenaPage onExit={closePanel} onAccount={()=>goTo('member')}/>}
-   {panel==='avatar'&&<AvatarPanel key={uid||'guest'} uid={uid||null} save={save} act={act} onDone={finishAvatarReveal}/>} 
+   {panel==='avatar'&&<AvatarPanel key={uid||'guest'} uid={uid||null} save={save} act={act} onDone={finishAvatarReveal}/>}
    {panel==='collection'&&<Companions save={save} act={act}/>}
    {panel==='encounter'&&<AdventureEncounter save={save} act={act} onClose={finishEncounter} Art={Art}/>}
    {panel==='story'&&<StoryPanel save={save} act={act} onNavigate={navigateTo} onClose={closePanel}/>}

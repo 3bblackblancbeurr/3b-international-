@@ -125,3 +125,10 @@
  .cinema-world-guardian-identity{gap:8px;padding:5px 0;margin-top:8px}
  .cinema-world-guardian-identity small{font-size:8px}
 }
+
+.world-cinematic-director[data-paused="true"] *, .world-cinematic-director[data-paused="true"] *::before, .world-cinematic-director[data-paused="true"] *::after{animation-play-state:paused!important}
+.cinema-world-actions{flex-wrap:wrap;gap:8px;max-width:calc(100% - 32px)}
+.cinema-playback-status{color:#e5edf6;font-size:12px;align-self:center}
+.cinema-voice-credit{flex-basis:100%;text-align:right;color:#d5dfeb;font-size:10px;text-decoration:underline}
+.cinema-world-actions button{min-height:44px}
+@media(max-width:600px){.cinema-playback-status{flex-basis:100%;text-align:right}.cinema-world-actions{bottom:24px}.cinema-world-copy p{max-height:28vh;overflow:auto}.cinema-world-signature{display:none}}
