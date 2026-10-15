@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { blankHealth, createStepDetector, HEALTH_STORAGE_KEY, localDay, normalizeHealth, readHealth } from './model.js';
+import { HEALTH_VAULT_KEY, createHealthVault, openHealthVault, sealHealthVault } from './secureVault.js';
 
 export function useToday() {
   const [today, setToday] = useState(localDay());
@@ -16,26 +17,142 @@ export function useToday() {
 export function useHealth() {
   const initial = useRef(null);
   if (!initial.current) {
-    try { initial.current = readHealth(window.localStorage); }
-    catch { initial.current = { data: blankHealth(), saved: false, error: true }; }
+    try {
+      const vaultPresent = Boolean(window.localStorage.getItem(HEALTH_VAULT_KEY));
+      const legacy = vaultPresent
+        ? { data: blankHealth(), saved: false, error: false }
+        : readHealth(window.localStorage);
+      initial.current = {
+        ...legacy,
+        mode: vaultPresent ? 'locked' : legacy.saved ? 'legacy' : 'temporary',
+      };
+    } catch {
+      initial.current = { data: blankHealth(), saved: false, error: true, mode: 'temporary' };
+    }
   }
   const [data, setData] = useState(initial.current.data);
   const [saved, setSaved] = useState(initial.current.saved);
-  const [notice, setNotice] = useState(initial.current.error ? 'La sauvegarde est indisponible. Le journal fonctionne pour cette visite.' : '');
+  const [vaultMode, setVaultMode] = useState(initial.current.mode);
+  const [saving, setSaving] = useState(false);
+  const [notice, setNotice] = useState(initial.current.error
+    ? 'Sauvegarde indisponible : le journal reste temporaire pour cette visite.'
+    : initial.current.mode === 'legacy'
+      ? 'Ancienne sauvegarde Santé non chiffrée : protège-la depuis Mon journal & mes données.'
+      : '');
+  const keyRef = useRef(null);
+  const saltRef = useRef('');
+  const revisionRef = useRef(0);
+
   useEffect(() => {
     if (!saved) return;
-    try { localStorage.setItem(HEALTH_STORAGE_KEY, JSON.stringify(normalizeHealth(data))); }
-    catch { setSaved(false); setNotice('Sauvegarde impossible : tes nouvelles saisies restent seulement pour cette visite. Exporte-les avant de quitter.'); }
-  }, [data, saved]);
+    if (vaultMode === 'legacy') {
+      // Compatibilité : ne jamais effacer silencieusement les données des membres existants.
+      try { localStorage.setItem(HEALTH_STORAGE_KEY, JSON.stringify(normalizeHealth(data))); }
+      catch { setSaved(false); setNotice('Sauvegarde impossible : tes saisies restent temporaires. Exporte-les avant de quitter.'); }
+      return;
+    }
+    if (vaultMode !== 'unlocked' || !keyRef.current) return;
+    const revision = ++revisionRef.current;
+    setSaving(true);
+    void sealHealthVault(normalizeHealth(data), keyRef.current, saltRef.current)
+      .then(envelope => {
+        if (revisionRef.current !== revision) return;
+        localStorage.setItem(HEALTH_VAULT_KEY, JSON.stringify(envelope));
+        setSaving(false);
+      })
+      .catch(() => {
+        if (revisionRef.current !== revision) return;
+        setSaving(false);
+        setNotice('Le coffre n’a pas pu être actualisé. Ne ferme pas la page : vérifie le stockage ou exporte tes données.');
+      });
+  }, [data, saved, vaultMode]);
+
+  async function enableSecureSave(passphrase) {
+    if (vaultMode === 'locked') throw new Error('Déverrouille le coffre existant avant de créer une sauvegarde.');
+    const snapshot = normalizeHealth(data);
+    const revision = ++revisionRef.current;
+    const { envelope, key } = await createHealthVault(snapshot, passphrase);
+    if (revisionRef.current !== revision) throw new Error('Le journal a changé. Recommence la sauvegarde.');
+    const storage = window.localStorage;
+    storage.setItem(HEALTH_VAULT_KEY, JSON.stringify(envelope));
+    try {
+      // Suppression de l'ancienne copie seulement une fois le coffre écrit.
+      storage.removeItem(HEALTH_STORAGE_KEY);
+    } catch {
+      try { storage.removeItem(HEALTH_VAULT_KEY); } catch { /* avertir, sans effacer l'original */ }
+      throw new Error('Ancienne copie non chiffrée non effacée. Vérifie les données du navigateur.');
+    }
+    keyRef.current = key;
+    saltRef.current = envelope.salt;
+    setVaultMode('unlocked');
+    setSaved(true);
+    setNotice('Coffre Santé chiffré sur cet appareil. Garde ta phrase secrète en lieu sûr.');
+    return true;
+  }
+
+  async function unlockSecureSave(passphrase) {
+    const raw = window.localStorage.getItem(HEALTH_VAULT_KEY);
+    if (!raw) throw new Error('Aucun coffre chiffré trouvé sur cet appareil.');
+    let envelope;
+    try { envelope = JSON.parse(raw); }
+    catch { throw new Error('Coffre illisible. Aucune donnée n’a été effacée.'); }
+    const { data: decrypted, key } = await openHealthVault(envelope, passphrase);
+    ++revisionRef.current;
+    keyRef.current = key;
+    saltRef.current = envelope.salt;
+    setData(normalizeHealth(decrypted));
+    setSaved(true);
+    setVaultMode('unlocked');
+    setNotice('Coffre Santé déverrouillé. Tes données restent sur cet appareil.');
+    return true;
+  }
+
+  async function lockSecureSave() {
+    if (vaultMode !== 'unlocked' || !keyRef.current) return false;
+    const revision = ++revisionRef.current; // annule les écritures asynchrones plus anciennes
+    setSaving(true);
+    try {
+      const envelope = await sealHealthVault(normalizeHealth(data), keyRef.current, saltRef.current);
+      if (revision !== revisionRef.current) throw new Error('La session a changé.');
+      window.localStorage.setItem(HEALTH_VAULT_KEY, JSON.stringify(envelope));
+      keyRef.current = null;
+      saltRef.current = '';
+      setSaved(false);
+      setData(blankHealth());
+      setVaultMode('locked');
+      setNotice('');
+      return true;
+    } finally { setSaving(false); }
+  }
+
   const updateDay = (date, patch) => setData(current => normalizeHealth({ ...current, days: { ...current.days, [date]: { ...current.days[date], ...patch } } }));
   const favorite = id => setData(current => ({ ...current, favorites: current.favorites.includes(id) ? current.favorites.filter(item => item !== id) : [...current.favorites, id] }));
   const clear = () => {
-    setSaved(false); setData(blankHealth());
-    try { localStorage.removeItem(HEALTH_STORAGE_KEY); }
-    catch { setNotice('Journal temporaire vidé. Impossible d’effacer la copie persistante de ce navigateur : supprime les données du site dans ses réglages avant de revenir.'); return false; }
-    setNotice('Journal effacé sur cet appareil.'); return true;
+    ++revisionRef.current;
+    keyRef.current = null;
+    saltRef.current = '';
+    setSaved(false);
+    setSaving(false);
+    setData(blankHealth());
+    try {
+      window.localStorage.removeItem(HEALTH_STORAGE_KEY);
+      window.localStorage.removeItem(HEALTH_VAULT_KEY);
+      if (window.localStorage.getItem(HEALTH_STORAGE_KEY) || window.localStorage.getItem(HEALTH_VAULT_KEY)) {
+        throw new Error('Deletion not confirmed');
+      }
+    } catch {
+      setVaultMode('locked');
+      setNotice('Journal temporaire vidé, mais suppression du stockage non confirmée. Efface les données du site dans les réglages du navigateur.');
+      return false;
+    }
+    setVaultMode('temporary');
+    setNotice('Journal et coffre local effacés sur cet appareil.');
+    return true;
   };
-  return { data, setData, saved, setSaved, notice, setNotice, updateDay, favorite, clear };
+  return {
+    data, setData, saved, vaultMode, saving, notice, setNotice, updateDay, favorite, clear,
+    enableSecureSave, unlockSecureSave, lockSecureSave,
+  };
 }
 
 export function useStepSession() {
