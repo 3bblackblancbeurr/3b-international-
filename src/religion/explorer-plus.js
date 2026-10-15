@@ -1,8 +1,10 @@
 // Keep the original renderer, source corpus and every existing feature intact.
 import './tree.js';
 import corpus from './corpus.json';
-// Shared documentary enhancements are public ES modules, also used by the library.
-import(/* @vite-ignore */ '/religion/discovery-plus.js')
+// Public ES modules are copied unchanged by Vite. Resolve this fixed same-origin
+// URL at runtime rather than asking Rollup to bundle a public-directory import.
+const discoveryModuleUrl = '/religion/discovery-plus.js';
+import(/* @vite-ignore */ discoveryModuleUrl)
   .then(({ mountTree }) => mountTree(corpus))
   .catch(error => {
     console.error('3B Religion: documentary enhancements unavailable; base tree preserved.', error);
