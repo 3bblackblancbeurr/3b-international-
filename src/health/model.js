@@ -17,7 +17,8 @@ export function boundedNumber(value, min, max, decimals = 0) {
   if (!Number.isFinite(number) || number < min || number > max) return null;
   return Number(number.toFixed(decimals));
 }
-export const blankHealth = () => ({ version: 1, days: {}, favorites: [], plan: {}, shoppingChecked: [], nativeEnabled: false });
+export function normalizeStepTarget(value) { return Number.isInteger(value) && value >= 1000 && value <= 30000 && value % 500 === 0 ? value : null; }
+export const blankHealth = () => ({ version: 1, days: {}, favorites: [], plan: {}, shoppingChecked: [], nativeEnabled: false, stepTarget: null });
 export function normalizeHealth(raw, now = new Date()) {
   const result = blankHealth();
   if (!raw || raw.version !== 1) return result;
@@ -38,6 +39,7 @@ export function normalizeHealth(raw, now = new Date()) {
     };
   }
   result.nativeEnabled = raw.nativeEnabled === true;
+  result.stepTarget = normalizeStepTarget(raw.stepTarget);
   result.favorites = Array.isArray(raw.favorites) ? [...new Set(raw.favorites.filter(v => typeof v === 'string' && /^[a-z0-9-]{1,70}$/.test(v)))].slice(0, 200) : [];
   for (const [day, id] of Object.entries(raw.plan || {})) {
     // Menu planning is independent from recorded health measurements.
