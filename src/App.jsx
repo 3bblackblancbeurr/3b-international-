@@ -1,6 +1,7 @@
 import { LuxuryBoot, useLuxuryRuntime } from "./design-system/LuxuryExperience.jsx";
 import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 
+const HealthPage = lazy(() => import("./health/HealthPage.jsx"));
 const DealsPage = lazy(() => import("./deals/DealsPage.jsx"));
 const ShopPage = lazy(() => import("./shop/ShopPage.jsx"));
 const AiPage = lazy(() => import("./ai/AiPage.jsx"));
@@ -52,6 +53,7 @@ const ArenaExperience=lazy(()=>import('./arena/ArenaPage.jsx'));
 const NosblocPage=lazy(()=>import('./nosbloc/NosblocPremiumPage.jsx'));
 
 const BASE_MENU_ITEMS = [
+  { id: "health", label: "Santé", description: "Manger, bouger et prendre soin de soi." },
   { id: "deals", label: "3 bons plans", description: "Des offres datées et sourcées pour le quotidien." },
   { id: "guide", label: "Guide & XP", description: "Les repères pour commencer." },
   {
@@ -360,7 +362,7 @@ export default function App() {
       <div className="app3b" data-page={page} data-glow={options.premiumGlow} data-matrix={options.matrix}>
         <div className="app3b-background" aria-hidden="true" />
         <div className={options.matrix ? "matrix-layer active" : "matrix-layer"} aria-hidden="true" />
-        <CompanionLayer goTo={goTo} page={page} secretPhase={secret.phase} memberRegistered={member.isRegistered} />
+        {page !== "health" && <CompanionLayer goTo={goTo} page={page} secretPhase={secret.phase} memberRegistered={member.isRegistered} />}
         <AppNavigation page={page} title={preparationTitle} menuItems={menuItems} goTo={goTo} secret={secret} options={options} toggleOption={toggleOption} installation={installation} />
         <main id="main-content" tabIndex={-1}>
           <ComingSoon
@@ -374,7 +376,7 @@ export default function App() {
     );
   }
 
-  const passportAllowed = new Set(["home", "passport", "member", "religion", "control", "shop", "guide", "invisible", "deals"]);
+  const passportAllowed = new Set(["home", "passport", "member", "religion", "control", "shop", "guide", "invisible", "deals", "health"]);
   const needsPassport = !loyalty.loading && !hasPassport && !passportAllowed.has(page);
 
   if (needsPassport) {
@@ -391,13 +393,13 @@ export default function App() {
       <div className="app3b-background" aria-hidden="true" />
       <div className={options.matrix ? "matrix-layer active" : "matrix-layer"} aria-hidden="true" />
 
-      <CompanionLayer goTo={goTo} page={page} secretPhase={secret.phase} memberRegistered={member.isRegistered} />
+      {page !== "health" && <CompanionLayer goTo={goTo} page={page} secretPhase={secret.phase} memberRegistered={member.isRegistered} />}
 
       <AppNavigation immersive={['world3b','arena','game','control','invisible'].includes(page)} page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} secret={secret} options={options} toggleOption={toggleOption} installation={installation} />
       <main id="main-content" tabIndex={-1}>
       <div className="route-announcer" aria-live="polite" aria-atomic="true">{currentPageTitle}</div>
       <Suspense fallback={<AppLoadingState label={`Ouverture · ${currentPageTitle}`} />}>
-      <ExplorationRewards page={page}/>
+      {page !== "health" && <ExplorationRewards page={page}/>}
       {storageNotice && <p className="storage-notice" role="status">{storageNotice}</p>}
 
       {page === "home" && (
@@ -440,6 +442,7 @@ export default function App() {
       )}
 
       {page === "sport" && <SportPage goTo={goTo} />}
+      {page === "health" && <HealthPage />}
       {page === "deals" && <DealsPage />}
       {page === "control" && <ControlCenterPage goTo={goTo} />}
       {["ia", "ia-textile", "ia-trio"].includes(page) && <ComingSoon goTo={goTo} eyebrow="CRÉATION · 3B" title="Espace textile & IA" description="L’atelier textile, la maroquinerie et les outils IA 3B sont en cours de finition pour une expérience mobile plus lisible et plus fiable." />}

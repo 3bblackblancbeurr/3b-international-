@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ChevronRight, BookOpen, Boxes, CreditCard, Gamepad2, Globe2, Home, Menu, Compass, Search, ShoppingBag, Sparkles, Trophy, UserRound, Users, LockKeyhole, X, Fingerprint, ScanLine, SlidersHorizontal, BadgePercent } from "lucide-react";
+import { ArrowLeft, ChevronRight, BookOpen, Boxes, CreditCard, Gamepad2, Globe2, Home, Menu, Compass, Search, ShoppingBag, Sparkles, Trophy, UserRound, Users, LockKeyhole, X, Fingerprint, ScanLine, SlidersHorizontal, BadgePercent, HeartPulse } from "lucide-react";
 import { getPageHref } from "../lib/navigation.js";
 import { ExperienceControls } from "../design-system/LuxuryExperience.jsx";
 import { Button } from "../design-system/index.jsx";
@@ -9,7 +9,7 @@ import CompanionPresenceControl from '../companion/CompanionPresenceControl.jsx'
 import { PRINCIPAL_DESTINATIONS, availableCategories, categoryForPage, itemsForCategory, searchNavigation } from './navigation-menu.js';
 import '../styles/simple-navigation.css';
 
-const ICONS = { deals: BadgePercent, invisible: ScanLine, home: Home, passport: Fingerprint, loyalty: CreditCard, manga: BookOpen, world3b: Globe2, nosbloc: Boxes, games: Gamepad2, religion: BookOpen, guide: Compass, community: Users, secret: LockKeyhole, sport: Trophy, ia: Sparkles, shop: ShoppingBag, member: UserRound };
+const ICONS = { health: HeartPulse, deals: BadgePercent, invisible: ScanLine, home: Home, passport: Fingerprint, loyalty: CreditCard, manga: BookOpen, world3b: Globe2, nosbloc: Boxes, games: Gamepad2, religion: BookOpen, guide: Compass, community: Users, secret: LockKeyhole, sport: Trophy, ia: Sparkles, shop: ShoppingBag, member: UserRound };
 export function SectionIcon({ page, ...props }) {
   const Icon = ICONS[page] || Globe2;
   return <Icon size={22} strokeWidth={1.65} aria-hidden="true" {...props} />;
