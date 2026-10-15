@@ -37,6 +37,30 @@ function browserAudio({blocked=false,deferred=false}={}){
  return {contexts,gestures,gesture(type='pointerdown'){return Promise.all([...(gestures.get(type)||[])].map(fn=>fn()));},restore(){globalThis.window=previous;}};
 }
 
+test('cancel clears the whole speech queue and late callbacks cannot replace the new voice',async()=>{
+ const browser=browserAudio(),audio=createWorldAudio(),voices=[];
+ const oldSynthesis=globalThis.speechSynthesis,oldUtterance=globalThis.SpeechSynthesisUtterance;
+ globalThis.SpeechSynthesisUtterance=class {constructor(text){this.text=text;}};
+ globalThis.speechSynthesis={getVoices:()=>[],speak:voice=>voices.push(voice),cancel(){voices.at(-1)?.onerror?.();},pause(){},resume(){}};
+ try{
+  await audio.enable(true,'hub');
+  audio.speak('Scène A');audio.speak('Ancienne file');assert.equal(voices.length,1);
+  const old=voices[0];audio.stopSpeech();assert.equal(voices.length,1);
+  audio.speak('Scène B');audio.speak('Suite B');assert.equal(voices.length,2);
+  old.onend();old.onerror();assert.equal(voices.length,2);
+  voices[1].onend();assert.equal(voices[2].text,'Suite B');
+ }finally{audio.close();browser.restore();globalThis.speechSynthesis=oldSynthesis;globalThis.SpeechSynthesisUtterance=oldUtterance;}
+});
+
+test('recorded preparation falls back immediately if autoplay is blocked or sound muted',async()=>{
+ const browser=browserAudio({blocked:true}),audio=createWorldAudio();
+ try{
+  await audio.enable(true,'hub');assert.equal(await audio.prepareNarration({src:'/voice.mp3'}),false);
+  browser.contexts[0].allowResume=true;await browser.gesture();await audio.enable(false);
+  assert.equal(await audio.prepareNarration({src:'/voice.mp3'}),false);
+ }finally{audio.close();browser.restore();}
+});
+
 test('browser autoplay blocking unlocks on the next real input without recreating audio',async()=>{
  const browser=browserAudio({blocked:true}),audio=createWorldAudio();
  try{

@@ -1,0 +1,99 @@
+{
+  "version": 1,
+  "language": "fr-FR",
+  "attribution": "Voiceover Generated with AIDOCMAKER.COM",
+  "attributionUrl": "https://www.aidocmaker.com",
+  "terms": "https://www.aidocmaker.com/docs/attribution-guidelines",
+  "clips": [
+    {
+      "id": "entry-france",
+      "text": "Les Jardins de la mémoire. Sous les arches bleues, les souvenirs prennent la forme de lumière. Comment juger lorsque la vérité est incomplète ?",
+      "src": "/world/narration/fr/v1/entry-france.mp3",
+      "durationMs": 9096,
+      "bytes": 145536,
+      "sha256": "f47a81cab14de235273786784938e3398cb514c55eb984624d2b85330b17a5f3",
+      "source": "https://www.aidocmaker.com/g0/audio?name=0bcae1719fa64434bc1aad9739821c15",
+      "voice": "deep"
+    },
+    {
+      "id": "entry-algerie",
+      "text": "L’Oasis des fragments. L’eau et les arches du désert gardent la trace des passages oubliés. À qui rester loyal lorsqu’une personne que l’on aime se trompe ?",
+      "src": "/world/narration/fr/v1/entry-algerie.mp3",
+      "durationMs": 9912,
+      "bytes": 158592,
+      "sha256": "7edec6820c61a854f89d15357b9783363b20e3ae126b59209456e1e46a079bb3",
+      "source": "https://www.aidocmaker.com/g0/audio?name=aed94e4313724f5aa8bbe05f5f3e3158",
+      "voice": "deep"
+    },
+    {
+      "id": "entry-maroc",
+      "text": "Les Cimes de l’Atlas. Les portes dorées s’ouvrent sur des jardins protégés par les montagnes. La noblesse vient-elle du rang ou de la manière d’agir ?",
+      "src": "/world/narration/fr/v1/entry-maroc.mp3",
+      "durationMs": 9552,
+      "bytes": 152832,
+      "sha256": "c45a052b568c0787ecd79ff813d4a125799d327cd5a144565e29afcddb973d5e",
+      "source": "https://www.aidocmaker.com/g0/audio?name=d9de739aded1423682c23f28c42e6c8d",
+      "voice": "deep"
+    },
+    {
+      "id": "entry-tunisie",
+      "text": "Les Rivages de Carthage. Des colonnes éclairées bordent une mer de brume et de souvenirs. Peut-on être courageux tout en ayant peur ?",
+      "src": "/world/narration/fr/v1/entry-tunisie.mp3",
+      "durationMs": 8496,
+      "bytes": 135936,
+      "sha256": "d107ac762c806b4bb50faa815995054b1e4cd0f7b830fd6f830bfed3258b1c63",
+      "source": "https://www.aidocmaker.com/g0/audio?name=e95b744bf81f4a23a900ba1201a194da",
+      "voice": "deep"
+    },
+    {
+      "id": "entry-espagne",
+      "text": "Les Falaises du crépuscule. Le vent traverse les moulins. Une lumière rouge court sur les falaises. Quand la passion cesse-t-elle de construire pour commencer à consumer ?",
+      "src": "/world/narration/fr/v1/entry-espagne.mp3",
+      "durationMs": 10824,
+      "bytes": 173184,
+      "sha256": "ed74a8d0f82abf75d2c79c3b3ff827eb250461ede56f9579133aa552dec5a068",
+      "source": "https://www.aidocmaker.com/g0/audio?name=0d8d8318c1d040b3a7c10456e124845a",
+      "voice": "deep"
+    },
+    {
+      "id": "entry-italie",
+      "text": "Les Terrasses vivantes. Des jardins suspendus relient les vestiges d’une cité qui se réveille. Comment continuer lorsque tout semble déjà perdu ?",
+      "src": "/world/narration/fr/v1/entry-italie.mp3",
+      "durationMs": 9264,
+      "bytes": 148224,
+      "sha256": "2ed13840600c7acd8ca64bf99562fca227711b8f31d0737dcd59460cbe9045b8",
+      "source": "https://www.aidocmaker.com/g0/audio?name=33a30048df76458989b44debf0cd5ea3",
+      "voice": "deep"
+    },
+    {
+      "id": "entry-turquie",
+      "text": "L’Observatoire des lunes. Huit constellations veillent sur les coupoles et les pierres flottantes. Comment continuer à croire lorsque le doute demeure ?",
+      "src": "/world/narration/fr/v1/entry-turquie.mp3",
+      "durationMs": 9624,
+      "bytes": 153984,
+      "sha256": "c4f47195b9ed71405e7cdeed3eef9ec5819fb1cd4fafa347b21ab48b69a51e48",
+      "source": "https://www.aidocmaker.com/g0/audio?name=66013dd2b3934fd8974d6126b35e3c9e",
+      "voice": "deep"
+    },
+    {
+      "id": "entry-estonie",
+      "text": "La Forêt des aurores. Chaque clairière abrite un écho. Suis les lumières entre les sapins. À quoi sert de comprendre si l’on refuse d’agir ?",
+      "src": "/world/narration/fr/v1/entry-estonie.mp3",
+      "durationMs": 8904,
+      "bytes": 142464,
+      "sha256": "b0abeda83ff604a13081525e83e1dd32c52a734d92a3765dc549c2da23a27151",
+      "source": "https://www.aidocmaker.com/g0/audio?name=50bc4791d4fe42289e4026a6d88153d4",
+      "voice": "deep"
+    },
+    {
+      "id": "prologue",
+      "text": "Avant la Rupture, huit héritages formaient un cercle. Puis chacun a voulu protéger sa mémoire, jusqu’à oublier celle des autres. Aujourd’hui, les portes s’ouvrent de nouveau. Kaïs n’est ni un roi, ni l’élu d’une prophétie. Il est celui qui choisit d’écouter, de reconstruire et de relier. La Justice, la Loyauté, la Noblesse, le Courage, la Passion, l’Espoir, la Foi et la Sagesse attendent leurs gardiens. Ton voyage commence ici. Dans le Monde du trois B.",
+      "src": "/world/narration/fr/v1/prologue.mp3",
+      "durationMs": 28176,
+      "bytes": 450816,
+      "sha256": "7d00e7c096372e76b9a4e91d0a514fa7cada6c27bc4fa93c0b27e204c22d0b4a",
+      "source": "https://www.aidocmaker.com/g0/audio?name=d9dbb98840044c2eaf8b2d1f13dcdad3",
+      "voice": "deep"
+    }
+  ]
+}
