@@ -564,7 +564,7 @@ function hubNpcAvatar(item){
   if(!paused&&!shot){
    qualityWindowMoving=qualityWindowMoving||moving||!!held?.drag||!!target||keys.size>0;qualityWindowStalled=qualityWindowStalled||rawDt>=.25;if(rawDt>=.25)qualityLongTime+=rawDt;
    const settlingTerrain=now<qualityTransitionAt+8000&&landscape?.streamingBusy;
-   if(sceneLoading||now<Math.max(qualityWarmupUntil,qualityGraceUntil)||settlingTerrain){frames=0;frameTime=0;qualityWindowMoving=qualityWindowStalled=false;qualityLongTime=0;}else{frames++;frameTime+=rawDt;}if(frameTime>=1){fps=Math.round(frames/frameTime);if(quality.sampleFrames(frames,frameTime,{allowRecovery:!qualityWindowMoving,windowStalled:qualityWindowStalled,severeOverload:frames>=2&&frames/frameTime<5&&qualityLongTime>=frameTime*.5}))resize();frames=0;frameTime=0;qualityWindowMoving=qualityWindowStalled=false;qualityLongTime=0;}
+   if(sceneLoading||now<Math.max(qualityWarmupUntil,qualityGraceUntil)||settlingTerrain){frames=0;frameTime=0;qualityWindowMoving=qualityWindowStalled=false;qualityLongTime=0;}else{frames++;frameTime+=rawDt;}if(frameTime>=1){fps=Math.round(frames/frameTime);if(quality.sampleFrames(frames,frameTime,{allowRecovery:!qualityWindowMoving,windowStalled:qualityWindowStalled,longFrameSeconds:qualityLongTime,severeOverload:frames>=2&&frames/frameTime<5&&qualityLongTime>=frameTime*.5}))resize();frames=0;frameTime=0;qualityWindowMoving=qualityWindowStalled=false;qualityLongTime=0;}
    if(lifeInteraction.active){const pose=lifeInteraction.sample(elapsed);position={x:pose.x,z:pose.z};heading=pose.heading;hero?.setPose?.(pose.pose,{seatHeight:pose.seatHeight});hero?.face?.(Math.sin(pose.heading*Math.PI/180),Math.cos(pose.heading*Math.PI/180),dt);moving=false;}else if(contextTraversal){
     const current=contextTraversal,previous=position,pose=traversalPose(current.plan,now-current.started);
     position={x:pose.x,z:pose.z};traversalLift=pose.lift;dx=position.x-previous.x;dz=position.z-previous.z;travelled=Math.hypot(dx,dz);moving=!pose.done;
@@ -765,7 +765,7 @@ function hubNpcAvatar(item){
    const finished=performance.now();
    frameTimeline.end({started:now,finished,updateMs:renderStarted-now,worldMs,renderMs:renderFinished-renderStarted,
     snapshotMs:finished-renderFinished,moving,context:{timeMs:Math.round(elapsed*1000),region,quality:qualityMode,
-     ratio:renderer.getPixelRatio(),programs:renderer.info.programs?.length||0,geometries:renderer.info.memory.geometries,
+     ratio:renderer.getPixelRatio(),qualityTransitionAgeMs:Number.isFinite(qualityTransitionAt)?Math.round(now-qualityTransitionAt):null,streamingBusy:!!landscape?.streamingBusy,programs:renderer.info.programs?.length||0,geometries:renderer.info.memory.geometries,
      textures:renderer.info.memory.textures,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles}});
   }else frameTimeline.reset();
  }

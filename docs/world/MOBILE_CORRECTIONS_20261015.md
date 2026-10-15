@@ -59,9 +59,26 @@ compilation de shaders, allocations React et pilote GPU restent des pistes,
 pas des causes établies du signalement. Aucun changement de moteur ou retrait
 arbitraire de bâtiments n'a été effectué sur cette base.
 
-La tentative de nouvelle revue Claude a été bloquée avant transmission par
-le contrôle automatique d'autorisation. Aucun avis Claude du 15 octobre ne
-fait partie de la validation ; les conclusions du 14 restent historiques.
+## Revue complémentaire du 15 octobre
+
+Après accord explicite du propriétaire, Claude a relu les seuls extraits du
+contrôleur et de la mesure des frames. Ce n’est pas une revue du dépôt entier.
+La lacune retenue : des gels périodiques pouvaient être exclus de l’adaptation.
+Trois fenêtres contenant au moins une seconde cumulée de frames longues, dans
+30 secondes d’échantillons actifs, déclenchent désormais uniquement le profil
+léger, à résolution inchangée. Cette voie partage le délai de 60 secondes et
+le recul de récupération du contrôleur. Un gel isolé ou des hitches de 450 ms
+ne suffisent pas. Tests : gels répétés avec 1 ou 21 frames par fenêtre,
+expiration des événements, stabilité du ratio et délai après récupération.
+
+Les autres suspicions ont été vérifiées : aucune limitation forcée à 30 FPS,
+dimensions canvas CSS, temps brut non clampé pour les FPS, première transition
+non bloquée par une initialisation à zéro. La récupération au-dessus de
+34 FPS reste volontairement prudente ; sur un appareil plafonné par le système
+à 30 FPS, le profil réduit peut rester actif jusqu’au choix manuel.
+Le relevé inclut aussi l’âge du dernier changement de qualité et l’état du
+streaming pour identifier les gels pendant une transition. La cause des gels
+sur le S21 physique reste à mesurer.
 
 ## Vérification sur téléphone après livraison
 
@@ -92,8 +109,8 @@ Ne pas effacer le stockage de l'application pour effectuer ce test.
 
 ## Livraison
 
-Le push GitHub a été refusé par le contrôle automatique demandant un accord
-explicite pour la publication. Aucune branche distante créée ni modification
-de production confirmée dans cette session. Après autorisation : envoyer la
-branche corrective, créer la PR, attendre les contrôles distants, puis publier
-et vérifier version.json sur l'URL publique.
+Le contrôle initial a demandé un accord explicite. Le propriétaire l’a donné
+le 15 octobre pour GitHub, la production après contrôles et les extraits à
+Claude. La branche distante et la PR #534 sont créées ; l’arbre envoyé est
+comparé au contenu local testé. La livraison sera validée par les contrôles
+GitHub puis par le commit de production et son version.json public.

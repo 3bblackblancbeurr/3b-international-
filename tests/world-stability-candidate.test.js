@@ -50,6 +50,53 @@ test('a phone persistently below five FPS can still shed work after three severe
  assert.equal(quality.sampleFrames(2,1,options),true);assert.equal(quality.renderMode(),'fluid');assert.equal(quality.ratio(390,844,3),1.75,'First shed effects without blurring the image');
 });
 
+test('three repeated multi-second freezes shed the scene without sacrificing phone clarity',()=>{
+ for(const frames of [1,21]){
+  const quality=createQualityController('auto',{targetFps:30}),ratio=quality.ratio(390,844,3);
+  const freeze={windowStalled:true,longFrameSeconds:2.5,allowRecovery:false};
+  for(let cycle=0;cycle<3;cycle++){
+   for(let i=0;i<3;i++)quality.sampleFrames(45,1,{allowRecovery:false});
+   assert.equal(quality.sampleFrames(frames,3,freeze),cycle===2);
+  }
+  assert.equal(quality.renderMode(),'fluid');assert.equal(quality.ratio(390,844,3),ratio);
+  for(let cycle=0;cycle<30;cycle++){
+   quality.sampleFrames(45,1,{allowRecovery:false});quality.sampleFrames(frames,3,freeze);
+  }
+  assert.equal(quality.ratio(390,844,3),ratio,'Repeated freezes alone never reduce pixels');
+ }
+});
+
+test('isolated long freezes and repeated shorter hitches cannot accumulate into a scene change',()=>{
+ const quality=createQualityController('auto',{targetFps:30}),ratio=quality.ratio(390,844,3);
+ for(let cycle=0;cycle<4;cycle++){
+  assert.equal(quality.sampleFrames(21,3,{windowStalled:true,longFrameSeconds:2.5}),false);
+  for(let i=0;i<31;i++)quality.sampleFrames(45,1);
+ }
+ for(let i=0;i<60;i++)assert.equal(quality.sampleFrames(21,1,{windowStalled:true,longFrameSeconds:.45}),false);
+ assert.equal(quality.renderMode(),'auto');assert.equal(quality.ratio(390,844,3),ratio);
+ // A manual quality choice starts a fresh automatic observation period.
+ for(let i=0;i<2;i++)quality.sampleFrames(21,3,{windowStalled:true,longFrameSeconds:2.5});
+ quality.setMode('auto');
+ assert.equal(quality.sampleFrames(21,3,{windowStalled:true,longFrameSeconds:2.5}),false);
+ assert.equal(quality.renderMode(),'auto');
+});
+
+test('recurrent-freeze mitigation shares the profile cooldown after idle recovery',()=>{
+ const quality=createQualityController('auto',{targetFps:30}),ratio=quality.ratio(390,844,3);
+ const freeze={windowStalled:true,longFrameSeconds:2.5,allowRecovery:false};
+ for(let i=0;i<3;i++)quality.sampleFrames(21,3,freeze);
+ for(let i=0;i<72;i++)quality.sampleFrames(45,1);
+ assert.equal(quality.renderMode(),'auto');
+ for(let i=0;i<19;i++)quality.sampleFrames(21,3,freeze);
+ assert.equal(quality.renderMode(),'auto','Recurrent stalls cannot bypass the shared 60-second profile cooldown');
+ quality.sampleFrames(21,3,freeze);
+ assert.equal(quality.renderMode(),'fluid');assert.equal(quality.ratio(390,844,3),ratio);
+ for(let i=0;i<60;i++)quality.sampleFrames(45,1);
+ assert.equal(quality.renderMode(),'fluid','Backoff and a new stable recovery window are both required');
+ for(let i=0;i<12;i++)quality.sampleFrames(45,1);
+ assert.equal(quality.renderMode(),'auto');assert.equal(quality.ratio(390,844,3),ratio);
+});
+
 test('phone requires three consecutive overloaded windows and does not hide levels below the effective floor',()=>{
  const quality=createQualityController('auto',{targetFps:30}),start=quality.ratio(390,844,3);
  assert.equal(quality.sampleFrames(24,1),false);assert.equal(quality.sampleFrames(24,1),false);
