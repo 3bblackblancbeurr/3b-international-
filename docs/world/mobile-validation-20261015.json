@@ -1,0 +1,699 @@
+{
+  "scope": "Tests logiciel, sans téléphone physique",
+  "reference": [
+    {
+      "region": "hub",
+      "device": "844×390, mobile input, DPR 1",
+      "gpu": "SwiftShader software",
+      "movement": {
+        "before": {
+          "x": 13.6,
+          "z": 64.6
+        },
+        "after": {
+          "x": 13.93564855279713,
+          "z": 66.39191133889834
+        },
+        "performance": {
+          "frames": 0,
+          "movingFrames": 0,
+          "stalls": 0,
+          "maxGapMs": 0,
+          "p95Ms": 0,
+          "updatePeakMs": 0,
+          "renderPeakMs": 0,
+          "windowFrames": 0,
+          "events": []
+        }
+      },
+      "injectedStall": {
+        "durationMs": 450,
+        "event": {
+          "timeMs": 2988,
+          "region": "hub",
+          "quality": "auto",
+          "ratio": 1,
+          "programs": 112,
+          "geometries": 577,
+          "textures": 429,
+          "drawCalls": 520,
+          "triangles": 1939956,
+          "worldMs": 9,
+          "snapshotMs": 1,
+          "frameCpuMs": 4541,
+          "betweenFramesMs": 12,
+          "gapMs": 4553,
+          "updateMs": 27,
+          "renderMs": 4514
+        }
+      },
+      "view": {
+        "eye": [
+          110,
+          130,
+          150
+        ],
+        "target": [
+          0,
+          75,
+          0
+        ],
+        "name": "Cercle Brisé et tour civique"
+      },
+      "budget": {
+        "calls": 585,
+        "triangles": 1399092,
+        "programs": 112,
+        "geometries": 625,
+        "textures": 433
+      },
+      "views": [],
+      "quality": "auto",
+      "errors": []
+    },
+    {
+      "region": "france",
+      "device": "844×390, mobile input, DPR 1",
+      "gpu": "SwiftShader software",
+      "movement": {
+        "before": {
+          "x": 0,
+          "z": 5
+        },
+        "after": {
+          "x": -1.3441496713265702,
+          "z": 7.525114975245488
+        },
+        "performance": {
+          "frames": 0,
+          "movingFrames": 0,
+          "stalls": 0,
+          "maxGapMs": 0,
+          "p95Ms": 0,
+          "updatePeakMs": 0,
+          "renderPeakMs": 0,
+          "windowFrames": 0,
+          "events": []
+        }
+      },
+      "injectedStall": {
+        "durationMs": 450,
+        "event": {
+          "timeMs": 3937,
+          "region": "france",
+          "quality": "auto",
+          "ratio": 1,
+          "programs": 83,
+          "geometries": 309,
+          "textures": 316,
+          "drawCalls": 563,
+          "triangles": 6751646,
+          "worldMs": 9,
+          "snapshotMs": 0,
+          "frameCpuMs": 6229,
+          "betweenFramesMs": 3,
+          "gapMs": 6232,
+          "updateMs": 18,
+          "renderMs": 6211
+        }
+      },
+      "view": {
+        "eye": [
+          1172.1325223461695,
+          82.40226868179457,
+          2888.4019448208537
+        ],
+        "target": [
+          1082.1325223461695,
+          16.40226868179456,
+          2788.4019448208537
+        ],
+        "name": "Hameau du Rivage · Hauts des Alpes",
+        "kind": "large"
+      },
+      "budget": {
+        "calls": 36,
+        "triangles": 220547,
+        "programs": 83,
+        "geometries": 321,
+        "textures": 316
+      },
+      "views": [
+        {
+          "view": {
+            "eye": [
+              1082.1325223461695,
+              12.10226868179456,
+              2836.4019448208537
+            ],
+            "target": [
+              1082.1325223461695,
+              13.402268681794562,
+              2761.4019448208537
+            ],
+            "name": "Hameau du Rivage · Hauts des Alpes",
+            "kind": "street"
+          },
+          "budget": {
+            "calls": 38,
+            "triangles": 220099,
+            "programs": 83,
+            "geometries": 327,
+            "textures": 316
+          }
+        },
+        {
+          "view": {
+            "eye": [
+              1070.1325223461695,
+              12.10226868179456,
+              2798.4019448208537
+            ],
+            "target": [
+              1090.1325223461695,
+              13.402268681794562,
+              2773.4019448208537
+            ],
+            "name": "Hameau du Rivage · Hauts des Alpes",
+            "kind": "square"
+          },
+          "budget": {
+            "calls": 36,
+            "triangles": 217969,
+            "programs": 83,
+            "geometries": 333,
+            "textures": 316
+          }
+        },
+        {
+          "view": {
+            "eye": [
+              1082.1325223461695,
+              23.976947297680702,
+              2893.4019448208537
+            ],
+            "target": [
+              1082.1325223461695,
+              16.40226868179456,
+              2788.4019448208537
+            ],
+            "name": "Hameau du Rivage · Hauts des Alpes",
+            "kind": "entry"
+          },
+          "budget": {
+            "calls": 40,
+            "triangles": 222435,
+            "programs": 83,
+            "geometries": 333,
+            "textures": 316
+          }
+        }
+      ],
+      "quality": "auto",
+      "stream": {
+        "region": "france",
+        "radius": 3437.9531701289943,
+        "areaHubRatio": 50,
+        "sectorSize": 256,
+        "activeSectors": 44,
+        "pendingSectors": 0,
+        "pendingRoadSurface": false,
+        "work": {
+          "tileSlices": 96,
+          "instanceUpdates": 29,
+          "peakTravelUpdateMs": 104.59999999962747,
+          "peakTileSliceMs": 104.5,
+          "peakRoadMs": 20.90000000037253,
+          "peakInstanceMs": 11.099999999627471,
+          "peakCommitMs": 3.900000000372529
+        },
+        "maxSectors": 49,
+        "generatedSectors": 84,
+        "terrainTriangles": 25600,
+        "natureInstances": 320,
+        "maxNatureInstances": 320,
+        "buildingInstances": 6,
+        "activeSettlements": 1,
+        "settlements": 15,
+        "travelRelays": 17,
+        "drawCalls": 54,
+        "position": {
+          "x": 1082.1325223461695,
+          "z": 2788.4019448208537
+        },
+        "realTerrain": true
+      },
+      "errors": []
+    }
+  ],
+  "adaptive": [
+    {
+      "device": "phone-landscape",
+      "before": {
+        "targetFps": 30,
+        "mode": "auto",
+        "selected": "auto",
+        "shadows": true,
+        "shadowInterval": 83,
+        "ratio": 1,
+        "ao": false,
+        "crowd": {
+          "profile": "mobileHigh",
+          "count": 32,
+          "updateHz": 6,
+          "maxDistance": 300,
+          "moving": true,
+          "visible": 16,
+          "routes": 41,
+          "localPool": false,
+          "civilian": true,
+          "activities": [
+            "walking",
+            "looking",
+            "chatting",
+            "resting"
+          ],
+          "ready": true,
+          "geometry": "shipped-human",
+          "error": null,
+          "drawCalls": 2,
+          "triangles": 46560,
+          "models": [
+            {
+              "vertices": 5476,
+              "nearTriangles": 7809,
+              "farTriangles": 2613,
+              "animationBytes": 1622016,
+              "frames": 16,
+              "idleFrames": 2,
+              "source": "shipped-traveller-glb"
+            },
+            {
+              "vertices": 6854,
+              "nearTriangles": 8615,
+              "farTriangles": 3207,
+              "animationBytes": 1990656,
+              "frames": 16,
+              "idleFrames": 2,
+              "source": "shipped-traveller-glb"
+            }
+          ]
+        },
+        "position": {
+          "x": 13.6,
+          "z": 64.6
+        }
+      },
+      "fallback": {
+        "targetFps": 30,
+        "mode": "fluid",
+        "selected": "fluid",
+        "shadows": false,
+        "shadowInterval": null,
+        "ratio": 1,
+        "ao": false,
+        "crowd": {
+          "profile": "mobileHigh",
+          "count": 16,
+          "updateHz": 6,
+          "maxDistance": 300,
+          "moving": true,
+          "visible": 16,
+          "routes": 41,
+          "localPool": false,
+          "civilian": true,
+          "activities": [
+            "walking",
+            "looking",
+            "chatting",
+            "resting"
+          ],
+          "ready": true,
+          "geometry": "shipped-human",
+          "error": null,
+          "drawCalls": 2,
+          "triangles": 46560,
+          "models": [
+            {
+              "vertices": 5476,
+              "nearTriangles": 7809,
+              "farTriangles": 2613,
+              "animationBytes": 1622016,
+              "frames": 16,
+              "idleFrames": 2,
+              "source": "shipped-traveller-glb"
+            },
+            {
+              "vertices": 6854,
+              "nearTriangles": 8615,
+              "farTriangles": 3207,
+              "animationBytes": 1990656,
+              "frames": 16,
+              "idleFrames": 2,
+              "source": "shipped-traveller-glb"
+            }
+          ]
+        },
+        "position": {
+          "x": 13.6,
+          "z": 64.6
+        }
+      },
+      "partial": {
+        "targetFps": 30,
+        "mode": "fluid",
+        "selected": "fluid",
+        "shadows": false,
+        "shadowInterval": null,
+        "ratio": 1,
+        "ao": false,
+        "crowd": {
+          "profile": "mobileHigh",
+          "count": 16,
+          "updateHz": 6,
+          "maxDistance": 300,
+          "moving": true,
+          "visible": 16,
+          "routes": 41,
+          "localPool": false,
+          "civilian": true,
+          "activities": [
+            "walking",
+            "looking",
+            "chatting",
+            "resting"
+          ],
+          "ready": true,
+          "geometry": "shipped-human",
+          "error": null,
+          "drawCalls": 2,
+          "triangles": 46560,
+          "models": [
+            {
+              "vertices": 5476,
+              "nearTriangles": 7809,
+              "farTriangles": 2613,
+              "animationBytes": 1622016,
+              "frames": 16,
+              "idleFrames": 2,
+              "source": "shipped-traveller-glb"
+            },
+            {
+              "vertices": 6854,
+              "nearTriangles": 8615,
+              "farTriangles": 3207,
+              "animationBytes": 1990656,
+              "frames": 16,
+              "idleFrames": 2,
+              "source": "shipped-traveller-glb"
+            }
+          ]
+        },
+        "position": {
+          "x": 13.6,
+          "z": 64.6
+        }
+      },
+      "recovered": {
+        "targetFps": 30,
+        "mode": "auto",
+        "selected": "auto",
+        "shadows": true,
+        "shadowInterval": 83,
+        "ratio": 1,
+        "ao": false,
+        "crowd": {
+          "profile": "mobileHigh",
+          "count": 32,
+          "updateHz": 6,
+          "maxDistance": 300,
+          "moving": true,
+          "visible": 16,
+          "routes": 41,
+          "localPool": false,
+          "civilian": true,
+          "activities": [
+            "walking",
+            "looking",
+            "chatting",
+            "resting"
+          ],
+          "ready": true,
+          "geometry": "shipped-human",
+          "error": null,
+          "drawCalls": 2,
+          "triangles": 46560,
+          "models": [
+            {
+              "vertices": 5476,
+              "nearTriangles": 7809,
+              "farTriangles": 2613,
+              "animationBytes": 1622016,
+              "frames": 16,
+              "idleFrames": 2,
+              "source": "shipped-traveller-glb"
+            },
+            {
+              "vertices": 6854,
+              "nearTriangles": 8615,
+              "farTriangles": 3207,
+              "animationBytes": 1990656,
+              "frames": 16,
+              "idleFrames": 2,
+              "source": "shipped-traveller-glb"
+            }
+          ]
+        },
+        "position": {
+          "x": 13.6,
+          "z": 64.6
+        }
+      },
+      "errors": []
+    },
+    {
+      "device": "phone-portrait",
+      "before": {
+        "targetFps": 30,
+        "mode": "auto",
+        "selected": "auto",
+        "shadows": true,
+        "shadowInterval": 83,
+        "ratio": 1,
+        "ao": false,
+        "crowd": {
+          "profile": "mobileHigh",
+          "count": 32,
+          "updateHz": 6,
+          "maxDistance": 300,
+          "moving": true,
+          "visible": 16,
+          "routes": 41,
+          "localPool": false,
+          "civilian": true,
+          "activities": [
+            "walking",
+            "looking",
+            "chatting",
+            "resting"
+          ],
+          "ready": true,
+          "geometry": "shipped-human",
+          "error": null,
+          "drawCalls": 2,
+          "triangles": 46560,
+          "models": [
+            {
+              "vertices": 5476,
+              "nearTriangles": 7809,
+              "farTriangles": 2613,
+              "animationBytes": 1622016,
+              "frames": 16,
+              "idleFrames": 2,
+              "source": "shipped-traveller-glb"
+            },
+            {
+              "vertices": 6854,
+              "nearTriangles": 8615,
+              "farTriangles": 3207,
+              "animationBytes": 1990656,
+              "frames": 16,
+              "idleFrames": 2,
+              "source": "shipped-traveller-glb"
+            }
+          ]
+        },
+        "position": {
+          "x": 13.6,
+          "z": 64.6
+        }
+      },
+      "fallback": {
+        "targetFps": 30,
+        "mode": "fluid",
+        "selected": "fluid",
+        "shadows": false,
+        "shadowInterval": null,
+        "ratio": 1,
+        "ao": false,
+        "crowd": {
+          "profile": "mobileHigh",
+          "count": 16,
+          "updateHz": 6,
+          "maxDistance": 300,
+          "moving": true,
+          "visible": 16,
+          "routes": 41,
+          "localPool": false,
+          "civilian": true,
+          "activities": [
+            "walking",
+            "looking",
+            "chatting",
+            "resting"
+          ],
+          "ready": true,
+          "geometry": "shipped-human",
+          "error": null,
+          "drawCalls": 2,
+          "triangles": 46560,
+          "models": [
+            {
+              "vertices": 5476,
+              "nearTriangles": 7809,
+              "farTriangles": 2613,
+              "animationBytes": 1622016,
+              "frames": 16,
+              "idleFrames": 2,
+              "source": "shipped-traveller-glb"
+            },
+            {
+              "vertices": 6854,
+              "nearTriangles": 8615,
+              "farTriangles": 3207,
+              "animationBytes": 1990656,
+              "frames": 16,
+              "idleFrames": 2,
+              "source": "shipped-traveller-glb"
+            }
+          ]
+        },
+        "position": {
+          "x": 13.6,
+          "z": 64.6
+        }
+      },
+      "partial": {
+        "targetFps": 30,
+        "mode": "fluid",
+        "selected": "fluid",
+        "shadows": false,
+        "shadowInterval": null,
+        "ratio": 1,
+        "ao": false,
+        "crowd": {
+          "profile": "mobileHigh",
+          "count": 16,
+          "updateHz": 6,
+          "maxDistance": 300,
+          "moving": true,
+          "visible": 16,
+          "routes": 41,
+          "localPool": false,
+          "civilian": true,
+          "activities": [
+            "walking",
+            "looking",
+            "chatting",
+            "resting"
+          ],
+          "ready": true,
+          "geometry": "shipped-human",
+          "error": null,
+          "drawCalls": 2,
+          "triangles": 46560,
+          "models": [
+            {
+              "vertices": 5476,
+              "nearTriangles": 7809,
+              "farTriangles": 2613,
+              "animationBytes": 1622016,
+              "frames": 16,
+              "idleFrames": 2,
+              "source": "shipped-traveller-glb"
+            },
+            {
+              "vertices": 6854,
+              "nearTriangles": 8615,
+              "farTriangles": 3207,
+              "animationBytes": 1990656,
+              "frames": 16,
+              "idleFrames": 2,
+              "source": "shipped-traveller-glb"
+            }
+          ]
+        },
+        "position": {
+          "x": 13.6,
+          "z": 64.6
+        }
+      },
+      "recovered": {
+        "targetFps": 30,
+        "mode": "auto",
+        "selected": "auto",
+        "shadows": true,
+        "shadowInterval": 83,
+        "ratio": 1,
+        "ao": false,
+        "crowd": {
+          "profile": "mobileHigh",
+          "count": 32,
+          "updateHz": 6,
+          "maxDistance": 300,
+          "moving": true,
+          "visible": 16,
+          "routes": 41,
+          "localPool": false,
+          "civilian": true,
+          "activities": [
+            "walking",
+            "looking",
+            "chatting",
+            "resting"
+          ],
+          "ready": true,
+          "geometry": "shipped-human",
+          "error": null,
+          "drawCalls": 2,
+          "triangles": 46560,
+          "models": [
+            {
+              "vertices": 5476,
+              "nearTriangles": 7809,
+              "farTriangles": 2613,
+              "animationBytes": 1622016,
+              "frames": 16,
+              "idleFrames": 2,
+              "source": "shipped-traveller-glb"
+            },
+            {
+              "vertices": 6854,
+              "nearTriangles": 8615,
+              "farTriangles": 3207,
+              "animationBytes": 1990656,
+              "frames": 16,
+              "idleFrames": 2,
+              "source": "shipped-traveller-glb"
+            }
+          ]
+        },
+        "position": {
+          "x": 13.6,
+          "z": 64.6
+        }
+      },
+      "errors": []
+    }
+  ]
+}

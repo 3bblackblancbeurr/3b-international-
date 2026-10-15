@@ -50,6 +50,11 @@ function injectQa(code){
   },
   qaCombatLook(){orbit={...orbit,yaw:0,pitch:.34,distance:24};cameraFollow=true;manualCameraAt=-Infinity;needsRender=true;},
   qaFreeze(){cancelAnimationFrame(raf);qaFrozen=true;},
+  qaSettleTerrain(count=8){
+   if(!qaFrozen||!Number.isInteger(count)||count<1||count>8)throw Error('Bounded private terrain preparation requires a frozen render clock');
+   for(let i=0;i<count&&landscape.streamingBusy;i++)landscape.updateStreaming(position);
+   return landscape.streamingDiagnostics;
+  },
   qaAdvance(count=1,dt=.25){
    if(!Number.isInteger(count)||count<1||count>8||!Number.isFinite(dt)||dt<=0||dt>.25)throw Error('Bounded private frame step required');
    cancelAnimationFrame(raf);qaFrozen=true;
@@ -133,6 +138,14 @@ try{
    console.log(profile.name+': loading real scene');await page.goto('http://127.0.0.1:'+port+'/__master-combat-qa',{waitUntil:'domcontentloaded',timeout:120000});
    await page.waitForFunction(()=>qa.ready&&game.qaCombatState().ready&&qa.snapshot?.drawCalls>0,undefined,{timeout:180000,polling:400});
    assert.equal(await page.evaluate(()=>{game.skipCinematic();return game.relocateRealm({region:'france',x:qa.court.x,z:qa.court.z+6});}),true);
+   // This fixture tests accepted combat, not terrain/frame throughput. Drain
+   // the real stream in bounded slices between renders: SwiftShader can take
+   // several seconds per image, starving distant terrain behind this wait.
+   // Streaming budgets and real-time movement have their own browser tests.
+   await page.evaluate(()=>game.qaFreeze());
+   try{
+    await page.waitForFunction(()=>{const stream=game.qaSettleTerrain();return stream.pendingSectors===0&&!stream.pendingRoadSurface;},undefined,{timeout:120000,polling:50});
+   }finally{await page.evaluate(()=>game.qaResume());}
    await page.waitForFunction(()=>{const s=game.qaCombatState();return s.stream?.pendingSectors===0&&qa.snapshot?.guardians.some(g=>g.ready);},undefined,{timeout:120000,polling:400});
    console.log(profile.name+': canonical windup, held pose and pause');
    const beginning=await page.evaluate(()=>{game.qaFreeze();return qa.begin();});assert.equal(beginning.field.phase,'windup');
