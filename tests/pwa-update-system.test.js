@@ -91,7 +91,7 @@ test("home portal renders the approved scene with a separate animated Broken Cir
   assert.match(artworkCss, /rotate\(360deg\)/);
   assert.match(artwork, /IntersectionObserver/);
   assert.match(artwork, /visibilitychange/);
-  assert.match(artwork, /!policy\.reduced && !policy\.economical/);
+  assert.match(artwork, /const motionAllowed\s*=\s*!policy\.reduced\s*;/);
   for (const condition of ['data-visible="false"', 'data-covered="true"', 'data-motion="reduced"']) {
     assert.ok(artworkCss.includes(condition), `missing animation pause condition: ${condition}`);
   }

@@ -13,9 +13,12 @@ test('approved scenic screenshot has distinct static scene and moving ring sourc
   assert.match(artwork, /className="home-aaa-artwork"/);
   assert.match(artwork, /className="home-aaa-rotating-circle"/);
   assert.match(css, /\.home-aaa-artwork\s*\{[^}]*animation:none/s);
-  assert.match(css, /@keyframes threebMenuBrokenCircleTurn/);
-  assert.match(css, /rotate\(360deg\)/);
-  assert.match(css, /34s linear infinite/);
+  assert.match(css, /@keyframes threebRingActuallyRotates/);
+  assert.match(css, /rotateZ\(360deg\)/);
+  assert.match(css, /16s linear infinite/);
+  assert.match(artwork, /home-aaa-ring-holder/);
+  assert.match(artwork, /home-aaa-magic-sky/);
+  assert.match(artwork, /home-aaa-water-glow/);
   assert.doesNotMatch(portal, /<BrokenCircle3D/);
 });
 
@@ -24,7 +27,8 @@ test('animation stops off-screen, inside modal, in background or reduced-motion 
   assert.match(artwork, /visibilitychange/);
   assert.match(artwork, /threeb:app-menu-state/);
   assert.match(artwork, /threeb:home-story-state/);
-  assert.match(artwork, /!policy\.reduced && !policy\.economical/);
+  assert.match(artwork, /motionAllowed = !policy\.reduced/);
+  assert.doesNotMatch(artwork, /!policy\.reduced && !policy\.economical/);
   for (const condition of ['data-visible="false"', 'data-covered="true"', 'data-motion="reduced"']) {
     assert.ok(css.includes(condition), 'missing stop condition: ' + condition);
   }

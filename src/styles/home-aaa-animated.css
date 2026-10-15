@@ -259,3 +259,354 @@ html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-ui-message {
   html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-rotating-circle,
   html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-ring-fallback { animation:none; }
 }
+
+
+/* ---- OCT 15 REPAIR / WORLD MENU GOLD MASTER v2 ----
+   Previous release mistakenly rotated a dirty extraction and retained a blurred
+   old ring inside the background. This layer uses two NEW clean art sources.
+   Deliberately not WebGL: transform+opacity stay smooth on economical Androids.
+   Gold Master reviewed exception: new visuals use the canonical tokens. */
+
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-entry {
+  position:relative;
+  display:block;
+  width:100%;
+  height:auto;
+  min-height:0;
+  overflow:hidden;
+  isolation:isolate;
+  border:1px solid rgba(var(--3b-champagne-rgb),.30);
+  border-radius:var(--3b-radius-hero);
+  background:var(--3b-obsidian);
+  box-shadow:var(--3b-shadow-deep);
+}
+
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-art {
+  display:block;
+  position:relative;
+  height:auto;
+  width:100%;
+  margin:0;
+  aspect-ratio:900 / 700;
+  overflow:hidden;
+  isolation:isolate;
+  pointer-events:none;
+  background:radial-gradient(ellipse at 50% 40%,rgb(28 66 88 / .55),transparent 70%),var(--3b-obsidian);
+}
+
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-artwork {
+  position:absolute;
+  z-index:0;
+  inset:0;
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:cover;
+  object-position:50% 45%;
+  animation:none;
+  transform:none;
+}
+
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-magic-sky {
+  position:absolute;
+  z-index:1;
+  inset:0 0 auto;
+  height:46%;
+  opacity:.28;
+  background-image:
+    radial-gradient(circle at 18% 9%,var(--3b-champagne-highlight) 0 1px,transparent 2px),
+    radial-gradient(circle at 82% 13%,var(--3b-matrix) 0 1.5px,transparent 2.5px),
+    radial-gradient(circle at 43% 25%,var(--3b-champagne-highlight) 0 1px,transparent 2px);
+  background-size:113px 104px,173px 159px,241px 227px;
+  animation:threebSkyBreath 7s ease-in-out infinite alternate;
+}
+
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-ring-aura {
+  position:absolute;
+  z-index:1;
+  left:50%;
+  top:45%;
+  width:67%;
+  aspect-ratio:1;
+  border-radius:var(--3b-radius-circle);
+  transform:translate3d(-50%,-50%,0);
+  opacity:.7;
+  background:radial-gradient(circle,transparent 0 30%,rgba(var(--3b-champagne-rgb),.13) 58%,transparent 73%);
+  filter:blur(15px);
+  animation:threebAuraBreath 5.3s ease-in-out infinite alternate;
+}
+
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-ring-holder {
+  position:absolute;
+  z-index:2;
+  left:50%;
+  top:45%;
+  display:block;
+  width:min(76%,520px);
+  height:auto;
+  aspect-ratio:1;
+  transform:translate3d(-50%,-50%,0);
+  transform-origin:50% 50%;
+  animation:threebRingFloat 5s ease-in-out infinite alternate;
+  will-change:transform;
+  filter:drop-shadow(0 17px 16px rgb(0 0 0 / .58)) drop-shadow(0 0 14px rgba(var(--3b-champagne-rgb),.20));
+}
+
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-rotating-circle,
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-ring-fallback {
+  position:absolute;
+  z-index:2;
+  display:block;
+  inset:0;
+  left:0;
+  top:0;
+  width:100%;
+  height:100%;
+  max-width:none;
+  object-fit:contain;
+  transform:translateZ(0) rotateZ(0deg);
+  transform-origin:50% 50%;
+  backface-visibility:hidden;
+  will-change:transform;
+  animation:threebRingActuallyRotates 16s linear infinite;
+}
+
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-ring-fallback {
+  border-radius:var(--3b-radius-circle);
+  background:repeating-conic-gradient(
+    from 7deg,
+    var(--3b-champagne-highlight) 0 22deg,
+    var(--3b-champagne-deep) 28deg,
+    rgb(127 139 145) 34deg,
+    transparent 35deg 43deg
+  );
+  -webkit-mask:radial-gradient(circle,transparent 0 51%,black 53% 79%,transparent 81%);
+  mask:radial-gradient(circle,transparent 0 51%,black 53% 79%,transparent 81%);
+  filter:drop-shadow(0 0 13px rgba(var(--3b-champagne-rgb),.60));
+}
+
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-water-glow {
+  position:absolute;
+  z-index:1;
+  inset:auto 0 3%;
+  height:23%;
+  opacity:.15;
+  background:linear-gradient(90deg,transparent,rgba(var(--3b-champagne-rgb),.45),transparent);
+  background-size:55% 100%;
+  background-repeat:no-repeat;
+  animation:threebWaterGleam 12s ease-in-out infinite alternate;
+}
+
+@keyframes threebRingActuallyRotates {
+  from { transform:translateZ(0) rotateZ(0deg); }
+  to { transform:translateZ(0) rotateZ(360deg); }
+}
+@keyframes threebRingFloat {
+  from { transform:translate3d(-50%,-51%,0) rotateX(1deg); }
+  to { transform:translate3d(-50%,-48.5%,0) rotateX(-2deg); }
+}
+@keyframes threebSkyBreath {
+  from { opacity:.15; }
+  to { opacity:.39; }
+}
+@keyframes threebAuraBreath {
+  from { opacity:.42; }
+  to { opacity:.85; }
+}
+@keyframes threebWaterGleam {
+  from { background-position:-100% center;opacity:.08; }
+  to { background-position:200% center;opacity:.23; }
+}
+
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-overlay.world-portal-copy {
+  position:absolute;
+  z-index:4;
+  inset:0;
+  display:block;
+  width:100%;
+  max-width:none;
+  height:100%;
+  margin:0;
+  padding:0;
+  background:linear-gradient(180deg,transparent 68%,rgb(1 8 15 / .10) 76%,rgb(1 6 12 / .73) 100%);
+  pointer-events:none;
+}
+
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-overlay .home-aaa-accessible {
+  position:absolute!important;
+  z-index:5;
+  top:45%;
+  left:50%;
+  width:min(52%,340px)!important;
+  min-width:0;
+  height:auto!important;
+  max-width:340px;
+  margin:0!important;
+  padding:0!important;
+  overflow:visible!important;
+  white-space:normal!important;
+  transform:translate3d(-50%,-50%,0);
+  clip-path:none!important;
+  text-align:center;
+  pointer-events:none;
+}
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-overlay .home-aaa-accessible::before {
+  content:"";
+  position:absolute;
+  z-index:-1;
+  inset:-30px -20px;
+  border-radius:var(--3b-radius-circle);
+  background:radial-gradient(ellipse at center,rgb(2 8 14 / .82) 0%,rgb(2 8 14 / .58) 39%,transparent 73%);
+}
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-overlay .home-aaa-accessible .eyebrow {
+  display:block;
+  margin:0 0 8px;
+  color:var(--3b-champagne-highlight);
+  font-size:clamp(7px,1.1vw,11px);
+  font-weight:650;
+  letter-spacing:.19em;
+  text-shadow:0 2px 10px rgb(0 0 0 / .8);
+}
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-overlay .home-aaa-accessible h2 {
+  display:block;
+  max-width:none;
+  margin:0;
+  font-family:Georgia,'Times New Roman',serif;
+  font-size:clamp(29px,4.7vw,50px);
+  font-weight:500;
+  letter-spacing:-.035em;
+  line-height:1.15;
+  color:var(--3b-white);
+  text-shadow:0 3px 11px rgb(0 0 0 / .96),0 0 28px rgb(0 0 0 / .7);
+}
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-overlay .home-aaa-accessible h2 em {
+  display:block;
+  font-family:Georgia,'Times New Roman',serif;
+  font-weight:500;
+  color:var(--3b-champagne-highlight);
+  background:none;
+  -webkit-text-fill-color:var(--3b-champagne-highlight);
+}
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-overlay .home-aaa-accessible p:not(.eyebrow) {
+  position:absolute!important;
+  display:block!important;
+  width:1px!important;
+  height:1px!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:hidden!important;
+  white-space:nowrap!important;
+  clip-path:inset(50%)!important;
+}
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-overlay .home-aaa-actions.world-portal-actions {
+  position:absolute;
+  z-index:6;
+  left:50%;
+  bottom:clamp(10px,2%,20px);
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  width:min(86%,550px);
+  margin:0;
+  padding:0;
+  gap:10px;
+  transform:translateX(-50%);
+  pointer-events:auto;
+}
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-actions .surface-button.gm-button {
+  min-height:62px;
+  width:100%;
+  padding:12px 16px;
+  font-size:clamp(16px,2.6vw,21px);
+  font-weight:750;
+  letter-spacing:-.015em;
+  border:1px solid var(--3b-champagne-highlight);
+  border-radius:var(--3b-radius-pill);
+  color:var(--3b-gold-ink);
+  background:var(--3b-gold-metal);
+  box-shadow:var(--3b-shadow-city-entry);
+}
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-actions .gm-button--ghost {
+  min-height:53px;
+  width:100%;
+  border:1px solid rgba(var(--3b-champagne-rgb),.36);
+  border-radius:var(--3b-radius-pill);
+  color:var(--3b-white);
+  background:rgb(2 9 17 / .82);
+  box-shadow:var(--3b-shadow-contact);
+  backdrop-filter:blur(8px);
+}
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-overlay .home-aaa-ui-message {
+  position:absolute;
+  bottom:0;
+  width:100%;
+  font-size:12px;
+}
+
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-art[data-visible="false"] :is(.home-aaa-rotating-circle,.home-aaa-ring-fallback,.home-aaa-ring-holder,.home-aaa-magic-sky,.home-aaa-ring-aura,.home-aaa-water-glow),
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-art[data-covered="true"] :is(.home-aaa-rotating-circle,.home-aaa-ring-fallback,.home-aaa-ring-holder,.home-aaa-magic-sky,.home-aaa-ring-aura,.home-aaa-water-glow),
+html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-art[data-motion="reduced"] :is(.home-aaa-rotating-circle,.home-aaa-ring-fallback,.home-aaa-ring-holder,.home-aaa-magic-sky,.home-aaa-ring-aura,.home-aaa-water-glow) {
+  animation-play-state:paused!important;
+}
+
+@media(max-width:720px) {
+  html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-entry {
+    margin-bottom:24px;
+    border-radius:var(--3b-radius-card);
+  }
+  html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-art {
+    aspect-ratio:420 / 595;
+  }
+  html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-artwork {
+    object-position:50% 44%;
+  }
+  html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-ring-holder {
+    top:43%;
+    width:85%;
+    max-width:430px;
+  }
+  html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-ring-aura {
+    top:43%;
+    width:85%;
+  }
+  html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-overlay .home-aaa-accessible {
+    top:43%;
+    width:52%!important;
+    min-width:0;
+  }
+  html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-overlay .home-aaa-accessible h2 {
+    font-size:clamp(23px,6.8vw,32px);
+    line-height:1.18;
+  }
+  html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-overlay .home-aaa-actions.world-portal-actions {
+    width:88%;
+    bottom:10px;
+    gap:8px;
+  }
+  html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-actions .surface-button.gm-button {
+    min-height:53px;
+    font-size:16px;
+  }
+  html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-actions .gm-button--ghost {
+    min-height:47px;
+    font-size:13px;
+  }
+}
+@media(max-width:380px) {
+  html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-overlay .home-aaa-accessible h2 {
+    font-size:clamp(21px,6.5vw,27px);
+  }
+  html[data-luxury="v2"] body .app3b[data-page="home"] .home-scanner-direct {
+    min-height:66px;
+  }
+}
+@media(prefers-reduced-motion:reduce) {
+  html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-ring-holder,
+  html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-rotating-circle,
+  html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-ring-fallback,
+  html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-magic-sky,
+  html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-ring-aura,
+  html[data-luxury="v2"] body .app3b[data-page="home"] .home-aaa-water-glow {
+    animation:none!important;
+  }
+}
