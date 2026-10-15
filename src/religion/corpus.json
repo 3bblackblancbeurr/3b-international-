@@ -13,11 +13,33 @@
         {
           "label": "Coran 2/30-39",
           "url": "https://quran.com/fr/2/30-39"
+        },
+        {
+          "label": "Gn 3",
+          "url": "https://www.aelf.org/bible/Gn/3"
+        },
+        {
+          "label": "Gn 5",
+          "url": "https://www.aelf.org/bible/Gn/5"
+        },
+        {
+          "label": "Coran 7:11-27",
+          "url": "https://quran.com/fr/7/11-27"
         }
       ],
       "group": "biblical",
       "aliases": "Adâm آدم",
-      "note": "Récits religieux des origines ; aucune date de naissance historiquement établie. Voir aussi Coran 2:30–39."
+      "note": "Récits religieux des origines ; aucune date de naissance historiquement établie. Voir aussi Coran 2:30–39.",
+      "sections": [
+        {
+          "title": "Dans la Genèse",
+          "text": "Les chapitres 2 et 3 mettent en scène le jardin, l’interdit et la condition humaine hors d’Éden. Le chapitre 5 ouvre ensuite une liste de descendants. Ces textes racontent les origines selon leurs formes littéraires ; ils ne constituent pas un registre civil permettant de dater chaque naissance."
+        },
+        {
+          "title": "Dans le Coran",
+          "text": "Les passages 2:30–39 et 7:11–27 abordent notamment l’enseignement des noms, l’épreuve et le retour vers Dieu. Les détails propres à chaque passage doivent rester attribués à leur texte, sans être automatiquement reportés dans la Genèse."
+        }
+      ]
     },
     {
       "id": "eve",
@@ -27,11 +49,29 @@
         {
           "label": "Genèse 3",
           "url": "https://www.aelf.org/bible/Gn/3"
+        },
+        {
+          "label": "Gn 4",
+          "url": "https://www.aelf.org/bible/Gn/4"
+        },
+        {
+          "label": "Coran 7:19-25",
+          "url": "https://quran.com/fr/7/19-25"
         }
       ],
       "group": "biblical",
       "aliases": "Hawwa حواء",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Un personnage, plusieurs lectures",
+          "text": "La Genèse nomme Ève et la situe auprès d’Adam dans les récits du jardin et des naissances. Le Coran évoque la compagne d’Adam sans donner son nom. Hawwa appartient à la tradition de nomination, et ne doit pas être présenté comme un nom directement cité dans ces versets."
+        },
+        {
+          "title": "Lire le couple dans son contexte",
+          "text": "Le lecteur peut suivre séparément Genèse 2–4 et Coran 7:19–25. Les commentaires ultérieurs sur la responsabilité, le couple et les origines ne sont pas tous contenus dans le texte primaire."
+        }
+      ]
     },
     {
       "id": "cain",
@@ -45,7 +85,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Adam, Ève. Les enfants nommés dans les sources de cette sélection sont : Hénok, fils de Caïn. "
+        }
+      ]
     },
     {
       "id": "abel",
@@ -59,7 +105,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Adam, Ève. "
+        }
+      ]
     },
     {
       "id": "seth",
@@ -73,7 +125,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Adam, Ève. Les enfants nommés dans les sources de cette sélection sont : Énosh. "
+        }
+      ]
     },
     {
       "id": "enosh",
@@ -87,7 +145,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Seth. Les enfants nommés dans les sources de cette sélection sont : Qénane. "
+        }
+      ]
     },
     {
       "id": "qenane",
@@ -101,7 +165,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Énosh. Les enfants nommés dans les sources de cette sélection sont : Mahalalel. "
+        }
+      ]
     },
     {
       "id": "mahalalel",
@@ -115,7 +185,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Qénane. Les enfants nommés dans les sources de cette sélection sont : Yèred. "
+        }
+      ]
     },
     {
       "id": "yered",
@@ -129,7 +205,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Mahalalel. Les enfants nommés dans les sources de cette sélection sont : Hénok. "
+        }
+      ]
     },
     {
       "id": "henok",
@@ -143,7 +225,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Yèred. Les enfants nommés dans les sources de cette sélection sont : Mathusalem. "
+        }
+      ]
     },
     {
       "id": "mathusalem",
@@ -157,7 +245,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Hénok. Les enfants nommés dans les sources de cette sélection sont : Lamek. "
+        }
+      ]
     },
     {
       "id": "lamek",
@@ -171,7 +265,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Mathusalem. Les enfants nommés dans les sources de cette sélection sont : Noé. "
+        }
+      ]
     },
     {
       "id": "noe",
@@ -185,11 +285,37 @@
         {
           "label": "Coran 71",
           "url": "https://quran.com/fr/71"
+        },
+        {
+          "label": "Gn 6",
+          "url": "https://www.aelf.org/bible/Gn/6"
+        },
+        {
+          "label": "Gn 9",
+          "url": "https://www.aelf.org/bible/Gn/9"
+        },
+        {
+          "label": "Gn 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        },
+        {
+          "label": "Coran 11:25-49",
+          "url": "https://quran.com/fr/11/25-49"
         }
       ],
       "group": "biblical",
-      "aliases": "Nûh نوح",
-      "note": ""
+      "aliases": "Nûh Nuh نوح",
+      "note": "",
+      "sections": [
+        {
+          "title": "Le récit biblique",
+          "text": "Genèse 6–9 développe le Déluge, la préservation d’une famille et des animaux, puis une alliance. La généalogie du chapitre 10 organise des peuples et des territoires dans un cadre antique. Elle ne doit pas servir à classer racialement des populations modernes."
+        },
+        {
+          "title": "Nûh dans le Coran",
+          "text": "La sourate 71 rapporte sa prédication ; la sourate 11 comprend l’épisode de l’arche et du fils qui refuse d’embarquer. Les versions ne présentent donc pas tous les membres de la famille de façon identique. La fiche ne les fusionne pas."
+        }
+      ]
     },
     {
       "id": "sem",
@@ -203,7 +329,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Noé. Les enfants nommés dans les sources de cette sélection sont : Arpaxad, Élam, Assour, Loud, Aram. "
+        }
+      ]
     },
     {
       "id": "cham",
@@ -217,7 +349,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Noé. Les enfants nommés dans les sources de cette sélection sont : Koush, Misraïm, Pouth, Canaan. "
+        }
+      ]
     },
     {
       "id": "japhet",
@@ -231,7 +369,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Noé. Les enfants nommés dans les sources de cette sélection sont : Gomer, Magog, Madaï, Yavane, Toubal, Mèshek, Tiras. "
+        }
+      ]
     },
     {
       "id": "arpaxad",
@@ -245,7 +389,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Sem. Les enfants nommés dans les sources de cette sélection sont : Shélah. "
+        }
+      ]
     },
     {
       "id": "shelah",
@@ -259,7 +409,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Arpaxad. Les enfants nommés dans les sources de cette sélection sont : Éber. "
+        }
+      ]
     },
     {
       "id": "eber",
@@ -273,7 +429,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Shélah. Les enfants nommés dans les sources de cette sélection sont : Pèleg. "
+        }
+      ]
     },
     {
       "id": "peleg",
@@ -287,7 +449,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Éber. Les enfants nommés dans les sources de cette sélection sont : Réou. "
+        }
+      ]
     },
     {
       "id": "reu",
@@ -301,7 +469,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Pèleg. Les enfants nommés dans les sources de cette sélection sont : Seroug. "
+        }
+      ]
     },
     {
       "id": "serug",
@@ -315,7 +489,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Réou. Les enfants nommés dans les sources de cette sélection sont : Nahor, ancêtre de Tèrah. "
+        }
+      ]
     },
     {
       "id": "nahor-ancien",
@@ -329,7 +509,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Seroug. Les enfants nommés dans les sources de cette sélection sont : Tèrah. "
+        }
+      ]
     },
     {
       "id": "terah",
@@ -343,7 +529,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": "Le Coran 6:74 nomme Âzar dans le récit d’Ibrahim ; ne pas confondre automatiquement les traditions."
+      "note": "Le Coran 6:74 nomme Âzar dans le récit d’Ibrahim ; ne pas confondre automatiquement les traditions.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Nahor, ancêtre de Tèrah. Les enfants nommés dans les sources de cette sélection sont : Abraham, Nahor, frère d’Abraham, Harane. "
+        }
+      ]
     },
     {
       "id": "abraham",
@@ -357,11 +549,49 @@
         {
           "label": "Coran 2/124-129",
           "url": "https://quran.com/fr/2/124-129"
+        },
+        {
+          "label": "Gn 12",
+          "url": "https://www.aelf.org/bible/Gn/12"
+        },
+        {
+          "label": "Gn 16",
+          "url": "https://www.aelf.org/bible/Gn/16"
+        },
+        {
+          "label": "Gn 18",
+          "url": "https://www.aelf.org/bible/Gn/18"
+        },
+        {
+          "label": "Gn 21",
+          "url": "https://www.aelf.org/bible/Gn/21"
+        },
+        {
+          "label": "Gn 22",
+          "url": "https://www.aelf.org/bible/Gn/22"
+        },
+        {
+          "label": "Coran 37:100-113",
+          "url": "https://quran.com/fr/37/100-113"
         }
       ],
       "group": "biblical",
-      "aliases": "Ibrahim إبراهيم",
-      "note": ""
+      "aliases": "Ibrahim Ibrâhîm إبراهيم",
+      "note": "",
+      "sections": [
+        {
+          "title": "Un parcours de déplacement",
+          "text": "Genèse 12 ouvre le récit du départ d’Abram. Les chapitres suivants développent la promesse, l’alliance, l’hospitalité et les épreuves familiales. Sarah et Hagar ont des histoires propres : les réduire à de simples raccords entre deux lignées ferait disparaître une partie essentielle du récit."
+        },
+        {
+          "title": "Ibrahim dans le Coran",
+          "text": "Coran 2:124–129 associe Ibrahim à l’épreuve et à la Maison, dont les fondations sont élevées avec Ismaël. Le Coran et la Genèse ne doivent pas être raccordés comme un récit unique. Les commentaires de chaque tradition apportent des interprétations supplémentaires qu’il faut nommer."
+        },
+        {
+          "title": "Un point de vigilance",
+          "text": "Le fils concerné par l’épisode du sacrifice est explicitement Isaac en Genèse 22. Coran 37:100–113 ne nomme pas ce fils dans le passage de l’épreuve. L’identification relève de traditions interprétatives à exposer comme telles."
+        }
+      ]
     },
     {
       "id": "nahor",
@@ -375,7 +605,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Tèrah. "
+        }
+      ]
     },
     {
       "id": "haran",
@@ -389,7 +625,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Tèrah. Les enfants nommés dans les sources de cette sélection sont : Lot. "
+        }
+      ]
     },
     {
       "id": "lot",
@@ -403,11 +645,25 @@
         {
           "label": "Coran 11/77-83",
           "url": "https://quran.com/fr/11/77-83"
+        },
+        {
+          "label": "Gn 19",
+          "url": "https://www.aelf.org/bible/Gn/19"
         }
       ],
       "group": "biblical",
       "aliases": "Lût لوط",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Le récit de la Genèse",
+          "text": "Lot apparaît dans les récits d’Abraham puis dans ceux de Sodome. Les scènes familiales et les épisodes de violence exigent une présentation contextualisée plutôt qu’un raccourci moral détaché de la source."
+        },
+        {
+          "title": "Lût dans le Coran",
+          "text": "Les passages consacrés à Lût sont répartis dans plusieurs sourates. La sourate 11 présente notamment l’arrivée des messagers. L’identité des personnages et l’ordre des événements ne sont pas à reconstruire en mélangeant les textes."
+        }
+      ]
     },
     {
       "id": "sarah",
@@ -417,11 +673,29 @@
         {
           "label": "Genèse 21",
           "url": "https://www.aelf.org/bible/Gn/21"
+        },
+        {
+          "label": "Gn 18",
+          "url": "https://www.aelf.org/bible/Gn/18"
+        },
+        {
+          "label": "Coran 11:69-73",
+          "url": "https://quran.com/fr/11/69-73"
         }
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Promesse et naissance",
+          "text": "Genèse 18 et 21 situent l’annonce puis la naissance d’Isaac dans un contexte de vieillesse. Sarah intervient aussi dans les tensions de la maisonnée d’Abraham. Sa trajectoire se lit avec celle de Hagar, sans effacer leurs différences de statut."
+        },
+        {
+          "title": "Comparer les textes",
+          "text": "Coran 11:69–73 évoque la femme d’Ibrahim et l’annonce d’Isaac puis de Jacob sans la nommer dans ces versets. L’identification à Sarah relève de la lecture traditionnelle ; la formulation de la source doit rester visible."
+        }
+      ]
     },
     {
       "id": "hagar",
@@ -431,11 +705,25 @@
         {
           "label": "Genèse 16",
           "url": "https://www.aelf.org/bible/Gn/16"
+        },
+        {
+          "label": "Gn 21",
+          "url": "https://www.aelf.org/bible/Gn/21"
         }
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Détresse et secours",
+          "text": "Genèse 16 et 21 rapportent deux épisodes où Hagar se trouve en situation de détresse. Le récit la montre parlant, recevant une annonce et veillant sur son fils. Son histoire ne se limite donc pas à la naissance d’Ismaël."
+        },
+        {
+          "title": "Dans les traditions islamiques",
+          "text": "Hajar occupe une place importante dans les traditions liées à La Mecque et au pèlerinage. Elle n’est pas nommée dans le Coran. Une histoire de Hajar doit identifier ses sources de hadith ou de commentaire au lieu de les présenter comme des versets."
+        }
+      ]
     },
     {
       "id": "ketura",
@@ -449,7 +737,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Les enfants nommés dans les sources de cette sélection sont : Zimrane, Yoqshane, Medane, Madiane, Yishbaq, Shouah. "
+        }
+      ]
     },
     {
       "id": "ismael",
@@ -463,11 +757,29 @@
         {
           "label": "Coran 19/54-55",
           "url": "https://quran.com/fr/19/54-55"
+        },
+        {
+          "label": "Gn 25",
+          "url": "https://www.aelf.org/bible/Gn/25"
+        },
+        {
+          "label": "Coran 2:127",
+          "url": "https://quran.com/fr/2/127"
         }
       ],
       "group": "biblical",
       "aliases": "Ismâ‘îl إسماعيل",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Dans la famille d’Abraham",
+          "text": "Genèse 16 présente Ismaël comme fils d’Abraham et de Hagar. Genèse 25 nomme douze fils et organise leur mémoire familiale. Les noms transmis par cette liste ne suffisent pas à établir une généalogie continue jusqu’aux familles actuelles."
+        },
+        {
+          "title": "Ismâ‘îl dans le Coran",
+          "text": "Coran 19:54–55 le qualifie de messager et de prophète. En 2:127, il apparaît avec Ibrahim auprès de la Maison. Aucune chaîne de descendants jusqu’à Muhammad n’est fournie par ces passages : les générations manquantes restent absentes de l’arbre."
+        }
+      ]
     },
     {
       "id": "isaac",
@@ -481,11 +793,33 @@
         {
           "label": "Coran 37/112-113",
           "url": "https://quran.com/fr/37/112-113"
+        },
+        {
+          "label": "Gn 24",
+          "url": "https://www.aelf.org/bible/Gn/24"
+        },
+        {
+          "label": "Gn 25",
+          "url": "https://www.aelf.org/bible/Gn/25"
+        },
+        {
+          "label": "Coran 6:84",
+          "url": "https://quran.com/fr/6/84"
         }
       ],
       "group": "biblical",
       "aliases": "Ishaq إسحاق",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Naissance et transmission",
+          "text": "Genèse 21 rapporte la naissance d’Isaac ; Genèse 24 développe le récit de son union avec Rébecca. Les chapitres suivants placent leurs fils jumeaux, Ésaü et Jacob, dans une histoire de bénédiction et de conflit."
+        },
+        {
+          "title": "Le nom d’Ishaq",
+          "text": "Le Coran cite Ishaq parmi les figures prophétiques, notamment en 6:84 et 37:112–113. Ce rapprochement de noms ne rend pas identiques les récits bibliques et coraniques. Chaque épisode est à relire dans son contexte propre."
+        }
+      ]
     },
     {
       "id": "rebecca",
@@ -499,7 +833,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Les enfants nommés dans les sources de cette sélection sont : Jacob, Ésaü. "
+        }
+      ]
     },
     {
       "id": "jacob",
@@ -513,11 +853,37 @@
         {
           "label": "Coran 12/6",
           "url": "https://quran.com/fr/12/6"
+        },
+        {
+          "label": "Gn 29",
+          "url": "https://www.aelf.org/bible/Gn/29"
+        },
+        {
+          "label": "Gn 32",
+          "url": "https://www.aelf.org/bible/Gn/32"
+        },
+        {
+          "label": "Gn 35",
+          "url": "https://www.aelf.org/bible/Gn/35"
+        },
+        {
+          "label": "Coran 12",
+          "url": "https://quran.com/fr/12"
         }
       ],
       "group": "biblical",
       "aliases": "Ya‘qûb يعقوب",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Jacob et Israël",
+          "text": "Les récits de Genèse 25–35 développent les tensions avec Ésaü, le séjour auprès de Laban et le retour. Le nom Israël intervient dans le récit de la lutte. Léa, Rachel, Bilha et Zilpa sont nommées dans les histoires de sa maisonnée."
+        },
+        {
+          "title": "La famille et la mémoire",
+          "text": "Les listes de ses enfants ne doivent pas faire oublier Dina. Dans la sourate Yûsuf, Ya‘qûb apparaît aussi comme un père qui traverse l’absence et les retrouvailles. Le détail des scènes diffère de la narration de la Genèse."
+        }
+      ]
     },
     {
       "id": "esau",
@@ -531,7 +897,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Isaac, Rébecca. "
+        }
+      ]
     },
     {
       "id": "zimran",
@@ -545,7 +917,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Abraham, Qetoura. "
+        }
+      ]
     },
     {
       "id": "yokshan",
@@ -559,7 +937,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Abraham, Qetoura. "
+        }
+      ]
     },
     {
       "id": "medan",
@@ -573,7 +957,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Abraham, Qetoura. "
+        }
+      ]
     },
     {
       "id": "midian",
@@ -587,7 +977,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Abraham, Qetoura. "
+        }
+      ]
     },
     {
       "id": "yishbak",
@@ -601,7 +997,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Abraham, Qetoura. "
+        }
+      ]
     },
     {
       "id": "shuah",
@@ -615,7 +1017,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Abraham, Qetoura. "
+        }
+      ]
     },
     {
       "id": "ismael-0",
@@ -629,7 +1037,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Ismaël. "
+        }
+      ]
     },
     {
       "id": "ismael-1",
@@ -643,7 +1057,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Ismaël. "
+        }
+      ]
     },
     {
       "id": "ismael-2",
@@ -657,7 +1077,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Ismaël. "
+        }
+      ]
     },
     {
       "id": "ismael-3",
@@ -671,7 +1097,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Ismaël. "
+        }
+      ]
     },
     {
       "id": "ismael-4",
@@ -685,7 +1117,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Ismaël. "
+        }
+      ]
     },
     {
       "id": "ismael-5",
@@ -699,7 +1137,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Ismaël. "
+        }
+      ]
     },
     {
       "id": "ismael-6",
@@ -713,7 +1157,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Ismaël. "
+        }
+      ]
     },
     {
       "id": "ismael-7",
@@ -727,7 +1177,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Ismaël. "
+        }
+      ]
     },
     {
       "id": "ismael-8",
@@ -741,7 +1197,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Ismaël. "
+        }
+      ]
     },
     {
       "id": "ismael-9",
@@ -755,7 +1217,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Ismaël. "
+        }
+      ]
     },
     {
       "id": "ismael-10",
@@ -769,7 +1237,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Ismaël. "
+        }
+      ]
     },
     {
       "id": "ismael-11",
@@ -783,7 +1257,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Ismaël. "
+        }
+      ]
     },
     {
       "id": "lea",
@@ -797,7 +1277,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Les enfants nommés dans les sources de cette sélection sont : Ruben, Siméon, Lévi, Juda, Issakar, Zabulon, Dina. "
+        }
+      ]
     },
     {
       "id": "rachel",
@@ -811,7 +1297,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Les enfants nommés dans les sources de cette sélection sont : Joseph, Benjamin. "
+        }
+      ]
     },
     {
       "id": "bilha",
@@ -825,7 +1317,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Les enfants nommés dans les sources de cette sélection sont : Dan, Nephtali. "
+        }
+      ]
     },
     {
       "id": "zilpa",
@@ -839,7 +1337,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Les enfants nommés dans les sources de cette sélection sont : Gad, Asher. "
+        }
+      ]
     },
     {
       "id": "ruben",
@@ -853,7 +1357,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Jacob, Léa. "
+        }
+      ]
     },
     {
       "id": "simeon",
@@ -867,7 +1377,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Jacob, Léa. "
+        }
+      ]
     },
     {
       "id": "levi",
@@ -881,7 +1397,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Jacob, Léa. Les enfants nommés dans les sources de cette sélection sont : Qehath. "
+        }
+      ]
     },
     {
       "id": "juda",
@@ -895,7 +1417,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Jacob, Léa. "
+        }
+      ]
     },
     {
       "id": "issachar",
@@ -909,7 +1437,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Jacob, Léa. "
+        }
+      ]
     },
     {
       "id": "zabulon",
@@ -923,7 +1457,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Jacob, Léa. "
+        }
+      ]
     },
     {
       "id": "dina",
@@ -937,7 +1477,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Jacob, Léa. "
+        }
+      ]
     },
     {
       "id": "dan",
@@ -951,7 +1497,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Jacob, Bilha. "
+        }
+      ]
     },
     {
       "id": "nephtali",
@@ -965,7 +1517,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Jacob, Bilha. "
+        }
+      ]
     },
     {
       "id": "gad",
@@ -979,7 +1537,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Jacob, Zilpa. "
+        }
+      ]
     },
     {
       "id": "asher",
@@ -993,7 +1557,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Jacob, Zilpa. "
+        }
+      ]
     },
     {
       "id": "joseph",
@@ -1007,11 +1577,29 @@
         {
           "label": "Coran 12",
           "url": "https://quran.com/fr/12"
+        },
+        {
+          "label": "Gn 37",
+          "url": "https://www.aelf.org/bible/Gn/37"
+        },
+        {
+          "label": "Gn 50",
+          "url": "https://www.aelf.org/bible/Gn/50"
         }
       ],
       "group": "biblical",
       "aliases": "Yûsuf يوسف",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "La Genèse",
+          "text": "Le cycle de Joseph se déploie de Genèse 37 à 50 : jalousie, vente, déplacement en Égypte, détention, responsabilité et retrouvailles. Ses frères et son père sont engagés dans cette histoire ; elle dépasse largement une biographie individuelle."
+        },
+        {
+          "title": "La sourate Yûsuf",
+          "text": "La sourate 12 forme un récit continu, ponctué de rêves, d’épreuves et de reconnaissance. Les paroles et les situations ne doivent pas être empruntées à un texte puis attribuées à l’autre. Une lecture parallèle gagne à avancer par épisodes référencés."
+        }
+      ]
     },
     {
       "id": "benjamin",
@@ -1025,7 +1613,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Jacob, Rachel. "
+        }
+      ]
     },
     {
       "id": "manasse",
@@ -1039,7 +1633,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Joseph, Asnath. "
+        }
+      ]
     },
     {
       "id": "ephraim",
@@ -1053,7 +1653,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Joseph, Asnath. "
+        }
+      ]
     },
     {
       "id": "qehat",
@@ -1067,7 +1673,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Lévi. Les enfants nommés dans les sources de cette sélection sont : Amram. "
+        }
+      ]
     },
     {
       "id": "amram",
@@ -1081,7 +1693,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Qehath. Les enfants nommés dans les sources de cette sélection sont : Moïse, Aaron. "
+        }
+      ]
     },
     {
       "id": "moise",
@@ -1095,11 +1713,41 @@
         {
           "label": "Coran 20/9-98",
           "url": "https://quran.com/fr/20/9-98"
+        },
+        {
+          "label": "Ex 3",
+          "url": "https://www.aelf.org/bible/Ex/3"
+        },
+        {
+          "label": "Ex 12",
+          "url": "https://www.aelf.org/bible/Ex/12"
+        },
+        {
+          "label": "Ex 15",
+          "url": "https://www.aelf.org/bible/Ex/15"
+        },
+        {
+          "label": "Coran 28",
+          "url": "https://quran.com/fr/28"
         }
       ],
       "group": "biblical",
-      "aliases": "Moussa موسى",
-      "note": ""
+      "aliases": "Moussa Musa موسى",
+      "note": "",
+      "sections": [
+        {
+          "title": "L’appel et la mission",
+          "text": "Exode 3 présente l’appel de Moïse ; les chapitres suivants organisent la confrontation avec Pharaon et la sortie d’Égypte. Aaron et Myriam ont leurs rôles propres. La généalogie d’Exode 6 est une source distincte du récit du buisson."
+        },
+        {
+          "title": "Moussa dans le Coran",
+          "text": "La sourate 20 retrace notamment l’appel, la mission et la demande d’assistance de Haroun. La sourate 28 présente d’autres épisodes de sa jeunesse. Les textes ne doivent pas être amalgamés à une reconstitution historique datée avec certitude."
+        },
+        {
+          "title": "Héritages",
+          "text": "Moïse occupe une place centrale dans la Torah et la mémoire juive ; il est également relu dans les écrits chrétiens et dans le Coran. Les lectures théologiques peuvent être rapprochées, mais aucune tradition ne doit parler au nom des autres."
+        }
+      ]
     },
     {
       "id": "aaron",
@@ -1113,11 +1761,29 @@
         {
           "label": "Coran 20/29-36",
           "url": "https://quran.com/fr/20/29-36"
+        },
+        {
+          "label": "Ex 32",
+          "url": "https://www.aelf.org/bible/Ex/32"
+        },
+        {
+          "label": "Coran 20:83-94",
+          "url": "https://quran.com/fr/20/83-94"
         }
       ],
       "group": "biblical",
       "aliases": "Haroun هارون",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Deux cadres documentaires",
+          "text": "Exode 6 donne des repères familiaux ; les récits de l’Exode développent ensuite sa place auprès de Moïse. Les textes bibliques sur le sacerdoce constituent encore un autre ensemble de passages."
+        },
+        {
+          "title": "Haroun",
+          "text": "Coran 20:29–36 rapporte la demande de Moussa pour être assisté par son frère. La place de Haroun dans l’épisode du veau doit être comparée à partir des textes eux-mêmes : les traditions n’en distribuent pas la responsabilité de manière identique."
+        }
+      ]
     },
     {
       "id": "myriam",
@@ -1131,7 +1797,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "La fiche se rattache à la liste textuelle indiquée dans les sources. La sélection ne fournit pas de récit individuel développé pour cette personne."
+        }
+      ]
     },
     {
       "id": "perez",
@@ -1145,7 +1817,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Tamar. "
+        }
+      ]
     },
     {
       "id": "hesron",
@@ -1159,7 +1837,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "La fiche se rattache à la liste textuelle indiquée dans les sources. La sélection ne fournit pas de récit individuel développé pour cette personne."
+        }
+      ]
     },
     {
       "id": "ram",
@@ -1173,7 +1857,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "La fiche se rattache à la liste textuelle indiquée dans les sources. La sélection ne fournit pas de récit individuel développé pour cette personne."
+        }
+      ]
     },
     {
       "id": "amminadab",
@@ -1187,7 +1877,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "La fiche se rattache à la liste textuelle indiquée dans les sources. La sélection ne fournit pas de récit individuel développé pour cette personne."
+        }
+      ]
     },
     {
       "id": "nahshon",
@@ -1201,7 +1897,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "La fiche se rattache à la liste textuelle indiquée dans les sources. La sélection ne fournit pas de récit individuel développé pour cette personne."
+        }
+      ]
     },
     {
       "id": "salmon",
@@ -1215,7 +1917,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "La fiche se rattache à la liste textuelle indiquée dans les sources. La sélection ne fournit pas de récit individuel développé pour cette personne."
+        }
+      ]
     },
     {
       "id": "boaz",
@@ -1229,7 +1937,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Rahab. "
+        }
+      ]
     },
     {
       "id": "obed",
@@ -1243,7 +1957,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Ruth. "
+        }
+      ]
     },
     {
       "id": "jesse",
@@ -1257,7 +1977,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "La fiche se rattache à la liste textuelle indiquée dans les sources. La sélection ne fournit pas de récit individuel développé pour cette personne."
+        }
+      ]
     },
     {
       "id": "david",
@@ -1271,11 +1997,29 @@
         {
           "label": "Coran 38/17-26",
           "url": "https://quran.com/fr/38/17-26"
+        },
+        {
+          "label": "2S 11",
+          "url": "https://www.aelf.org/bible/2S/11"
+        },
+        {
+          "label": "2S 12",
+          "url": "https://www.aelf.org/bible/2S/12"
         }
       ],
       "group": "matthew",
-      "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "aliases": "Dâwûd Dawud داود",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Royauté et responsabilité",
+          "text": "Les livres de Samuel présentent David dans un ensemble narratif traversé par la royauté, les conflits et les fautes. Une notice équilibrée ne retient pas seulement la victoire ou la gloire : le récit de Bethsabée et d’Urie doit aussi être reconnu."
+        },
+        {
+          "title": "Dâwûd",
+          "text": "Coran 38:17–26 associe Dâwûd au jugement et au retour vers Dieu. Le rapprochement avec David ne donne pas le droit de reporter automatiquement dans le Coran tous les détails des livres de Samuel. Les Psaumes et leurs attributions demandent également une lecture distincte."
+        }
+      ]
     },
     {
       "id": "salomon",
@@ -1289,11 +2033,29 @@
         {
           "label": "Coran 27/15-44",
           "url": "https://quran.com/fr/27/15-44"
+        },
+        {
+          "label": "1R 3",
+          "url": "https://www.aelf.org/bible/1R/3"
+        },
+        {
+          "label": "1R 6",
+          "url": "https://www.aelf.org/bible/1R/6"
         }
       ],
       "group": "matthew",
-      "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "aliases": "Sulaymân Suleiman سليمان",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sagesse et construction",
+          "text": "Les livres des Rois présentent Salomon comme fils de David et développent notamment la sagesse, le gouvernement et le Temple. Ces thèmes doivent être situés dans la narration biblique, avec ses tensions et sa lecture de la royauté."
+        },
+        {
+          "title": "Sulaymân",
+          "text": "Coran 27:15–44 rapporte une série d’épisodes associant Sulaymân, les oiseaux et la souveraine de Saba. La source ne donne pas le nom de cette souveraine dans ce passage. Un nom reçu dans des commentaires doit être présenté comme tel."
+        }
+      ]
     },
     {
       "id": "roboam",
@@ -1307,7 +2069,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "La fiche se rattache à la liste textuelle indiquée dans les sources. La sélection ne fournit pas de récit individuel développé pour cette personne."
+        }
+      ]
     },
     {
       "id": "abia",
@@ -1321,7 +2089,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "La fiche se rattache à la liste textuelle indiquée dans les sources. La sélection ne fournit pas de récit individuel développé pour cette personne."
+        }
+      ]
     },
     {
       "id": "asa",
@@ -1335,7 +2109,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "La fiche se rattache à la liste textuelle indiquée dans les sources. La sélection ne fournit pas de récit individuel développé pour cette personne."
+        }
+      ]
     },
     {
       "id": "josaphat",
@@ -1349,7 +2129,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "La fiche se rattache à la liste textuelle indiquée dans les sources. La sélection ne fournit pas de récit individuel développé pour cette personne."
+        }
+      ]
     },
     {
       "id": "joram",
@@ -1363,7 +2149,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "La fiche se rattache à la liste textuelle indiquée dans les sources. La sélection ne fournit pas de récit individuel développé pour cette personne."
+        }
+      ]
     },
     {
       "id": "ozias",
@@ -1377,7 +2169,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "La fiche se rattache à la liste textuelle indiquée dans les sources. La sélection ne fournit pas de récit individuel développé pour cette personne."
+        }
+      ]
     },
     {
       "id": "joatham",
@@ -1391,7 +2189,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "La fiche se rattache à la liste textuelle indiquée dans les sources. La sélection ne fournit pas de récit individuel développé pour cette personne."
+        }
+      ]
     },
     {
       "id": "achaz",
@@ -1405,7 +2209,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "La fiche se rattache à la liste textuelle indiquée dans les sources. La sélection ne fournit pas de récit individuel développé pour cette personne."
+        }
+      ]
     },
     {
       "id": "ezechias",
@@ -1419,7 +2229,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "La fiche se rattache à la liste textuelle indiquée dans les sources. La sélection ne fournit pas de récit individuel développé pour cette personne."
+        }
+      ]
     },
     {
       "id": "manasse-roi",
@@ -1433,7 +2249,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "La fiche se rattache à la liste textuelle indiquée dans les sources. La sélection ne fournit pas de récit individuel développé pour cette personne."
+        }
+      ]
     },
     {
       "id": "amon",
@@ -1447,7 +2269,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "La fiche se rattache à la liste textuelle indiquée dans les sources. La sélection ne fournit pas de récit individuel développé pour cette personne."
+        }
+      ]
     },
     {
       "id": "josias",
@@ -1461,7 +2289,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "La fiche se rattache à la liste textuelle indiquée dans les sources. La sélection ne fournit pas de récit individuel développé pour cette personne."
+        }
+      ]
     },
     {
       "id": "jeconias",
@@ -1475,7 +2309,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "La fiche se rattache à la liste textuelle indiquée dans les sources. La sélection ne fournit pas de récit individuel développé pour cette personne."
+        }
+      ]
     },
     {
       "id": "salathiel",
@@ -1489,7 +2329,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "La fiche se rattache à la liste textuelle indiquée dans les sources. La sélection ne fournit pas de récit individuel développé pour cette personne."
+        }
+      ]
     },
     {
       "id": "zorobabel",
@@ -1503,7 +2349,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "La fiche se rattache à la liste textuelle indiquée dans les sources. La sélection ne fournit pas de récit individuel développé pour cette personne."
+        }
+      ]
     },
     {
       "id": "abioud",
@@ -1517,7 +2369,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "La fiche se rattache à la liste textuelle indiquée dans les sources. La sélection ne fournit pas de récit individuel développé pour cette personne."
+        }
+      ]
     },
     {
       "id": "eliakim",
@@ -1531,7 +2389,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "La fiche se rattache à la liste textuelle indiquée dans les sources. La sélection ne fournit pas de récit individuel développé pour cette personne."
+        }
+      ]
     },
     {
       "id": "azor",
@@ -1545,7 +2409,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "La fiche se rattache à la liste textuelle indiquée dans les sources. La sélection ne fournit pas de récit individuel développé pour cette personne."
+        }
+      ]
     },
     {
       "id": "sadok",
@@ -1559,7 +2429,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "La fiche se rattache à la liste textuelle indiquée dans les sources. La sélection ne fournit pas de récit individuel développé pour cette personne."
+        }
+      ]
     },
     {
       "id": "akhim",
@@ -1573,7 +2449,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "La fiche se rattache à la liste textuelle indiquée dans les sources. La sélection ne fournit pas de récit individuel développé pour cette personne."
+        }
+      ]
     },
     {
       "id": "elioud",
@@ -1587,7 +2469,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "La fiche se rattache à la liste textuelle indiquée dans les sources. La sélection ne fournit pas de récit individuel développé pour cette personne."
+        }
+      ]
     },
     {
       "id": "eleazar",
@@ -1601,7 +2489,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "La fiche se rattache à la liste textuelle indiquée dans les sources. La sélection ne fournit pas de récit individuel développé pour cette personne."
+        }
+      ]
     },
     {
       "id": "matthane",
@@ -1615,7 +2509,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "La fiche se rattache à la liste textuelle indiquée dans les sources. La sélection ne fournit pas de récit individuel développé pour cette personne."
+        }
+      ]
     },
     {
       "id": "jacob-joseph",
@@ -1629,7 +2529,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "La fiche se rattache à la liste textuelle indiquée dans les sources. La sélection ne fournit pas de récit individuel développé pour cette personne."
+        }
+      ]
     },
     {
       "id": "joseph-marie",
@@ -1643,7 +2549,13 @@
       ],
       "group": "matthew",
       "aliases": "",
-      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "La fiche se rattache à la liste textuelle indiquée dans les sources. La sélection ne fournit pas de récit individuel développé pour cette personne."
+        }
+      ]
     },
     {
       "id": "marie",
@@ -1657,11 +2569,33 @@
         {
           "label": "Coran 19/16-36",
           "url": "https://quran.com/fr/19/16-36"
+        },
+        {
+          "label": "Lc 2",
+          "url": "https://www.aelf.org/bible/Lc/2"
+        },
+        {
+          "label": "Mt 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
         }
       ],
       "group": "shared",
       "aliases": "Maryam مريم",
-      "note": "Voir aussi Coran 19:16–36. Aucune paternité biologique de Joseph n’est affirmée ici."
+      "note": "Voir aussi Coran 19:16–36. Aucune paternité biologique de Joseph n’est affirmée ici.",
+      "sections": [
+        {
+          "title": "Dans les Évangiles",
+          "text": "Luc 1–2 donne une place importante à l’Annonciation et à la naissance. Matthieu 1 raconte également la naissance dans une autre construction narrative. Ces versions se lisent séparément avant tout rapprochement."
+        },
+        {
+          "title": "Maryam",
+          "text": "Coran 19:16–36 présente l’annonce et la naissance de ‘Îsâ, en donnant à Maryam une place propre. Le rapprochement des personnages n’efface pas les différences théologiques. Myriam, sœur d’Aaron dans l’Exode, reste une autre fiche."
+        },
+        {
+          "title": "Généalogie",
+          "text": "La maternité de Marie est indiquée dans l’arbre. Joseph est présenté comme son époux dans Matthieu ; aucun trait ne lui attribue ici une paternité biologique de Jésus."
+        }
+      ]
     },
     {
       "id": "jesus",
@@ -1675,11 +2609,45 @@
         {
           "label": "Coran 19/16-36",
           "url": "https://quran.com/fr/19/16-36"
+        },
+        {
+          "label": "Mc 15",
+          "url": "https://www.aelf.org/bible/Mc/15"
+        },
+        {
+          "label": "Lc 24",
+          "url": "https://www.aelf.org/bible/Lc/24"
+        },
+        {
+          "label": "Lc 3",
+          "url": "https://www.aelf.org/bible/Lc/3"
+        },
+        {
+          "label": "Mt 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        },
+        {
+          "label": "Coran 4:157-171",
+          "url": "https://quran.com/fr/4/157-171"
         }
       ],
       "group": "shared",
       "aliases": "Issa عيسى",
-      "note": "Voir aussi Coran 19:16–36. Aucune paternité biologique de Joseph n’est affirmée ici."
+      "note": "Voir aussi Coran 19:16–36. Aucune paternité biologique de Joseph n’est affirmée ici.",
+      "sections": [
+        {
+          "title": "Les récits chrétiens",
+          "text": "Les Évangiles racontent l’enseignement, les actes, la Passion et la résurrection de Jésus selon leurs perspectives propres. Pour le christianisme, sa place ne se réduit pas à celle d’un personnage dans une chaîne familiale : les affirmations de foi appartiennent au cœur des textes."
+        },
+        {
+          "title": "‘Îsâ dans le Coran",
+          "text": "Le Coran présente ‘Îsâ comme Messie et messager, né de Maryam. Les textes divergent avec les affirmations chrétiennes sur sa nature et sur la crucifixion. Ces différences sont essentielles : une présentation respectueuse les explique sans les dissoudre."
+        },
+        {
+          "title": "Deux généalogies",
+          "text": "Matthieu 1 et Luc 3 présentent des lignées différentes. L’arbre visualise la succession de Matthieu en signalant ses omissions ; Luc reste consultable à sa source. Les deux listes ne sont pas réunies artificiellement."
+        }
+      ]
     },
     {
       "id": "idris",
@@ -1693,7 +2661,17 @@
       ],
       "group": "quran",
       "aliases": "",
-      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché."
+      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché.",
+      "sections": [
+        {
+          "title": "Ce que dit la source",
+          "text": "Coran 19:56–57 donne un bref portrait d’Idris et évoque une élévation. La brièveté du passage ne permet pas de produire à elle seule une biographie détaillée ou une généalogie complète."
+        },
+        {
+          "title": "Une identification traditionnelle",
+          "text": "Le rapprochement avec Hénok existe dans des traditions interprétatives. Il n’est pas énoncé comme une équivalence généalogique explicite dans ces versets. Les deux fiches restent donc séparées."
+        }
+      ]
     },
     {
       "id": "hud",
@@ -1707,7 +2685,17 @@
       ],
       "group": "quran",
       "aliases": "",
-      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché."
+      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché.",
+      "sections": [
+        {
+          "title": "L’appel au peuple de ‘Âd",
+          "text": "Coran 11:50–60 présente la mission de Hûd et la résistance de son peuple. Le récit met en jeu l’appel religieux et la responsabilité de ceux qui le reçoivent."
+        },
+        {
+          "title": "Périmètre de la fiche",
+          "text": "Les récits de peuples anciens ont suscité de nombreux commentaires. Sans source identifiée, ils ne permettent pas d’ajouter un arbre d’ancêtres ou une localisation archéologique certaine."
+        }
+      ]
     },
     {
       "id": "salih",
@@ -1721,7 +2709,17 @@
       ],
       "group": "quran",
       "aliases": "",
-      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché."
+      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché.",
+      "sections": [
+        {
+          "title": "Le peuple et le signe",
+          "text": "Coran 11:61–68 présente Sâlih auprès des Thamûd et donne une place importante à la chamelle. Le passage doit être lu avec sa logique narrative propre."
+        },
+        {
+          "title": "Éviter les raccords automatiques",
+          "text": "Une identification entre les lieux du récit et un vestige actuel demande une démonstration historique distincte. La fiche ne transforme pas une ressemblance ou un usage touristique en preuve de filiation."
+        }
+      ]
     },
     {
       "id": "shuayb",
@@ -1735,7 +2733,17 @@
       ],
       "group": "quran",
       "aliases": "",
-      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché."
+      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché.",
+      "sections": [
+        {
+          "title": "Justice dans les échanges",
+          "text": "Coran 11:84–95 rapporte un appel associant l’adoration de Dieu et la probité dans les mesures. L’épisode permet de travailler le lien entre parole religieuse et responsabilité sociale."
+        },
+        {
+          "title": "Comparer avec prudence",
+          "text": "Le rapprochement de Shu‘ayb avec Jéthro apparaît dans certaines traditions. Une telle identification ne doit pas être présentée comme une filiation explicitement démontrée par ces versets."
+        }
+      ]
     },
     {
       "id": "job",
@@ -1745,11 +2753,29 @@
         {
           "label": "Coran 21/83-84",
           "url": "https://quran.com/fr/21/83-84"
+        },
+        {
+          "label": "Jb 1",
+          "url": "https://www.aelf.org/bible/Jb/1"
+        },
+        {
+          "label": "Coran 38:41-44",
+          "url": "https://quran.com/fr/38/41-44"
         }
       ],
       "group": "quran",
       "aliases": "",
-      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché."
+      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché.",
+      "sections": [
+        {
+          "title": "Deux ensembles à distinguer",
+          "text": "Le livre biblique de Job développe une œuvre longue faite de récit et de dialogues sur l’épreuve. Le Coran évoque Ayyûb dans des passages plus brefs, notamment 21:83–84 et 38:41–44."
+        },
+        {
+          "title": "Lire l’épreuve",
+          "text": "Ces textes ont nourri des lectures sur la patience et la souffrance. Les détails ajoutés par des récits populaires ne doivent pas être attribués au texte primaire sans référence ; sa filiation n’est pas complétée par conjecture."
+        }
+      ]
     },
     {
       "id": "dhulkifl",
@@ -1759,11 +2785,25 @@
         {
           "label": "Coran 21/85-86",
           "url": "https://quran.com/fr/21/85-86"
+        },
+        {
+          "label": "Coran 38:48",
+          "url": "https://quran.com/fr/38/48"
         }
       ],
       "group": "quran",
       "aliases": "",
-      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché."
+      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché.",
+      "sections": [
+        {
+          "title": "Un portrait bref",
+          "text": "Le nom est cité en Coran 21:85–86 et 38:48. Les passages soulignent une qualité et une place parmi des figures exemplaires ; ils n’exposent pas une biographie développée."
+        },
+        {
+          "title": "Garder les hypothèses visibles",
+          "text": "Des identifications ont été proposées dans les commentaires. Elles ne sont pas transformées ici en certitudes ni en filiations. Cette limite est une information documentaire, pas un manque à combler par invention."
+        }
+      ]
     },
     {
       "id": "elie",
@@ -1773,11 +2813,25 @@
         {
           "label": "Coran 37/123-132",
           "url": "https://quran.com/fr/37/123-132"
+        },
+        {
+          "label": "1R 17",
+          "url": "https://www.aelf.org/bible/1R/17"
         }
       ],
       "group": "quran",
       "aliases": "",
-      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché."
+      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché.",
+      "sections": [
+        {
+          "title": "Ilyâs et son appel",
+          "text": "Coran 37:123–132 présente Ilyâs et sa dénonciation du culte de Baal. Le passage s’inscrit dans une série de récits prophétiques."
+        },
+        {
+          "title": "Lectures bibliques",
+          "text": "Les livres des Rois développent Élie dans un ensemble beaucoup plus long. Une notice comparée doit identifier à chaque fois le livre, le chapitre et la tradition du commentaire."
+        }
+      ]
     },
     {
       "id": "elisee",
@@ -1787,11 +2841,25 @@
         {
           "label": "Coran 6/86",
           "url": "https://quran.com/fr/6/86"
+        },
+        {
+          "label": "2R 2",
+          "url": "https://www.aelf.org/bible/2R/2"
         }
       ],
       "group": "quran",
       "aliases": "",
-      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché."
+      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché.",
+      "sections": [
+        {
+          "title": "Un nom cité",
+          "text": "Al-Yasa‘ apparaît notamment en Coran 6:86 et 38:48. Ces références constituent un point de départ, sans fournir à elles seules le détail d’une vie."
+        },
+        {
+          "title": "Un autre corpus narratif",
+          "text": "Les livres des Rois développent la figure d’Élisée. Les récits bibliques associés à ce nom ne sont pas tous racontés dans le Coran ; leurs sources restent séparées."
+        }
+      ]
     },
     {
       "id": "jonas",
@@ -1801,11 +2869,25 @@
         {
           "label": "Coran 37/139-148",
           "url": "https://quran.com/fr/37/139-148"
+        },
+        {
+          "label": "Jon 1",
+          "url": "https://www.aelf.org/bible/Jon/1"
         }
       ],
       "group": "quran",
       "aliases": "",
-      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché."
+      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché.",
+      "sections": [
+        {
+          "title": "Jonas et son appel",
+          "text": "Le livre de Jonas raconte une mission, une fuite et l’épreuve du grand poisson. Il développe aussi un débat narratif sur le jugement et la compassion ; le poisson n’est pas le seul sujet du livre."
+        },
+        {
+          "title": "Yûnus",
+          "text": "Coran 37:139–148 reprend plusieurs éléments de son épreuve et de sa mission. Les passages doivent être lus selon leur propre construction et non comme une traduction du livre biblique."
+        }
+      ]
     },
     {
       "id": "zacharie",
@@ -1815,11 +2897,25 @@
         {
           "label": "Coran 19/2-11",
           "url": "https://quran.com/fr/19/2-11"
+        },
+        {
+          "label": "Lc 1",
+          "url": "https://www.aelf.org/bible/Lc/1"
         }
       ],
       "group": "quran",
       "aliases": "",
-      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché."
+      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché.",
+      "sections": [
+        {
+          "title": "Une demande dans la vieillesse",
+          "text": "Coran 19:2–11 présente Zakariyyâ dans une prière pour recevoir un enfant. Le récit chrétien de Luc 1 présente Zacharie et Élisabeth avec ses particularités."
+        },
+        {
+          "title": "Ne pas confondre les homonymes",
+          "text": "Ce Zacharie ne doit pas être identifié automatiquement au prophète du livre biblique de Zacharie. Les homonymies demandent des fiches distinctes et des sources précises."
+        }
+      ]
     },
     {
       "id": "jean",
@@ -1829,11 +2925,25 @@
         {
           "label": "Coran 19/7-15",
           "url": "https://quran.com/fr/19/7-15"
+        },
+        {
+          "label": "Lc 1",
+          "url": "https://www.aelf.org/bible/Lc/1"
         }
       ],
       "group": "quran",
       "aliases": "",
-      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché."
+      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché.",
+      "sections": [
+        {
+          "title": "Yahyâ",
+          "text": "Coran 19:7–15 rapporte l’annonce de sa naissance et souligne notamment sa piété. Le nom s’inscrit dans le récit de Zakariyyâ et ne doit pas être traité comme un personnage sans contexte."
+        },
+        {
+          "title": "Jean dans les Évangiles",
+          "text": "Luc 1 et les récits évangéliques du baptême donnent d’autres repères sur Jean. Les traditions chrétiennes et musulmanes partagent une identification générale tout en proposant des constructions religieuses différentes."
+        }
+      ]
     },
     {
       "id": "muhammad",
@@ -1843,11 +2953,33 @@
         {
           "label": "Coran 33/40",
           "url": "https://quran.com/fr/33/40"
+        },
+        {
+          "label": "Coran 96:1-5",
+          "url": "https://quran.com/fr/96/1-5"
+        },
+        {
+          "label": "Coran 74:1-7",
+          "url": "https://quran.com/fr/74/1-7"
         }
       ],
       "group": "quran",
       "aliases": "",
-      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché."
+      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché.",
+      "sections": [
+        {
+          "title": "Texte et biographie",
+          "text": "Muhammad se situe historiquement dans l’Arabie des VIe–VIIe siècles. Le Coran est la source première du message religieux ; la sîra et les recueils de hadiths sont des genres distincts, avec leurs propres histoires de transmission et méthodes d’évaluation."
+        },
+        {
+          "title": "Repères de lecture",
+          "text": "Coran 33:40 donne un repère sur son statut ; 96:1–5 et 74:1–7 permettent d’aborder des passages traditionnellement liés aux débuts de la prédication. Leur mise en ordre biographique dépend aussi de sources extérieures au texte coranique."
+        },
+        {
+          "title": "Une limite conservée",
+          "text": "Les traditions généalogiques ne doivent pas être confondues avec une chaîne civile intégralement attestée. La fiche ne fabrique pas un raccord continu entre Ismaël et Muhammad. Les détails de la sîra demandent des références identifiées et une analyse de leur transmission."
+        }
+      ]
     },
     {
       "id": "tamar",
@@ -1861,7 +2993,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Les enfants nommés dans les sources de cette sélection sont : Pérès. "
+        }
+      ]
     },
     {
       "id": "rahab",
@@ -1875,7 +3013,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Les enfants nommés dans les sources de cette sélection sont : Booz. "
+        }
+      ]
     },
     {
       "id": "ruth",
@@ -1885,11 +3029,25 @@
         {
           "label": "Rt 4",
           "url": "https://www.aelf.org/bible/Rt/4"
+        },
+        {
+          "label": "Rt 1",
+          "url": "https://www.aelf.org/bible/Rt/1"
         }
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Une histoire de fidélité",
+          "text": "Le livre de Ruth suit une femme moabite, sa relation à Noémi et son installation dans un nouvel environnement. La subsistance, la solidarité et la protection sociale font partie de la trame narrative."
+        },
+        {
+          "title": "La place dans la lignée",
+          "text": "Ruth 4 présente l’union avec Booz et la naissance d’Obed. Matthieu la nomme dans sa généalogie de Jésus. La fiche distingue le récit propre de Ruth de sa reprise ultérieure dans une autre œuvre."
+        }
+      ]
     },
     {
       "id": "bethsabee",
@@ -1907,7 +3065,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Les enfants nommés dans les sources de cette sélection sont : Salomon. "
+        }
+      ]
     },
     {
       "id": "yokebed",
@@ -1921,7 +3085,13 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Les enfants nommés dans les sources de cette sélection sont : Moïse, Aaron. "
+        }
+      ]
     },
     {
       "id": "asenath",
@@ -1935,7 +3105,913 @@
       ],
       "group": "biblical",
       "aliases": "",
-      "note": ""
+      "note": "",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Les enfants nommés dans les sources de cette sélection sont : Manassé, Éphraïm. "
+        }
+      ]
+    },
+    {
+      "id": "henok-cain",
+      "name": "Hénok, fils de Caïn",
+      "bio": "Dans la lignée de Caïn. À distinguer des homonymes de la lignée de Seth.",
+      "sources": [
+        {
+          "label": "Genèse 4",
+          "url": "https://www.aelf.org/bible/Gn/4"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Caïn. Les enfants nommés dans les sources de cette sélection sont : Irad. "
+        }
+      ]
+    },
+    {
+      "id": "irad",
+      "name": "Irad",
+      "bio": "Dans la lignée de Caïn. À distinguer des homonymes de la lignée de Seth.",
+      "sources": [
+        {
+          "label": "Genèse 4",
+          "url": "https://www.aelf.org/bible/Gn/4"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Hénok, fils de Caïn. Les enfants nommés dans les sources de cette sélection sont : Mehouyaël. "
+        }
+      ]
+    },
+    {
+      "id": "mehouyael",
+      "name": "Mehouyaël",
+      "bio": "Dans la lignée de Caïn. À distinguer des homonymes de la lignée de Seth.",
+      "sources": [
+        {
+          "label": "Genèse 4",
+          "url": "https://www.aelf.org/bible/Gn/4"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Irad. Les enfants nommés dans les sources de cette sélection sont : Metoushaël. "
+        }
+      ]
+    },
+    {
+      "id": "metoushael",
+      "name": "Metoushaël",
+      "bio": "Dans la lignée de Caïn. À distinguer des homonymes de la lignée de Seth.",
+      "sources": [
+        {
+          "label": "Genèse 4",
+          "url": "https://www.aelf.org/bible/Gn/4"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Mehouyaël. Les enfants nommés dans les sources de cette sélection sont : Lamek, descendant de Caïn. "
+        }
+      ]
+    },
+    {
+      "id": "lamek-cain",
+      "name": "Lamek, descendant de Caïn",
+      "bio": "Dans la lignée de Caïn. À distinguer des homonymes de la lignée de Seth.",
+      "sources": [
+        {
+          "label": "Genèse 4",
+          "url": "https://www.aelf.org/bible/Gn/4"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Metoushaël. Les enfants nommés dans les sources de cette sélection sont : Yabal, Youbal, Toubal-Caïn, Naama. "
+        }
+      ]
+    },
+    {
+      "id": "ada",
+      "name": "Ada",
+      "bio": "Épouse de Lamek, mère de Yabal et Youbal.",
+      "sources": [
+        {
+          "label": "Genèse 4",
+          "url": "https://www.aelf.org/bible/Gn/4"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Les enfants nommés dans les sources de cette sélection sont : Yabal, Youbal. "
+        }
+      ]
+    },
+    {
+      "id": "silla",
+      "name": "Silla",
+      "bio": "Épouse de Lamek, nommée avec Toubal-Caïn et Naama.",
+      "sources": [
+        {
+          "label": "Genèse 4",
+          "url": "https://www.aelf.org/bible/Gn/4"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Les enfants nommés dans les sources de cette sélection sont : Toubal-Caïn, Naama. "
+        }
+      ]
+    },
+    {
+      "id": "yabal",
+      "name": "Yabal",
+      "bio": "Associé à la vie sous la tente et aux troupeaux.",
+      "sources": [
+        {
+          "label": "Genèse 4",
+          "url": "https://www.aelf.org/bible/Gn/4"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Lamek, descendant de Caïn, Ada. "
+        }
+      ]
+    },
+    {
+      "id": "youbal",
+      "name": "Youbal",
+      "bio": "Associé à la musique dans le récit.",
+      "sources": [
+        {
+          "label": "Genèse 4",
+          "url": "https://www.aelf.org/bible/Gn/4"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Lamek, descendant de Caïn, Ada. "
+        }
+      ]
+    },
+    {
+      "id": "toubal-cain",
+      "name": "Toubal-Caïn",
+      "bio": "Associé au travail des métaux. Ce repère est donné dans la liste du chapitre cité.",
+      "sources": [
+        {
+          "label": "Genèse 4",
+          "url": "https://www.aelf.org/bible/Gn/4"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Lamek, descendant de Caïn, Silla. "
+        }
+      ]
+    },
+    {
+      "id": "naama",
+      "name": "Naama",
+      "bio": "Nommée comme sœur de Toubal-Caïn.",
+      "sources": [
+        {
+          "label": "Genèse 4",
+          "url": "https://www.aelf.org/bible/Gn/4"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Lamek, descendant de Caïn, Silla. "
+        }
+      ]
+    },
+    {
+      "id": "gomer",
+      "name": "Gomer",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Japhet. Les enfants nommés dans les sources de cette sélection sont : Ashkenaz, Rifath, Togarma. "
+        }
+      ]
+    },
+    {
+      "id": "nation-magog",
+      "name": "Magog",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Japhet. "
+        }
+      ]
+    },
+    {
+      "id": "nation-mada",
+      "name": "Madaï",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Japhet. "
+        }
+      ]
+    },
+    {
+      "id": "yavane",
+      "name": "Yavane",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Japhet. Les enfants nommés dans les sources de cette sélection sont : Élisha, Tarsis, Kittim, Dodanim. "
+        }
+      ]
+    },
+    {
+      "id": "nation-toubal",
+      "name": "Toubal",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Japhet. "
+        }
+      ]
+    },
+    {
+      "id": "nation-mshek",
+      "name": "Mèshek",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Japhet. "
+        }
+      ]
+    },
+    {
+      "id": "nation-tiras",
+      "name": "Tiras",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Japhet. "
+        }
+      ]
+    },
+    {
+      "id": "nation-ashkenaz",
+      "name": "Ashkenaz",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Gomer. "
+        }
+      ]
+    },
+    {
+      "id": "nation-rifath",
+      "name": "Rifath",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Gomer. "
+        }
+      ]
+    },
+    {
+      "id": "nation-togarma",
+      "name": "Togarma",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Gomer. "
+        }
+      ]
+    },
+    {
+      "id": "nation-lisha",
+      "name": "Élisha",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Yavane. "
+        }
+      ]
+    },
+    {
+      "id": "nation-tarsis",
+      "name": "Tarsis",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Yavane. "
+        }
+      ]
+    },
+    {
+      "id": "nation-kittim",
+      "name": "Kittim",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Yavane. "
+        }
+      ]
+    },
+    {
+      "id": "nation-dodanim",
+      "name": "Dodanim",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Yavane. "
+        }
+      ]
+    },
+    {
+      "id": "koush",
+      "name": "Koush",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Cham. Les enfants nommés dans les sources de cette sélection sont : Seba, Havila, Sabta, Raéma, Sabteka, Nemrod. "
+        }
+      ]
+    },
+    {
+      "id": "nation-misram",
+      "name": "Misraïm",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Cham. "
+        }
+      ]
+    },
+    {
+      "id": "nation-pouth",
+      "name": "Pouth",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Cham. "
+        }
+      ]
+    },
+    {
+      "id": "nation-canaan",
+      "name": "Canaan",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Cham. "
+        }
+      ]
+    },
+    {
+      "id": "nation-seba",
+      "name": "Seba",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Koush. "
+        }
+      ]
+    },
+    {
+      "id": "nation-havila",
+      "name": "Havila",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Koush. "
+        }
+      ]
+    },
+    {
+      "id": "nation-sabta",
+      "name": "Sabta",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Koush. "
+        }
+      ]
+    },
+    {
+      "id": "raema",
+      "name": "Raéma",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Koush. Les enfants nommés dans les sources de cette sélection sont : Saba, Dedane. "
+        }
+      ]
+    },
+    {
+      "id": "nation-sabteka",
+      "name": "Sabteka",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Koush. "
+        }
+      ]
+    },
+    {
+      "id": "nation-nemrod",
+      "name": "Nemrod",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Koush. "
+        }
+      ]
+    },
+    {
+      "id": "nation-saba",
+      "name": "Saba",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Raéma. "
+        }
+      ]
+    },
+    {
+      "id": "nation-dedane",
+      "name": "Dedane",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Raéma. "
+        }
+      ]
+    },
+    {
+      "id": "nation-lam",
+      "name": "Élam",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Sem. "
+        }
+      ]
+    },
+    {
+      "id": "nation-assour",
+      "name": "Assour",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Sem. "
+        }
+      ]
+    },
+    {
+      "id": "nation-loud",
+      "name": "Loud",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Sem. "
+        }
+      ]
+    },
+    {
+      "id": "aram",
+      "name": "Aram",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Sem. Les enfants nommés dans les sources de cette sélection sont : Ouç, Houl, Guèter, Mash. "
+        }
+      ]
+    },
+    {
+      "id": "nation-ou",
+      "name": "Ouç",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Aram. "
+        }
+      ]
+    },
+    {
+      "id": "nation-houl",
+      "name": "Houl",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Aram. "
+        }
+      ]
+    },
+    {
+      "id": "nation-guter",
+      "name": "Guèter",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Aram. "
+        }
+      ]
+    },
+    {
+      "id": "nation-mash",
+      "name": "Mash",
+      "bio": "Nom transmis dans la table des lignées et des peuples après le Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Liste généalogique du texte : ce nom ne suffit pas à identifier un peuple ou une nation actuelle.",
+      "sections": [
+        {
+          "title": "Sa place dans les textes",
+          "text": "Le corpus cite comme parent(s) : Aram. "
+        }
+      ]
     }
   ],
   "edges": [
@@ -2981,6 +5057,335 @@
       "kind": "parent",
       "tradition": "Genèse",
       "reference": "Genèse 41:50–52"
+    },
+    {
+      "source": "cain",
+      "target": "henok-cain",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 4"
+    },
+    {
+      "source": "henok-cain",
+      "target": "irad",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 4"
+    },
+    {
+      "source": "irad",
+      "target": "mehouyael",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 4"
+    },
+    {
+      "source": "mehouyael",
+      "target": "metoushael",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 4"
+    },
+    {
+      "source": "metoushael",
+      "target": "lamek-cain",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 4"
+    },
+    {
+      "source": "lamek-cain",
+      "target": "yabal",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 4"
+    },
+    {
+      "source": "lamek-cain",
+      "target": "youbal",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 4"
+    },
+    {
+      "source": "lamek-cain",
+      "target": "toubal-cain",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 4"
+    },
+    {
+      "source": "lamek-cain",
+      "target": "naama",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 4"
+    },
+    {
+      "source": "ada",
+      "target": "yabal",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 4"
+    },
+    {
+      "source": "ada",
+      "target": "youbal",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 4"
+    },
+    {
+      "source": "silla",
+      "target": "toubal-cain",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 4"
+    },
+    {
+      "source": "silla",
+      "target": "naama",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 4"
+    },
+    {
+      "source": "japhet",
+      "target": "gomer",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
+    },
+    {
+      "source": "japhet",
+      "target": "nation-magog",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
+    },
+    {
+      "source": "japhet",
+      "target": "nation-mada",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
+    },
+    {
+      "source": "japhet",
+      "target": "yavane",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
+    },
+    {
+      "source": "japhet",
+      "target": "nation-toubal",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
+    },
+    {
+      "source": "japhet",
+      "target": "nation-mshek",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
+    },
+    {
+      "source": "japhet",
+      "target": "nation-tiras",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
+    },
+    {
+      "source": "gomer",
+      "target": "nation-ashkenaz",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
+    },
+    {
+      "source": "gomer",
+      "target": "nation-rifath",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
+    },
+    {
+      "source": "gomer",
+      "target": "nation-togarma",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
+    },
+    {
+      "source": "yavane",
+      "target": "nation-lisha",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
+    },
+    {
+      "source": "yavane",
+      "target": "nation-tarsis",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
+    },
+    {
+      "source": "yavane",
+      "target": "nation-kittim",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
+    },
+    {
+      "source": "yavane",
+      "target": "nation-dodanim",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
+    },
+    {
+      "source": "cham",
+      "target": "koush",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
+    },
+    {
+      "source": "cham",
+      "target": "nation-misram",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
+    },
+    {
+      "source": "cham",
+      "target": "nation-pouth",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
+    },
+    {
+      "source": "cham",
+      "target": "nation-canaan",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
+    },
+    {
+      "source": "koush",
+      "target": "nation-seba",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
+    },
+    {
+      "source": "koush",
+      "target": "nation-havila",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
+    },
+    {
+      "source": "koush",
+      "target": "nation-sabta",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
+    },
+    {
+      "source": "koush",
+      "target": "raema",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
+    },
+    {
+      "source": "koush",
+      "target": "nation-sabteka",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
+    },
+    {
+      "source": "koush",
+      "target": "nation-nemrod",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
+    },
+    {
+      "source": "raema",
+      "target": "nation-saba",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
+    },
+    {
+      "source": "raema",
+      "target": "nation-dedane",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
+    },
+    {
+      "source": "sem",
+      "target": "nation-lam",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
+    },
+    {
+      "source": "sem",
+      "target": "nation-assour",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
+    },
+    {
+      "source": "sem",
+      "target": "nation-loud",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
+    },
+    {
+      "source": "sem",
+      "target": "aram",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
+    },
+    {
+      "source": "aram",
+      "target": "nation-ou",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
+    },
+    {
+      "source": "aram",
+      "target": "nation-houl",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
+    },
+    {
+      "source": "aram",
+      "target": "nation-guter",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
+    },
+    {
+      "source": "aram",
+      "target": "nation-mash",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 10"
     }
   ]
 }

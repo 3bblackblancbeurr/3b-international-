@@ -1,5 +1,5 @@
 import { defineConfig } from "vite";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import react from "@vitejs/plugin-react";
 
 const commitSha = process.env.VERCEL_GIT_COMMIT_SHA || process.env.GITHUB_SHA || "";
@@ -7,19 +7,25 @@ const buildId = commitSha ? commitSha.slice(0, 12) : `local-${Date.now().toStrin
 const appVersion = process.env.THREEB_APP_VERSION || "1.0.0";
 const mandatoryUpdate = /^(1|true|yes)$/i.test(process.env.THREEB_FORCE_UPDATE || "");
 
-// The documentary corpus is a source asset, emitted alongside the legacy library.
-const religionHistorySource = () => readFileSync(new URL('./src/religion/histories.js', import.meta.url), 'utf8');
+// Emit documentary sources and licensed museum images beside the preserved library.
+const religionAssets = () => [
+  ...['histories.js', 'research.js', 'premium.js', 'premium.css'].map(name => ({name, path: new URL('./src/religion/'+name, import.meta.url)})),
+  ...readdirSync(new URL('./src/religion/media/', import.meta.url)).filter(name => /\.(jpg|png|svg)$/.test(name)).map(name => ({name:'museum/'+name,path:new URL('./src/religion/media/'+name,import.meta.url)})),
+];
 function religionHistoryPlugin() {
   return {
-    name: 'threeb-religion-history',
+    name: 'threeb-religion-documents',
     configureServer(server) {
-      server.middlewares.use('/religion/histories.js', (_req, res) => {
-        res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-        res.end(religionHistorySource());
+      server.middlewares.use((req, res, next) => {
+        const asset = religionAssets().find(asset => '/religion/'+asset.name === req.url?.split('?')[0]);
+        if (!asset) return next();
+        const mime = asset.name.endsWith('.css') ? 'text/css' : asset.name.endsWith('.jpg') ? 'image/jpeg' : asset.name.endsWith('.png') ? 'image/png' : asset.name.endsWith('.svg') ? 'image/svg+xml' : 'application/javascript';
+        res.setHeader('Content-Type', mime+'; charset=utf-8');
+        res.end(readFileSync(asset.path));
       });
     },
     generateBundle() {
-      this.emitFile({type: 'asset', fileName: 'religion/histories.js', source: religionHistorySource()});
+      for (const asset of religionAssets()) this.emitFile({type:'asset',fileName:'religion/'+asset.name,source:readFileSync(asset.path)});
     },
   };
 }
