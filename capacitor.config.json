@@ -3,6 +3,7 @@
   "appName": "3B International",
   "webDir": "dist",
   "backgroundColor": "#030405",
+  "loggingBehavior": "none",
   "server": {
     "hostname": "localhost",
     "androidScheme": "https",

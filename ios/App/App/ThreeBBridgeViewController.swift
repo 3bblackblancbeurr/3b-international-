@@ -4,5 +4,7 @@ final class ThreeBBridgeViewController: CAPBridgeViewController {
     override func capacitorDidLoad() {
         super.capacitorDidLoad()
         bridge?.registerPluginInstance(ThreeBCompanionPlugin())
+        bridge?.registerPluginInstance(ThreeBHealthPlugin())
+        bridge?.registerPluginInstance(ThreeBHealthRemindersPlugin())
     }
 }

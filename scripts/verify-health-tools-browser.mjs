@@ -1,0 +1,48 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import {createRequire} from 'node:module';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {createServer} from 'vite';
+const require=createRequire(import.meta.url),{chromium}=require('playwright');
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+const out=process.env.HEALTH_QA_DIR||'/tmp/3b-health-tools-qa';await fs.mkdir(out,{recursive:true});
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH||undefined,args:['--no-sandbox']});
+const checks=[],errors=[];
+let server;
+async function open(port,plugins=[]){server=await createServer({root,plugins,server:{host:'127.0.0.1',port,strictPort:true}});await server.listen();const context=await browser.newContext({viewport:{width:390,height:844},locale:'fr-FR',timezoneId:'Europe/Paris'});const page=await context.newPage();page.setDefaultTimeout(12000);page.on('pageerror',error=>errors.push(error.message));await page.goto(`http://127.0.0.1:${port}/#sante`);await page.getByRole('heading',{name:'Santé.',exact:true}).waitFor();return {context,page};}
+const mockCode=`
+const mock=window.__healthMock={calls:[],permission:'granted',pausePermission:false,steps:6543,reminders:[],pauseReminderPermission:false};
+export const nativePlatform=()=> 'android';export const hasHealthBridge=()=>true;export const hasReminderBridge=()=>true;
+export const HealthBridge={
+getStatus:async()=>({available:true,platform:'android',status:'available',permission:mock.permission}),
+requestStepsPermission:async()=>{mock.calls.push('permission');if(mock.pausePermission)await new Promise(resolve=>mock.permissionResolve=resolve);return {permission:mock.permission};},
+readSteps:async()=>{mock.calls.push('read');const d=new Date();const date=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');return {source:'health-connect',syncedAt:new Date().toISOString(),days:[{date,steps:mock.steps}]};},
+disconnect:async()=>{mock.calls.push('disconnect');return {revoked:true};},openSettings:async()=>({opened:true})};
+export const ReminderBridge={getStatus:async()=>({permission:'granted',pendingCount:mock.reminders.length,reminders:mock.reminders}),requestPermission:async()=>{mock.calls.push('reminder-permission');if(mock.pauseReminderPermission)await new Promise(resolve=>mock.reminderPermissionResolve=resolve);return {permission:'granted'};},schedule:async({reminders})=>{mock.calls.push('schedule');mock.reminders=reminders;return {scheduled:true,count:reminders.length};},cancelAll:async()=>{mock.calls.push('cancel');mock.reminders=[];return {cancelled:true};}};
+export const healthError=()=> 'Lecture impossible';
+export function onHealthResume(fn){window.addEventListener('health-test-resume',fn);return()=>window.removeEventListener('health-test-resume',fn);}
+`;
+try{
+  let {context,page}=await open(5190);
+  const nav=()=>page.getByRole('navigation',{name:'Les espaces Santé 3B'}),close=()=>page.getByRole('button',{name:'Fermer la fiche',exact:true}).click();
+  await page.getByRole('button',{name:'Bonne',exact:true}).click();await page.locator('.h-routine-list input').first().check();
+  assert.equal(await page.evaluate(()=>localStorage.getItem('threeb_health_local_v1')),null);
+  await page.getByRole('button',{name:'Mon journal et mes données'}).click();await page.getByRole('button',{name:'J’accepte de sauvegarder sur cet appareil'}).click();await close();await page.reload();await page.getByRole('heading',{name:'Santé.',exact:true}).waitFor();
+  assert.equal(await page.getByRole('button',{name:'Bonne',exact:true}).getAttribute('aria-pressed'),'true');assert.equal(await page.locator('.h-routine-list input').first().isChecked(),true);checks.push('Energy and routine survive opt-in reload; no default persistence');
+  await page.getByRole('button',{name:'Historique',exact:true}).click();await page.getByLabel('Mesure de l’historique').selectOption('energy');await page.getByRole('button',{name:'90 jours',exact:true}).click();assert.match(await page.locator('.h-history-summary').innerText(),/4/);assert.match(await page.locator('.h-history-summary').innerText(),/1 jour renseigné/);await page.getByRole('button',{name:'Ouvrir ce jour'}).click();assert.ok(await page.getByLabel('Pas du jour · total manuel').isVisible());await close();checks.push('90-day history preserves missing values and opens selected journal day');
+  await page.getByRole('button',{name:'Mes rappels',exact:true}).click();await page.getByLabel('Mon moment au réveil',{exact:true}).check();await page.getByLabel('Heure : Mon moment au réveil').fill('10:45');const dl=page.waitForEvent('download');await page.getByRole('button',{name:'Ajouter au calendrier · 30 jours'}).click();const download=await dl;const ics=await fs.readFile(await download.path(),'utf8');assert.match(ics,/T104500/);assert.match(ics,/COUNT=30/);assert.match(await page.getByRole('dialog').innerText(),/le téléchargement seul ne programme rien/);await close();checks.push('Web reminder downloads valid local calendar and discloses import requirement');
+  await page.getByRole('button',{name:'Pas connectés',exact:true}).click();assert.match(await page.getByRole('dialog').innerText(),/Tu utilises la version web/);assert.equal(await page.getByRole('button',{name:'Connecter Health Connect',exact:true}).count(),0);await close();checks.push('PWA never presents fake native connection');
+  await nav().getByRole('button',{name:'Bouger',exact:true}).click();await page.locator('.h-mobility').getByRole('button',{name:'Commencer',exact:true}).click();await page.locator('.h-mobility').getByRole('button',{name:'Pause',exact:true}).click();assert.match(await page.locator('.h-mobility-status').innerText(),/En pause/);checks.push('Guided mobility controls respond in full app');
+  for(const width of [360,390,768,1440]){await page.setViewportSize({width,height:900});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);await page.getByRole('button',{name:'Historique',exact:true}).click();await page.getByRole('button',{name:'90 jours',exact:true}).click();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);await close();}
+  await page.setViewportSize({width:390,height:844});await page.locator('.h-mobility').scrollIntoViewIfNeeded();await page.screenshot({path:out+'/mobility-mobile.png'});await nav().getByRole('button',{name:'Aujourd’hui',exact:true}).click();await page.locator('.h-energy').scrollIntoViewIfNeeded();await page.screenshot({path:out+'/routine-mobile.png'});checks.push('Mobile/tablet/desktop tools and scrollable 90-day history fit');
+  await context.close();await server.close();
+  ({context,page}=await open(5191,[{name:'health-native-test-only',enforce:'pre',transform(code,id){if(id.split('?')[0].endsWith('/src/health/nativeHealth.js'))return {code:mockCode,map:null};}}]));
+  assert.deepEqual(await page.evaluate(()=>window.__healthMock.calls),[]);
+  await page.getByRole('button',{name:'Pas connectés',exact:true}).click();await page.getByRole('button',{name:'Connecter Health Connect',exact:true}).click();await page.getByRole('button',{name:'Actualiser mes pas',exact:true}).waitFor();assert.match(await page.locator('.h-auto-total').innerText(),/6.?543/);checks.push('Mocked native bridge reads only after explicit connect and displays sourced total');
+  await page.getByRole('button',{name:'Déconnecter',exact:true}).click();await page.getByRole('button',{name:'Connecter Health Connect',exact:true}).waitFor();
+  await page.evaluate(()=>{window.__healthMock.pausePermission=true;window.__healthMock.calls=[];});await page.getByRole('button',{name:'Connecter Health Connect',exact:true}).click();await page.waitForFunction(()=>!!window.__healthMock.permissionResolve);await page.getByRole('button',{name:'Fermer la fiche',exact:true}).click();
+  await page.getByRole('button',{name:'Mon journal et mes données'}).click();await page.getByRole('button',{name:'Effacer mon journal et désactiver la sauvegarde'}).click();await page.getByRole('button',{name:'Oui, effacer',exact:true}).click();await page.getByRole('button',{name:'Fermer la fiche',exact:true}).click();await page.evaluate(()=>window.__healthMock.permissionResolve());await page.waitForTimeout(200);assert.equal(await page.evaluate(()=>window.__healthMock.calls.includes('read')),false);checks.push('Disconnect/erase during pending permission cannot trigger late health read');
+  await page.getByRole('button',{name:'Mes rappels',exact:true}).click();await page.getByLabel('Mon moment au réveil',{exact:true}).check();await page.evaluate(()=>window.__healthMock.pauseReminderPermission=true);await page.getByRole('button',{name:'Programmer les notifications'}).click();await page.waitForFunction(()=>!!window.__healthMock.reminderPermissionResolve);await page.getByRole('button',{name:'Fermer la fiche',exact:true}).click();await page.evaluate(()=>window.__healthMock.reminderPermissionResolve());await page.waitForTimeout(200);assert.equal(await page.evaluate(()=>window.__healthMock.calls.includes('schedule')),false);checks.push('Closing a pending notification permission prevents late reminder scheduling');
+  await context.close();assert.deepEqual(errors,[]);await fs.writeFile(out+'/tools-results.json',JSON.stringify({checks,errors,native:'Mocked bridge only; physical device QA still required'},null,2));console.log(JSON.stringify({passed:checks.length,checks,errors},null,2));
+}finally{await browser.close();await server?.close();}

@@ -87,13 +87,16 @@ test('migration integrity manifest tracks all current applied sources and preser
  assert.deepEqual([...versions].sort(),versions);
 });
 
-test('home portal presents the redesigned 3D gateway and keeps native launch feature-gated',()=>{
+test('home portal presents the cinematic gateway and keeps native launch feature-gated',()=>{
  const portal=read('src/components/WorldPortalCard.jsx');
  const env=read('.env.example');
- assert.match(portal,/home-world-atmosphere/);
- assert.match(portal,/BrokenCircle3D variant="menu"/);
+ assert.match(portal,/<HomeCinematicArtwork\s*\/>/);
+ assert.match(portal,/home-aaa-actions/);
+ assert.match(portal,/<Button\s+as=\{RouteLink\}\s+page="world3b"/);
+ assert.doesNotMatch(portal,/<BrokenCircle3D/);
  assert.doesNotMatch(portal,/hub-cite-origine\.webp/);
- assert.match(portal,/UNREAL_LAUNCH_ENABLED/);
+ assert.match(portal,/\{UNREAL_LAUNCH_ENABLED\s*&&\s*\([\s\S]*?<Button\b[^>]*onClick=\{openNativeWorld\}[^>]*disabled=\{busy\}/);
+ assert.match(portal,/await launchUnrealWorld\(\)/);
  assert.match(env,/VITE_UNREAL_LAUNCH_ENABLED=false/);
 });
 

@@ -7,7 +7,9 @@ Une destination publique `#sante` dans le menu et les cartes de l’accueil exis
 - 26 aliments : préparation, usages, apports qualitatifs, précautions, saisons métropolitaines indicatives, recherche et favoris.
 - 12 recettes : ingrédients, étapes, personnes ajustables, allergènes déclarés, filtres rapide/végétarien/allergène, calendrier d’un repas par jour et liste de courses consolidée/exportable.
 - 12 guides : peau, soleil, mains, dents, pieds, sommeil, horaires décalés, marche, renforcement, pauses et respiration.
-- Journal quotidien : pas manuels, estimations séparées, minutes d’activité, sommeil estimé, verres d’eau et portions de fruits/légumes ; vue des sept derniers jours et historique de 90 jours.
+- Journal quotidien : pas manuels et importés avec source explicite, estimations séparées, minutes d’activité, sommeil estimé, verres d’eau, portions de fruits/légumes et énergie ressentie facultative ; historique interactif de 7, 30 ou 90 jours.
+- Trois séances de mobilité avec minuteur actif, pause automatique en arrière-plan, étapes et validation volontaire ; routines au réveil et avant le repos, adaptées aussi aux horaires décalés.
+- Rappels facultatifs : notifications locales dans les nouvelles versions natives ; export calendrier de 30 occurrences sur le web. Aucun rappel activé par défaut.
 - Respiration de 1, 3 ou 5 minutes avec pause, arrêt, interruption en arrière-plan et respect de la réduction des mouvements.
 - Aide française : 15, 112, 114 par SMS, 3114 et Santé.fr.
 
@@ -33,7 +35,11 @@ La télémétrie de présence et les événements de navigation sont suspendus p
 
 Le mode web utilise de vrais événements `DeviceMotionEvent` après action volontaire, avec détection de pics, temporisation et filtre. Il s’agit d’une **estimation expérimentale non étalonnée**, pas du capteur de pas natif. Le temps ne génère jamais de pas. La session est suspendue quand la page devient invisible et au changement de journée. Les permissions refusées et l’absence d’événements affichent un état explicite. La source manuelle et les estimations ne sont jamais additionnées implicitement.
 
-Samsung Health, Health Connect et Apple HealthKit ne sont **pas connectés** dans cette livraison. Une intégration native, des permissions et une validation sur appareils restent nécessaires. Aucun test physique de précision sur Samsung/Xiaomi n’a été effectué ; ne pas revendiquer une précision clinique ni un suivi en arrière-plan.
+**Les ponts natifs Health Connect (Android) et HealthKit (iOS) sont désormais implémentés**, en lecture seule des pas sur 30 jours, après action et permission explicites. Les données sont rafraîchies à l’ouverture de Santé et au retour au premier plan ; le fournisseur du téléphone enregistre les pas indépendamment de 3B. Samsung Health doit partager ses données avec Health Connect. Les agrégations du système évitent d’additionner les doublons de plusieurs sources. Priorité affichée : import natif, puis saisie manuelle, puis estimation expérimentale ; ces valeurs ne sont jamais additionnées.
+
+**La publication web ne rend pas ces ponts accessibles dans un navigateur ou une PWA** : une nouvelle application native compilée, signée et installée est indispensable. Les anciennes versions natives affichent une invitation à se mettre à jour. Les déclarations de distribution et essais sur appareils réels restent nécessaires. Apple ne révèle pas un refus de lecture : une absence de données reste indéterminée. Aucun test physique de précision sur Samsung/Xiaomi/iPhone n’a été effectué ; ne pas revendiquer une précision clinique ni une lecture 3B en arrière-plan.
+
+Détails : `android-steps.md`, `ios-steps.md`, `TOOLS-RELEASE.md`. Politique publique : `/health/privacy.html`. Les notifications utilisent des textes génériques, sans valeurs de santé sur l’écran verrouillé. Effacer les données annule les rappels natifs 3B ; les événements déjà importés dans un calendrier externe sont à supprimer dans ce calendrier.
 
 Références : [MDN DeviceMotion](https://developer.mozilla.org/en-US/docs/Web/API/DeviceMotionEvent/requestPermission_static), [Health Connect](https://developer.android.com/health-and-fitness/health-connect/get-started).
 

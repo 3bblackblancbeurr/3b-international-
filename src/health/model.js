@@ -1,5 +1,7 @@
 export const HEALTH_STORAGE_KEY = 'threeb_health_local_v1';
 export const RETENTION_DAYS = 90;
+export const ROUTINE_KEYS = ['wake-water','wake-move','wake-meal','rest-slow','rest-care','rest-journal'];
+export const STEP_SOURCES = ['health-connect', 'apple-health'];
 
 export function localDay(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
@@ -15,7 +17,7 @@ export function boundedNumber(value, min, max, decimals = 0) {
   if (!Number.isFinite(number) || number < min || number > max) return null;
   return Number(number.toFixed(decimals));
 }
-export const blankHealth = () => ({ version: 1, days: {}, favorites: [], plan: {}, shoppingChecked: [] });
+export const blankHealth = () => ({ version: 1, days: {}, favorites: [], plan: {}, shoppingChecked: [], nativeEnabled: false });
 export function normalizeHealth(raw, now = new Date()) {
   const result = blankHealth();
   if (!raw || raw.version !== 1) return result;
@@ -29,8 +31,13 @@ export function normalizeHealth(raw, now = new Date()) {
       plants: boundedNumber(day.plants, 0, 30) ?? 0,
       activeMinutes: boundedNumber(day.activeMinutes, 0, 1440),
       sleepHours: boundedNumber(day.sleepHours, 0, 24, 2),
+      energy: Number.isInteger(day.energy) && day.energy >= 1 && day.energy <= 5 ? day.energy : null,
+      routines: Array.isArray(day.routines) ? [...new Set(day.routines.filter(id => ROUTINE_KEYS.includes(id)))] : [],
+      mobility: Array.isArray(day.mobility) ? day.mobility.filter(item => item && typeof item.id === 'string' && /^[a-z0-9-]{1,60}$/.test(item.id) && typeof item.completedAt === 'string' && Number.isFinite(Date.parse(item.completedAt)) && boundedNumber(item.minutes, 0.01, 180, 2) !== null).slice(-50).map(item => ({ id:item.id, minutes:boundedNumber(item.minutes, 0.01, 180, 2), completedAt:item.completedAt })) : [],
+      nativeSteps: normalizeNativeSteps(day.nativeSteps),
     };
   }
+  result.nativeEnabled = raw.nativeEnabled === true;
   result.favorites = Array.isArray(raw.favorites) ? [...new Set(raw.favorites.filter(v => typeof v === 'string' && /^[a-z0-9-]{1,70}$/.test(v)))].slice(0, 200) : [];
   for (const [day, id] of Object.entries(raw.plan || {})) {
     // Menu planning is independent from recorded health measurements.
@@ -39,6 +46,50 @@ export function normalizeHealth(raw, now = new Date()) {
   result.plan = Object.fromEntries(Object.entries(result.plan).sort().slice(-28));
   result.shoppingChecked = Array.isArray(raw.shoppingChecked) ? raw.shoppingChecked.filter(v => typeof v === 'string').slice(0, 200) : [];
   return result;
+}
+
+export function normalizeNativeSteps(raw) {
+  if (!raw || !STEP_SOURCES.includes(raw.source) || typeof raw.syncedAt !== 'string' || !Number.isFinite(Date.parse(raw.syncedAt))) return null;
+  const steps = typeof raw.steps === 'number' && Number.isInteger(raw.steps) ? boundedNumber(raw.steps, 0, 100000) : null;
+  return steps === null ? null : { steps, source:raw.source, syncedAt:raw.syncedAt };
+}
+export function effectiveSteps(day = {}) {
+  const native = normalizeNativeSteps(day.nativeSteps);
+  if (native) return { value:native.steps, source:native.source, label:native.source === 'apple-health' ? 'Apple Santé' : 'Health Connect', estimated:false };
+  if (day.steps != null) return { value:day.steps, source:'manual', label:'saisis', estimated:false };
+  if (day.estimatedSteps != null) return { value:day.estimatedSteps, source:'estimate', label:'estimés', estimated:true };
+  return { value:null, source:null, label:'', estimated:false };
+}
+export function withoutNativeSteps(data) {
+  return { ...data, nativeEnabled:false, days:Object.fromEntries(Object.entries(data.days).map(([date,day]) => [date,{...day,nativeSteps:null}])) };
+}
+export function mergeNativeSteps(data, response, now = new Date()) {
+  if (!STEP_SOURCES.includes(response?.source) || !Array.isArray(response.days) || typeof response.syncedAt !== 'string' || !Number.isFinite(Date.parse(response.syncedAt))) throw new Error('Réponse du téléphone invalide.');
+  // A fresh snapshot replaces the previous import, including deleted/unreadable data.
+  const result = withoutNativeSteps(data), validDays = new Set(previousDays(30,now));
+  result.nativeEnabled = true;
+  for (const item of response.days) {
+    if (!item || !validDays.has(item.date)) continue;
+    const nativeSteps = normalizeNativeSteps({steps:item.steps,source:response.source,syncedAt:response.syncedAt});
+    if (nativeSteps) result.days[item.date] = {...result.days[item.date],nativeSteps};
+  }
+  return normalizeHealth(result,now);
+}
+export function recordMobility(data, session, now = new Date()) {
+  const minutes = boundedNumber(session?.minutes, .01, 180, 2);
+  if (!session || minutes === null || !Number.isFinite(Date.parse(session.completedAt))) return data;
+  const date = localDay(new Date(session.completedAt));
+  if (!previousDays(90,now).includes(date)) return data;
+  const day = data.days[date] || {}, mobility = day.mobility || [];
+  if (mobility.some(item=>item.id===session.id && item.completedAt===session.completedAt)) return data;
+  return normalizeHealth({...data,days:{...data.days,[date]:{...day,mobility:[...mobility,{...session,minutes}]}}},now);
+}
+export function mobilityMinutes(day = {}) { return (day.mobility || []).reduce((sum,item)=>sum+item.minutes,0); }
+export function historyValue(day, metric) {
+  if (!day) return null;
+  if (metric === 'steps') return effectiveSteps(day).value;
+  if (metric === 'mobility') return day.mobility?.length ? mobilityMinutes(day) : null;
+  return day[metric] ?? null;
 }
 export function readHealth(storage) {
   try { const raw = storage.getItem(HEALTH_STORAGE_KEY); return { data: normalizeHealth(raw ? JSON.parse(raw) : null), saved: !!raw, error: false }; }
