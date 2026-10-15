@@ -29,14 +29,16 @@ test('mobile navigation keeps an active destination instead of staged games',()=
  assert.ok(NAV_GROUPS.some(group=>group.title==='Services & avantages'));
 });
 
-test('sport religion manga games and nosbloc are locked in preparation without deleting their routes',()=>{
- for(const id of ['nosbloc','games','religion','manga','sport']){
+test('sport manga games and nosbloc are locked in preparation without deleting their routes',()=>{
+ for(const id of ['nosbloc','games','manga','sport']){
   assert.match(app,new RegExp('id: "'+id+'"[\\s\\S]{0,120}status: "soon"'));
  }
- assert.match(app,/const PREPARATION_ROUTE_IDS = new Set\(\["nosbloc", "games", "religion", "manga", "sport"\]\)/);
+ assert.match(app,/const PREPARATION_ROUTE_IDS = new Set\(\["nosbloc", "games", "manga", "sport"\]\)/);
  assert.match(app,/PREPARATION_ROUTE_IDS\.has\(page\) \|\| page === "game"/);
  assert.match(app,/EN PRÉPARATION · 3B/);
- for(const id of ['nosbloc','games','manga','religion','sport'])assert.ok(NAV_GROUPS.find(group=>group.title==='En préparation').ids.includes(id));
+ assert.doesNotMatch(app,/id: "religion"[\s\S]{0,80}status: "soon"/);
+ assert.ok(NAV_GROUPS.find(group=>group.title==='Comprendre 3B').ids.includes('religion'));
+ for(const id of ['nosbloc','games','manga','sport'])assert.ok(NAV_GROUPS.find(group=>group.title==='En préparation').ids.includes(id));
 });
 
 test('community and textile AI remain explicitly staged as coming soon',()=>{

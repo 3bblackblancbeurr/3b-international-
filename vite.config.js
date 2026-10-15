@@ -1,4 +1,5 @@
 import { defineConfig } from "vite";
+import { readFileSync } from "node:fs";
 import react from "@vitejs/plugin-react";
 
 const commitSha = process.env.VERCEL_GIT_COMMIT_SHA || process.env.GITHUB_SHA || "";
@@ -6,6 +7,22 @@ const buildId = commitSha ? commitSha.slice(0, 12) : `local-${Date.now().toStrin
 const appVersion = process.env.THREEB_APP_VERSION || "1.0.0";
 const mandatoryUpdate = /^(1|true|yes)$/i.test(process.env.THREEB_FORCE_UPDATE || "");
 
+// The documentary corpus is a source asset, emitted alongside the legacy library.
+const religionHistorySource = () => readFileSync(new URL('./src/religion/histories.js', import.meta.url), 'utf8');
+function religionHistoryPlugin() {
+  return {
+    name: 'threeb-religion-history',
+    configureServer(server) {
+      server.middlewares.use('/religion/histories.js', (_req, res) => {
+        res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+        res.end(religionHistorySource());
+      });
+    },
+    generateBundle() {
+      this.emitFile({type: 'asset', fileName: 'religion/histories.js', source: religionHistorySource()});
+    },
+  };
+}
 function threeBReleasePlugin() {
   return {
     name: "threeb-release-artifacts",
@@ -28,13 +45,14 @@ function threeBReleasePlugin() {
 }
 
 export default defineConfig({
-  plugins: [react(), threeBReleasePlugin()],
+  plugins: [react(), religionHistoryPlugin(), threeBReleasePlugin()],
   define: {
     __THREEB_BUILD_ID__: JSON.stringify(buildId),
     __THREEB_APP_VERSION__: JSON.stringify(appVersion),
   },
   build: {
     rollupOptions: {
+      input: { main: "index.html", religionTree: "religion-tree.html" },
       output: {
         manualChunks(id) {
           if (!id.includes("node_modules")) return undefined;

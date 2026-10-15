@@ -1,0 +1,2986 @@
+{
+  "version": 1,
+  "nodes": [
+    {
+      "id": "adam",
+      "name": "Adam",
+      "bio": "Figure des récits de création. La Genèse le situe dans le jardin puis raconte sa vie hors d’Éden. Le Coran présente sa création, son épreuve et son repentir.",
+      "sources": [
+        {
+          "label": "Genèse 2",
+          "url": "https://www.aelf.org/bible/Gn/2"
+        },
+        {
+          "label": "Coran 2/30-39",
+          "url": "https://quran.com/fr/2/30-39"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "Adâm آدم",
+      "note": "Récits religieux des origines ; aucune date de naissance historiquement établie. Voir aussi Coran 2:30–39."
+    },
+    {
+      "id": "eve",
+      "name": "Ève",
+      "bio": "La Genèse la présente comme la compagne d’Adam et nomme ses enfants. Dans le Coran, la compagne d’Adam est évoquée sans être nommée.",
+      "sources": [
+        {
+          "label": "Genèse 3",
+          "url": "https://www.aelf.org/bible/Gn/3"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "Hawwa حواء",
+      "note": ""
+    },
+    {
+      "id": "cain",
+      "name": "Caïn",
+      "bio": "Fils d’Adam et Ève, associé au meurtre de son frère Abel.",
+      "sources": [
+        {
+          "label": "Genèse 4",
+          "url": "https://www.aelf.org/bible/Gn/4"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "abel",
+      "name": "Abel",
+      "bio": "Frère de Caïn, tué dans le récit de leur offrande.",
+      "sources": [
+        {
+          "label": "Genèse 4",
+          "url": "https://www.aelf.org/bible/Gn/4"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "seth",
+      "name": "Seth",
+      "bio": "Fils nommé après la mort d’Abel ; sa lignée est développée au chapitre suivant.",
+      "sources": [
+        {
+          "label": "Genèse 4",
+          "url": "https://www.aelf.org/bible/Gn/4"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "enosh",
+      "name": "Énosh",
+      "bio": "Énosh appartient à la lignée de Seth transmise avant le récit du Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 5",
+          "url": "https://www.aelf.org/bible/Gn/5"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "qenane",
+      "name": "Qénane",
+      "bio": "Qénane appartient à la lignée de Seth transmise avant le récit du Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 5",
+          "url": "https://www.aelf.org/bible/Gn/5"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "mahalalel",
+      "name": "Mahalalel",
+      "bio": "Mahalalel appartient à la lignée de Seth transmise avant le récit du Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 5",
+          "url": "https://www.aelf.org/bible/Gn/5"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "yered",
+      "name": "Yèred",
+      "bio": "Yèred appartient à la lignée de Seth transmise avant le récit du Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 5",
+          "url": "https://www.aelf.org/bible/Gn/5"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "henok",
+      "name": "Hénok",
+      "bio": "Patriarche dont le récit souligne la proximité avec Dieu et une disparition singulière. Son identification à Idris relève d’une tradition interprétative, pas d’une équivalence explicite du Coran.",
+      "sources": [
+        {
+          "label": "Genèse 5",
+          "url": "https://www.aelf.org/bible/Gn/5"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "mathusalem",
+      "name": "Mathusalem",
+      "bio": "Mathusalem appartient à la lignée de Seth transmise avant le récit du Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 5",
+          "url": "https://www.aelf.org/bible/Gn/5"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "lamek",
+      "name": "Lamek",
+      "bio": "Lamek appartient à la lignée de Seth transmise avant le récit du Déluge.",
+      "sources": [
+        {
+          "label": "Genèse 5",
+          "url": "https://www.aelf.org/bible/Gn/5"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "noe",
+      "name": "Noé",
+      "bio": "Figure centrale du Déluge et de l’alliance dans la Genèse ; Nûh est un messager dans le Coran. Les versions doivent être lues séparément.",
+      "sources": [
+        {
+          "label": "Genèse 5",
+          "url": "https://www.aelf.org/bible/Gn/5"
+        },
+        {
+          "label": "Coran 71",
+          "url": "https://quran.com/fr/71"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "Nûh نوح",
+      "note": ""
+    },
+    {
+      "id": "sem",
+      "name": "Sem",
+      "bio": "Sem est nommé parmi les fils de Noé. Genèse 10 organise ensuite des lignées et des peuples dans un cadre antique.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "cham",
+      "name": "Cham",
+      "bio": "Cham est nommé parmi les fils de Noé. Genèse 10 organise ensuite des lignées et des peuples dans un cadre antique.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "japhet",
+      "name": "Japhet",
+      "bio": "Japhet est nommé parmi les fils de Noé. Genèse 10 organise ensuite des lignées et des peuples dans un cadre antique.",
+      "sources": [
+        {
+          "label": "Genèse 10",
+          "url": "https://www.aelf.org/bible/Gn/10"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "arpaxad",
+      "name": "Arpaxad",
+      "bio": "Arpaxad figure dans la généalogie qui relie Sem à la famille d’Abram.",
+      "sources": [
+        {
+          "label": "Genèse 11",
+          "url": "https://www.aelf.org/bible/Gn/11"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "shelah",
+      "name": "Shélah",
+      "bio": "Shélah figure dans la généalogie qui relie Sem à la famille d’Abram.",
+      "sources": [
+        {
+          "label": "Genèse 11",
+          "url": "https://www.aelf.org/bible/Gn/11"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "eber",
+      "name": "Éber",
+      "bio": "Éber figure dans la généalogie qui relie Sem à la famille d’Abram.",
+      "sources": [
+        {
+          "label": "Genèse 11",
+          "url": "https://www.aelf.org/bible/Gn/11"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "peleg",
+      "name": "Pèleg",
+      "bio": "Pèleg figure dans la généalogie qui relie Sem à la famille d’Abram.",
+      "sources": [
+        {
+          "label": "Genèse 11",
+          "url": "https://www.aelf.org/bible/Gn/11"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "reu",
+      "name": "Réou",
+      "bio": "Réou figure dans la généalogie qui relie Sem à la famille d’Abram.",
+      "sources": [
+        {
+          "label": "Genèse 11",
+          "url": "https://www.aelf.org/bible/Gn/11"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "serug",
+      "name": "Seroug",
+      "bio": "Seroug figure dans la généalogie qui relie Sem à la famille d’Abram.",
+      "sources": [
+        {
+          "label": "Genèse 11",
+          "url": "https://www.aelf.org/bible/Gn/11"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "nahor-ancien",
+      "name": "Nahor, ancêtre de Tèrah",
+      "bio": "Nahor, ancêtre de Tèrah figure dans la généalogie qui relie Sem à la famille d’Abram.",
+      "sources": [
+        {
+          "label": "Genèse 11",
+          "url": "https://www.aelf.org/bible/Gn/11"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "terah",
+      "name": "Tèrah",
+      "bio": "Tèrah figure dans la généalogie qui relie Sem à la famille d’Abram.",
+      "sources": [
+        {
+          "label": "Genèse 11",
+          "url": "https://www.aelf.org/bible/Gn/11"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": "Le Coran 6:74 nomme Âzar dans le récit d’Ibrahim ; ne pas confondre automatiquement les traditions."
+    },
+    {
+      "id": "abraham",
+      "name": "Abraham",
+      "bio": "Patriarche lié à l’alliance, au départ vers Canaan et aux récits d’Isaac et d’Ismaël. Ibrahim occupe une place majeure dans le Coran.",
+      "sources": [
+        {
+          "label": "Genèse 11",
+          "url": "https://www.aelf.org/bible/Gn/11"
+        },
+        {
+          "label": "Coran 2/124-129",
+          "url": "https://quran.com/fr/2/124-129"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "Ibrahim إبراهيم",
+      "note": ""
+    },
+    {
+      "id": "nahor",
+      "name": "Nahor, frère d’Abraham",
+      "bio": "Membre de la famille de Tèrah dans les récits d’origine des patriarches.",
+      "sources": [
+        {
+          "label": "Genèse 11",
+          "url": "https://www.aelf.org/bible/Gn/11"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "haran",
+      "name": "Harane",
+      "bio": "Membre de la famille de Tèrah dans les récits d’origine des patriarches.",
+      "sources": [
+        {
+          "label": "Genèse 11",
+          "url": "https://www.aelf.org/bible/Gn/11"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "lot",
+      "name": "Lot",
+      "bio": "Neveu d’Abraham, associé aux récits de séparation et de Sodome. Lût est un messager dans le Coran.",
+      "sources": [
+        {
+          "label": "Genèse 13",
+          "url": "https://www.aelf.org/bible/Gn/13"
+        },
+        {
+          "label": "Coran 11/77-83",
+          "url": "https://quran.com/fr/11/77-83"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "Lût لوط",
+      "note": ""
+    },
+    {
+      "id": "sarah",
+      "name": "Sarah",
+      "bio": "Épouse d’Abraham et mère d’Isaac, au centre du récit de naissance dans la vieillesse.",
+      "sources": [
+        {
+          "label": "Genèse 21",
+          "url": "https://www.aelf.org/bible/Gn/21"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "hagar",
+      "name": "Hagar",
+      "bio": "Mère d’Ismaël. Le récit évoque sa fuite, sa détresse et son secours dans le désert.",
+      "sources": [
+        {
+          "label": "Genèse 16",
+          "url": "https://www.aelf.org/bible/Gn/16"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "ketura",
+      "name": "Qetoura",
+      "bio": "Compagne d’Abraham nommée avec ses six fils après la mort de Sarah.",
+      "sources": [
+        {
+          "label": "Genèse 25",
+          "url": "https://www.aelf.org/bible/Gn/25"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "ismael",
+      "name": "Ismaël",
+      "bio": "Fils d’Abraham et de Hagar. Ismâ‘îl participe avec Ibrahim à l’élévation des fondations de la Maison selon Coran 2:127.",
+      "sources": [
+        {
+          "label": "Genèse 16",
+          "url": "https://www.aelf.org/bible/Gn/16"
+        },
+        {
+          "label": "Coran 19/54-55",
+          "url": "https://quran.com/fr/19/54-55"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "Ismâ‘îl إسماعيل",
+      "note": ""
+    },
+    {
+      "id": "isaac",
+      "name": "Isaac",
+      "bio": "Fils d’Abraham et Sarah ; époux de Rébecca, père d’Ésaü et Jacob.",
+      "sources": [
+        {
+          "label": "Genèse 21",
+          "url": "https://www.aelf.org/bible/Gn/21"
+        },
+        {
+          "label": "Coran 37/112-113",
+          "url": "https://quran.com/fr/37/112-113"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "Ishaq إسحاق",
+      "note": ""
+    },
+    {
+      "id": "rebecca",
+      "name": "Rébecca",
+      "bio": "Épouse d’Isaac ; son rôle est décisif dans les récits familiaux de Jacob et Ésaü.",
+      "sources": [
+        {
+          "label": "Genèse 24",
+          "url": "https://www.aelf.org/bible/Gn/24"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "jacob",
+      "name": "Jacob",
+      "bio": "Aussi nommé Israël. Les récits suivent ses conflits familiaux, son départ, son retour et ses enfants.",
+      "sources": [
+        {
+          "label": "Genèse 25",
+          "url": "https://www.aelf.org/bible/Gn/25"
+        },
+        {
+          "label": "Coran 12/6",
+          "url": "https://quran.com/fr/12/6"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "Ya‘qûb يعقوب",
+      "note": ""
+    },
+    {
+      "id": "esau",
+      "name": "Ésaü",
+      "bio": "Frère jumeau de Jacob. Leurs récits abordent le droit d’aînesse, la bénédiction et leur rencontre après la séparation.",
+      "sources": [
+        {
+          "label": "Genèse 25",
+          "url": "https://www.aelf.org/bible/Gn/25"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "zimran",
+      "name": "Zimrane",
+      "bio": "Fils d’Abraham et Qetoura dans la liste de Genèse 25.",
+      "sources": [
+        {
+          "label": "Genèse 25",
+          "url": "https://www.aelf.org/bible/Gn/25"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "yokshan",
+      "name": "Yoqshane",
+      "bio": "Fils d’Abraham et Qetoura dans la liste de Genèse 25.",
+      "sources": [
+        {
+          "label": "Genèse 25",
+          "url": "https://www.aelf.org/bible/Gn/25"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "medan",
+      "name": "Medane",
+      "bio": "Fils d’Abraham et Qetoura dans la liste de Genèse 25.",
+      "sources": [
+        {
+          "label": "Genèse 25",
+          "url": "https://www.aelf.org/bible/Gn/25"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "midian",
+      "name": "Madiane",
+      "bio": "Fils d’Abraham et Qetoura dans la liste de Genèse 25.",
+      "sources": [
+        {
+          "label": "Genèse 25",
+          "url": "https://www.aelf.org/bible/Gn/25"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "yishbak",
+      "name": "Yishbaq",
+      "bio": "Fils d’Abraham et Qetoura dans la liste de Genèse 25.",
+      "sources": [
+        {
+          "label": "Genèse 25",
+          "url": "https://www.aelf.org/bible/Gn/25"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "shuah",
+      "name": "Shouah",
+      "bio": "Fils d’Abraham et Qetoura dans la liste de Genèse 25.",
+      "sources": [
+        {
+          "label": "Genèse 25",
+          "url": "https://www.aelf.org/bible/Gn/25"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "ismael-0",
+      "name": "Nebayoth",
+      "bio": "Nommé dans la descendance d’Ismaël, organisée en douze chefs dans le récit.",
+      "sources": [
+        {
+          "label": "Genèse 25",
+          "url": "https://www.aelf.org/bible/Gn/25"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "ismael-1",
+      "name": "Qédar",
+      "bio": "Nommé dans la descendance d’Ismaël, organisée en douze chefs dans le récit.",
+      "sources": [
+        {
+          "label": "Genèse 25",
+          "url": "https://www.aelf.org/bible/Gn/25"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "ismael-2",
+      "name": "Adbéel",
+      "bio": "Nommé dans la descendance d’Ismaël, organisée en douze chefs dans le récit.",
+      "sources": [
+        {
+          "label": "Genèse 25",
+          "url": "https://www.aelf.org/bible/Gn/25"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "ismael-3",
+      "name": "Mibsam",
+      "bio": "Nommé dans la descendance d’Ismaël, organisée en douze chefs dans le récit.",
+      "sources": [
+        {
+          "label": "Genèse 25",
+          "url": "https://www.aelf.org/bible/Gn/25"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "ismael-4",
+      "name": "Mishma",
+      "bio": "Nommé dans la descendance d’Ismaël, organisée en douze chefs dans le récit.",
+      "sources": [
+        {
+          "label": "Genèse 25",
+          "url": "https://www.aelf.org/bible/Gn/25"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "ismael-5",
+      "name": "Douma",
+      "bio": "Nommé dans la descendance d’Ismaël, organisée en douze chefs dans le récit.",
+      "sources": [
+        {
+          "label": "Genèse 25",
+          "url": "https://www.aelf.org/bible/Gn/25"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "ismael-6",
+      "name": "Massa",
+      "bio": "Nommé dans la descendance d’Ismaël, organisée en douze chefs dans le récit.",
+      "sources": [
+        {
+          "label": "Genèse 25",
+          "url": "https://www.aelf.org/bible/Gn/25"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "ismael-7",
+      "name": "Hadad",
+      "bio": "Nommé dans la descendance d’Ismaël, organisée en douze chefs dans le récit.",
+      "sources": [
+        {
+          "label": "Genèse 25",
+          "url": "https://www.aelf.org/bible/Gn/25"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "ismael-8",
+      "name": "Téma",
+      "bio": "Nommé dans la descendance d’Ismaël, organisée en douze chefs dans le récit.",
+      "sources": [
+        {
+          "label": "Genèse 25",
+          "url": "https://www.aelf.org/bible/Gn/25"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "ismael-9",
+      "name": "Yetour",
+      "bio": "Nommé dans la descendance d’Ismaël, organisée en douze chefs dans le récit.",
+      "sources": [
+        {
+          "label": "Genèse 25",
+          "url": "https://www.aelf.org/bible/Gn/25"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "ismael-10",
+      "name": "Nafish",
+      "bio": "Nommé dans la descendance d’Ismaël, organisée en douze chefs dans le récit.",
+      "sources": [
+        {
+          "label": "Genèse 25",
+          "url": "https://www.aelf.org/bible/Gn/25"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "ismael-11",
+      "name": "Qédma",
+      "bio": "Nommé dans la descendance d’Ismaël, organisée en douze chefs dans le récit.",
+      "sources": [
+        {
+          "label": "Genèse 25",
+          "url": "https://www.aelf.org/bible/Gn/25"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "lea",
+      "name": "Léa",
+      "bio": "Femme de la maisonnée de Jacob ; les récits précisent des situations conjugales et sociales différentes.",
+      "sources": [
+        {
+          "label": "Genèse 29",
+          "url": "https://www.aelf.org/bible/Gn/29"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "rachel",
+      "name": "Rachel",
+      "bio": "Femme de la maisonnée de Jacob ; les récits précisent des situations conjugales et sociales différentes.",
+      "sources": [
+        {
+          "label": "Genèse 29",
+          "url": "https://www.aelf.org/bible/Gn/29"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "bilha",
+      "name": "Bilha",
+      "bio": "Femme de la maisonnée de Jacob ; les récits précisent des situations conjugales et sociales différentes.",
+      "sources": [
+        {
+          "label": "Genèse 29",
+          "url": "https://www.aelf.org/bible/Gn/29"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "zilpa",
+      "name": "Zilpa",
+      "bio": "Femme de la maisonnée de Jacob ; les récits précisent des situations conjugales et sociales différentes.",
+      "sources": [
+        {
+          "label": "Genèse 29",
+          "url": "https://www.aelf.org/bible/Gn/29"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "ruben",
+      "name": "Ruben",
+      "bio": "Ruben est nommé parmi les enfants de Jacob ; sa lignée s’inscrit dans les récits d’Israël.",
+      "sources": [
+        {
+          "label": "Genèse 35",
+          "url": "https://www.aelf.org/bible/Gn/35"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "simeon",
+      "name": "Siméon",
+      "bio": "Siméon est nommé parmi les enfants de Jacob ; sa lignée s’inscrit dans les récits d’Israël.",
+      "sources": [
+        {
+          "label": "Genèse 35",
+          "url": "https://www.aelf.org/bible/Gn/35"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "levi",
+      "name": "Lévi",
+      "bio": "Lévi est nommé parmi les enfants de Jacob ; sa lignée s’inscrit dans les récits d’Israël.",
+      "sources": [
+        {
+          "label": "Genèse 35",
+          "url": "https://www.aelf.org/bible/Gn/35"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "juda",
+      "name": "Juda",
+      "bio": "Juda est nommé parmi les enfants de Jacob ; sa lignée s’inscrit dans les récits d’Israël.",
+      "sources": [
+        {
+          "label": "Genèse 35",
+          "url": "https://www.aelf.org/bible/Gn/35"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "issachar",
+      "name": "Issakar",
+      "bio": "Issakar est nommé parmi les enfants de Jacob ; sa lignée s’inscrit dans les récits d’Israël.",
+      "sources": [
+        {
+          "label": "Genèse 35",
+          "url": "https://www.aelf.org/bible/Gn/35"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "zabulon",
+      "name": "Zabulon",
+      "bio": "Zabulon est nommé parmi les enfants de Jacob ; sa lignée s’inscrit dans les récits d’Israël.",
+      "sources": [
+        {
+          "label": "Genèse 35",
+          "url": "https://www.aelf.org/bible/Gn/35"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "dina",
+      "name": "Dina",
+      "bio": "Fille de Jacob et Léa. Genèse 34 rapporte les violences qui la concernent et leurs conséquences.",
+      "sources": [
+        {
+          "label": "Genèse 35",
+          "url": "https://www.aelf.org/bible/Gn/35"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "dan",
+      "name": "Dan",
+      "bio": "Dan est nommé parmi les enfants de Jacob ; sa lignée s’inscrit dans les récits d’Israël.",
+      "sources": [
+        {
+          "label": "Genèse 35",
+          "url": "https://www.aelf.org/bible/Gn/35"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "nephtali",
+      "name": "Nephtali",
+      "bio": "Nephtali est nommé parmi les enfants de Jacob ; sa lignée s’inscrit dans les récits d’Israël.",
+      "sources": [
+        {
+          "label": "Genèse 35",
+          "url": "https://www.aelf.org/bible/Gn/35"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "gad",
+      "name": "Gad",
+      "bio": "Gad est nommé parmi les enfants de Jacob ; sa lignée s’inscrit dans les récits d’Israël.",
+      "sources": [
+        {
+          "label": "Genèse 35",
+          "url": "https://www.aelf.org/bible/Gn/35"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "asher",
+      "name": "Asher",
+      "bio": "Asher est nommé parmi les enfants de Jacob ; sa lignée s’inscrit dans les récits d’Israël.",
+      "sources": [
+        {
+          "label": "Genèse 35",
+          "url": "https://www.aelf.org/bible/Gn/35"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "joseph",
+      "name": "Joseph",
+      "bio": "Fils de Jacob et Rachel. Vendu par ses frères, il devient un personnage majeur en Égypte avant les retrouvailles familiales. La sourate 12 présente le récit de Yûsuf.",
+      "sources": [
+        {
+          "label": "Genèse 35",
+          "url": "https://www.aelf.org/bible/Gn/35"
+        },
+        {
+          "label": "Coran 12",
+          "url": "https://quran.com/fr/12"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "Yûsuf يوسف",
+      "note": ""
+    },
+    {
+      "id": "benjamin",
+      "name": "Benjamin",
+      "bio": "Benjamin est nommé parmi les enfants de Jacob ; sa lignée s’inscrit dans les récits d’Israël.",
+      "sources": [
+        {
+          "label": "Genèse 35",
+          "url": "https://www.aelf.org/bible/Gn/35"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "manasse",
+      "name": "Manassé",
+      "bio": "Fils de Joseph, né en Égypte. La bénédiction donnée par Jacob occupe une place importante dans son récit.",
+      "sources": [
+        {
+          "label": "Genèse 48",
+          "url": "https://www.aelf.org/bible/Gn/48"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "ephraim",
+      "name": "Éphraïm",
+      "bio": "Fils de Joseph, né en Égypte. La bénédiction donnée par Jacob occupe une place importante dans son récit.",
+      "sources": [
+        {
+          "label": "Genèse 48",
+          "url": "https://www.aelf.org/bible/Gn/48"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "qehat",
+      "name": "Qehath",
+      "bio": "Ancêtre de la famille de Moïse et Aaron selon la généalogie de l’Exode.",
+      "sources": [
+        {
+          "label": "Exode 6",
+          "url": "https://www.aelf.org/bible/Ex/6"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "amram",
+      "name": "Amram",
+      "bio": "Ancêtre de la famille de Moïse et Aaron selon la généalogie de l’Exode.",
+      "sources": [
+        {
+          "label": "Exode 6",
+          "url": "https://www.aelf.org/bible/Ex/6"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "moise",
+      "name": "Moïse",
+      "bio": "Figure centrale de l’Exode, de la sortie d’Égypte et de la transmission de la Loi. Moussa est l’un des personnages les plus présents du Coran.",
+      "sources": [
+        {
+          "label": "Exode 6",
+          "url": "https://www.aelf.org/bible/Ex/6"
+        },
+        {
+          "label": "Coran 20/9-98",
+          "url": "https://quran.com/fr/20/9-98"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "Moussa موسى",
+      "note": ""
+    },
+    {
+      "id": "aaron",
+      "name": "Aaron",
+      "bio": "Frère de Moïse ; associé au sacerdoce dans la Torah et à la mission de Moussa dans le Coran.",
+      "sources": [
+        {
+          "label": "Exode 6",
+          "url": "https://www.aelf.org/bible/Ex/6"
+        },
+        {
+          "label": "Coran 20/29-36",
+          "url": "https://quran.com/fr/20/29-36"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "Haroun هارون",
+      "note": ""
+    },
+    {
+      "id": "myriam",
+      "name": "Myriam",
+      "bio": "Prophétesse, sœur d’Aaron, associée au chant après le passage de la mer. À distinguer de Maryam, mère de Jésus.",
+      "sources": [
+        {
+          "label": "Exode 15:20",
+          "url": "https://www.aelf.org/bible/Ex/15"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "perez",
+      "name": "Pérès",
+      "bio": "Pérès figure dans la généalogie littéraire de Jésus donnée par Matthieu.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "hesron",
+      "name": "Hesrone",
+      "bio": "Hesrone figure dans la généalogie littéraire de Jésus donnée par Matthieu.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "ram",
+      "name": "Ram",
+      "bio": "Ram figure dans la généalogie littéraire de Jésus donnée par Matthieu.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "amminadab",
+      "name": "Aminadab",
+      "bio": "Aminadab figure dans la généalogie littéraire de Jésus donnée par Matthieu.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "nahshon",
+      "name": "Naassone",
+      "bio": "Naassone figure dans la généalogie littéraire de Jésus donnée par Matthieu.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "salmon",
+      "name": "Salmone",
+      "bio": "Salmone figure dans la généalogie littéraire de Jésus donnée par Matthieu.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "boaz",
+      "name": "Booz",
+      "bio": "Personnage du livre de Ruth ; son union avec Ruth est inscrite dans la généalogie de David.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "obed",
+      "name": "Obed",
+      "bio": "Obed figure dans la généalogie littéraire de Jésus donnée par Matthieu.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "jesse",
+      "name": "Jessé",
+      "bio": "Jessé figure dans la généalogie littéraire de Jésus donnée par Matthieu.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "david",
+      "name": "David",
+      "bio": "Roi d’Israël associé à Jérusalem et à la tradition des Psaumes. Dâwûd est un prophète dans le Coran.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        },
+        {
+          "label": "Coran 38/17-26",
+          "url": "https://quran.com/fr/38/17-26"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "salomon",
+      "name": "Salomon",
+      "bio": "Fils de David, roi associé à la sagesse et au Temple. Sulaymân est un prophète dans le Coran.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        },
+        {
+          "label": "Coran 27/15-44",
+          "url": "https://quran.com/fr/27/15-44"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "roboam",
+      "name": "Roboam",
+      "bio": "Roboam figure dans la généalogie littéraire de Jésus donnée par Matthieu.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "abia",
+      "name": "Abia",
+      "bio": "Abia figure dans la généalogie littéraire de Jésus donnée par Matthieu.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "asa",
+      "name": "Asa",
+      "bio": "Asa figure dans la généalogie littéraire de Jésus donnée par Matthieu.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "josaphat",
+      "name": "Josaphat",
+      "bio": "Josaphat figure dans la généalogie littéraire de Jésus donnée par Matthieu.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "joram",
+      "name": "Joram",
+      "bio": "Joram figure dans la généalogie littéraire de Jésus donnée par Matthieu.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "ozias",
+      "name": "Ozias",
+      "bio": "Ozias figure dans la généalogie littéraire de Jésus donnée par Matthieu.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "joatham",
+      "name": "Joatham",
+      "bio": "Joatham figure dans la généalogie littéraire de Jésus donnée par Matthieu.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "achaz",
+      "name": "Acaz",
+      "bio": "Acaz figure dans la généalogie littéraire de Jésus donnée par Matthieu.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "ezechias",
+      "name": "Ézékias",
+      "bio": "Ézékias figure dans la généalogie littéraire de Jésus donnée par Matthieu.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "manasse-roi",
+      "name": "Manassé, roi",
+      "bio": "Manassé, roi figure dans la généalogie littéraire de Jésus donnée par Matthieu.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "amon",
+      "name": "Amone",
+      "bio": "Amone figure dans la généalogie littéraire de Jésus donnée par Matthieu.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "josias",
+      "name": "Josias",
+      "bio": "Josias figure dans la généalogie littéraire de Jésus donnée par Matthieu.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "jeconias",
+      "name": "Jékonias",
+      "bio": "Jékonias figure dans la généalogie littéraire de Jésus donnée par Matthieu.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "salathiel",
+      "name": "Salathiel",
+      "bio": "Salathiel figure dans la généalogie littéraire de Jésus donnée par Matthieu.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "zorobabel",
+      "name": "Zorobabel",
+      "bio": "Zorobabel figure dans la généalogie littéraire de Jésus donnée par Matthieu.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "abioud",
+      "name": "Abioud",
+      "bio": "Abioud figure dans la généalogie littéraire de Jésus donnée par Matthieu.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "eliakim",
+      "name": "Éliakim",
+      "bio": "Éliakim figure dans la généalogie littéraire de Jésus donnée par Matthieu.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "azor",
+      "name": "Azor",
+      "bio": "Azor figure dans la généalogie littéraire de Jésus donnée par Matthieu.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "sadok",
+      "name": "Sadok",
+      "bio": "Sadok figure dans la généalogie littéraire de Jésus donnée par Matthieu.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "akhim",
+      "name": "Akhim",
+      "bio": "Akhim figure dans la généalogie littéraire de Jésus donnée par Matthieu.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "elioud",
+      "name": "Élioud",
+      "bio": "Élioud figure dans la généalogie littéraire de Jésus donnée par Matthieu.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "eleazar",
+      "name": "Éléazar",
+      "bio": "Éléazar figure dans la généalogie littéraire de Jésus donnée par Matthieu.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "matthane",
+      "name": "Matthane",
+      "bio": "Matthane figure dans la généalogie littéraire de Jésus donnée par Matthieu.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "jacob-joseph",
+      "name": "Jacob, père de Joseph",
+      "bio": "Jacob, père de Joseph figure dans la généalogie littéraire de Jésus donnée par Matthieu.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "joseph-marie",
+      "name": "Joseph, époux de Marie",
+      "bio": "Matthieu présente Joseph comme époux de Marie. Le texte change de formulation au moment d’évoquer la naissance de Jésus.",
+      "sources": [
+        {
+          "label": "Matthieu 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "matthew",
+      "aliases": "",
+      "note": "Cette succession suit Matthieu, qui comporte des omissions. Elle ne représente pas systématiquement chaque génération. Luc 3 donne une autre lignée."
+    },
+    {
+      "id": "marie",
+      "name": "Marie / Maryam",
+      "bio": "Mère de Jésus. Les récits de l’Annonciation et de la naissance sont présentés différemment dans les Évangiles et dans la sourate Maryam.",
+      "sources": [
+        {
+          "label": "Luc 1",
+          "url": "https://www.aelf.org/bible/Lc/1"
+        },
+        {
+          "label": "Coran 19/16-36",
+          "url": "https://quran.com/fr/19/16-36"
+        }
+      ],
+      "group": "shared",
+      "aliases": "Maryam مريم",
+      "note": "Voir aussi Coran 19:16–36. Aucune paternité biologique de Joseph n’est affirmée ici."
+    },
+    {
+      "id": "jesus",
+      "name": "Jésus / ‘Îsâ",
+      "bio": "Au centre de la foi chrétienne ; messager et Messie dans le Coran. Les traditions divergent notamment sur sa nature et sa crucifixion.",
+      "sources": [
+        {
+          "label": "Luc 1",
+          "url": "https://www.aelf.org/bible/Lc/1"
+        },
+        {
+          "label": "Coran 19/16-36",
+          "url": "https://quran.com/fr/19/16-36"
+        }
+      ],
+      "group": "shared",
+      "aliases": "Issa عيسى",
+      "note": "Voir aussi Coran 19:16–36. Aucune paternité biologique de Joseph n’est affirmée ici."
+    },
+    {
+      "id": "idris",
+      "name": "Idris",
+      "bio": "Le Coran le qualifie de véridique et de prophète. Son rapprochement avec Hénok existe dans les traditions, sans généalogie explicite dans ces versets.",
+      "sources": [
+        {
+          "label": "Coran 19/56-57",
+          "url": "https://quran.com/fr/19/56-57"
+        }
+      ],
+      "group": "quran",
+      "aliases": "",
+      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché."
+    },
+    {
+      "id": "hud",
+      "name": "Hûd",
+      "bio": "Messager envoyé au peuple de ‘Âd. Son récit traite du refus de son appel et du jugement.",
+      "sources": [
+        {
+          "label": "Coran 11/50-60",
+          "url": "https://quran.com/fr/11/50-60"
+        }
+      ],
+      "group": "quran",
+      "aliases": "",
+      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché."
+    },
+    {
+      "id": "salih",
+      "name": "Sâlih",
+      "bio": "Messager envoyé aux Thamûd ; la chamelle est un élément majeur du récit.",
+      "sources": [
+        {
+          "label": "Coran 11/61-68",
+          "url": "https://quran.com/fr/11/61-68"
+        }
+      ],
+      "group": "quran",
+      "aliases": "",
+      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché."
+    },
+    {
+      "id": "shuayb",
+      "name": "Shu‘ayb",
+      "bio": "Appelle son peuple à l’adoration de Dieu et à la justice dans les échanges commerciaux.",
+      "sources": [
+        {
+          "label": "Coran 11/84-95",
+          "url": "https://quran.com/fr/11/84-95"
+        }
+      ],
+      "group": "quran",
+      "aliases": "",
+      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché."
+    },
+    {
+      "id": "job",
+      "name": "Job / Ayyûb",
+      "bio": "Figure de l’épreuve et du secours divin. Sa parenté précise n’est pas donnée par ces versets.",
+      "sources": [
+        {
+          "label": "Coran 21/83-84",
+          "url": "https://quran.com/fr/21/83-84"
+        }
+      ],
+      "group": "quran",
+      "aliases": "",
+      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché."
+    },
+    {
+      "id": "dhulkifl",
+      "name": "Dhû l-Kifl",
+      "bio": "Nommé parmi des figures de patience. Les identifications proposées dans les commentaires ne sont pas certaines.",
+      "sources": [
+        {
+          "label": "Coran 21/85-86",
+          "url": "https://quran.com/fr/21/85-86"
+        }
+      ],
+      "group": "quran",
+      "aliases": "",
+      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché."
+    },
+    {
+      "id": "elie",
+      "name": "Élie / Ilyâs",
+      "bio": "Figure prophétique dont le Coran rapporte la dénonciation du culte de Baal.",
+      "sources": [
+        {
+          "label": "Coran 37/123-132",
+          "url": "https://quran.com/fr/37/123-132"
+        }
+      ],
+      "group": "quran",
+      "aliases": "",
+      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché."
+    },
+    {
+      "id": "elisee",
+      "name": "Élisée / Al-Yasa‘",
+      "bio": "Nommé parmi les figures distinguées dans le Coran. Les versets cités ne donnent pas sa filiation.",
+      "sources": [
+        {
+          "label": "Coran 6/86",
+          "url": "https://quran.com/fr/6/86"
+        }
+      ],
+      "group": "quran",
+      "aliases": "",
+      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché."
+    },
+    {
+      "id": "jonas",
+      "name": "Jonas / Yûnus",
+      "bio": "Prophète associé à l’épreuve du poisson et à la prière dans la détresse.",
+      "sources": [
+        {
+          "label": "Coran 37/139-148",
+          "url": "https://quran.com/fr/37/139-148"
+        }
+      ],
+      "group": "quran",
+      "aliases": "",
+      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché."
+    },
+    {
+      "id": "zacharie",
+      "name": "Zacharie / Zakariyyâ",
+      "bio": "Le récit rapporte sa prière pour recevoir un enfant malgré la vieillesse.",
+      "sources": [
+        {
+          "label": "Coran 19/2-11",
+          "url": "https://quran.com/fr/19/2-11"
+        }
+      ],
+      "group": "quran",
+      "aliases": "",
+      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché."
+    },
+    {
+      "id": "jean",
+      "name": "Jean / Yahyâ",
+      "bio": "Fils annoncé à Zacharie ; le Coran souligne sa sagesse et sa piété.",
+      "sources": [
+        {
+          "label": "Coran 19/7-15",
+          "url": "https://quran.com/fr/19/7-15"
+        }
+      ],
+      "group": "quran",
+      "aliases": "",
+      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché."
+    },
+    {
+      "id": "muhammad",
+      "name": "Muhammad",
+      "bio": "Messager de l’islam, situé historiquement en Arabie aux VIe–VIIe siècles. Le Coran le désigne comme messager et sceau des prophètes.",
+      "sources": [
+        {
+          "label": "Coran 33/40",
+          "url": "https://quran.com/fr/33/40"
+        }
+      ],
+      "group": "quran",
+      "aliases": "",
+      "note": "Aucun rattachement généalogique spéculatif : une absence de trait signifie que cette filiation n’est pas documentée dans le corpus affiché."
+    },
+    {
+      "id": "tamar",
+      "name": "Tamar",
+      "bio": "Mère de Pérès et Zérah dans le récit de Juda. Matthieu la nomme explicitement dans sa généalogie.",
+      "sources": [
+        {
+          "label": "Gn 38",
+          "url": "https://www.aelf.org/bible/Gn/38"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "rahab",
+      "name": "Rahab",
+      "bio": "Matthieu la nomme comme mère de Booz. Ce renseignement est présenté selon cette généalogie, sans reconstituer les générations absentes.",
+      "sources": [
+        {
+          "label": "Mt 1",
+          "url": "https://www.aelf.org/bible/Mt/1"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "ruth",
+      "name": "Ruth",
+      "bio": "Femme moabite liée à Noémi. Son histoire conduit à son union avec Booz et à la naissance d’Obed.",
+      "sources": [
+        {
+          "label": "Rt 4",
+          "url": "https://www.aelf.org/bible/Rt/4"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "bethsabee",
+      "name": "Bethsabée",
+      "bio": "Mère de Salomon. Le récit de Samuel évoque aussi la violence de David envers sa famille et la mort d’Urie.",
+      "sources": [
+        {
+          "label": "2S 11",
+          "url": "https://www.aelf.org/bible/2S/11"
+        },
+        {
+          "label": "2 Samuel 12:24",
+          "url": "https://www.aelf.org/bible/2S/12"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "yokebed",
+      "name": "Yokébed",
+      "bio": "Mère de Moïse et Aaron, nommée dans la généalogie d’Exode 6.",
+      "sources": [
+        {
+          "label": "Ex 6",
+          "url": "https://www.aelf.org/bible/Ex/6"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    },
+    {
+      "id": "asenath",
+      "name": "Asnath",
+      "bio": "Épouse de Joseph, mère de Manassé et Éphraïm dans le récit de ses années en Égypte.",
+      "sources": [
+        {
+          "label": "Gn 41",
+          "url": "https://www.aelf.org/bible/Gn/41"
+        }
+      ],
+      "group": "biblical",
+      "aliases": "",
+      "note": ""
+    }
+  ],
+  "edges": [
+    {
+      "source": "adam",
+      "target": "cain",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 4"
+    },
+    {
+      "source": "eve",
+      "target": "cain",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 4"
+    },
+    {
+      "source": "adam",
+      "target": "abel",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 4"
+    },
+    {
+      "source": "eve",
+      "target": "abel",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 4"
+    },
+    {
+      "source": "adam",
+      "target": "seth",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 4"
+    },
+    {
+      "source": "eve",
+      "target": "seth",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 4"
+    },
+    {
+      "source": "seth",
+      "target": "enosh",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 5"
+    },
+    {
+      "source": "enosh",
+      "target": "qenane",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 5"
+    },
+    {
+      "source": "qenane",
+      "target": "mahalalel",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 5"
+    },
+    {
+      "source": "mahalalel",
+      "target": "yered",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 5"
+    },
+    {
+      "source": "yered",
+      "target": "henok",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 5"
+    },
+    {
+      "source": "henok",
+      "target": "mathusalem",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 5"
+    },
+    {
+      "source": "mathusalem",
+      "target": "lamek",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 5"
+    },
+    {
+      "source": "lamek",
+      "target": "noe",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 5"
+    },
+    {
+      "source": "noe",
+      "target": "sem",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 5:32"
+    },
+    {
+      "source": "noe",
+      "target": "cham",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 5:32"
+    },
+    {
+      "source": "noe",
+      "target": "japhet",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 5:32"
+    },
+    {
+      "source": "sem",
+      "target": "arpaxad",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 11"
+    },
+    {
+      "source": "arpaxad",
+      "target": "shelah",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 11"
+    },
+    {
+      "source": "shelah",
+      "target": "eber",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 11"
+    },
+    {
+      "source": "eber",
+      "target": "peleg",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 11"
+    },
+    {
+      "source": "peleg",
+      "target": "reu",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 11"
+    },
+    {
+      "source": "reu",
+      "target": "serug",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 11"
+    },
+    {
+      "source": "serug",
+      "target": "nahor-ancien",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 11"
+    },
+    {
+      "source": "nahor-ancien",
+      "target": "terah",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 11"
+    },
+    {
+      "source": "terah",
+      "target": "abraham",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 11"
+    },
+    {
+      "source": "terah",
+      "target": "nahor",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 11"
+    },
+    {
+      "source": "terah",
+      "target": "haran",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 11"
+    },
+    {
+      "source": "haran",
+      "target": "lot",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 11:27"
+    },
+    {
+      "source": "abraham",
+      "target": "sarah",
+      "kind": "union",
+      "tradition": "Genèse",
+      "reference": "Genèse 21"
+    },
+    {
+      "source": "abraham",
+      "target": "hagar",
+      "kind": "union",
+      "tradition": "Genèse",
+      "reference": "Genèse 16"
+    },
+    {
+      "source": "abraham",
+      "target": "ketura",
+      "kind": "union",
+      "tradition": "Genèse",
+      "reference": "Genèse 25"
+    },
+    {
+      "source": "abraham",
+      "target": "ismael",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 16"
+    },
+    {
+      "source": "hagar",
+      "target": "ismael",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 16"
+    },
+    {
+      "source": "abraham",
+      "target": "isaac",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 21"
+    },
+    {
+      "source": "sarah",
+      "target": "isaac",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 21"
+    },
+    {
+      "source": "isaac",
+      "target": "rebecca",
+      "kind": "union",
+      "tradition": "Genèse",
+      "reference": "Genèse 24"
+    },
+    {
+      "source": "isaac",
+      "target": "jacob",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 25"
+    },
+    {
+      "source": "rebecca",
+      "target": "jacob",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 25"
+    },
+    {
+      "source": "isaac",
+      "target": "esau",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 25"
+    },
+    {
+      "source": "rebecca",
+      "target": "esau",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 25"
+    },
+    {
+      "source": "abraham",
+      "target": "zimran",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 25"
+    },
+    {
+      "source": "ketura",
+      "target": "zimran",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 25"
+    },
+    {
+      "source": "abraham",
+      "target": "yokshan",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 25"
+    },
+    {
+      "source": "ketura",
+      "target": "yokshan",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 25"
+    },
+    {
+      "source": "abraham",
+      "target": "medan",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 25"
+    },
+    {
+      "source": "ketura",
+      "target": "medan",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 25"
+    },
+    {
+      "source": "abraham",
+      "target": "midian",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 25"
+    },
+    {
+      "source": "ketura",
+      "target": "midian",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 25"
+    },
+    {
+      "source": "abraham",
+      "target": "yishbak",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 25"
+    },
+    {
+      "source": "ketura",
+      "target": "yishbak",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 25"
+    },
+    {
+      "source": "abraham",
+      "target": "shuah",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 25"
+    },
+    {
+      "source": "ketura",
+      "target": "shuah",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 25"
+    },
+    {
+      "source": "ismael",
+      "target": "ismael-0",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 25:13–16"
+    },
+    {
+      "source": "ismael",
+      "target": "ismael-1",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 25:13–16"
+    },
+    {
+      "source": "ismael",
+      "target": "ismael-2",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 25:13–16"
+    },
+    {
+      "source": "ismael",
+      "target": "ismael-3",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 25:13–16"
+    },
+    {
+      "source": "ismael",
+      "target": "ismael-4",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 25:13–16"
+    },
+    {
+      "source": "ismael",
+      "target": "ismael-5",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 25:13–16"
+    },
+    {
+      "source": "ismael",
+      "target": "ismael-6",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 25:13–16"
+    },
+    {
+      "source": "ismael",
+      "target": "ismael-7",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 25:13–16"
+    },
+    {
+      "source": "ismael",
+      "target": "ismael-8",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 25:13–16"
+    },
+    {
+      "source": "ismael",
+      "target": "ismael-9",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 25:13–16"
+    },
+    {
+      "source": "ismael",
+      "target": "ismael-10",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 25:13–16"
+    },
+    {
+      "source": "ismael",
+      "target": "ismael-11",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 25:13–16"
+    },
+    {
+      "source": "jacob",
+      "target": "lea",
+      "kind": "union",
+      "tradition": "Genèse",
+      "reference": "Genèse 29–30"
+    },
+    {
+      "source": "jacob",
+      "target": "rachel",
+      "kind": "union",
+      "tradition": "Genèse",
+      "reference": "Genèse 29–30"
+    },
+    {
+      "source": "jacob",
+      "target": "bilha",
+      "kind": "union",
+      "tradition": "Genèse",
+      "reference": "Genèse 29–30"
+    },
+    {
+      "source": "jacob",
+      "target": "zilpa",
+      "kind": "union",
+      "tradition": "Genèse",
+      "reference": "Genèse 29–30"
+    },
+    {
+      "source": "jacob",
+      "target": "ruben",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 29–35"
+    },
+    {
+      "source": "lea",
+      "target": "ruben",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 29–35"
+    },
+    {
+      "source": "jacob",
+      "target": "simeon",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 29–35"
+    },
+    {
+      "source": "lea",
+      "target": "simeon",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 29–35"
+    },
+    {
+      "source": "jacob",
+      "target": "levi",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 29–35"
+    },
+    {
+      "source": "lea",
+      "target": "levi",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 29–35"
+    },
+    {
+      "source": "jacob",
+      "target": "juda",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 29–35"
+    },
+    {
+      "source": "lea",
+      "target": "juda",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 29–35"
+    },
+    {
+      "source": "jacob",
+      "target": "issachar",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 29–35"
+    },
+    {
+      "source": "lea",
+      "target": "issachar",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 29–35"
+    },
+    {
+      "source": "jacob",
+      "target": "zabulon",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 29–35"
+    },
+    {
+      "source": "lea",
+      "target": "zabulon",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 29–35"
+    },
+    {
+      "source": "jacob",
+      "target": "dina",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 29–35"
+    },
+    {
+      "source": "lea",
+      "target": "dina",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 29–35"
+    },
+    {
+      "source": "jacob",
+      "target": "dan",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 29–35"
+    },
+    {
+      "source": "bilha",
+      "target": "dan",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 29–35"
+    },
+    {
+      "source": "jacob",
+      "target": "nephtali",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 29–35"
+    },
+    {
+      "source": "bilha",
+      "target": "nephtali",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 29–35"
+    },
+    {
+      "source": "jacob",
+      "target": "gad",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 29–35"
+    },
+    {
+      "source": "zilpa",
+      "target": "gad",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 29–35"
+    },
+    {
+      "source": "jacob",
+      "target": "asher",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 29–35"
+    },
+    {
+      "source": "zilpa",
+      "target": "asher",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 29–35"
+    },
+    {
+      "source": "jacob",
+      "target": "joseph",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 29–35"
+    },
+    {
+      "source": "rachel",
+      "target": "joseph",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 29–35"
+    },
+    {
+      "source": "jacob",
+      "target": "benjamin",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 29–35"
+    },
+    {
+      "source": "rachel",
+      "target": "benjamin",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 29–35"
+    },
+    {
+      "source": "joseph",
+      "target": "manasse",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 41:50–52"
+    },
+    {
+      "source": "joseph",
+      "target": "ephraim",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 41:50–52"
+    },
+    {
+      "source": "levi",
+      "target": "qehat",
+      "kind": "parent",
+      "tradition": "Exode",
+      "reference": "Exode 6"
+    },
+    {
+      "source": "qehat",
+      "target": "amram",
+      "kind": "parent",
+      "tradition": "Exode",
+      "reference": "Exode 6"
+    },
+    {
+      "source": "amram",
+      "target": "moise",
+      "kind": "parent",
+      "tradition": "Exode",
+      "reference": "Exode 6"
+    },
+    {
+      "source": "amram",
+      "target": "aaron",
+      "kind": "parent",
+      "tradition": "Exode",
+      "reference": "Exode 6"
+    },
+    {
+      "source": "aaron",
+      "target": "myriam",
+      "kind": "sibling",
+      "tradition": "Exode",
+      "reference": "Exode 15:20"
+    },
+    {
+      "source": "juda",
+      "target": "perez",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "perez",
+      "target": "hesron",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "hesron",
+      "target": "ram",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "ram",
+      "target": "amminadab",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "amminadab",
+      "target": "nahshon",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "nahshon",
+      "target": "salmon",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "salmon",
+      "target": "boaz",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "boaz",
+      "target": "obed",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "obed",
+      "target": "jesse",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "jesse",
+      "target": "david",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "david",
+      "target": "salomon",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "salomon",
+      "target": "roboam",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "roboam",
+      "target": "abia",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "abia",
+      "target": "asa",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "asa",
+      "target": "josaphat",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "josaphat",
+      "target": "joram",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "joram",
+      "target": "ozias",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "ozias",
+      "target": "joatham",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "joatham",
+      "target": "achaz",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "achaz",
+      "target": "ezechias",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "ezechias",
+      "target": "manasse-roi",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "manasse-roi",
+      "target": "amon",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "amon",
+      "target": "josias",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "josias",
+      "target": "jeconias",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "jeconias",
+      "target": "salathiel",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "salathiel",
+      "target": "zorobabel",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "zorobabel",
+      "target": "abioud",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "abioud",
+      "target": "eliakim",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "eliakim",
+      "target": "azor",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "azor",
+      "target": "sadok",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "sadok",
+      "target": "akhim",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "akhim",
+      "target": "elioud",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "elioud",
+      "target": "eleazar",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "eleazar",
+      "target": "matthane",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "matthane",
+      "target": "jacob-joseph",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "jacob-joseph",
+      "target": "joseph-marie",
+      "kind": "lineage",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1"
+    },
+    {
+      "source": "joseph-marie",
+      "target": "marie",
+      "kind": "union",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1:16"
+    },
+    {
+      "source": "marie",
+      "target": "jesus",
+      "kind": "parent",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1:16"
+    },
+    {
+      "source": "zacharie",
+      "target": "jean",
+      "kind": "parent",
+      "tradition": "Coran",
+      "reference": "Coran 19:7"
+    },
+    {
+      "source": "tamar",
+      "target": "perez",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 38"
+    },
+    {
+      "source": "rahab",
+      "target": "boaz",
+      "kind": "parent",
+      "tradition": "Matthieu",
+      "reference": "Matthieu 1:5"
+    },
+    {
+      "source": "ruth",
+      "target": "obed",
+      "kind": "parent",
+      "tradition": "Ruth",
+      "reference": "Ruth 4"
+    },
+    {
+      "source": "bethsabee",
+      "target": "salomon",
+      "kind": "parent",
+      "tradition": "Samuel",
+      "reference": "2 Samuel 12:24"
+    },
+    {
+      "source": "yokebed",
+      "target": "moise",
+      "kind": "parent",
+      "tradition": "Exode",
+      "reference": "Exode 6:20"
+    },
+    {
+      "source": "yokebed",
+      "target": "aaron",
+      "kind": "parent",
+      "tradition": "Exode",
+      "reference": "Exode 6:20"
+    },
+    {
+      "source": "asenath",
+      "target": "manasse",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 41:50–52"
+    },
+    {
+      "source": "asenath",
+      "target": "ephraim",
+      "kind": "parent",
+      "tradition": "Genèse",
+      "reference": "Genèse 41:50–52"
+    }
+  ]
+}

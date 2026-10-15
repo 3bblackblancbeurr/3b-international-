@@ -10,8 +10,8 @@ export const NAV_GROUPS=Object.freeze([
  {title:'Identité & progression',ids:['passport','member','loyalty']},
  {title:'Univers 3B',ids:['world3b','invisible','secret']},
  {title:'Services & avantages',ids:['deals','shop','control']},
- {title:'En préparation',ids:['nosbloc','games','manga','religion','sport','community','ia']},
- {title:'Comprendre 3B',ids:['guide']},
+ {title:'En préparation',ids:['nosbloc','games','manga','sport','community','ia']},
+ {title:'Comprendre 3B',ids:['guide','religion']},
 ]);
 
 export const MENU_CATEGORIES=Object.freeze([

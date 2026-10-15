@@ -101,9 +101,8 @@ const BASE_MENU_ITEMS = [
   },
   {
     id: "religion",
-    label: "Religion",
+    label: "3B Religion",
     icon: "✧",
-    status: "soon",
     description: "Croyances, cultures et traditions.",
   },
   {
@@ -141,7 +140,7 @@ const BASE_MENU_ITEMS = [
   },
 ];
 
-const PREPARATION_ROUTE_IDS = new Set(["nosbloc", "games", "religion", "manga", "sport"]);
+const PREPARATION_ROUTE_IDS = new Set(["nosbloc", "games", "manga", "sport"]);
 
 const CONTROL_MENU_ITEM = {
   id: "control",
