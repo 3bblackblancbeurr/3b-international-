@@ -18,8 +18,9 @@ Commande reproductible avec Playwright installé : `CHROMIUM_PATH=/chemin/vers/c
 - Les 14 parcours existants restent réussis, sans exception JavaScript.
 - 9 contrôles supplémentaires réussis : routines/énergie après rechargement, historique 90 jours, export calendrier réel, absence de fausse connexion dans une PWA, mobilité, quatre largeurs, permission native explicite, déconnexion pendant une permission et fermeture pendant une permission de notification.
 - Les trois derniers parcours utilisent un pont natif simulé uniquement dans le serveur de test. Ils vérifient les courses asynchrones du JavaScript, pas le matériel ni la délivrance réelle des permissions.
+- Boutons composés avec le Button partagé Gold Master ; palette Santé et matériaux centralisés dans les tokens communs. Le garde de cohérence visuelle reste actif.
 - Compilation de production Vite réussie. Interface inspectée en 360 / 390 / 768 / 1440 px, sans débordement horizontal de la page ; graphique 90 jours défilant dans sa zone.
-- Android : compilation Kotlin/Java réelle, APK debug construit et 18 tests JUnit réussis, dont cinq cas de calendrier/rappels. Les tests d’appareil restent à faire.
+- Android : compilation Kotlin/Java réelle, APK debug et AAB release non signé construits, lintVitalRelease réussi et 18 tests JUnit réussis, dont cinq cas de calendrier/rappels. Les tests d’appareil restent à faire.
 - iOS : les contrats de source passent ; la compilation du simulateur est effectuée par le workflow mobile macOS. Une application signée et installée avec HealthKit activé est nécessaire pour les essais réels.
 - La vérification complète a identifié trois attentes obsolètes déjà présentes sur `main` après la refonte de l’accueil : espace dans l’import Button et ancien portail 3D remplacé par HomeCinematicArtwork. Ces attentes sont alignées sur l’accueil approuvé, en conservant ses contrats de navigation, de réduction des mouvements et du composant WebGL autonome. Aucun composant de l’accueil n’est modifié par cette correction.
 

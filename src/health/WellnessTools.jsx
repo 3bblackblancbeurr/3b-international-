@@ -1,3 +1,4 @@
+import { Button as HealthButton } from '../design-system/index.jsx';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowRight, Check, CheckCircle2, Footprints, Moon, Pause, Play, RotateCcw, SkipForward, Sun } from 'lucide-react';
 import {
@@ -52,10 +53,10 @@ export function MobilitySessions({ onComplete }) {
   return <section className="h-mobility" aria-labelledby="h-mobility-title">
     <div className="h-section-heading"><div><span className="h-eyebrow">QUELQUES MINUTES POUR BOUGER</span><h2 id="h-mobility-title">Ton mouvement du moment.</h2></div><Footprints size={25} aria-hidden="true"/></div>
     <div className="h-mobility-choices" role="group" aria-label="Choisir une séance douce">
-      {MOBILITY_SESSIONS.map(item => <button type="button" key={item.id} aria-pressed={selected === item.id} disabled={timer.status === 'running'} onClick={() => choose(item.id)}>
+      {MOBILITY_SESSIONS.map(item => <HealthButton variant="health" type="button" key={item.id} aria-pressed={selected === item.id} disabled={timer.status === 'running'} onClick={() => choose(item.id)}>
         <img src={`/health/photos/${item.photo}.webp`} alt="" loading="lazy" width="180" height="140"/>
         <span><small>{item.minutes} MIN ENVIRON</small><strong>{item.name}</strong></span>{selected === item.id && <Check size={16} aria-hidden="true"/>}
-      </button>)}
+      </HealthButton>)}
     </div>
     <div className={`h-mobility-stage ${completed ? 'is-complete' : ''}`}>
       <img className="h-mobility-backdrop" src={`/health/photos/${session.photo}.webp`} alt="" width="900" height="600" loading="lazy"/>
@@ -74,13 +75,13 @@ export function MobilitySessions({ onComplete }) {
     <p className="h-mobility-status" role="status" aria-live="polite">{completed ? timer.recorded ? 'Temps ajouté au journal.' : `${String(minutes).replace('.', ',')} min de mouvement chronométrées${timer.skipped ? ` · ${timer.skipped} étape(s) passée(s)` : ''}.` : timer.interrupted ? 'Le minuteur a été interrompu. Aucun temps pendant cette interruption n’a été ajouté.' : timer.status === 'paused' ? 'En pause. Reprends quand tu es prêt.' : timer.status === 'running' ? `Étape ${timer.index + 1} : ${step.title}.` : 'À toi de démarrer. Les durées restent des repères.'}</p>
     <div className="h-mobility-actions">
       {completed ? <>
-        {onComplete && <button type="button" className="h-primary" onClick={record} disabled={timer.recorded || minutes <= 0}><Check size={17}/>{timer.recorded ? 'Ajouté au journal' : `Confirmer ${String(minutes).replace('.', ',')} min réalisées`}</button>}
-        <button type="button" className="h-secondary" onClick={() => send('reset')}><RotateCcw size={16}/> Recommencer</button>
+        {onComplete && <HealthButton variant="health" type="button" className="h-primary" onClick={record} disabled={timer.recorded || minutes <= 0}><Check size={17}/>{timer.recorded ? 'Ajouté au journal' : `Confirmer ${String(minutes).replace('.', ',')} min réalisées`}</HealthButton>}
+        <HealthButton variant="health" type="button" className="h-secondary" onClick={() => send('reset')}><RotateCcw size={16}/> Recommencer</HealthButton>
       </> : <>
-        <button type="button" className="h-primary" onClick={() => send(timer.status === 'running' ? 'pause' : 'start')}>{timer.status === 'running' ? <Pause size={17}/> : <Play size={17}/>} {timer.status === 'running' ? 'Pause' : timer.status === 'paused' ? 'Reprendre' : 'Commencer'}</button>
-        <button type="button" className="h-secondary" onClick={() => send('finish')} disabled={timer.elapsedMs === 0}><Check size={17}/> Fait, continuer</button>
-        <button type="button" className="h-link" onClick={() => send('skip')}><SkipForward size={16}/> Passer</button>
-        {(timer.index > 0 || timer.elapsedMs > 0) && <button type="button" className="h-link h-mobility-reset" onClick={() => send('reset')} aria-label="Recommencer la séance depuis le début"><RotateCcw size={16}/> Recommencer</button>}
+        <HealthButton variant="health" type="button" className="h-primary" onClick={() => send(timer.status === 'running' ? 'pause' : 'start')}>{timer.status === 'running' ? <Pause size={17}/> : <Play size={17}/>} {timer.status === 'running' ? 'Pause' : timer.status === 'paused' ? 'Reprendre' : 'Commencer'}</HealthButton>
+        <HealthButton variant="health" type="button" className="h-secondary" onClick={() => send('finish')} disabled={timer.elapsedMs === 0}><Check size={17}/> Fait, continuer</HealthButton>
+        <HealthButton variant="health" type="button" className="h-link" onClick={() => send('skip')}><SkipForward size={16}/> Passer</HealthButton>
+        {(timer.index > 0 || timer.elapsedMs > 0) && <HealthButton variant="health" type="button" className="h-link h-mobility-reset" onClick={() => send('reset')} aria-label="Recommencer la séance depuis le début"><RotateCcw size={16}/> Recommencer</HealthButton>}
       </>}
     </div>
     {!completed && step.tip && <p className="h-mobility-tip">{step.tip}</p>}
@@ -101,10 +102,10 @@ export function DailyRoutines({ date, day = {}, onUpdate, onNavigate }) {
   const completed = items.filter(item => checked.includes(item.id)).length;
   return <section className="h-routines" aria-labelledby="h-routines-title">
     <div className="h-routines-heading"><div><span className="h-eyebrow">TES PETITS REPÈRES</span><h2 id="h-routines-title">Un rythme qui te ressemble.</h2><p>Au réveil ou avant le repos, même en horaires décalés.</p></div><img src="/health/photos/rest.webp" alt="" loading="lazy" width="160" height="160"/></div>
-    <div className="h-routines-bar"><div className="h-pills" role="group" aria-label="Moment de la routine"><button type="button" aria-pressed={period === 'wake'} onClick={() => setPeriod('wake')}><Sun size={15}/> Au réveil</button><button type="button" aria-pressed={period === 'rest'} onClick={() => setPeriod('rest')}><Moon size={15}/> Avant le repos</button></div><span aria-label={`${completed} gestes cochés sur ${items.length}`}>{completed}/{items.length}</span></div>
+    <div className="h-routines-bar"><div className="h-pills" role="group" aria-label="Moment de la routine"><HealthButton variant="health" type="button" aria-pressed={period === 'wake'} onClick={() => setPeriod('wake')}><Sun size={15}/> Au réveil</HealthButton><HealthButton variant="health" type="button" aria-pressed={period === 'rest'} onClick={() => setPeriod('rest')}><Moon size={15}/> Avant le repos</HealthButton></div><span aria-label={`${completed} gestes cochés sur ${items.length}`}>{completed}/{items.length}</span></div>
     <div className="h-routine-list">{items.map(item => <div key={item.id} className={checked.includes(item.id) ? 'is-checked' : ''}>
       <label><input type="checkbox" checked={checked.includes(item.id)} onChange={() => onUpdate?.({ routines: toggleRoutine(day.routines, item.id) })}/><span><strong>{item.title}</strong><small>{item.detail}</small></span></label>
-      {onNavigate && <button type="button" onClick={() => onNavigate(item.route)} aria-label={`Ouvrir l’outil : ${item.title}`}><ArrowRight size={18}/></button>}
+      {onNavigate && <HealthButton variant="health" type="button" onClick={() => onNavigate(item.route)} aria-label={`Ouvrir l’outil : ${item.title}`}><ArrowRight size={18}/></HealthButton>}
     </div>)}</div>
     <div className="h-routines-foot"><small>Pour le {date ? new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long' }).format(new Date(`${date}T12:00:00`)) : 'jour choisi'}. À cocher selon ce que tu fais, sans obligation.</small><span role="status">{completed === items.length ? <><Check size={14}/> Tes repères sont cochés.</> : null}</span></div>
     {period === 'rest' && <WellnessSources ids={['sleep', 'teeth']}/>}
