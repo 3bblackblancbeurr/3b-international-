@@ -28,8 +28,8 @@ export function verifyVercelBudget() {
   const apiFiles = filesBelow(join(root, 'api')).filter(file => file.path.endsWith('.js'));
   const largestPublic = [...publicFiles].sort((a, b) => b.bytes - a.bytes)[0] || null;
 
-  const publicBudget = numberFromEnv('VERCEL_PUBLIC_BUDGET_BYTES', 230 * decimalMb);
-  const distBudget = numberFromEnv('VERCEL_DIST_BUDGET_BYTES', 240 * decimalMb);
+  const publicBudget = numberFromEnv('VERCEL_PUBLIC_BUDGET_BYTES', 232 * decimalMb);
+  const distBudget = numberFromEnv('VERCEL_DIST_BUDGET_BYTES', 242 * decimalMb);
   const singleStaticBudget = numberFromEnv('VERCEL_SINGLE_STATIC_BUDGET_BYTES', 10 * decimalMb);
   const apiFunctionBudget = numberFromEnv('VERCEL_API_FUNCTION_BUDGET', 12);
   const hobbyCliSourceLimit = 100 * decimalMb;
@@ -51,9 +51,15 @@ export function verifyVercelBudget() {
   const failures = [];
   const warnings = [];
 
+  // 2 MB reserved exclusively for the nine lazy-loaded narration clips.
+  // Keep the previous 230 MB budget for every other public asset.
+  const narrationBytes = total(filesBelow(join(root, 'public/world/narration')));
+  const narrationBudget = 2 * decimalMb;
   const publicBytes = total(publicFiles);
   const distBytes = total(distFiles);
   const cliSourceBytes = total(cliSourceFiles);
+  if (narrationBytes > narrationBudget) failures.push({error: 'narration_budget_exceeded', bytes: narrationBytes, budget: narrationBudget});
+  if (publicBytes - narrationBytes > publicBudget - narrationBudget) failures.push({error: 'non_narration_budget_exceeded', bytes: publicBytes - narrationBytes, budget: publicBudget - narrationBudget});
   if (publicBytes > publicBudget) failures.push({error: 'public_budget_exceeded', bytes: publicBytes, budget: publicBudget});
   if (distFiles.length && distBytes > distBudget) failures.push({error: 'dist_budget_exceeded', bytes: distBytes, budget: distBudget});
   if (largestPublic?.bytes > singleStaticBudget) {
@@ -79,6 +85,7 @@ export function verifyVercelBudget() {
 
   return {
     ok: failures.length === 0,
+    narration: {bytes: narrationBytes, budget: narrationBudget},
     public: {files: publicFiles.length, bytes: publicBytes, budget: publicBudget, headroom: publicBudget - publicBytes},
     dist: {files: distFiles.length, bytes: distBytes, budget: distBudget, headroom: distFiles.length ? distBudget - distBytes : null},
     apiFunctions: {count: apiFiles.length, budget: apiFunctionBudget, names: apiFiles.map(file => basename(file.path)).sort()},
