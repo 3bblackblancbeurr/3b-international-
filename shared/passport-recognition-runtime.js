@@ -2,14 +2,23 @@ export class PassportFailure extends Error {
   constructor(status,message){super(message);this.status=status;}
 }
 
-export async function readPassportBody(req,limit=24576) {
-  if((req.headers.get('content-type')||'').split(';')[0].trim().toLowerCase()!=='application/json') throw new PassportFailure(415,'Un corps JSON est requis.');
-  const reader=req.body?.getReader(),decoder=new TextDecoder();
+export async function readPassportText(req,limit=24576) {
+  const reader=req.body?.getReader(),decoder=new TextDecoder('utf-8',{fatal:true});
   let text='',bytes=0;
   if(reader) try {
     while(true){const chunk=await reader.read();if(chunk.done)break;bytes+=chunk.value.byteLength;if(bytes>limit){await reader.cancel();throw new PassportFailure(413,'Demande trop volumineuse.');}text+=decoder.decode(chunk.value,{stream:true});}
     text+=decoder.decode();
+  } catch(error) {
+    if(error instanceof PassportFailure)throw error;
+    await reader.cancel().catch(()=>{});
+    throw new PassportFailure(400,'Demande invalide.');
   } finally {reader.releaseLock();}
+  return text;
+}
+
+export async function readPassportBody(req,limit=24576) {
+  if((req.headers.get('content-type')||'').split(';')[0].trim().toLowerCase()!=='application/json') throw new PassportFailure(415,'Un corps JSON est requis.');
+  const text=await readPassportText(req,limit);
   let body;try{body=JSON.parse(text);}catch{throw new PassportFailure(400,'Demande invalide.');}
   if(!body || typeof body!=='object' || Array.isArray(body)) throw new PassportFailure(400,'Demande invalide.');
   return body;

@@ -106,6 +106,27 @@ test('status requires member authentication; untrusted origin and oversize body 
   assert.equal((await fixtureData.handler(request({action:'status',large:'x'.repeat(25000)}))).status,413);
 });
 
+test('unauthenticated POSTs and invalid member requests cannot bootstrap signing material',async()=>{
+ const fixtureData=await fixture({vault:true});
+ for(const body of [{action:'status'},{action:'issue'},{action:'revoke'},{}]){
+  assert.equal((await fixtureData.handler(request(body,'unknown'))).status,401);
+ }
+ assert.equal(fixtureData.calls.length,0);
+ assert.equal((await fixtureData.handler(request({action:'verify',proof:'invalid',nonce:randomSecret()},randomSecret(),null))).status,401);
+ assert.equal((await fixtureData.handler(request({action:'issue',partnerId:PARTNER,nonce:randomSecret(),consent:false,scopes:['passport.basic']}))).status,400);
+ assert.equal((await fixtureData.handler(request({action:'status',unexpected:true}))).status,400);
+ assert.equal(fixtureData.calls.some(call=>call.path.includes('signing_material')||call.path.includes('recognition_settings')),false);
+});
+
+test('public metadata and holder revocation do not load or initialize private signing keys',async()=>{
+ const fixtureData=await fixture({vault:true});
+ const metadata=await fixtureData.handler(new Request(BASE+'/functions/v1/passport-recognition?action=metadata'));
+ assert.equal(metadata.status,200);
+ assert.equal((await metadata.json()).official_recognition,false);
+ assert.equal((await fixtureData.handler(request({action:'revoke',proofId:crypto.randomUUID()}))).status,404);
+ assert.equal(fixtureData.calls.some(call=>call.path.includes('signing_material')||call.path.includes('recognition_settings')),false);
+});
+
 test('Vault bootstrap validates its key before persistence and supplies the selected KID',async()=>{
   const fixtureData=await fixture();
   const withoutKid={...fixtureData.jwk};delete withoutKid.kid;

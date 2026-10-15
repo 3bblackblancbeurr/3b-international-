@@ -1,12 +1,14 @@
 import {useState} from 'react';
-import {ArrowUpRight} from 'lucide-react';
+import {ArrowUpRight,BookOpen} from 'lucide-react';
 import {RouteLink} from './AppNavigation.jsx';
 import {launchUnrealWorld,UNREAL_LAUNCH_ENABLED} from '../world/unrealLaunch.js';
 import {Button} from '../design-system/index.jsx';
 import BrokenCircle3D from './BrokenCircle3D.jsx';
+import WorldStoryPreview from './WorldStoryPreview.jsx';
 
 export default function WorldPortalCard({goTo}){
  const[busy,setBusy]=useState(false),[message,setMessage]=useState('');
+ const[storyOpen,setStoryOpen]=useState(false);
  const openNativeWorld=async()=>{
   if(busy)return;
   setBusy(true);setMessage('');
@@ -23,10 +25,12 @@ export default function WorldPortalCard({goTo}){
    <p>Traverse la Cité des Huit Héritages. Explore, rencontre les Gardiens et fais évoluer un monde vivant.</p>
    <div className="world-portal-actions">
     <Button as={RouteLink} page="world3b" goTo={goTo} variant="champagne" className="surface-button">Explorer le Monde <ArrowUpRight size={16}/></Button>
+    <Button variant="ghost" aria-haspopup="dialog" onClick={()=>setStoryOpen(true)}><BookOpen size={17} aria-hidden="true"/>Découvrir l’histoire</Button>
     {UNREAL_LAUNCH_ENABLED&&<Button variant="ghost" onClick={openNativeWorld} disabled={busy} loading={busy}>{busy?'Ouverture…':'Lancer l’expérience native'}</Button>}
    </div>
    {message&&<p role="status">{message}</p>}
   </div>
   <div className="home-world-signature" aria-hidden="true"><span>8 ROYAUMES</span><i/><span>8 GARDIENS</span><i/><span>UN SEUL MONDE</span></div>
+  <WorldStoryPreview open={storyOpen} onClose={()=>setStoryOpen(false)} onExplore={()=>{setStoryOpen(false);goTo('world3b');}}/>
  </section>;
 }

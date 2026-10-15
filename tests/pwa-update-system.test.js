@@ -89,7 +89,9 @@ test("home portal renders an architectural atmospheric scene and the real 3D Bro
   assert.match(circle3d, /rotor\.rotation\.z/);
   assert.match(circle3d, /TAU\/24/);
   assert.match(circle3d, /IntersectionObserver/);
-  assert.match(circle3d, /prefers-reduced-motion/);
+  assert.match(circle3d, /useLuxury/);
+  assert.match(circle3d, /!policy\.reduced&&!policy\.economical/);
+  assert.match(circle3d, /createSceneFrameLoop/);
   assert.match(circle3d, /powerPreference:'high-performance'/);
   assert.match(circle3d, /annularSectorGeometry/);
   assert.match(circle3d, /webglcontextlost/);

@@ -24,6 +24,7 @@ export const MENU_CATEGORIES=Object.freeze([
 
 const normalized=value=>String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('fr');
 const assignedIds=new Set(MENU_CATEGORIES.flatMap(category=>category.ids));
+const scannerDestination=item=>({...item,label:'Scanner',description:'Faire apparaître une scène autour de toi.',target:'scanner'});
 
 export function navigationItems(menuItems=[]){
  const items=new Map([['home',{id:'home',label:'Accueil',description:'Retrouver les espaces principaux.'}]]);
@@ -34,16 +35,17 @@ export function navigationItems(menuItems=[]){
 export function itemsForCategory(menuItems,categoryId){
  const items=navigationItems(menuItems).filter(item=>item.status!=='soon'),category=MENU_CATEGORIES.find(item=>item.id===categoryId);
  if(!category)return [];
- const ordered=category.ids.map(id=>items.find(item=>item.id===id)).filter(Boolean).map(item=>categoryId==='principal'&&item.id==='invisible'?{...item,label:'Scanner',description:'Faire apparaître une scène autour de toi.',target:'scanner'}:item);
+ const ordered=category.ids.map(id=>items.find(item=>item.id===id)).filter(Boolean).map(item=>categoryId==='principal'&&item.id==='invisible'?scannerDestination(item):item);
  return categoryId==='discover'?[...ordered,...items.filter(item=>!assignedIds.has(item.id))]:ordered;
 }
 
 export function searchNavigation(menuItems,query){
  const words=normalized(query).trim().split(/\s+/).filter(Boolean);
+ const cameraIntent=words.some(word=>word.length>=3&&['scanner','camera'].some(alias=>alias.startsWith(word)));
  return navigationItems(menuItems).filter(item=>item.status!=='soon').filter(item=>{
   const text=normalized(`${item.id} ${item.label} ${item.description||''} ${item.id==='invisible'?'scanner caméra réalité augmentée':''}`);
   return words.every(word=>text.includes(word));
- });
+ }).map(item=>item.id==='invisible'&&cameraIntent?scannerDestination(item):item);
 }
 
 export function categoryForPage(page,menuItems){

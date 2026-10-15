@@ -1,4 +1,6 @@
 import {useEffect,useRef} from 'react';
+import {useLuxury} from '../design-system/LuxuryExperience.jsx';
+import {createSceneFrameLoop} from './scene-frame-loop.js';
 
 const TAU=Math.PI*2;
 const DEG=Math.PI/180;
@@ -181,6 +183,13 @@ function addArchitecturalDetails(THREE,rotor,materials){
 
 export default function BrokenCircle3D({variant='stone'}){
   const mountRef=useRef(null);
+  const loopRef=useRef(null);
+  const {policy}=useLuxury();
+  const animate=!policy.reduced&&!policy.economical;
+  const animateRef=useRef(animate);
+  animateRef.current=animate;
+
+  useEffect(()=>{loopRef.current?.update({animate});},[animate]);
 
   useEffect(()=>{
     const menuMode=variant==='menu';
@@ -188,7 +197,6 @@ export default function BrokenCircle3D({variant='stone'}){
     if(!mount)return undefined;
 
     let disposed=false;
-    let frame=0;
     let renderer=null;
     let scene=null;
     let camera=null;
@@ -196,35 +204,11 @@ export default function BrokenCircle3D({variant='stone'}){
     let ambientRig=null;
     let resizeObserver=null;
     let intersectionObserver=null;
-    let visible=true;
-    let applicationMenuOpen=false;
-    let running=false;
-    let reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const motionQuery=window.matchMedia('(prefers-reduced-motion: reduce)');
-    let lastTime=performance.now();
-
-    const stop=()=>{
-      running=false;
-      if(frame)cancelAnimationFrame(frame);
-      frame=0;
-    };
-
-    const start=()=>{
-      if(disposed||running||!renderer||document.hidden||!visible||applicationMenuOpen)return;
-      running=true;
-      lastTime=performance.now();
-      frame=requestAnimationFrame(renderLoop);
-    };
-
-    const onApplicationMenu=event=>{applicationMenuOpen=event.detail?.open===true;if(applicationMenuOpen)stop();else start();};
-    const onMotionChange=(event)=>{reducedMotion=event.matches;};
-    const onVisibility=()=>{if(document.hidden)stop();else start();};
-
-    const renderLoop=(now)=>{
-      if(disposed||!renderer||!scene||!camera||!rotor){stop();return;}
-      const dt=Math.min((now-lastTime)/1000,.05);
-      lastTime=now;
-      if(!reducedMotion){
+    let launchObserver=null;
+    const covers=new Set();
+    const frames=createSceneFrameLoop({render:(now,dt,moving)=>{
+      if(disposed||!renderer||!scene||!camera||!rotor)return;
+      if(moving){
         rotor.rotation.z-=dt*(TAU/24);
         if(menuMode){
           const t=now/1000;
@@ -240,8 +224,37 @@ export default function BrokenCircle3D({variant='stone'}){
         }
       }
       renderer.render(scene,camera);
-      if(running)frame=requestAnimationFrame(renderLoop);
+    }});
+    loopRef.current=frames;
+    frames.update({animate:animateRef.current,hidden:document.hidden,visible:false});
+    const onCover=event=>{
+      if(event.detail?.open) covers.add(event.type); else covers.delete(event.type);
+      frames.update({covered:covers.size>0});
     };
+    const onVisibility=()=>frames.update({hidden:document.hidden});
+    const onContextLost=event=>{
+      event.preventDefault();
+      frames.update({active:false});
+      mount.dataset.state='fallback';
+    };
+    const onContextRestored=()=>{
+      if(disposed)return;
+      mount.dataset.state='ready';
+      frames.update({active:true});
+      frames.invalidate();
+    };
+    // Subscribe before the async Three import, so a dialog opened during
+    // loading cannot leave an unseen animation running underneath it.
+    document.addEventListener('visibilitychange',onVisibility);
+    window.addEventListener('threeb:app-menu-state',onCover);
+    window.addEventListener('threeb:home-story-state',onCover);
+    const appContent=mount.closest('.threeb-app-content');
+    if(appContent){
+      const updateLaunch=()=>onCover({type:'launch',detail:{open:appContent.dataset.launchHidden==='true'}});
+      updateLaunch();
+      launchObserver=new MutationObserver(updateLaunch);
+      launchObserver.observe(appContent,{attributes:true,attributeFilter:['data-launch-hidden']});
+    }
 
     (async()=>{
       const THREE=await import('three');
@@ -267,16 +280,15 @@ export default function BrokenCircle3D({variant='stone'}){
       renderer.shadowMap.type=THREE.PCFShadowMap;
       renderer.domElement.className='home-world-webgl-canvas';
       renderer.domElement.setAttribute('aria-hidden','true');
-      renderer.domElement.addEventListener('webglcontextlost',(event)=>{
-        event.preventDefault();
-        stop();
-        mount.dataset.state='fallback';
-      },{passive:false});
+      renderer.domElement.addEventListener('webglcontextlost',onContextLost,{passive:false});
+      renderer.domElement.addEventListener('webglcontextrestored',onContextRestored);
       mount.appendChild(renderer.domElement);
 
       const maxAnisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
       const textureLoader=new THREE.TextureLoader();
-      const stoneTexture=textureLoader.load('/world/origins/limestone-color.webp');
+      const stoneTexture=textureLoader.load('/world/origins/limestone-color.webp',()=>{
+        if(disposed)stoneTexture.dispose();else frames.invalidate();
+      });
       stoneTexture.colorSpace=THREE.SRGBColorSpace;
       stoneTexture.wrapS=stoneTexture.wrapT=THREE.RepeatWrapping;
       stoneTexture.repeat.set(2.8,2.2);
@@ -582,48 +594,54 @@ export default function BrokenCircle3D({variant='stone'}){
         camera.aspect=width/height;
         camera.position.z=menuMode?(mobile?11.45:11.70):(mobile?8.85:8.45);
         camera.updateProjectionMatrix();
-        renderer.render(scene,camera);
+        frames.invalidate();
       };
 
       resizeObserver=new ResizeObserver(resize);
       resizeObserver.observe(mount);
 
       intersectionObserver=new IntersectionObserver(([entry])=>{
-        visible=Boolean(entry?.isIntersecting);
-        if(visible)start();else stop();
+        frames.update({visible:Boolean(entry?.isIntersecting)});
       },{threshold:.05});
       intersectionObserver.observe(mount);
 
-      motionQuery.addEventListener?.('change',onMotionChange);
-      document.addEventListener('visibilitychange',onVisibility);
-      window.addEventListener('threeb:app-menu-state',onApplicationMenu);
-
       mount.dataset.state='ready';
       resize();
-      start();
+      frames.update({active:true});
     })().catch(()=>{
+      if(disposed)return;
       mount.dataset.state='fallback';
-      stop();
+      frames.update({active:false});
     });
 
     return()=>{
       disposed=true;
-      stop();
-      motionQuery.removeEventListener?.('change',onMotionChange);
+      frames.dispose();
+      if(loopRef.current===frames)loopRef.current=null;
       document.removeEventListener('visibilitychange',onVisibility);
-      window.removeEventListener('threeb:app-menu-state',onApplicationMenu);
+      window.removeEventListener('threeb:app-menu-state',onCover);
+      window.removeEventListener('threeb:home-story-state',onCover);
       resizeObserver?.disconnect();
       intersectionObserver?.disconnect();
+      launchObserver?.disconnect();
       delete mount.dataset.state;
       if(renderer){
+        renderer.domElement.removeEventListener('webglcontextlost',onContextLost);
+        renderer.domElement.removeEventListener('webglcontextrestored',onContextRestored);
         renderer.dispose();
+        renderer.forceContextLoss();
         renderer.domElement?.remove();
       }
+      const resources=new Set();
       scene?.traverse?.((node)=>{
-        node.geometry?.dispose?.();
-        if(Array.isArray(node.material))node.material.forEach((material)=>material.dispose?.());
-        else node.material?.dispose?.();
+        if(node.geometry)resources.add(node.geometry);
+        const materials=Array.isArray(node.material)?node.material:[node.material];
+        materials.filter(Boolean).forEach(material=>{
+          resources.add(material);
+          Object.values(material).forEach(value=>{if(value?.isTexture)resources.add(value);});
+        });
       });
+      resources.forEach(resource=>resource.dispose?.());
     };
   },[variant]);
 

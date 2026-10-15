@@ -42,6 +42,7 @@ import {worldRuntimeItems} from './runtime-items.js';
 import {COSMETICS} from './chapters.js';
 import {findPath,findInteractionPath} from './navigation.js';
 import {createRoutePlanner} from './route-planner.js';
+import {createNpcRouteScheduler} from './hub/npc-routes.js';
 import {distance,nearestInteraction,teamStats} from './rules.js';
 import {hubNpcPose,hubNpcSocialContext,npcSimulationTier} from './hub/npc-motion.js';
 import {routePose,referenceTransportRoutes,referenceTransportRoute,referenceTransportNextStop,referenceWaterClear,sampleTransportRide} from './hub/transport-motion.js';
@@ -98,7 +99,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  let fieldRival=null,combatDistance=Infinity,combatClock=0;
  const combatBuffer=createFieldCombatBuffer(),readCache=createSceneReadCache();
  let campaignClock=0,realmEffects=null,realmMarkers=new Map();
- const routePlanner=createRoutePlanner();let routeEpoch=0;
+ const routePlanner=createRoutePlanner(),npcRoutes=createNpcRouteScheduler({onUpdate:()=>{needsRender=true;}});let routeEpoch=0;
  const combatInput={x:0,z:0};
  let cameraLookSensitivity=loadCameraSensitivity();
  let qualityMode='auto',cameraFollow=true,manualCameraAt=-Infinity,travelTimer=null,transportRide=null,contextTraversal=null,traversalLift=0,routeSprintUntil=0,lastGroundTapAt=-Infinity,lastCameraTapAt=-Infinity,lastWorldTimeAt=0,lastStreamingAt=0,lastNpcUpdateAt=0,lastHubScheduleKey='',portalCrossing=initialPortalCrossingState(),worldTime=worldTimeSnapshot(),weather=worldWeatherForDate(save.region,new Date()),weatherState=weatherProfile(weather),weatherFx=null,weatherPositions=null;
@@ -112,7 +113,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  const hubScheduleClockKey=(date=new Date())=>`${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}-${date.getHours()}`;
  const lifeInteraction=createHubLifeInteraction({reducedMotion});let baseHubObstacles=null;
  function endLifeInteraction(){const origin=lifeInteraction.finish();if(origin)position=origin;hero?.setPose?.(null);needsRender=true;}
- function selectTowerFloor(index){if(region!=='hub'||!landscape?.setTowerFloor)return false;endLifeInteraction();clearInput();const selected=landscape.setTowerFloor(index);obstacles=selected?[...(landscape.obstaclesForTowerFloor?.()||[])]:baseHubObstacles||obstacles;const destination=selected||landscape.liftItems?.[0]?.destinations?.[0];if(!destination)return false;position={x:destination.x,z:destination.z};waypoint=null;moving=false;heading=180;shot=null;report=0;needsRender=true;return destination;}
+ function selectTowerFloor(index){if(region!=='hub'||!landscape?.setTowerFloor)return false;endLifeInteraction();clearInput();const selected=landscape.setTowerFloor(index);obstacles=selected?[...(landscape.obstaclesForTowerFloor?.()||[])]:baseHubObstacles||obstacles;const destination=selected||landscape.liftItems?.[0]?.destinations?.[0];if(!destination)return false;position={x:destination.x,z:destination.z};waypoint=null;moving=false;heading=180;shot=null;report=0;if(!selected)refreshHubScheduleState();needsRender=true;return destination;}
  const visualCapabilities=(mode=qualityMode)=>worldVisualCapabilities({mode,width:canvas.clientWidth,height:canvas.clientHeight,deviceMemory:typeof navigator!=='undefined'?Number(navigator.deviceMemory)||4:4,coarsePointer:window.matchMedia('(pointer: coarse)').matches});
  const combatFx=createCombatEffects({reducedMotion}),threat=createCombatTelegraph({reducedMotion,heightAt:(x,z)=>groundY(x,z)}),cameraImpulse=createCameraImpulse({reducedMotion}),cameraImpulseLayer=createCameraImpulseLayer();scene.add(combatFx.root,threat.root);let lastCombat=null;const opponentPosition=new THREE.Vector3();let shadowInvalidated=true,shadowInterval=83;
  function clearCameraImpulse(){cameraImpulseLayer.remove(camera.position);cameraImpulse.clear();}
@@ -256,9 +257,29 @@ function hubNpcAvatar(item){
    for(const actor of actors){const next=byId.get(actor.itemId);if(!next)continue;const current=items.find(item=>item.id===actor.itemId);if(current)Object.assign(current,next);actor.x=next.x;actor.z=next.z;actor.controller.object.position.set(next.x,groundY(next.x,next.z),next.z);}
    needsRender=true;return;
   }
-  if(region!=='hub')return;const latest=worldRuntimeItems('hub',save,{weather}),byId=new Map(latest.filter(item=>item.type==='hubNpc').map(item=>[item.id,item]));for(const actor of hubNpcActors){const next=byId.get(actor.item.id);if(!next)continue;const nextX=next.x,nextZ=next.z,{x:_nextX,z:_nextZ,...scheduleState}=next;if(Math.hypot(actor.item.homeX-nextX,actor.item.homeZ-nextZ)>10){const path=findPath({x:actor.object.position.x,z:actor.object.position.z},next,obstacles,worldRadius);actor.walkTarget=path.shift()||null;actor.walkRoute=path;}Object.assign(actor.item,scheduleState,{homeX:nextX,homeZ:nextZ});}needsRender=true;}
+  // Ground residents resume their latest schedule after leaving an upper floor;
+  // the tower's temporary floor boundary is never their navigation geometry.
+  if(region!=='hub'||landscape?.towerFloor)return;
+  const latest=worldRuntimeItems('hub',save,{weather}),byId=new Map(latest.filter(item=>item.type==='hubNpc').map(item=>[item.id,item]));
+  let scheduledObstacles;const scheduledRoot=root,scheduledRadius=worldRadius;
+  for(const actor of hubNpcActors){
+   const next=byId.get(actor.item.id);if(!next)continue;
+   const nextX=next.x,nextZ=next.z,{x:_nextX,z:_nextZ,...scheduleState}=next;
+   if(Math.hypot(actor.item.homeX-nextX,actor.item.homeZ-nextZ)>10){
+    // Keep ground enabled flags stable even if the player takes the lift
+    // while a resident waits in the queue. Shapes and collision math stay intact.
+    scheduledObstacles??=obstacles.map(obstacle=>({...obstacle}));
+    npcRoutes.schedule(actor,{
+     request:()=>({start:{x:actor.object.position.x,z:actor.object.position.z},destination:{x:nextX,z:nextZ},obstacles:scheduledObstacles,radius:scheduledRadius}),
+     valid:()=>!disposed&&region==='hub'&&root===scheduledRoot,
+    });
+   }
+   Object.assign(actor.item,scheduleState,{homeX:nextX,homeZ:nextZ});
+  }
+  needsRender=true;
+ }
  function cancelContextTraversal(){if(!contextTraversal)return;const resolve=contextTraversal.resolve;contextTraversal=null;traversalLift=0;try{resolve(false);}catch{}needsRender=true;}
- function rebuild(nextRegion){frameTimeline.reset();endLifeInteraction();cancelContextTraversal();
+ function rebuild(nextRegion){frameTimeline.reset();npcRoutes.clear();endLifeInteraction();cancelContextTraversal();
   const previousRegion=region;
   sceneLoading=true;onLoadState?.(true);
   realmEffects?.dispose();realmEffects=null;for(const marker of realmMarkers.values())marker.dispose();realmMarkers.clear();campaignClock=0;
@@ -632,8 +653,8 @@ function hubNpcAvatar(item){
     const beforeX=actor.object.position.x,beforeZ=actor.object.position.z,tier=actor.item.simulationTier||'full';
     const follow=tier==='full'?13:tier==='simplified'?7:3.5,blend=1-Math.exp(-dt*follow);
     const attentive=actor.item.id===npcConversationId||actor.item.simulationState==='Observe';
-    const walk=attentive?{position:{x:beforeX,z:beforeZ}}:advanceMotion({position:{x:beforeX,z:beforeZ},target:actor.walkTarget||{x:actor.targetX,z:actor.targetZ},route:actor.walkRoute||[]},{x:0,z:0},dt,Math.min(2.6,Math.hypot(actor.targetX-beforeX,actor.targetZ-beforeZ)*blend/Math.max(dt,.001)),obstacles,worldRadius);
-    actor.object.position.x=walk.position.x;actor.object.position.z=walk.position.z;if(actor.walkTarget&&!attentive){actor.walkTarget=walk.target;actor.walkRoute=walk.route;}
+    const walk=attentive||actor.routePending?{position:{x:beforeX,z:beforeZ}}:advanceMotion({position:{x:beforeX,z:beforeZ},target:actor.walkTarget||{x:actor.targetX,z:actor.targetZ},route:actor.walkRoute||[]},{x:0,z:0},dt,Math.min(2.6,Math.hypot(actor.targetX-beforeX,actor.targetZ-beforeZ)*blend/Math.max(dt,.001)),obstacles,worldRadius);
+    actor.object.position.x=walk.position.x;actor.object.position.z=walk.position.z;if(actor.walkTarget&&!attentive&&!actor.routePending){actor.walkTarget=walk.target;actor.walkRoute=walk.route;}
     actor.object.position.y=groundY(actor.object.position.x,actor.object.position.z);
     const mx=actor.object.position.x-beforeX,mz=actor.object.position.z-beforeZ,moved=Math.hypot(mx,mz);
     actor.item.x=actor.object.position.x;actor.item.z=actor.object.position.z;
@@ -917,6 +938,6 @@ function hubNpcAvatar(item){
   waypoint(item,walk=false){if(!item)return;waypoint=item;needsRender=true;if(walk)startRoute(item,true);},
   cancelWaypoint(){waypoint=null;clearInput();needsRender=true;},
   cooldown(id){cooldowns.set(id,Date.now()+90000);},
-  destroy(){routeEpoch++;routePlanner.dispose();realmEffects?.dispose();for(const marker of realmMarkers.values())marker.dispose();realmMarkers.clear();lifeInteraction.dispose();staticInstances?.dispose();ambientCrowd?.dispose();cancelContextTraversal();clearTimeout(travelTimer);partyActors?.dispose();disposed=true;post.dispose();sky.dispose();combatFx.dispose();threat.dispose();daylight?.dispose();escort?.dispose();hero?.dispose();landscape?.dispose();actors.forEach(a=>{a.aura?.dispose();a.controller.dispose();});hubNpcActors.forEach(a=>a.controller?.dispose());models?.dispose();cancelAnimationFrame(raf);observer.disconnect();resources.forEach(r=>r.dispose());Object.values(geometry).forEach(g=>g.dispose());renderer.dispose();canvas.removeEventListener('wheel',wheel);canvas.removeEventListener('contextmenu',context);canvas.removeEventListener('pointerdown',down);canvas.removeEventListener('pointermove',move);canvas.removeEventListener('pointerup',up);canvas.removeEventListener('pointercancel',up);canvas.removeEventListener('lostpointercapture',up);canvas.removeEventListener('webglcontextlost',lost);window.removeEventListener('keydown',keydown);window.removeEventListener('keyup',keyup);window.removeEventListener('blur',clearInput);document.removeEventListener('visibilitychange',hidden);},
+  destroy(){routeEpoch++;routePlanner.dispose();npcRoutes.dispose();realmEffects?.dispose();for(const marker of realmMarkers.values())marker.dispose();realmMarkers.clear();lifeInteraction.dispose();staticInstances?.dispose();ambientCrowd?.dispose();cancelContextTraversal();clearTimeout(travelTimer);partyActors?.dispose();disposed=true;post.dispose();sky.dispose();combatFx.dispose();threat.dispose();daylight?.dispose();escort?.dispose();hero?.dispose();landscape?.dispose();actors.forEach(a=>{a.aura?.dispose();a.controller.dispose();});hubNpcActors.forEach(a=>a.controller?.dispose());models?.dispose();cancelAnimationFrame(raf);observer.disconnect();resources.forEach(r=>r.dispose());Object.values(geometry).forEach(g=>g.dispose());renderer.dispose();canvas.removeEventListener('wheel',wheel);canvas.removeEventListener('contextmenu',context);canvas.removeEventListener('pointerdown',down);canvas.removeEventListener('pointermove',move);canvas.removeEventListener('pointerup',up);canvas.removeEventListener('pointercancel',up);canvas.removeEventListener('lostpointercapture',up);canvas.removeEventListener('webglcontextlost',lost);window.removeEventListener('keydown',keydown);window.removeEventListener('keyup',keyup);window.removeEventListener('blur',clearInput);document.removeEventListener('visibilitychange',hidden);},
  };
 }

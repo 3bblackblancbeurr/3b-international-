@@ -49,7 +49,7 @@ Le serveur :
 5. crée un subjectId pseudonyme HMAC ;
 6. obtient un token IDnow client_credentials ;
 7. crée la session IDnow avec BasicIdentity ;
-8. stocke uniquement un HMAC du sessionId dans la table des tentatives ;
+8. appelle `passport_identity_begin_attempt_v1` : revérifie la session active, verrouille le profil, stocke uniquement un HMAC du sessionId et passe le profil à `pending` dans la même transaction ;
 9. renvoie seulement playerUrl + attemptId au client.
 
 ## Webhook
@@ -66,6 +66,25 @@ Le webhook :
 9. réclame chaque `eventId` via un lease atomique côté PostgreSQL ; un événement terminé reste idempotent et un traitement interrompu devient reprenable après deux minutes.
 
 Un résultat IDnow accepté ne suffit donc pas à lui seul si le mauvais flow a été configuré.
+
+Les résultats négatifs (`rejected`, `expired`, `cancelled`, `error`) passent par `passport_identity_finish_attempt_v1`. La mise à jour de la tentative et celle du profil utilisent le même verrou de profil que le démarrage et la confirmation positive. Le serveur refuse une tentative terminée, remplacée par une plus récente, liée à une autre référence fournisseur, sans consentement enregistré, ou dont le Passeport est suspendu ou l'identité révoquée. Deux anciennes tentatives ayant exactement la même date de démarrage sont ambiguës : aucun résultat ne peut promouvoir ou rétrograder l'identité dans cet état.
+
+Le RPC de résultat négatif accepte seulement des couples état/code d'erreur prévus ; il ne peut jamais passer une identité à `verified`. Les trois RPC de transition sont réservés au rôle serveur, sans droit `EXECUTE` pour `PUBLIC`, `anon` ou `authenticated`.
+
+Les webhooks sont limités à **30 000 octets pendant leur lecture**, avant la vérification cryptographique, sans chargement préalable d'un corps de taille arbitraire. Les demandes JSON du membre sont limitées à 8 192 octets et aux champs attendus. Un encodage UTF-8 invalide est refusé.
+
+## Ordre de livraison du correctif du 15 octobre 2026
+
+La migration `20261015120046_passport_identity_attempt_transactions_v1.sql` est **appliquée le 15 octobre 2026** sur le projet 3B. Son texte a été relu depuis l'historique réel et comparé au fichier versionné. Les droits serveur des trois fonctions ont été vérifiés. Elle ne modifie pas les preuves ni les profils existants et n'active aucun fournisseur.
+
+`passport-idv` version 3 et `passport-recognition` version 2 ont ensuite été déployées. Les cinq fichiers de chaque fonction correspondent aux sources du dépôt. Les contrôles HTTP sans compte confirment les refus d'authentification, d'origine et de taille excessive. Cela ne remplace pas le parcours fournisseur authentifié ci-dessous ; aucune clé fournisseur ni porte d'activation n'a été changée.
+
+1. Pour tout nouvel environnement de recette, appliquer cette migration et vérifier les privilèges des trois fonctions.
+2. Déployer ensuite la version correspondante de `passport-idv` dans cet environnement. Ne pas déployer cette Edge Function avant ses RPC : les démarrages et résultats négatifs seraient refusés.
+3. Exécuter les scénarios fournisseur sandbox : deux démarrages simultanés, expiration suivie d'une nouvelle tentative, ancien événement reçu après la nouvelle tentative, événement en double, révocation administrative et résultat sandbox accepté.
+4. Valider les critères contractuels et techniques avant toute activation fournisseur ; conserver les portes d'activation fermées jusqu'à cette validation.
+
+`tests/passport-idv-transactions.test.js` exécute le SQL avec PGlite : session active, transaction unique, résultats obsolètes, révocation, référence fournisseur, consentement, ambiguïté de date et droits par rôle. PGlite sérialise ses requêtes ; ce test ne remplace pas une recette de concurrence multi-connexions sur PostgreSQL ni le parcours IDnow réel.
 
 ## URLs officielles prévues
 

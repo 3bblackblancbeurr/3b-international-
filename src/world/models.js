@@ -4,23 +4,34 @@ import {clone} from 'three/addons/utils/SkeletonUtils.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {createLivingLibrary,createLivingActor} from './living.js';
 
-export async function loadWorldModels(){
- const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder),living=createLivingLibrary();
- const [hero,kit,atlas,places]=await Promise.all([
-  living.load('/world/living/traveller-0.glb'),
-  loader.loadAsync('/world/models/chapter-kit.glb'),
-  new THREE.TextureLoader().loadAsync('/world/guardians-atlas.webp'),
-  loader.loadAsync('/world/places/living-places.glb')
- ]);
+export async function loadWorldModels({loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder),living=createLivingLibrary(),textureLoader=new THREE.TextureLoader()}={}){
+ const owned=new Set(),released=new WeakSet();let closed=false;
+ const release=resource=>{if(!resource?.dispose||released.has(resource))return;released.add(resource);resource.dispose();};
+ const releaseAsset=asset=>asset.scene.traverse(o=>{
+  release(o.geometry);for(const material of [o.material].flat().filter(Boolean)){
+   for(const value of Object.values(material))if(value?.isTexture)release(value);
+   release(material);
+  }
+ });
+ const own=(promise,cleanup)=>promise.then(asset=>{
+  // A sibling may have failed before this download completed. Release late
+  // successes as well, without delaying the error on every remaining request.
+  if(closed)cleanup(asset);else owned.add(()=>cleanup(asset));return asset;
+ });
+ const dispose=()=>{if(closed)return;closed=true;living.dispose();for(const cleanup of owned)cleanup();owned.clear();};
+ let hero,kit,atlas,places;
+ try{
+  [hero,kit,atlas,places]=await Promise.all([
+   living.load('/world/living/traveller-0.glb'),
+   own(loader.loadAsync('/world/models/chapter-kit.glb'),releaseAsset),
+   own(textureLoader.loadAsync('/world/guardians-atlas.webp'),release),
+   own(loader.loadAsync('/world/places/living-places.glb'),releaseAsset),
+  ]);
+ }catch(error){dispose();throw error;}
  kit.living=living;const assets=[kit.scene,places.scene];
  assets.forEach(root=>root.traverse(o=>{if(!o.isMesh)return;o.receiveShadow=true;const name=o.material?.name||'';o.castShadow=!/lawn|travertine|island strata|slate inlay/i.test(name);}));
  atlas.colorSpace=THREE.SRGBColorSpace;
- return {hero,kit,atlas,places,living,dispose(){
-  living.dispose();
-  const geometries=new Set(),materials=new Set(),textures=new Set();
-  assets.forEach(root=>root.traverse(o=>{if(o.geometry)geometries.add(o.geometry);for(const m of [o.material].flat().filter(Boolean)){materials.add(m);for(const value of Object.values(m))if(value?.isTexture)textures.add(value);}}));
-  geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());atlas.dispose();
- }};
+ return {hero,kit,atlas,places,living,dispose};
 }
 
 export function createKais(asset){

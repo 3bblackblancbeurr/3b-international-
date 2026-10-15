@@ -49,6 +49,20 @@ test('current pages choose their category and new supplied destinations have a f
  assert.equal(navigationItems([...fixtures,fixtures[0]]).filter(item=>item.id==='passport').length,1);
 });
 
+test('camera search opens the scanner directly while world discovery keeps its own route',()=>{
+ for(const query of ['scanner','ScAn','caméra','CAMERA']){
+  const results=searchNavigation(fixtures,query);
+  assert.equal(results.length,1);
+  assert.equal(results[0].target,'scanner');
+  assert.equal(results[0].label,'Scanner');
+ }
+ for(const query of ['énigmes','monde invisible']){
+  assert.equal(searchNavigation(fixtures,query)[0].id,'invisible');
+  assert.equal(searchNavigation(fixtures,query)[0].target,undefined);
+ }
+ assert.equal(fixtures.find(item=>item.id==='invisible').label,'Le Monde Invisible','search never mutates the menu source');
+});
+
 test('the bounded native menu retains keyboard, normal links, current-page semantics and settings',async()=>{
  const navigation=await readFile(new URL('../src/components/AppNavigation.jsx',import.meta.url),'utf8');
  const css=await readFile(new URL('../src/styles/simple-navigation.css',import.meta.url),'utf8');
