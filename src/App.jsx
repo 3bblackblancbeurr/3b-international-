@@ -24,6 +24,7 @@ import { hasPassportAccess } from "./passport/access.js";
 import { Button } from "./design-system/index.jsx";
 const GamesHub = lazy(() => import("./games/GamesHub.jsx"));
 const PenaltyRush = lazy(() => import("./games/PenaltyRush.jsx"));
+const KeyRaceOriginal = lazy(() => import("./games/KeyRaceOriginal.jsx"));
 import LoyaltyPage from "./loyalty/LoyaltyPage.jsx";
 import AccountPage from "./loyalty/AccountPage.jsx";
 import {useLoyalty,remoteMember,ExplorationRewards} from "./loyalty/LoyaltyContext.jsx";
@@ -279,7 +280,7 @@ export default function App() {
     if (page === "ia-textile") return "IA textile";
     if (page === "ia-trio") return "Mode 3 IA";
     if (page === "control") return "Centre de commande 3B";
-    if (page === "game") return gameSlug === "penalty-rush" ? "Penalty Rush" : "Jeux 3B";
+    if (page === "game") return gameSlug === "penalty-rush" ? "Penalty Rush" : gameSlug === "key-race" ? "La course des 8 clés" : "Jeux 3B";
     if (page === "home") return "Accueil";
     return menuItems.find((item) => item.id === page)?.label || "3B International";
   }, [page, gameSlug, menuItems, member.isRegistered]);
@@ -419,7 +420,9 @@ export default function App() {
       {page === "games" && <GamesHub key={loyalty.user?.id || "guest"} goTo={goTo} goToGame={goToGame} />}
       {page === "game" && (gameSlug === "penalty-rush"
         ? <PenaltyRush onClose={() => goTo("games")} onAccount={() => goTo("member")} />
-        : <RemoteGamePage slug={gameSlug} onBack={() => goTo("games")} />)}
+        : gameSlug === "key-race"
+          ? <KeyRaceOriginal onClose={() => goTo("games")} />
+          : <RemoteGamePage slug={gameSlug} onBack={() => goTo("games")} />)}
       {page === "religion" && <ReligionPage />}
       {page === "guide" && <GuidePage goTo={goTo} menuItems={[...BASE_MENU_ITEMS, MEMBER_MENU_ITEM]} />}
       {page === "manga" && <ComingSoon goTo={goTo} />}
