@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "publishedAt": "2026-10-15T15:23:00Z",
+  "deals": [
+    {
+      "id": "auchan-bienvenue-octobre20-202610",
+      "category": "alimentation",
+      "kind": "offre",
+      "title": "Premières courses Auchan : 20 € de remise dès 80 €",
+      "price": "20 € de remise",
+      "benefit": "Un panier de 80 € revient à 60 €, hors éventuels frais de service et livraison.",
+      "conditions": "Code OCTOBRE20 au paiement. Première commande seulement sur Auchan.fr ou l’application, courses du quotidien, une utilisation, non cumulable avec un autre code. Pas en magasin ; exclusions Corse indiquées par Auchan. Vérifier la desserte et les frais avant commande.",
+      "location": "France · en ligne, selon zones desservies",
+      "source": "Auchan",
+      "url": "https://www.auchan.fr/courses",
+      "verifiedAt": "2026-10-15T15:23:00Z",
+      "startsAt": "2026-09-30T22:00:00Z",
+      "expiresAt": "2026-10-31T22:59:59Z"
+    },
+    {
+      "id": "decathlon-easybreath-8984136-202610",
+      "category": "sport",
+      "kind": "offre",
+      "title": "Masque Easybreath 900 bleu crépuscule",
+      "price": "29,99 €",
+      "benefit": "10 € de moins que le prix initial de 39,99 € affiché par l’enseigne.",
+      "conditions": "Référence 8984136. Tailles et stocks à vérifier sur la fiche produit. Des frais de livraison peuvent s’ajouter. Offre annoncée jusqu’au 24 octobre ; consulter les consignes d’utilisation du fabricant.",
+      "location": "France · en ligne / disponibilité selon magasin",
+      "source": "Decathlon",
+      "url": "https://www.decathlon.fr/p/masque-snorkeling-immersion-easybreath-900-bleu-crepuscule/301599/c298m8984136",
+      "verifiedAt": "2026-10-15T15:23:00Z",
+      "expiresAt": "2026-10-24T21:59:59Z"
+    },
+    {
+      "id": "actionlogement-logements-abordables",
+      "category": "immobilier",
+      "kind": "aide",
+      "title": "Action Logement : rechercher un loyer maîtrisé",
+      "price": "Accès au service gratuit",
+      "benefit": "Une piste pour les salariés éligibles : logements annoncés avec des loyers inférieurs au marché. Ce n’est pas une annonce de logement disponible ni une attribution garantie.",
+      "conditions": "Loyer, charges, disponibilités et critères d’éligibilité à consulter pour chaque logement. Offre destinée aux salariés concernés ; dossier et acceptation nécessaires. Ne pas payer d’intermédiaire pour accéder au service.",
+      "location": "France · selon les logements disponibles",
+      "source": "Action Logement",
+      "url": "https://www.actionlogement.fr/logement",
+      "verifiedAt": "2026-10-15T15:23:00Z",
+      "expiresAt": null
+    }
+  ]
+}

@@ -9,13 +9,13 @@ export const PRINCIPAL_DESTINATIONS=Object.freeze([
 export const NAV_GROUPS=Object.freeze([
  {title:'Identité & progression',ids:['passport','member','loyalty']},
  {title:'Univers 3B',ids:['world3b','invisible','secret']},
- {title:'Services & avantages',ids:['shop','control']},
+ {title:'Services & avantages',ids:['deals','shop','control']},
  {title:'En préparation',ids:['nosbloc','games','manga','religion','sport','community','ia']},
  {title:'Comprendre 3B',ids:['guide']},
 ]);
 
 export const MENU_CATEGORIES=Object.freeze([
- {id:'principal',label:'Essentiel',ids:['home','invisible','world3b','shop']},
+ {id:'principal',label:'Essentiel',ids:['home','invisible','world3b','shop','deals']},
  {id:'world',label:'Monde',ids:['world3b','invisible','secret','games','nosbloc','arena']},
  {id:'account',label:'Compte',ids:['member','passport','loyalty','control']},
  {id:'discover',label:'Repères',ids:['guide','community','manga','religion','sport','ia']},
