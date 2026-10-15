@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLuxury } from '../design-system/LuxuryExperience.jsx';
 
-// Separate, long-lived visual layers derived from the owner's approved menu image.
-// The photograph NEVER rotates: only the transparent ring layer does.
-export const MENU_SCENE_URL = 'https://cdn.creativeclaw.co/u/be6cdbed/images/efdc49d8-0f1f-467e-8c17-af6d98c1f2be.webp';
-export const MENU_RING_URL = 'https://cdn.creativeclaw.co/u/be6cdbed/images/d769962b-91da-4127-90b1-7f65b879a9da.webp';
+// These are genuine independent visual assets, NOT a screenshot of a finished UI.
+// Crucially there is no baked-in ring in MENU_SCENE_URL and no city in MENU_RING_URL.
+// The ring's rotation is a compositor animation, not an animation of the backdrop.
+export const MENU_SCENE_URL = 'https://cdn.creativeclaw.co/u/be6cdbed/images/eb865b42-4b1d-4ce5-a857-ac7c9b2f09c1.png';
+export const MENU_RING_URL = 'https://cdn.creativeclaw.co/u/be6cdbed/images/73a34bbf-6829-4b8a-b8a7-6d622769698e.png';
 const OFFLINE_SCENE = '/art/monde-3b/reference-cite-huit-heritages.webp';
 
 export default function HomeCinematicArtwork() {
@@ -14,37 +15,41 @@ export default function HomeCinematicArtwork() {
   const [ringFailed, setRingFailed] = useState(false);
 
   useEffect(() => {
-    const stage = sceneRef.current;
-    if (!stage) return undefined;
+    const scene = sceneRef.current;
+    if (!scene) return undefined;
     const covers = new Set();
-    const update = () => {
-      stage.dataset.covered = document.hidden || covers.size > 0 ? 'true' : 'false';
+    const updateVisibility = () => {
+      scene.dataset.covered = document.hidden || covers.size > 0 ? 'true' : 'false';
     };
-    const onCover = event => {
+    const onOverlay = event => {
       if (event.detail?.open) covers.add(event.type);
       else covers.delete(event.type);
-      update();
+      updateVisibility();
     };
-    const onVisibility = () => update();
+    const onTabVisibility = () => updateVisibility();
     const observer = typeof IntersectionObserver === 'function'
       ? new IntersectionObserver(([entry]) => {
-          stage.dataset.visible = entry?.isIntersecting ? 'true' : 'false';
+          scene.dataset.visible = entry?.isIntersecting ? 'true' : 'false';
         }, { threshold: 0.02 })
       : null;
-    observer?.observe(stage);
-    document.addEventListener('visibilitychange', onVisibility);
-    window.addEventListener('threeb:app-menu-state', onCover);
-    window.addEventListener('threeb:home-story-state', onCover);
-    update();
+
+    observer?.observe(scene);
+    document.addEventListener('visibilitychange', onTabVisibility);
+    window.addEventListener('threeb:app-menu-state', onOverlay);
+    window.addEventListener('threeb:home-story-state', onOverlay);
+    updateVisibility();
     return () => {
       observer?.disconnect();
-      document.removeEventListener('visibilitychange', onVisibility);
-      window.removeEventListener('threeb:app-menu-state', onCover);
-      window.removeEventListener('threeb:home-story-state', onCover);
+      document.removeEventListener('visibilitychange', onTabVisibility);
+      window.removeEventListener('threeb:app-menu-state', onOverlay);
+      window.removeEventListener('threeb:home-story-state', onOverlay);
     };
   }, []);
 
-  const motionAllowed = !policy.reduced && !policy.economical;
+  // Saving data or having 4GB RAM is NOT a reason to freeze a CSS transform:
+  // unlike WebGL, this compositor-only animation is inexpensive on phones.
+  const motionAllowed = !policy.reduced;
+
   return (
     <figure
       ref={sceneRef}
@@ -58,28 +63,33 @@ export default function HomeCinematicArtwork() {
         className="home-aaa-artwork"
         src={sceneFailed ? OFFLINE_SCENE : MENU_SCENE_URL}
         alt=""
-        width="864"
-        height="810"
+        width="941"
+        height="1672"
         decoding="async"
         fetchPriority="high"
         draggable="false"
         onError={() => setSceneFailed(true)}
       />
-      {ringFailed ? (
-        <span className="home-aaa-ring-fallback" />
-      ) : (
-        <img
-          className="home-aaa-rotating-circle"
-          src={MENU_RING_URL}
-          alt=""
-          width="650"
-          height="650"
-          decoding="async"
-          fetchPriority="high"
-          draggable="false"
-          onError={() => setRingFailed(true)}
-        />
-      )}
+      <span className="home-aaa-magic-sky" />
+      <span className="home-aaa-ring-aura" />
+      <span className="home-aaa-ring-holder">
+        {ringFailed ? (
+          <span className="home-aaa-ring-fallback" />
+        ) : (
+          <img
+            className="home-aaa-rotating-circle"
+            src={MENU_RING_URL}
+            alt=""
+            width="1254"
+            height="1254"
+            decoding="async"
+            fetchPriority="high"
+            draggable="false"
+            onError={() => setRingFailed(true)}
+          />
+        )}
+      </span>
+      <span className="home-aaa-water-glow" />
     </figure>
   );
 }
