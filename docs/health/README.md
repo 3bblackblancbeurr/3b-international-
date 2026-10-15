@@ -27,7 +27,9 @@ Revue parallèle réellement obtenue de Claude via la session utilisateur le 15/
 
 ## Données personnelles
 
-Par défaut, les saisies sont en mémoire et disparaissent au démontage de la rubrique ou au rechargement. Le bouton de consentement explicite active la sauvegarde locale dans `threeb_health_local_v1`. Le journal est normalisé, limité aux 90 derniers jours au chargement et aux écritures, et n’est pas envoyé à un serveur. Export JSON et suppression avec confirmation intégrés. Le stockage du navigateur n’est pas chiffré par l’application : l’interface le précise et déconseille un appareil partagé.
+Par défaut, les saisies sont en mémoire et disparaissent au démontage de la rubrique ou au rechargement. Pour une nouvelle sauvegarde volontaire, la personne crée désormais une **phrase secrète locale d’au moins 12 caractères**. `secureVault.js` dérive sur son appareil une clé non exportable par PBKDF2-HMAC-SHA-256 (600 000 itérations, sel aléatoire 128 bits), puis chiffre les données avec AES-256-GCM (IV aléatoire 96 bits renouvelé à chaque écriture). La clé et la phrase secrète ne sont pas envoyées au serveur, l'enveloppe `threeb_health_vault_v1` reste dans le stockage local. À l’ouverture d’une nouvelle session, le coffre est verrouillé et nécessite la phrase secrète. L'export chiffré et son import sur un autre navigateur sont possibles avec cette phrase. Les exports JSON **en clair** restent possibles mais sont explicitement identifiés comme non chiffrés.
+
+**Compatibilité et migration sans perte :** les anciens membres possédant `threeb_health_local_v1` continuent de lire leur sauvegarde existante, avec avertissement « non chiffrée » et invitation à migrer. Cette ancienne copie n'est retirée qu'après confirmation d'écriture du nouveau coffre. Aucun chiffrement sans consentement, aucun compte 3B requis. En cas de perte de la phrase secrète, 3B ne peut pas déchiffrer le coffre. Le stockage web chiffré n’empêche pas les attaques sur un appareil déjà compromis ni l'exécution d'un code malveillant lorsque le coffre est ouvert. L'activation d'un stockage local reste facultative. Normalisation du journal à 90 jours et absence d'envoi des mesures au serveur inchangées.
 
 La télémétrie de présence et les événements de navigation sont suspendus pour cette route. Aucun SDK de capture de session ni appel réseau pour les champs santé. Les services d’authentification, mises à jour et ressources générales de l’application existent toujours ; ne pas présenter toute l’application comme entièrement hors réseau.
 
@@ -48,3 +50,10 @@ Références : [MDN DeviceMotion](https://developer.mozilla.org/en-US/docs/Web/A
 Information générale de prévention et bien-être pour adultes ; pas de diagnostic, ordonnance, télémédecine, analyse de lésion par photo, suivi médical automatisé ou régime thérapeutique. Une relecture par des professionnels de santé est nécessaire avant d’ajouter des fonctions cliniques personnalisées. Le contenu n’est pas présenté comme une encyclopédie médicale exhaustive.
 
 Les 24 photos individuelles couvrent les aliments dont une correspondance libre et exacte a été vérifiée. Riz complet et pois cassés ont un visuel neutre explicitement nommé. Les photos des repas sont des ambiances, pas une promesse de résultat. Pas de cache hors-ligne complet revendiqué.
+
+## Sécurité — limites et prochaine étape native
+
+- L'enveloppe chiffrée sur le Web/PWA ne remplace pas un coffre matériel TEE/Secure Enclave : pour les builds natifs, prévoir un stockage chiffré utilisant Android Keystore/iOS Keychain, avec audit indépendant et stratégie de récupération.
+- Ne pas mettre les informations de santé dans les logs, notifications, traceurs, erreurs ou les URL. Le module est isolé des événements de navigation globaux existants.
+- Avant tout usage clinique, tout stockage médical distant ou synchronisation nouvelle : analyse des risques, bases légales RGPD, éventuelle AIPD et évaluation de l'applicabilité de l'hébergement HDS.
+- Ne pas annoncer une certification ISO, HDS, ANSSI, RGPD ou une sécurité absolue : cette évolution n'est pas un audit indépendant.
