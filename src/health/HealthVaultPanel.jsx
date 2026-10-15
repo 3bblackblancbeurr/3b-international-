@@ -18,6 +18,9 @@ export default function HealthVaultPanel({ health }) {
   const [error, setError] = useState('');
   const [forget, setForget] = useState(false);
   const [deleteText, setDeleteText] = useState('');
+  const [restoreFile, setRestoreFile] = useState(null);
+  const [restorePassphrase, setRestorePassphrase] = useState('');
+  const [showRestore, setShowRestore] = useState(false);
   const mode = health.vaultMode;
   const creating = mode === 'legacy' || mode === 'temporary';
 
@@ -59,6 +62,24 @@ export default function HealthVaultPanel({ health }) {
     }
   }
 
+  async function importBackup(event) {
+    event.preventDefault();
+    if (!restoreFile || busy) return;
+    setError('');
+    if (restoreFile.size > 3000000) { setError('Fichier trop volumineux.'); return; }
+    if (!window.confirm('Importer ce coffre remplacera ton journal temporaire actuellement visible. Continuer ?')) return;
+    setBusy(true);
+    try {
+      const raw = await restoreFile.text();
+      await health.importEncryptedVault(raw, restorePassphrase);
+      setRestoreFile(null);
+      setRestorePassphrase('');
+      setShowRestore(false);
+    } catch (exception) {
+      setError(exception?.message || 'Import impossible ; aucune donnée effacée.');
+    } finally { setBusy(false); }
+  }
+
   function eraseLocked() {
     if (deleteText !== 'EFFACER') return;
     if (health.clear()) { setForget(false); setDeleteText(''); }
@@ -93,6 +114,19 @@ export default function HealthVaultPanel({ health }) {
           {busy ? 'Protection en cours…' : mode === 'locked' ? 'Déverrouiller mon journal' : mode === 'legacy' ? 'Chiffrer ma sauvegarde actuelle' : 'Créer mon coffre chiffré'}
         </HealthButton>
       </form>
+      {mode === 'temporary' && <div className="h-vault-restore">
+        {!showRestore ? <HealthButton variant="health" className="h-link" onClick={()=>setShowRestore(true)}><ArrowDownToLine size={16}/> Restaurer un coffre chiffré depuis un fichier</HealthButton>
+          : <form onSubmit={importBackup} className="h-vault-form">
+            <label className="h-field">Fichier de sauvegarde chiffré 3B (.json)
+              <input type="file" accept=".json,application/json" required onChange={event=>setRestoreFile(event.target.files?.[0] || null)} disabled={busy}/>
+            </label>
+            <label className="h-field">Phrase secrète du coffre importé
+              <input type="password" autoComplete="off" value={restorePassphrase} required onChange={event=>setRestorePassphrase(event.target.value)} disabled={busy}/>
+            </label>
+            <HealthButton variant="health" className="h-secondary" type="submit" disabled={busy || !restoreFile}>Restaurer sur cet appareil</HealthButton>
+            <HealthButton variant="health" className="h-link" type="button" onClick={()=>setShowRestore(false)} disabled={busy}>Annuler</HealthButton>
+          </form>}
+      </div>}
       <p className="h-vault-caution">Phrase secrète différente du mot de passe de ton compte 3B. En cas d’oubli, la récupération n’est pas possible. Le coffre reste sur ce téléphone ou ce navigateur ; aucune synchronisation automatique.</p>
       {mode === 'locked' && <div className="h-vault-forget">
         {!forget ? <HealthButton variant="health" className="h-link h-danger" onClick={()=>setForget(true)}><Trash2 size={15}/> Phrase oubliée ? Supprimer le coffre local</HealthButton>
