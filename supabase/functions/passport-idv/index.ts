@@ -1,5 +1,7 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import {productionIdentityApproved} from '../../../shared/passport-idv-policy.js';
+import {PassportFailure,readPassportBody,readPassportText} from '../../../shared/passport-recognition-runtime.js';
+import {isUUID} from '../../../shared/passport-recognition.js';
 
 const BASE=Deno.env.get('SUPABASE_URL')!;
 const APP_URL=(Deno.env.get('APP_URL')||'https://3b-international.vercel.app').replace(/\/$/,'');
@@ -42,7 +44,7 @@ const ORIGINS=new Set([
   'http://localhost:5174','http://127.0.0.1:5174'
 ]);
 
-class Failure extends Error{constructor(public status:number,message:string){super(message);}}
+class Failure extends PassportFailure{}
 
 const encoder=new TextEncoder();
 const hex=(bytes:ArrayBuffer)=>Array.from(new Uint8Array(bytes),b=>b.toString(16).padStart(2,'0')).join('');
@@ -77,24 +79,24 @@ async function api(path:string,body?:unknown,method=body===undefined?'GET':'POST
 async function authenticate(req:Request){
   if(!PUBLIC)throw new Failure(503,'Configuration d’authentification incomplète.');
   const authorization=req.headers.get('authorization')||'';
-  if(!authorization.startsWith('Bearer '))throw new Failure(401,'Connecte-toi à ton compte 3B.');
+  if(!authorization.startsWith('Bearer ')||authorization.length>8192)throw new Failure(401,'Connecte-toi à ton compte 3B.');
   const token=authorization.slice(7);
   const response=await fetch(BASE+'/auth/v1/user',{
     headers:{apikey:PUBLIC,Authorization:authorization},
     signal:AbortSignal.timeout(10000)
   });
   const user=await response.json().catch(()=>null);
-  if(!response.ok||!user?.id)throw new Failure(401,'Ta session a expiré. Reconnecte-toi.');
+  if(!response.ok||!isUUID(user?.id))throw new Failure(401,'Ta session a expiré. Reconnecte-toi.');
   let sid='';
   try{
     const part=token.split('.')[1]||'';
     const normalized=part.replace(/-/g,'+').replace(/_/g,'/');
     sid=String(JSON.parse(atob(normalized)).session_id||'');
   }catch{}
-  if(!sid)throw new Failure(401,'Ta session a expiré. Reconnecte-toi.');
+  if(!isUUID(sid))throw new Failure(401,'Ta session a expiré. Reconnecte-toi.');
   const valid=await api('/rest/v1/rpc/loyalty_session_valid',{p_user:user.id,p_session:sid});
   if(valid!==true)throw new Failure(401,'Ta session a expiré. Reconnecte-toi.');
-  return String(user.id);
+  return {userId:String(user.id),sessionId:sid};
 }
 
 function idnowHosts(){
@@ -159,7 +161,7 @@ async function idnow(path:string,method='GET',body?:unknown){
   return data;
 }
 
-async function startVerification(uid:string){
+async function startVerification(uid:string,sid:string){
   if(!configured())throw new Failure(503,'La vérification d’identité n’est pas encore ouverte.');
   if(PHYSICAL==='production'&&LOGICAL==='live'&&!IDNOW_APPROVED)
     throw new Failure(503,'Le flux IDnow production n’est pas approuvé.');
@@ -202,25 +204,16 @@ async function startVerification(uid:string){
   if(!sessionId||!playerUrl.startsWith('https://'))throw new Failure(503,'Session de vérification invalide.');
 
   const refHash=await hmac('idnow-session:'+sessionId);
-  const rows=await api('/rest/v1/passport_identity_verification_attempts',{
-    user_id:uid,
-    provider:'idnow',
-    provider_session_ref_hash:refHash,
-    state:'processing',
-    assurance_requested:'identity_verified',
-    provider_consent_at:new Date().toISOString(),
-    provider_consent_version:1
+  // The pending profile and its attempt are created under one profile lock.
+  // A delayed terminal webhook cannot alter a newly started verification.
+  const rows=await api('/rest/v1/rpc/passport_identity_begin_attempt_v1',{
+    p_user:uid,p_session:sid,p_ref_hash:refHash
   });
   const attempt=Array.isArray(rows)?rows[0]:rows;
-
-  await api('/rest/v1/member_profiles?user_id=eq.'+encodeURIComponent(uid)+
-    '&identity_verification_state=in.(unverified,rejected,expired)',
-    {identity_verification_state:'pending'},
-    'PATCH'
-  );
+  if(!isUUID(attempt?.id))throw new Failure(409,'Le contrôle est déjà en cours ou cette identité nécessite une revue.');
 
   return{
-    attemptId:attempt?.id||null,
+    attemptId:attempt.id,
     playerUrl,
     environment:PHYSICAL+':'+LOGICAL
   };
@@ -280,6 +273,14 @@ async function processWebhook(jwt:string){
   }
 
   let nextState='processing',resultCode=eventName;
+  async function finishAttempt(state:string,code:string){
+    const rows=await api('/rest/v1/rpc/passport_identity_finish_attempt_v1',{
+      p_attempt:attempt.id,p_ref_hash:refHash,p_state:state,p_error_code:code
+    });
+    const result=Array.isArray(rows)?rows[0]:rows;
+    nextState=result?.applied===true?state:String(attempt.state||'processing');
+    resultCode=result?.applied===true?code:'state_no_longer_pending';
+  }
   if(eventName==='session.completed'){
     const result=await idnow('/api/v1/'+LOGICAL+'/sessions/'+encodeURIComponent(sessionId));
     const expected='3b_'+(await hmac('subject:'+attempt.user_id)).slice(0,40);
@@ -293,46 +294,16 @@ async function processWebhook(jwt:string){
       nextState=applied?.applied===true?'verified':String(attempt.state||'processing');
       if(applied?.applied!==true)resultCode='state_no_longer_pending';
     }else if(outcome==='accepted'){
-      nextState='error';resultCode=PHYSICAL==='sandbox'?'test_flow_only':'flow_not_approved';
-      await api('/rest/v1/passport_identity_verification_attempts?id=eq.'+attempt.id,{
-        state:'error',completed_at:new Date().toISOString(),last_error_code:resultCode
-      },'PATCH');
-      await api('/rest/v1/member_profiles?user_id=eq.'+encodeURIComponent(attempt.user_id)+'&identity_verification_state=eq.pending',{
-        identity_verification_state:'unverified'
-      },'PATCH');
+      await finishAttempt('error',PHYSICAL==='sandbox'?'test_flow_only':'flow_not_approved');
     }else{
-      nextState='rejected';resultCode='rejected';
-      await api('/rest/v1/passport_identity_verification_attempts?id=eq.'+attempt.id,{
-        state:'rejected',completed_at:new Date().toISOString(),last_error_code:'provider_rejected'
-      },'PATCH');
-      await api('/rest/v1/member_profiles?user_id=eq.'+encodeURIComponent(attempt.user_id)+'&identity_verification_state=eq.pending',{
-        identity_verification_state:'rejected'
-      },'PATCH');
+      await finishAttempt('rejected','provider_rejected');
     }
   }else if(eventName==='session.expired'){
-    nextState='expired';
-    await api('/rest/v1/passport_identity_verification_attempts?id=eq.'+attempt.id,{
-      state:'expired',completed_at:new Date().toISOString(),last_error_code:'session_expired'
-    },'PATCH');
-    await api('/rest/v1/member_profiles?user_id=eq.'+encodeURIComponent(attempt.user_id)+'&identity_verification_state=eq.pending',{
-      identity_verification_state:'expired'
-    },'PATCH');
+    await finishAttempt('expired','session_expired');
   }else if(eventName==='session.aborted'){
-    nextState='cancelled';
-    await api('/rest/v1/passport_identity_verification_attempts?id=eq.'+attempt.id,{
-      state:'cancelled',completed_at:new Date().toISOString(),last_error_code:'session_aborted'
-    },'PATCH');
-    await api('/rest/v1/member_profiles?user_id=eq.'+encodeURIComponent(attempt.user_id)+'&identity_verification_state=eq.pending',{
-      identity_verification_state:'unverified'
-    },'PATCH');
+    await finishAttempt('cancelled','session_aborted');
   }else if(eventName==='session.error'){
-    nextState='error';
-    await api('/rest/v1/passport_identity_verification_attempts?id=eq.'+attempt.id,{
-      state:'error',completed_at:new Date().toISOString(),last_error_code:'provider_error'
-    },'PATCH');
-    await api('/rest/v1/member_profiles?user_id=eq.'+encodeURIComponent(attempt.user_id)+'&identity_verification_state=eq.pending',{
-      identity_verification_state:'unverified'
-    },'PATCH');
+    await finishAttempt('error','provider_error');
   }
 
   await api('/rest/v1/passport_identity_provider_events?provider=eq.idnow&event_id=eq.'+encodeURIComponent(eventId),{
@@ -358,15 +329,17 @@ Deno.serve(async req=>{
   try{
     const type=(req.headers.get('content-type')||'').split(';')[0].trim().toLowerCase();
     if(type==='application/jwt'){
-      const jwt=(await req.text()).trim();
+      const jwt=(await readPassportText(req,30000)).trim();
       if(jwt.length<100||jwt.length>30000)throw new Failure(400,'Webhook invalide.');
       return reply(await processWebhook(jwt));
     }
 
     if(type!=='application/json')throw new Failure(415,'Format invalide.');
-    const uid=await authenticate(req);
-    const body=await req.json().catch(()=>null);
+    const {userId,sessionId}=await authenticate(req);
+    const body=await readPassportBody(req,8192);
     const action=String(body?.action||'');
+    const fields=action==='start'?['action','consent']:['action'];
+    if(Object.keys(body).some(key=>!fields.includes(key)))throw new Failure(400,'Demande invalide.');
     if(action==='readiness')return reply({
       enabled:configured(),
       provider:PROVIDER||null,
@@ -376,13 +349,13 @@ Deno.serve(async req=>{
     });
     if(action==='start'){
       if(body?.consent!==true)throw new Failure(400,'Ton accord explicite pour le contrôle IDnow est requis.');
-      return reply(await startVerification(uid),201);
+      return reply(await startVerification(userId,sessionId),201);
     }
     throw new Failure(404,'Action inconnue.');
   }catch(error){
     return reply(
-      {error:error instanceof Failure?error.message:'Service de vérification momentanément indisponible.'},
-      error instanceof Failure?error.status:500
+      {error:error instanceof PassportFailure?error.message:'Service de vérification momentanément indisponible.'},
+      error instanceof PassportFailure?error.status:500
     );
   }
 });

@@ -17,8 +17,10 @@ export function SectionIcon({ page, ...props }) {
 
 export { NAV_GROUPS } from './navigation-menu.js';
 
-export function RouteLink({ page, goTo, children, ...props }) {
+export function RouteLink({ page, goTo, children, onClick, ...props }) {
   return <a href={getPageHref(page)} onClick={(event) => {
+    onClick?.(event);
+    if (event.defaultPrevented || props.download !== undefined || (props.target && props.target !== '_self')) return;
     if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
     goTo(page);
@@ -28,7 +30,7 @@ export function RouteLink({ page, goTo, children, ...props }) {
 const QUICK_LINKS = PRINCIPAL_DESTINATIONS;
 
 export default function AppNavigation({ page, title, menuItems, goTo, secret, options, toggleOption, installation, immersive = false }) {
-  const dialog = useRef(null), searchInput = useRef(null);
+  const dialog = useRef(null), searchInput = useRef(null), content = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("principal");
@@ -41,6 +43,7 @@ export default function AppNavigation({ page, title, menuItems, goTo, secret, op
 
 
   useEffect(() => { dialog.current?.close(); }, [page]);
+  useEffect(() => { content.current?.scrollTo(0, 0); }, [category, query]);
   useEffect(() => {
     const request = event => openMenu({ category: event.detail?.category });
     window.addEventListener('threeb:open-app-menu', request);
@@ -90,7 +93,11 @@ export default function AppNavigation({ page, title, menuItems, goTo, secret, op
   function changeCategory(id, focus = false) {
     setQuery("");
     setCategory(id);
-    if (focus) requestAnimationFrame(() => document.getElementById('menu-category-' + id)?.focus());
+    if (focus) requestAnimationFrame(() => {
+      const tab = document.getElementById('menu-category-' + id);
+      tab?.focus({ preventScroll: true });
+      tab?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    });
   }
   function categoryKey(event, index) {
     let next;
@@ -101,6 +108,17 @@ export default function AppNavigation({ page, title, menuItems, goTo, secret, op
     if (next === undefined) return;
     event.preventDefault();
     changeCategory(categories[next].id, true);
+  }
+  function searchKey(event) {
+    if (event.isComposing || event.nativeEvent?.isComposing) return;
+    if (event.key === 'ArrowDown' && matching.length) {
+      event.preventDefault();
+      content.current?.querySelector('.app-menu-route')?.focus();
+    }
+    if (event.key === 'Enter' && searching && matching.length === 1) {
+      event.preventDefault();
+      navigate(matching[0].target || matching[0].id);
+    }
   }
   return <>
     <a className="skip-link" href="#main-content" onClick={event => {
@@ -126,7 +144,7 @@ export default function AppNavigation({ page, title, menuItems, goTo, secret, op
       if (event.target.closest('dialog') !== dialog.current) return;
       if (event.key === "Escape") { event.preventDefault(); dialog.current.close(); }
       if (event.key === "Tab") {
-        const targets = [...dialog.current.querySelectorAll('button:not([disabled]):not([tabindex="-1"]), a[href], input:not([disabled]), select:not([disabled]), summary')].filter(element => element.getClientRects().length);
+        const targets = [...dialog.current.querySelectorAll('button:not([disabled]):not([tabindex="-1"]), a[href], input:not([disabled]), select:not([disabled]), summary, [tabindex="0"]')].filter(element => element.getClientRects().length);
         const first = targets[0], last = targets[targets.length - 1];
         if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
         else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
@@ -142,13 +160,13 @@ export default function AppNavigation({ page, title, menuItems, goTo, secret, op
       </div>
       <div className="app-menu-search">
         <Search size={19} aria-hidden="true" />
-        <input ref={searchInput} type="search" aria-label="Rechercher une rubrique" placeholder="Rechercher dans 3B" value={query} onChange={event => setQuery(event.target.value)} />
+        <input ref={searchInput} type="search" aria-label="Rechercher une rubrique" aria-controls="menu-category-content" placeholder="Rechercher dans 3B" autoComplete="off" spellCheck={false} enterKeyHint="go" value={query} onChange={event => setQuery(event.target.value)} onKeyDown={searchKey} />
         {query && <Button variant="ghost" type="button" aria-label="Effacer la recherche" onClick={() => { setQuery(""); searchInput.current?.focus(); }}><X size={17} aria-hidden="true" /></Button>}
       </div>
       <div className="app-menu-categories" role="tablist" aria-label="Catégories du menu">
         {categories.map((item, index) => <Button variant="ghost" key={item.id} type="button" role="tab" id={'menu-category-' + item.id} aria-controls="menu-category-content" aria-selected={!searching && item.id === currentCategory.id} tabIndex={item.id === currentCategory.id ? 0 : -1} onClick={() => changeCategory(item.id)} onKeyDown={event => categoryKey(event, index)}>{item.label}</Button>)}
       </div>
-      <section id="menu-category-content" className="app-menu-content" role={searching ? 'region' : 'tabpanel'} aria-label={searching ? 'Résultats de recherche' : undefined} aria-labelledby={searching ? undefined : 'menu-category-' + currentCategory.id} tabIndex={0}>
+      <section ref={content} id="menu-category-content" className="app-menu-content" role={searching ? 'region' : 'tabpanel'} aria-label={searching ? 'Résultats de recherche' : undefined} aria-labelledby={searching ? undefined : 'menu-category-' + currentCategory.id} tabIndex={0}>
         {searching && <p className="app-menu-results" role="status">{matching.length} {matching.length === 1 ? 'rubrique trouvée' : 'rubriques trouvées'}</p>}
         {!searching && currentCategory.id === 'settings' ? <div className="app-menu-settings">
           {options ? <ExperienceControls inline options={options} toggleOption={toggleOption} page={page}/> : <CompanionPresenceControl/>}

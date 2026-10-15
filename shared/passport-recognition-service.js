@@ -64,17 +64,17 @@ export function createRecognitionHandler(runtime) {
         if(!['jwks','metadata'].includes(action)) throw new PassportFailure(404,'Action inconnue.');
         const ip=(req.headers.get('cf-connecting-ip')||req.headers.get('x-forwarded-for')||'unknown').split(',')[0].trim().slice(0,128);
         await rate('passport-recognition:public:'+await sha256(ip),10,60);
-        const config=await configuration();
-        if(action==='jwks') return reply({keys:config.material?[config.material.publicJWK]:[]},200,true);
+        if(action==='jwks') {
+          const config=await configuration();
+          return reply({keys:config.material?[config.material.publicJWK]:[]},200,true);
+        }
         return reply({profile:'3b-private-recognition-v1',issuer:httpsURL(issuer),algorithm:'ES256',jwks_uri:endpoint+'?action=jwks',verification_endpoint:endpoint,supported_scopes:RECOGNITION_SCOPES,ttl_seconds:PROOF_TTL_SECONDS,online_validation_required:true,one_time:true,official_recognition:false},200,true);
       }
       if(req.method!=='POST') throw new PassportFailure(405,'Méthode non autorisée.');
       if(origin && !origins.has(origin)) throw new PassportFailure(403,'Origine non autorisée.');
       const body=await readPassportBody(req);
-      const config=await configuration();
       if(body.action==='verify') {
         fieldSet(body,['action','proof','nonce']);
-        requireConfiguration(config);
         if(!isNonce(body.nonce)) throw new PassportFailure(400,'Défi partenaire invalide.');
         const authorization=req.headers.get('authorization')||'';
         const apiKey=authorization.startsWith('Bearer ')?authorization.slice(7):'';
@@ -83,6 +83,8 @@ export function createRecognitionHandler(runtime) {
         const partner=first(await api('/rest/v1/passport_recognition_partners?active=eq.true&api_key_hash=eq.'+keyHash+'&select=id,name,audience,allowed_scopes&limit=1'));
         if(!partner || !httpsURL(partner.audience)) throw new PassportFailure(401,'Partenaire non autorisé.');
         await rate('passport-recognition:verify:'+partner.id,60,60);
+        const config=await configuration();
+        requireConfiguration(config);
         let payload;
         try{payload=await verifyProof(body.proof,config.material,{issuer,audience:partner.audience});}
         catch{throw new PassportFailure(400,'Preuve invalide, expirée ou destinée à un autre partenaire.');}
@@ -96,6 +98,7 @@ export function createRecognitionHandler(runtime) {
       await rate(userId+':passport-recognition',60,60);
       if(body.action==='status') {
         fieldSet(body,['action']);
+        const config=await configuration();
         let partners=[],proofs=[],registryReady=true;
         try {
           const [registered,recent]=await Promise.all([
@@ -109,11 +112,12 @@ export function createRecognitionHandler(runtime) {
         return reply({readiness:{configured:config.configured,enabled:config.enabled,ready:config.configured&&config.enabled&&registryReady&&partners.length>0,hasPartners:partners.length>0,registryReady,algorithm:'ES256',ttlSeconds:PROOF_TTL_SECONDS,issuer:httpsURL(issuer),missing:[...config.missing,...(!registryReady?['partner_registry_unavailable']:partners.length?[]:['no_active_partners'])]},partners,proofs});
       }
       if(body.action==='issue') {
-        requireConfiguration(config);
         fieldSet(body,['action','partnerId','scopes','nonce','consent']);
         if(!isUUID(body.partnerId) || !isNonce(body.nonce) || body.consent!==true) throw new PassportFailure(400,'Choisis un partenaire, son défi et les informations à partager, puis confirme ton accord.');
         let scopes;
         try{scopes=scopesFor(body.scopes);}catch{throw new PassportFailure(400,'Informations demandées invalides.');}
+        const config=await configuration();
+        requireConfiguration(config);
         const subject=await pairwiseSubject(config.pairwise,body.partnerId,userId);
         const result=first(await api('/rest/v1/rpc/passport_recognition_issue_v1',{p_user:userId,p_session:sessionId,p_partner:body.partnerId,p_scopes:scopes,p_nonce_hash:await sha256(body.nonce),p_subject:subject,p_issuer:issuer,p_consent:true}));
         if(!result?.payload || !isUUID(result.id)) throw new PassportFailure(503,'La présentation n’a pas pu être créée.');

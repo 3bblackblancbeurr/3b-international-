@@ -56,7 +56,16 @@ test('IDnow documentation records the retry lease and external activation gates'
 });
 
 test('terminal IDnow errors clear pending profile state so verification can be retried',()=>{
-  assert.match(edge,/flow_not_approved'[\s\S]*identity_verification_state:'unverified'/);
-  assert.match(edge,/eventName==='session\.error'[\s\S]*identity_verification_state:'unverified'/);
-  assert.match(edge,/eventName==='session\.aborted'[\s\S]*identity_verification_state:'unverified'/);
+  assert.match(edge,/finishAttempt\('error',PHYSICAL==='sandbox'\?'test_flow_only':'flow_not_approved'\)/);
+  assert.match(edge,/eventName==='session\.error'[\s\S]*finishAttempt\('error','provider_error'\)/);
+  assert.match(edge,/eventName==='session\.aborted'[\s\S]*finishAttempt\('cancelled','session_aborted'\)/);
+  assert.match(edge,/passport_identity_finish_attempt_v1/);
+  assert.match(edge,/passport_identity_begin_attempt_v1/);
+  assert.doesNotMatch(edge,/identity_verification_state:|state:'processing'/);
+});
+
+test('IDnow webhook and member requests share the streaming byte limit',()=>{
+  assert.match(edge,/readPassportText\(req,30000\)/);
+  assert.match(edge,/readPassportBody\(req,8192\)/);
+  assert.doesNotMatch(edge,/req\.(text|json)\(/);
 });

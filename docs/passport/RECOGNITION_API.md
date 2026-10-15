@@ -72,6 +72,8 @@ Les noms Vault sont `passport_recognition_signing_jwk` et `passport_recognition_
 
 Le cache privé de configuration dure 30 secondes ; les RPC de consommation contrôlent toujours les états métier en base. Une rotation de clé invalide les présentations émises avec l’ancien `kid` dans ce profil à une seule clé active : révoquer les présentations ouvertes et attendre au plus cinq minutes avant une rotation planifiée. Le secret pairwise est indépendant et doit rester stable pour conserver le même pseudonyme chez un partenaire.
 
+Les POST authentifient désormais le membre ou le partenaire avant de charger ou d'initialiser le matériau de signature. Les champs et le consentement d'une émission sont contrôlés avant cette initialisation. La lecture publique des métadonnées et la révocation par le titulaire ne dépendent pas des clés privées ; seul le JWKS public charge la configuration de signature, sous sa limite de fréquence. Les corps JSON sont bornés pendant la lecture et un encodage UTF-8 invalide est rejeté.
+
 ## QR du Passeport existant
 
 `passport-identity` accepte `POST {"action":"issue"}` (ou `{}` pour compatibilité), avec une session membre toujours active. La réponse ajoute `ticketId` aux champs existants : `{ticketId,verifyUrl,qrDataUrl,expiresAt,passportNumber,state,version}`. Le token aléatoire de 32 octets est placé dans le fragment de l’URL du vérificateur existant ; seul son SHA-256 est stocké.
