@@ -4,9 +4,19 @@ import {readFileSync,statSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {createCinematicClock} from '../src/world/cinematic-clock.js';
 import {createRecordedNarration} from '../src/world/recorded-narration.js';
-import {narratedCinematic} from '../src/world/narrated-cinematic.js';
+import {narratedCinematic,cinematicPhase} from '../src/world/narrated-cinematic.js';
 import {storyCinematicPresentation} from '../src/world/story-cinematic.js';
 const manifest=JSON.parse(readFileSync('src/world/narration-manifest.json','utf8'));
+
+test('the transcript remains visible through the last recorded sentence and every manual pause',()=>{
+ for(const narration of manifest.clips.filter(clip=>clip.id.startsWith('entry-'))){
+  const duration=narration.durationMs+600;
+  assert.equal(cinematicPhase(0,duration,{narration}),'ignite');
+  assert.equal(cinematicPhase(narration.durationMs-1,duration,{narration}),'reveal');
+  assert.equal(cinematicPhase(narration.durationMs,duration,{narration}),'handoff');
+  assert.equal(cinematicPhase(duration-1,duration,{paused:true,narration}),'reveal');
+ }
+});
 
 test('2 FPS playback finishes at the same time as 60 FPS and stays finished',()=>{
  for(const frame of [1000/60,500,5000]){

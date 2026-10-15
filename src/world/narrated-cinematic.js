@@ -8,3 +8,10 @@ export function narratedCinematic(presentation, manifest) {
  return {...presentation, narration: clip || null,
   duration: Math.max(presentation.duration, clip ? clip.durationMs + 600 : readingDuration)};
 }
+
+export function cinematicPhase(elapsed, duration, {paused = false, narration = null} = {}) {
+ if (paused) return 'reveal';
+ const progress = Math.max(0, elapsed / duration);
+ const handoff = narration ? Math.min(duration, narration.durationMs) : duration * .72;
+ return progress < .16 ? 'ignite' : elapsed < handoff ? 'reveal' : 'handoff';
+}

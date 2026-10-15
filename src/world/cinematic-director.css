@@ -132,3 +132,4 @@
 .cinema-voice-credit{flex-basis:100%;text-align:right;color:#d5dfeb;font-size:10px;text-decoration:underline}
 .cinema-world-actions button{min-height:44px}
 @media(max-width:600px){.cinema-playback-status{flex-basis:100%;text-align:right}.cinema-world-actions{bottom:24px}.cinema-world-copy p{max-height:28vh;overflow:auto}.cinema-world-signature{display:none}}
+.world-cinematic-director[data-paused="true"] .cinema-world-copy{animation:none;opacity:1;transform:none;filter:none}

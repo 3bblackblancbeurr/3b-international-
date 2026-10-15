@@ -2,6 +2,7 @@ import React,{useEffect,useMemo,useRef,useState} from 'react';
 import {cinematicCssVars} from './cinematic-director.js';
 import './cinematic-director.css';
 import {createCinematicClock} from './cinematic-clock.js';
+import {cinematicPhase} from './narrated-cinematic.js';
 import narrationManifest from './narration-manifest.json';
 
 const clamp=v=>Math.max(0,Math.min(1,v));
@@ -11,7 +12,7 @@ export function CinematicOverlay({presentation,onDone,onSkip,audioDirector,scene
  const [reduced,setReduced]=useState(()=>window.matchMedia('(prefers-reduced-motion: reduce)').matches);
  const finished=useRef(false),root=useRef(null),duration=presentation?.duration||5000;
  const progress=clamp(elapsed/duration);
- const phase=progress<.16?'ignite':progress<.72?'reveal':'handoff';
+ const phase=cinematicPhase(elapsed,duration,{paused:userPaused,narration:presentation?.narration});
  const particles=useMemo(()=>Array.from({length:24},(_,i)=>i),[presentation?.key]);
 
  useEffect(()=>{
@@ -20,7 +21,7 @@ export function CinematicOverlay({presentation,onDone,onSkip,audioDirector,scene
  },[]);
  useEffect(()=>{
   if(!presentation)return;
-  let raf,live=true,spoken=false,hasRecording=false;
+  let raf,live=true,spoken=false,hasRecording=false,lastPaint=-Infinity;
   const timeline=createCinematicClock(duration);clock.current=timeline;
   finished.current=false;setElapsed(0);setUserPaused(false);setRecorded(false);
   timeline.hold('loading',!!presentation.narration);timeline.hold('hidden',document.hidden);
@@ -40,7 +41,7 @@ export function CinematicOverlay({presentation,onDone,onSkip,audioDirector,scene
   },()=>{if(live){setLoading(false);timeline.hold('loading',false);}});
   const tick=()=>{
    if(!live||finished.current)return;
-   const value=timeline.elapsed();setElapsed(value);
+   const value=timeline.elapsed();if(value-lastPaint>=50||value>=duration){lastPaint=value;setElapsed(value);}
    sceneDirector?.setCinematicFrame?.(value,timeline.paused);
    if(!timeline.paused&&!spoken){
     spoken=true;audioDirector?.cinematic?.(presentation.kind);
