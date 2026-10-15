@@ -107,6 +107,26 @@ export function useHealth() {
     return true;
   }
 
+  async function importEncryptedVault(raw, passphrase) {
+    if (vaultMode !== 'temporary') throw new Error('Protège ou supprime le journal actuel avant de restaurer un autre coffre.');
+    let envelope;
+    try { envelope = JSON.parse(raw); } catch { throw new Error('Fichier de coffre invalide.'); }
+    const { data: restored, key } = await openHealthVault(envelope, passphrase);
+    const storage = window.localStorage;
+    if (storage.getItem(HEALTH_STORAGE_KEY) || storage.getItem(HEALTH_VAULT_KEY)) {
+      throw new Error('Un ancien coffre est déjà présent. Aucune donnée n’a été remplacée.');
+    }
+    storage.setItem(HEALTH_VAULT_KEY, JSON.stringify(envelope));
+    ++revisionRef.current;
+    keyRef.current = key;
+    saltRef.current = envelope.salt;
+    setData(normalizeHealth(restored));
+    setVaultMode('unlocked');
+    setSaved(true);
+    setNotice('Coffre chiffré restauré localement. Aucun fichier envoyé à 3B.');
+    return true;
+  }
+
   async function lockSecureSave() {
     if (vaultMode !== 'unlocked' || !keyRef.current) return false;
     const revision = ++revisionRef.current; // annule les écritures asynchrones plus anciennes
@@ -151,7 +171,7 @@ export function useHealth() {
   };
   return {
     data, setData, saved, vaultMode, saving, notice, setNotice, updateDay, favorite, clear,
-    enableSecureSave, unlockSecureSave, lockSecureSave,
+    enableSecureSave, unlockSecureSave, lockSecureSave, importEncryptedVault,
   };
 }
 
