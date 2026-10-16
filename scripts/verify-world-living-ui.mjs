@@ -34,7 +34,7 @@ try{
    return {scrollWidth:el.scrollWidth,clientWidth:el.clientWidth,offenders:[...el.querySelectorAll('*')]
     .map(n=>({n,rect:n.getBoundingClientRect()}))
     .filter(({rect})=>rect.right>root.right+2||rect.left<root.left-2)
-    .slice(0,20).map(({n,rect})=>({tag:n.tagName,cls:typeof n.className==='string'?n.className.slice(0,70):'',text:(n.innerText||'').slice(0,40),left:Math.round(rect.left),right:Math.round(rect.right)}))};
+    .slice(0,20).map(({n,rect})=>({tag:n.tagName,cls:typeof n.className==='string'?n.className.slice(0,70):'',text:(n.innerText||'').slice(0,40),left:Math.round(rect.left),right:Math.round(rect.right)})),blocks:[el,...el.children,...el.querySelectorAll('.world3b-intro,.world3b-globe-frame,.world3b-hero,.world3b-tabs,.world3b-country-rail,.world3b-module-section,.world3b-active-view,.world3b-extra')].map(n=>({cls:typeof n.className==='string'?n.className:'',x:Math.round(n.getBoundingClientRect().x),w:Math.round(n.getBoundingClientRect().width),scroll:n.scrollWidth,client:n.clientWidth,position:getComputedStyle(n).position,overflow:getComputedStyle(n).overflowX})).slice(0,28)};
   });
   if(overflow.scrollWidth>overflow.clientWidth+2)console.log('OVERFLOW_DIAGNOSTIC',width,JSON.stringify(overflow));
   check('Homepage has no unwanted horizontal overflow '+width,overflow.scrollWidth<=overflow.clientWidth+2);
