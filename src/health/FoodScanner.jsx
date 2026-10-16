@@ -1,18 +1,9 @@
 import React,{useCallback,useEffect,useRef,useState} from 'react';
 import {AlertTriangle, ArrowUpRight, Barcode, Camera, CheckCircle2, CircleHelp, LoaderCircle, RotateCcw, ScanLine, ShieldCheck, StopCircle, X} from 'lucide-react';
 import './food-scanner.css';
+import {validFoodBarcode} from './foodBarcode.js';
 
 const SCANNABLE = ['ean_13','ean_8','upc_a','upc_e','itf'];
-export function validFoodBarcode(code) {
-  if(!/^\d{8,14}$/.test(String(code)))return false;
-  // Validate GS1 check digit on standard EAN/UPC/GTIN lengths.
-  if(![8,12,13,14].includes(code.length))return true;
-  const digits=String(code).split('').map(Number);
-  const check=digits.pop();
-  let sum=0;
-  for(let i=digits.length-1,weight=3;i>=0;i--,weight=weight===3?1:3)sum+=digits[i]*weight;
-  return (10-(sum%10))%10===check;
-}
 const NUMERIC = [
   ['kcal','Énergie','kcal'],
   ['sugars','Sucres','g'],
