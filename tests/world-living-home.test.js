@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {PAGE_HASHES,getPageHref,readLocation} from '../src/lib/navigation.js';
-import {WORLD_MODULES,WORLD_MORE_SERVICES,WORLD_REALMS,WORLD_MODULE_GROUPS,findWorldModules,findAlbertDestination,albertLocalGuideAnswer} from '../src/components/world-living-data.js';
+import {WORLD_MODULES,WORLD_MORE_SERVICES,WORLD_REALMS,WORLD_MODULE_GROUPS,findWorldModules,findWorldExtraServices,findAlbertDestination,albertLocalGuideAnswer} from '../src/components/world-living-data.js';
 
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 
@@ -22,6 +22,11 @@ test('22 principal world modules are unique, routed and discoverable without inv
  assert.deepEqual(findWorldModules({category:'favorites',favorites:['health','travel']}).map(item=>item.id),['health','travel']);
  assert.equal(findWorldModules({query:'aucun-module-connu'}).length,0);
  assert.equal(WORLD_MODULE_GROUPS[0].id,'all');
+ assert.deepEqual(findWorldExtraServices('scanner').map(item=>item.id),['foodscan']);
+ assert.deepEqual(findWorldExtraServices('film').map(item=>item.id),['cinema']);
+ assert.deepEqual(findWorldExtraServices('recrutement').map(item=>item.id),['join']);
+ assert.equal(findWorldExtraServices('').length,0);
+ assert.equal(findWorldModules().length,22,'extra results must not inflate the 22 core universe tiles');
  for(const id of ['news','association','partners','finance','travel','tv','admin'])
   assert.ok(WORLD_MODULES.some(item=>item.id===id),'required 3B space missing: '+id);
  for(const id of ['foodscan','cinema','join'])
