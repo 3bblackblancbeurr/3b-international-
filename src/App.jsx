@@ -140,9 +140,9 @@ const BASE_MENU_ITEMS = [
   },
   {
     id: "esports",
-    label: "16-18 e-sport",
+    label: "16‑18 ESPORT",
     icon: "🎯",
-    description: "L’équipe 16-18 de 3B ESPORTS · Warzone.",
+    description: "Club gaming multijeux : équipes, compétitions, recrutement et gameplays.",
   },
   {
     id: "ia",
