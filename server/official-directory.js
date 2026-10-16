@@ -44,7 +44,7 @@ export async function fetchOfficialDirectory(request) {
   const url = new URL(ENDPOINT);
   url.searchParams.set('where', 'search(nom, "'+locality.trim()+'")');
   url.searchParams.set('select', 'nom,adresse,telephone,url_service_public,date_modification_datetime');
-  url.searchParams.set('limit','12');
+  url.searchParams.set('limit','20');
   try {
     const result = await fetch(url, {
       headers:{Accept:'application/json'},
@@ -60,8 +60,8 @@ export async function fetchOfficialDirectory(request) {
       if(seen.has(item.profile)) return false;
       seen.add(item.profile);
       return true;
-    }).slice(0,10);
-    return json({services, source:'DILA · Annuaire officiel des services publics',
+    }).slice(0,20);
+    return json({services, total:Number.isInteger(payload.total_count)?Math.min(payload.total_count,1000000):null, source:'DILA · Annuaire officiel des services publics',
       queried_at:new Date().toISOString(), city:locality.trim()},
       200,'public, s-maxage=1800, stale-while-revalidate=3600');
   } catch {
