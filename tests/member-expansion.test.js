@@ -2,16 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {validFoodBarcode} from '../src/health/foodBarcode.js';
 import {MEMBER_SPACES, COUNTRY_INDEX, ADMIN_GUIDES, CINEMA_GUIDES, FINANCE_GUIDES, countryEventsHref,countryNewsHref,countryFor,contactHref} from '../src/member/memberSources.js';
-import foodProduct from '../api/food-product.js';
-import worldBrief from '../api/member-brief.js';
+import {fetchFoodProduct} from '../server/food-product.js';
+import {fetchMemberBrief} from '../server/member-brief.js';
+import catalog from '../api/catalog.js';
+import {readFileSync} from 'node:fs';
 
-function response(){
-  return {headers:{},code:200,body:null,
-    setHeader(name,value){this.headers[name.toLowerCase()]=value;return this;},
-    status(code){this.code=code;return this;},
-    json(body){this.body=body;return this;},
-  };
-}
 test('member destinations are unique and can be explored without duplicated loyalty data',()=>{
   assert.equal(MEMBER_SPACES.length,10);
   assert.equal(new Set(MEMBER_SPACES.map(x=>x.id)).size,10);
@@ -34,20 +29,27 @@ test('scanner validates common GTIN-13 check digits',()=>{
   assert.equal(validFoodBarcode(''),false);
   assert.equal(validFoodBarcode('123456789012345'),false);
 });
-test('food lookup rejects non-GET and unsupported barcodes without network',async()=>{
-  const notGet=response(),bad=response();
-  await foodProduct({method:'POST',query:{code:'3017620422003'}},notGet);
-  await foodProduct({method:'GET',query:{code:'1.1.1.1/file'}},bad);
-  assert.equal(notGet.code,405);
-  assert.equal(bad.code,400);
-  assert.equal(bad.body.error,'Code-barres invalide');
-  assert.equal(bad.headers['x-content-type-options'],'nosniff');
+
+test('food lookup rejects invalid routes and unsafe barcodes without network access',async()=>{
+  const badMethod=await fetchFoodProduct(new Request('https://3b.example/api/food-product?code=3017620422003',{method:'POST'}));
+  const invalid=await fetchFoodProduct(new Request('https://3b.example/api/food-product?code=https://example.com/'));
+  assert.equal(badMethod.status,405);
+  assert.equal(invalid.status,400);
+  assert.equal((await invalid.json()).error,'Code-barres invalide');
+  assert.equal(invalid.headers.get('x-content-type-options'),'nosniff');
 });
-test('world brief is strict fixed-source-only API',async()=>{
-  const notGet=response(),bad=response();
-  await worldBrief({method:'POST',query:{feed:'world'}},notGet);
-  await worldBrief({method:'GET',query:{feed:'http://example.com'}},bad);
-  assert.equal(notGet.code,405);
-  assert.equal(bad.code,400);
-  assert.equal(bad.headers['x-content-type-options'],'nosniff');
+test('world news is restricted to two allowlisted feeds',async()=>{
+  const badMethod=await fetchMemberBrief(new Request('https://3b.example/api/member-brief?feed=world',{method:'POST'}));
+  const invalid=await fetchMemberBrief(new Request('https://3b.example/api/member-brief?feed=https://example.com'));
+  assert.equal(badMethod.status,405);
+  assert.equal(invalid.status,400);
+  assert.equal(invalid.headers.get('x-content-type-options'),'nosniff');
+});
+test('member services share the original Vercel catalog router and do not require paid functions',()=>{
+  const config=JSON.parse(readFileSync(new URL('../vercel.json',import.meta.url),'utf8'));
+  const items=['member-brief','food-product'];
+  for(const id of items){
+    assert.ok(config.rewrites.some(x=>x.source==='/api/'+id&&x.destination==='/api/catalog?__3b_route='+id));
+  }
+  assert.equal(typeof catalog.fetch,'function');
 });
