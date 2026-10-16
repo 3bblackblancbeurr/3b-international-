@@ -1,3 +1,4 @@
+import {Button} from '../design-system/index.jsx';
 import {useEffect,useState} from 'react';
 import {Accessibility,Volume2,VolumeX,Type,Eye,ScanText,Wind} from 'lucide-react';
 import {readUniversal,saveUniversal} from './universal.js';
@@ -27,15 +28,15 @@ export default function UniversalModes(){
   <p className="now-eyebrow">06 / POUR TOUS</p><h2 id="universal-title">Une application qui s’adapte à toi.</h2>
   <p className="now-intro">Ces réglages modifient l’affichage de 3B sur cet appareil, sans créer de compte ni demander d’accès à tes données.</p>
   <div className="now-settings" role="group" aria-label="Préférences de lecture">
-   {MODES.map(({id,title,detail,icon:Icon})=><button type="button" key={id} aria-pressed={prefs[id]} onClick={()=>toggle(id)}>
+   {MODES.map(({id,title,detail,icon:Icon})=><Button type="button" key={id} aria-pressed={prefs[id]} onClick={()=>toggle(id)}>
     <Icon size={21} strokeWidth={1.7} aria-hidden="true"/>
     <span><strong>{title}</strong><small>{detail}</small></span>
     <span className="now-switch" aria-hidden="true"/>
-   </button>)}
+   </Button>)}
   </div>
   <div className="now-action-row">
-   <button type="button" className="now-quiet" onClick={speak}>{voice?<VolumeX size={18}/>:<Volume2 size={18}/>} {voice?'Arrêter la lecture':'Écouter un exemple'}</button>
-   <button type="button" className="now-quiet" onClick={()=>{const settings=saveUniversal({},window.localStorage,document.documentElement);setPrefs(settings);setMessage('Affichage standard restauré.');}}><Accessibility size={18}/> Réglages d’origine</button>
+   <Button type="button" className="now-quiet" onClick={speak}>{voice?<VolumeX size={18}/>:<Volume2 size={18}/>} {voice?'Arrêter la lecture':'Écouter un exemple'}</Button>
+   <Button type="button" className="now-quiet" onClick={()=>{const settings=saveUniversal({},window.localStorage,document.documentElement);setPrefs(settings);setMessage('Affichage standard restauré.');}}><Accessibility size={18}/> Réglages d’origine</Button>
   </div>
   <p className="now-discretion">Les aides natives de ton téléphone (TalkBack, VoiceOver, grossissement et dictée) restent disponibles. L’effet réel dépend du navigateur. Ces choix sont locaux et réversibles.</p>
   {message&&<p className="now-message" role="status">{message}</p>}

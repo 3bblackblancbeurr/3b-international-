@@ -1,3 +1,4 @@
+import {Button,VideoPlayer} from '../design-system/index.jsx';
 import {useEffect,useRef,useState} from 'react';
 import {Camera,CameraOff,ScanText,Barcode,Volume2,ExternalLink} from 'lucide-react';
 
@@ -57,22 +58,22 @@ export default function UsefulScanner(){
   <p className="now-eyebrow">04 / REGARD UTILE</p><h2 id="scanner-utile-title">Comprendre ce qui t’entoure.</h2>
   <p className="now-intro">Lis un texte ou un code avec les fonctions compatibles de ton téléphone. Rien ne démarre sans ton geste.</p>
   <div className="now-camera-area">
-   <video ref={video} playsInline muted autoPlay aria-label="Aperçu de la caméra" hidden={!on}/>
+   <VideoPlayer ref={video} title="Aperçu de la caméra" controls={false} playsInline muted autoPlay hidden={!on}/>
    {!on&&<div className="now-camera-placeholder" aria-hidden="true"><Camera size={54} strokeWidth={1}/><span>CAMÉRA À LA DEMANDE</span></div>}
    <div className="now-camera-actions">
-    {!on?<button type="button" className="now-primary" disabled={busy} onClick={openCamera}><Camera size={18}/> {busy?'Autorisation…':'Activer la caméra'}</button>:
-     <button type="button" className="now-quiet" onClick={stop}><CameraOff size={18}/> Éteindre la caméra</button>}
+    {!on?<Button type="button" className="now-primary" disabled={busy} onClick={openCamera}><Camera size={18}/> {busy?'Autorisation…':'Activer la caméra'}</Button>:
+     <Button type="button" className="now-quiet" onClick={stop}><CameraOff size={18}/> Éteindre la caméra</Button>}
    </div>
   </div>
   {on&&<div className="now-action-row">
-   <button type="button" disabled={busy} className="now-quiet" onClick={()=>detect('texte')}><ScanText size={18}/> Reconnaître un texte</button>
-   <button type="button" disabled={busy} className="now-quiet" onClick={()=>detect('code')}><Barcode size={18}/> Lire un code</button>
+   <Button type="button" disabled={busy} className="now-quiet" onClick={()=>detect('texte')}><ScanText size={18}/> Reconnaître un texte</Button>
+   <Button type="button" disabled={busy} className="now-quiet" onClick={()=>detect('code')}><Barcode size={18}/> Lire un code</Button>
   </div>}
   <label className="now-field">Texte à comprendre ou à écouter
    <textarea rows={4} maxLength={2400} value={content} onChange={e=>{setContent(e.target.value);setKind('Texte saisi');}} placeholder="Colle ici le texte d’une étiquette, d’un panneau ou d’un document."/>
   </label>
   <div className="now-action-row">
-   <button type="button" className="now-primary" disabled={!text} onClick={read}><Volume2 size={18}/> Lire à voix haute</button>
+   <Button type="button" className="now-primary" disabled={!text} onClick={read}><Volume2 size={18}/> Lire à voix haute</Button>
    {text&&<a className="now-quiet" href={translateHref} target="_blank" rel="noreferrer noopener" onClick={()=>window.speechSynthesis?.cancel?.()}><ExternalLink size={18}/> Traduire sur Google</a>}
   </div>
   {text&&<p className="now-discretion">{kind} · La traduction ouvre un site externe et lui transmet uniquement le texte choisi. Ne transmets pas de données confidentielles.</p>}
