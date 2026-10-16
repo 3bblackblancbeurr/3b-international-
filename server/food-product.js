@@ -3,7 +3,7 @@
  * A barcode is the only input. No image, medical information or identity is sent.
  * Attribution: Open Food Facts (ODbL), https://world.openfoodfacts.org/
  */
-const digitsOnly = value => typeof value==='string'&&/^\d{8,14}$/.test(value);
+const digitsOnly = value => typeof value==='string'&&/^(?:\d{8}|\d{12}|\d{13}|\d{14})$/.test(value);
 const compactText=(value,limit=300)=>typeof value==='string'?value.trim().slice(0,limit):'';
 const nutrient=(data,key)=>{
   const n=data?.[key];return typeof n==='number'&&Number.isFinite(n)&&n>=0?n:null;
