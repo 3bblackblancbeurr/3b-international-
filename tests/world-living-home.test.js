@@ -22,6 +22,11 @@ test('22 principal world modules are unique, routed and discoverable without inv
  assert.deepEqual(findWorldModules({category:'favorites',favorites:['health','travel']}).map(item=>item.id),['health','travel']);
  assert.equal(findWorldModules({query:'aucun-module-connu'}).length,0);
  assert.equal(WORLD_MODULE_GROUPS[0].id,'all');
+ for(const id of ['news','association','partners','finance','travel','tv','admin'])
+  assert.ok(WORLD_MODULES.some(item=>item.id===id),'required 3B space missing: '+id);
+ for(const id of ['foodscan','cinema','join'])
+  assert.ok(WORLD_MORE_SERVICES.some(item=>item.id===id),'required 3B service missing: '+id);
+ assert.equal(WORLD_MODULES.some(item=>item.id==='music'||/musique/i.test(item.label)),false,'removed 3B Music must not return as a canonical module');
 });
 
 test('world realms follow the eight 3B narrative countries, without false physical hubs',()=>{
