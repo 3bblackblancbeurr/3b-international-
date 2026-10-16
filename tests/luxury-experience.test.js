@@ -64,7 +64,12 @@ test('owner decision: one Matrix Passport with no buttons, links or city trigger
   assert.doesNotMatch(card, /<button\b|<Button\b|<a\b|role="button"|passport-portal-trigger|PassportNexus/);
   for (const className of ['passport-matrix-rain', 'passport-matrix-stream', 'passport-circuits', 'passport-blue-sweep']) assert.ok(card.includes(className));
   assert.equal((card.match(/className="passport-card-stage/g) || []).length, 1);
-  assert.match(readFileSync('src/components/HomePage.jsx', 'utf8'), /title="Créer ma ville"/);
+  const home = readFileSync('src/components/HomePage.jsx', 'utf8');
+  const games = readFileSync('src/games/catalog.js', 'utf8');
+  const hub = readFileSync('src/games/GamesHub.jsx', 'utf8');
+  assert.doesNotMatch(home, /title="Créer ma ville"|city-essential-card/);
+  assert.match(games, /title:'Créer ma Ville'/);
+  assert.match(hub, /NexusCityGateway/);
 });
 
 // The entrance sequence must never run inside an access-denied screen.
