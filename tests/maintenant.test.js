@@ -98,6 +98,7 @@ test('six modules are wired honestly, no camera starts without user action and n
  assert.match(home,/page="maintenant"/);
  assert.ok(home.indexOf('<WorldPortalCard')<home.indexOf('threeb-now-entry'));
  assert.match(source,/role="tablist"/);
+ assert.doesNotMatch(source,/className="now-back"/);
  assert.match(source,/aria-pressed=/);
  assert.match(source,/Coup de Main|COUP DE MAIN/);
  assert.match(source,/Marquer comme exploré/);

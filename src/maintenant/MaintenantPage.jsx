@@ -76,7 +76,6 @@ export default function MaintenantPage({goTo}){
  }
  return <section className="now-app" aria-labelledby="now-title">
   <header className="now-hero">
-   <Button variant="ghost" className="now-back" type="button" onClick={()=>goTo('home')}><ArrowLeft size={17}/> Accueil</Button>
    <p className="now-hero-kicker">3B INTERNATIONAL · BLACK BLANC BEUR</p>
    <div className="now-halo" aria-hidden="true"><span className="now-halo-core">3B</span><i className="now-halo-star now-halo-one"/><i className="now-halo-star now-halo-two"/></div>
    <div className="now-hero-copy">
