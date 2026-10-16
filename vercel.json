@@ -218,6 +218,10 @@
   ],
   "rewrites": [
     {
+      "source": "/api/official-directory",
+      "destination": "/api/catalog?__3b_route=official-directory"
+    },
+    {
       "source": "/api/pwa-audit",
       "destination": "/api/pwa-quickkit-status?__3b_route=pwa-audit"
     },
