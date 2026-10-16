@@ -41,10 +41,11 @@ export default function LivingWorldGlobe({selectedId='france',onSelect}){
   const media=window.matchMedia?.('(prefers-reduced-motion: reduce)');
   const reduced=()=>media?.matches||document.documentElement.dataset.motion==='reduced';
   function resize(){
-   width=Math.max(220,Math.min(660,Math.round(canvas.getBoundingClientRect().width||320)));
+   width=Math.max(190,Math.min(660,Math.round(canvas.parentElement?.getBoundingClientRect().width||canvas.getBoundingClientRect().width||320)));
    const dpr=Math.min(window.devicePixelRatio||1,1.5);
    const target=Math.round(width*dpr);
-   if(canvas.width!==target||canvas.height!==target){canvas.width=target;canvas.height=target;canvas.style.height=width+'px';}
+   if(canvas.width!==target||canvas.height!==target){canvas.width=target;canvas.height=target;}
+   canvas.style.width=width+'px';canvas.style.height=width+'px';
    ctx.setTransform(dpr,0,0,dpr,0,0);
    draw();
   }
