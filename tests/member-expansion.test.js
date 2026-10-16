@@ -67,6 +67,7 @@ test('France 24 live feed parser accepts an authentic RSS shape and rejects untr
   const date=new Date().toUTCString();
   const xml='<?xml version="1.0"?><rss version="2.0"><channel>'
    +'<item><title>France &amp; Europe</title><link>https://www.france24.com/fr/europe/actualite</link><pubDate>'+date+'</pubDate></item>'
+   +'<item><title>France &amp; Europe</title><link>https://www.france24.com/fr/europe/duplicate-article</link><pubDate>'+date+'</pubDate></item>'
    +'<item><title>Fake external link</title><link>https://phishing.example/evil</link><pubDate>'+date+'</pubDate></item>'
    +'</channel></rss>';
   try {
