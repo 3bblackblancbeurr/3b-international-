@@ -37,7 +37,7 @@ export function NutritionAtlas({ foods, favorites = [], onOpen }) {
   const visible = useMemo(() => foods.filter(item => {
     const matchesFamily = family === 'all' || item.group === family;
     const matchesBody = organ === 'all' || organ === 'liver' || getFoodTopics(item.id).includes(organ);
-    const matchesSearch = searchText(item.name + ' ' + item.summary + ' ' + (getNutrition(item.id)?.highlights.join(' ') || '')).includes(searchText(query));
+    const matchesSearch = searchText(item.name + ' ' + item.summary + ' ' + (getNutrition(item.id)?.highlights.join(' ') || '') + ' ' + (getNutrition(item.id)?.micronutrients.map(n => n.label).join(' ') || '')).includes(searchText(query));
     return matchesFamily && matchesBody && matchesSearch && (!seasonOnly || item.season.includes(month)) && (!favoritesOnly || favorites.includes(item.id));
   }), [foods, query, family, organ, seasonOnly, favoritesOnly, favorites, month]);
   const featured = visible.find(item => item.id === 'carotte') || visible.find(item => Boolean(FOOD_NUTRITION[item.id])) || visible[0];
