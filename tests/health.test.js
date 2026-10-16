@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import {
   HEALTH_STORAGE_KEY, blankHealth, boundedNumber, createStepDetector,
-  normalizeHealth, readHealth, searchText, shoppingList, sleepDuration,
+  mergeNativeSteps, normalizeHealth, readHealth, searchText, shoppingList, sleepDuration,
 } from '../src/health/model.js';
 import { FOODS, GUIDES, RECIPES, SOURCES } from '../src/health/content.js';
 
@@ -39,6 +39,19 @@ test('journal retains exactly the last 90 local calendar days and rejects future
   assert.equal(result.days['2026-07-17'], undefined);
   assert.equal(result.days['2026-10-15'].steps, null, 'legacy manual step totals are retired');
   assert.equal(result.days['2026-10-15'].estimatedSteps, null, 'legacy web step estimates are retired');
+});
+
+test('one-day automatic refresh preserves older native step history', () => {
+  const now = new Date(2026, 9, 15, 12);
+  const previous = normalizeHealth({...blankHealth(), nativeEnabled:true, days:{
+    '2026-10-14':{nativeSteps:{steps:4321,source:'health-connect',syncedAt:'2026-10-15T08:00:00Z'}}
+  }},now);
+  const refreshed = mergeNativeSteps(previous,{source:'health-connect',syncedAt:'2026-10-15T10:00:00Z',days:[
+    {date:'2026-10-15',steps:6789}
+  ]},now);
+  assert.equal(refreshed.days['2026-10-14'].nativeSteps.steps,4321);
+  assert.equal(refreshed.days['2026-10-15'].nativeSteps.steps,6789);
+  assert.equal(refreshed.nativeEnabled,true);
 });
 
 test('unreadable storage and malformed JSON leave the temporary journal usable', () => {
