@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {validFoodBarcode} from '../src/health/foodBarcode.js';
 import {allergenLabel} from '../src/health/allergenLabels.js';
+import {cinemaSearchLinks} from '../src/member/cinema-search.js';
 import {MEMBER_SPACES, COUNTRY_INDEX, ADMIN_GUIDES, CINEMA_GUIDES, FINANCE_GUIDES, countryEventsHref,countryNewsHref,countryFor,contactHref} from '../src/member/memberSources.js';
 import {fetchFoodProduct} from '../server/food-product.js';
 import {fetchMemberBrief} from '../server/member-brief.js';
@@ -189,4 +190,19 @@ test('directory lookup returns public services without leaking user data or GPS'
   assert.equal(data.services[0].lat,undefined);
   assert.equal(data.services[0].user_id,undefined);
  }finally{globalThis.fetch=orig;}
+});
+
+test('cinema search goes only to verified official legal services',()=>{
+ const title='Le cinéma & la vie';
+ const links=cinemaSearchLinks(title);
+ assert.equal(new URL(links.arte).hostname,'www.arte.tv');
+ assert.equal(new URL(links.france).hostname,'www.france.tv');
+ assert.equal(new URL(links.arte).searchParams.get('genre'),'movies');
+ assert.equal(new URL(links.arte).searchParams.get('q'),title);
+ assert.equal(new URL(links.france).searchParams.get('q'),title);
+ assert.match(cinemaSearchLinks('').arte,/arte\.tv\/fr\/videos\/cinema\/films\//);
+ const hostile=cinemaSearchLinks('https://evil.example/?q=film');
+ assert.equal(new URL(hostile.arte).hostname,'www.arte.tv');
+ assert.equal(new URL(hostile.france).hostname,'www.france.tv');
+ assert.ok(cinemaSearchLinks('a'.repeat(1000)).title.length<=80);
 });
