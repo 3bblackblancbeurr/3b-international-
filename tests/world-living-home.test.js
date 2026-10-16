@@ -84,14 +84,17 @@ test('World Living Gold Master sources tokens and shared controls',()=>{
  const components=['src/components/AlbertPublicPreview.jsx','src/components/LivingWorldHome.jsx'];
  for(const path of components){
   const source=read(path);
-  assert.doesNotMatch(source, /<button\\b/);
-  assert.match(source, /<Button variant="ghost"/);
+  assert.equal(source.includes('<button'),false,'native button in '+path);
+  assert.ok(source.includes('<Button variant="ghost"'),path);
  }
  const css=read('src/styles/world-living-home.css');
- assert.doesNotMatch(css, /#[0-9a-fA-F]{3,8}\\b/);
- assert.doesNotMatch(css, /border-radius\\s*:\\s*(?!var\\()/);
- assert.doesNotMatch(css, /box-shadow\\s*:\\s*(?!var\\()/);
+ const hex=new RegExp('#[0-9a-fA-F]{3,8}'+String.fromCharCode(92)+'b');
+ assert.equal(hex.test(css),false,'scenic CSS colors belong in Gold Master tokens');
+ const radius=/\bborder-radius\s*:\s*([^;}]+)/g;
+ const shadow=/\bbox-shadow\s*:\s*([^;}]+)/g;
+ assert.ok([...css.matchAll(radius)].every(match=>match[1].trim().startsWith('var(')),'Gold Master radius');
+ assert.ok([...css.matchAll(shadow)].every(match=>match[1].trim().startsWith('var(')),'Gold Master shadow');
  const canvas=read('src/components/LivingWorldGlobe.jsx');
- assert.match(canvas,/worldLivingCanvasPalette/);
- assert.doesNotMatch(canvas, /#[0-9a-fA-F]{3,8}\\b/);
+ assert.ok(canvas.includes('worldLivingCanvasPalette'));
+ assert.equal(hex.test(canvas),false,'canvas pigments belong in JS palette');
 });
