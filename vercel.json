@@ -1,6 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "regions": ["cdg1"],
+  "regions": [
+    "cdg1"
+  ],
   "git": {
     "deploymentEnabled": {
       "*": false,
@@ -215,6 +217,14 @@
     }
   ],
   "rewrites": [
+    {
+      "source": "/api/member-brief",
+      "destination": "/api/catalog?__3b_route=member-brief"
+    },
+    {
+      "source": "/api/food-product",
+      "destination": "/api/catalog?__3b_route=food-product"
+    },
     {
       "source": "/api/command-integrations",
       "destination": "/api/catalog?__3b_route=command-integrations"
