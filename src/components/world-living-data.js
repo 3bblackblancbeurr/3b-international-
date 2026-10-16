@@ -99,7 +99,7 @@ export function albertLocalGuideAnswer(input){
  const query=normalizeWorldSearch(input).slice(0,300);
  if(!query)return {message:'Écris ta demande ou choisis un raccourci. Je peux te guider vers les rubriques 3B.',destination:null};
  if(/^(bonjour|salut|salam|hello|coucou)\b/.test(query))return {message:'Bienvenue dans 3B International ! Dis-moi quel univers tu veux explorer.',destination:null};
- if(/\b(qui es tu|tu es qui|quel est ton nom|fonctionne comment)\b/.test(query))return {message:'Je suis le guide de navigation 3B. Le moteur personnel Albert APEX n’est pas connecté ici : je ne prétends pas répondre avec lui.',destination:null};
+ if(/\b(qui es[- ]tu|tu es qui|quel est ton nom|fonctionne comment)\b/.test(query))return {message:'Je suis le guide de navigation 3B. Le moteur personnel Albert APEX n’est pas connecté ici : je ne prétends pas répondre avec lui.',destination:null};
  const destination=findAlbertDestination(query);
  if(destination && destination.id!=='albert')return {message:'Je peux t’ouvrir « '+destination.label+' » dans l’application 3B. Utilise le lien ci-dessous pour accéder à la vraie rubrique.',destination};
  if(/(pays|royaume|carte|monde|planete)/.test(query))return {message:'Les huit royaumes du Monde du 3B sont explorables depuis la carte mondiale. Ils représentent notre univers créatif, pas des hubs physiques vérifiés.',destination:{id:'world3b',label:'Monde du 3B'}};
