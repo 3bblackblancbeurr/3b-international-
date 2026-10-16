@@ -170,8 +170,11 @@ export default function MemberExperiences({goTo,profile}) {
 
         {active==='admin'&&<>
           <SectionIntro eyebrow="DES SERVICES QUI EXISTENT" title="Le bon chemin pour chaque démarche.">Logement, emploi, santé, identité, impôts, entreprise, justice et Europe. 3B te conduit vers les organismes officiels : ne communique jamais tes identifiants administratifs à une imitation de site.</SectionIntro>
-          <SourceRows rows={ADMIN_GUIDES}/>
           <React.Suspense fallback={<p className="mx-status" role="status">Ouverture de l’annuaire public…</p>}><OfficialDirectory/></React.Suspense>
+          <details className="mx-admin-guides"><summary>Explorer les autres démarches officielles <ArrowRight size={17} aria-hidden="true"/></summary>
+            <p>Identité, emploi, logement, santé, impôts, justice, entreprise et Europe : ouvre le site de l’organisme compétent.</p>
+            <SourceRows rows={ADMIN_GUIDES}/>
+          </details>
           <p className="mx-honesty"><ShieldCheck size={16}/> Aucun dossier personnel n’est copié ou conservé dans cette rubrique. Les démarches s’effectuent sur les sites officiels.</p>
         </>}
 
