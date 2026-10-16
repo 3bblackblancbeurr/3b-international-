@@ -60,13 +60,32 @@ test('France 24 live feed parser accepts an authentic RSS shape and rejects untr
    +'</channel></rss>';
   try {
     globalThis.fetch=async()=>new Response(xml,{status:200,headers:{'content-type':'application/rss+xml'}});
-    const reply=await fetchMemberBrief(new Request('https://3b.example/api/member-brief?feed=fr'));
+    const reply=await catalog.fetch(new Request('https://3b.example/api/catalog?__3b_route=member-brief&feed=fr'));
     assert.equal(reply.status,200);
     const data=await reply.json();
     assert.equal(data.items.length,1);
     assert.equal(data.items[0].title,'France & Europe');
     assert.equal(data.items[0].source,'France 24');
   } finally {globalThis.fetch=original;}
+});
+
+
+test('food API returns a nutrition card but no personal member data',async()=>{
+  const previous=globalThis.fetch;
+  try {
+    globalThis.fetch=async()=>new Response(JSON.stringify({status:1,product:{
+      product_name_fr:'Produit témoin',brands:'3B QA TEST',quantity:'100 g',
+      ingredients_text_fr:'lait',allergens_tags:['en:milk'],traces_tags:[],
+      nutriments:{'energy-kcal_100g':80,proteins_100g:4,sugars_100g:5}
+    }}),{status:200,headers:{'content-type':'application/json'}});
+    const reply=await foodApi.fetch(new Request('https://3b.example/api/food-product?code=3017620422003'));
+    assert.equal(reply.status,200);
+    const data=await reply.json();
+    assert.equal(data.product.name,'Produit témoin');
+    assert.equal(data.product.per100g.kcal,80);
+    assert.ok(data.product.allergens.includes('en:milk'));
+    assert.ok(!JSON.stringify(data).includes('user_id'));
+  }finally{globalThis.fetch=previous;}
 });
 
 test('member services share the original Vercel catalog router and do not require paid functions',()=>{
