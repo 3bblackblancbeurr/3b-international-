@@ -1,0 +1,122 @@
+/* 3B Cuisine — editorial, photo-first, no floating frames or nested cards */
+.h-kitchen{color:#f6f6ef;min-width:0;--h-kitchen-soft:#bbd6c2;}
+.h-kitchen-heading{margin:18px 0 17px;}
+.h-kitchen-heading h2{font-size:clamp(35px,5vw,56px)!important;font-weight:550;letter-spacing:-.055em;line-height:1.05;margin:9px 0 13px;color:#fcfbf5!important;}
+.h-kitchen-heading h2 em{color:#b5ddc5;font-style:normal}
+.h-kitchen-heading p{font-size:13px!important;max-width:540px;line-height:1.5;color:#c6d4c7}
+.health3b .h-kitchen-hero{position:relative;isolation:isolate;min-height:265px;background:#172c25;overflow:hidden;border-radius:13px;}
+.h-kitchen-hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2;filter:saturate(.95)}
+.h-kitchen-hero:after{content:'';position:absolute;z-index:-1;inset:0;background:linear-gradient(90deg,#081811ed 0%,#07170f9c 58%,#08170e16 100%),linear-gradient(0deg,#07140b90,transparent 65%)}
+.h-kitchen-hero>div{position:relative;padding:29px;max-width:72%;display:flex;flex-direction:column;align-items:start;gap:11px;color:#fff}
+.h-kitchen-hero>div>span{font-size:9px;letter-spacing:.16em;color:#ecd8a8;font-weight:650}
+.h-kitchen-hero strong{font-size:clamp(26px,3.6vw,42px);font-weight:550;line-height:1.13;letter-spacing:-.04em}
+.h-kitchen-hero small{font-size:11px;color:#d4e2d5}
+.health3b .h-kitchen-hero button{background:#e3dec6!important;color:#193327!important;border:0!important;display:flex;gap:8px;align-items:center;min-height:44px;border-radius:6px;font-size:11px;padding:9px 13px}
+.h-kitchen-switch{display:flex;gap:19px;overflow:auto hidden;border-bottom:1px solid #c8e3d423;margin:18px 0}
+.health3b .h-kitchen-switch button{border:0!important;background:none!important;color:#b7cbbc;display:flex;align-items:center;gap:7px;white-space:nowrap;min-height:45px;padding:7px 0;border-radius:0;border-bottom:2px solid transparent!important;font-size:12px}
+.health3b .h-kitchen-switch button[aria-current=page]{color:#fff;border-bottom-color:#d9c695!important}
+.h-kitchen-search{display:flex;align-items:center;gap:10px;border-bottom:1px solid #d4e2d13e;padding:10px 0;min-height:43px;color:#bdcfbc}
+.h-kitchen-search input{background:transparent;border:0;outline:none;color:#f5f6ef;font-size:13px;flex:1;min-width:0}
+.h-kitchen-search input::placeholder{color:#b3c4b5}
+.h-kitchen-search button{border:0!important;background:transparent!important;color:#dbe6d7}
+.h-kitchen-chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:11px 0 3px;touch-action:pan-x}
+.h-kitchen-chips::-webkit-scrollbar,.h-kitchen-grid::-webkit-scrollbar{display:none}
+.health3b .h-kitchen-chips>button{background:none!important;border:1px solid #cadaac35!important;color:#ccdacc;border-radius:50px;white-space:nowrap;flex-shrink:0;padding:8px 12px;font-size:11px;min-height:39px}
+.health3b .h-kitchen-chips>button[aria-pressed=true]{background:#dbe6ce!important;color:#173626;border-color:#dbe6ce!important}
+.h-kitchen-collection-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:24px 0 15px}
+.h-kitchen-collection-head h3{font-weight:540;letter-spacing:-.03em;margin:0;font-size:19px}
+.h-kitchen-collection-head span{font-size:10px;color:#b7cbbb}
+.h-kitchen-grid{display:grid;grid-auto-flow:column;grid-template-rows:repeat(2,minmax(0,auto));grid-auto-columns:calc((100% - 44px)/3.28);gap:22px 15px;overflow-x:auto;scrollbar-width:none;scroll-snap-type:x mandatory;scroll-padding-inline:3px;padding:3px 3px 12px;margin-inline:-3px}
+.h-kitchen-tile{scroll-snap-align:start;min-width:0}
+.health3b .h-kitchen-tile>button{display:flex;flex-direction:column;align-items:stretch;width:100%;border:0!important;background:transparent!important;text-align:left;padding:0!important;color:#f6f6f0;border-radius:0}
+.h-kitchen-tile-media{width:100%;aspect-ratio:1.15;display:block;position:relative;border-radius:11px;overflow:hidden;background:#1b342b}
+.h-kitchen-tile-media img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .35s ease}
+.h-kitchen-tile:hover .h-kitchen-tile-media img{transform:scale(1.045)}
+.h-kitchen-tile-duration{position:absolute;bottom:8px;left:8px;display:flex;align-items:center;gap:4px;background:#0c2119dc;padding:5px 7px;font-size:10px;border-radius:4px;color:#edf5e8}
+.h-kitchen-tile-name{display:flex;align-items:start;justify-content:space-between;gap:5px;font-size:14px;font-weight:560;line-height:1.3;margin-top:8px;letter-spacing:-.025em}
+.h-kitchen-tile-name svg{width:16px;height:16px;flex-shrink:0;color:#d1c493}
+.h-kitchen-tile small{font-size:10px;color:#b7c7b8;margin-top:5px}
+.h-kitchen-after{display:flex;justify-content:space-between;gap:14px;align-items:center;border-top:1px solid #c6d6c62a;padding-top:12px}
+.health3b .h-kitchen-after>button{background:transparent!important;border:0!important;color:#d5dfd3;font-size:11px;display:flex;gap:7px;align-items:center;padding:10px 2px}
+.h-kitchen-disclaimer{font-size:10px!important;color:#a7bcae!important;display:flex;align-items:flex-start;gap:7px;line-height:1.6;margin:17px 0 8px!important}
+.h-kitchen-disclaimer svg{flex-shrink:0}
+.h-kitchen-empty{text-align:center;padding:30px 5px;color:#c0d3c6}
+.h-kitchen-empty svg{margin:auto}
+.h-kitchen-empty button{border:0;background:transparent;color:#decda6;display:flex;align-items:center;margin:auto;gap:7px}
+.h-kitchen-planner{padding-bottom:10px}
+/* Recipe sheet — single active stage, no endless scrolling */
+.h-sheet.h-sheet--kitchen{max-width:680px;width:calc(100vw - 20px);max-height:95dvh;background:#0b1914;color:#f8f7f0;border:1px solid #cee2ce2e;border-radius:18px;overflow-y:auto;overscroll-behavior:contain}
+.h-sheet--kitchen>header{position:sticky;top:0;z-index:3;background:#0b1914ec;backdrop-filter:blur(12px);border-bottom:1px solid #cbe1d328}
+.h-sheet--kitchen>header h2{font-size:16px!important;font-weight:550}
+.h-sheet--kitchen>.h-sheet-body{padding:0 0 26px}
+.h-kitchen-detail-visual{height:220px;position:relative;isolation:isolate;overflow:hidden;background:#142a20}
+.h-kitchen-detail-visual img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2}
+.h-kitchen-detail-visual:after{content:'';inset:0;position:absolute;background:linear-gradient(0deg,#071912ec,#07191224 100%);z-index:-1}
+.h-kitchen-detail-visual>div{position:absolute;bottom:18px;left:23px;right:23px}
+.h-kitchen-detail-visual>div>span{font-size:9px;letter-spacing:.13em;color:#e4cca2;font-weight:750}
+.h-kitchen-detail-visual h2{font-size:clamp(27px,4vw,39px)!important;color:#fff!important;line-height:1.13;letter-spacing:-.048em;margin:7px 0 6px;font-weight:570}
+.h-kitchen-detail-visual small{font-size:11px;color:#dee8dc}
+.h-kitchen-recipe-tabs{display:flex;gap:13px;margin:0 22px 21px;border-bottom:1px solid #cadaaf25;overflow-x:auto}
+.h-sheet--kitchen .h-kitchen-recipe-tabs button{display:flex;gap:6px;align-items:center;justify-content:center;white-space:nowrap;flex:1;border:0!important;border-bottom:2px solid transparent!important;background:transparent!important;color:#b9c9ba;padding:10px 6px;min-height:49px;font-size:11px;border-radius:0}
+.h-sheet--kitchen .h-kitchen-recipe-tabs button[aria-pressed=true]{color:#f8f6ec;border-bottom-color:#ddc79e!important}
+.h-kitchen-recipe-ingredients,.h-kitchen-recipe-steps,.h-kitchen-recipe-plan,.h-kitchen-recipe-foot{padding:0 22px}
+.h-kitchen-serving{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.h-kitchen-serving>span{font-size:13px;color:#d2dfd1}
+.h-kitchen-serving>div{display:flex;align-items:center;gap:11px}
+.h-kitchen-serving strong{font-size:19px;min-width:16px;text-align:center}
+.h-sheet--kitchen .h-kitchen-serving button{background:transparent!important;color:#e6ece0;border:1px solid #d0e2c659!important;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;padding:0}
+.h-kitchen-recipe-ingredients>p{color:#b8cbb8;font-size:12px;margin:15px 0}
+.h-kitchen-ingredients-list{display:grid;grid-template-columns:1fr;gap:0;border-top:1px solid #c6e3cb24;margin-bottom:17px}
+.h-sheet--kitchen .h-kitchen-ingredients-list>button{width:100%;display:grid;grid-template-columns:20px 1fr auto;gap:12px;align-items:center;text-align:left;border:0!important;border-bottom:1px solid #c6e3cb21!important;background:none!important;color:#ecf0e7;padding:12px 0;min-height:44px;font-size:12px;border-radius:0}
+.h-kitchen-ingredients-list button[aria-pressed=true]>span:nth-child(2){color:#93af9a;text-decoration:line-through}
+.h-kitchen-ingredients-list strong{font-weight:600;white-space:nowrap;color:#e8dfc0}
+.h-kitchen-check{width:19px;height:19px;display:grid;place-items:center;border:1px solid #b8cbb5;border-radius:5px;color:#cdeace}
+.h-kitchen-recipe-ingredients button[aria-pressed=true] .h-kitchen-check{background:#1f5b43}
+.h-sheet--kitchen .h-kitchen-primary-action{display:flex;align-items:center;justify-content:center;gap:9px;min-height:45px;padding:10px 18px;color:#153626;background:#e1e2ca!important;border:0!important;border-radius:7px;font-size:12px;font-weight:650}
+.h-kitchen-recipe-steps .h-kitchen-step-count{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;color:#e4cea4;font-size:10px;letter-spacing:.12em;font-weight:700}
+.h-kitchen-step-count progress{width:100%;height:5px;border:0;border-radius:6px;overflow:hidden;background:#2c4236}
+.h-kitchen-step-count progress::-webkit-progress-bar{background:#2c4236}
+.h-kitchen-step-count progress::-webkit-progress-value{background:#dce2ba;border-radius:6px}
+.h-kitchen-recipe-steps h3{margin:28px 0 10px;font-size:25px;letter-spacing:-.035em;font-weight:550}
+.h-kitchen-recipe-steps>p{font-size:16px!important;color:#f5f5ec!important;line-height:1.75;min-height:98px}
+.h-kitchen-step-controls{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:20px 0}
+.h-sheet--kitchen .h-kitchen-step-controls>button:first-child{display:flex;gap:6px;align-items:center;background:transparent!important;color:#d6e4d7;border:0!important;padding:10px}
+.h-kitchen-step-all{font-size:12px;padding:14px 0;border-top:1px solid #d6e4d127;color:#b9cdbc}
+.h-kitchen-step-all summary{cursor:pointer;min-height:38px}
+.h-kitchen-step-all li{margin:9px 0}
+.h-kitchen-recipe-plan h3{font-size:24px;line-height:1.2}
+.h-kitchen-recipe-plan>p{font-size:13px!important}
+.h-kitchen-recipe-plan label{display:flex;flex-direction:column;gap:11px;font-size:13px;margin:22px 0}
+.h-kitchen-recipe-plan select{width:100%;min-height:48px;background:#162b20;color:#f2f5ec;border:1px solid #e5e5bd42;border-radius:6px;padding:11px}
+.h-kitchen-recipe-plan>p[role=status]{color:#c8e3c4!important;font-size:12px}
+.h-kitchen-recipe-foot{margin-top:28px;padding-top:18px;border-top:1px solid #c5d5c229}
+.h-kitchen-recipe-foot h3{font-size:17px;font-weight:550}
+.h-kitchen-recipe-foot>p{display:flex;gap:10px;font-size:12px;color:#cbdacd;line-height:1.5}
+.h-kitchen-recipe-foot>p svg{flex-shrink:0;color:#bddec4}
+.h-kitchen-recipe-foot>div{margin-top:20px;padding-top:12px;border-top:1px solid #c5d5c229}
+.h-kitchen-recipe-foot>div strong{font-size:12px}
+.h-kitchen-recipe-foot>div p{font-size:11px}
+.h-kitchen-recipe-foot details{margin-top:15px}
+.h-kitchen-recipe-foot summary{cursor:pointer;font-size:12px;min-height:40px;display:flex;align-items:center;gap:7px}
+.h-kitchen-recipe-foot details a{display:block;font-size:11px;margin:7px 0}
+@media(max-width:700px){
+.h-kitchen-heading{margin:12px 0 15px}
+.h-kitchen-heading h2{font-size:37px!important;margin:7px 0}
+.health3b .h-kitchen-hero{min-height:214px}
+.h-kitchen-hero>div{padding:18px;max-width:92%;gap:8px}
+.h-kitchen-hero strong{font-size:26px;max-width:235px}
+.health3b .h-kitchen-hero button{font-size:10px;min-height:40px}
+.h-kitchen-grid{grid-auto-columns:calc((100% - 12px)/2.15);gap:17px 12px}
+.h-kitchen-tile-name{font-size:13px}
+.h-kitchen-tile small{font-size:9px}
+.h-kitchen-collection-head{margin:15px 0 10px}
+.h-kitchen-collection-head h3{font-size:17px}
+.h-kitchen-switch{margin:11px 0}
+.h-sheet.h-sheet--kitchen{width:100vw;max-width:100vw;max-height:96dvh;margin:4dvh auto 0;border:0;border-radius:17px 17px 0 0}
+.h-sheet--kitchen>header{min-height:54px;padding:11px 16px}
+.h-kitchen-detail-visual{height:205px}
+.h-kitchen-detail-visual>div{left:19px;right:19px}
+.h-kitchen-recipe-tabs{margin:0 18px 18px;gap:5px}
+.h-kitchen-recipe-ingredients,.h-kitchen-recipe-steps,.h-kitchen-recipe-plan,.h-kitchen-recipe-foot{padding-left:18px;padding-right:18px}
+}
+@media(prefers-reduced-motion:reduce){.h-kitchen-tile-media img{transition:none}}
