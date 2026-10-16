@@ -1,4 +1,5 @@
 import { NAV_GROUPS, RouteLink } from './AppNavigation.jsx';
+import LivingWorldHome from './LivingWorldHome.jsx';
 import SectionCard from './SectionCard.jsx';
 import WorldPortalCard from './WorldPortalCard.jsx';
 import { ScanLine, ArrowUpRight, Compass } from 'lucide-react';
@@ -16,6 +17,8 @@ export default function HomePage({goTo,menuItems,member,installation}){
  })).filter(group=>group.items.length>0);
 
  return <section className="home-dashboard home-dashboard-simplified home-app-hub">
+  <LivingWorldHome goTo={goTo} menuItems={menuItems}/>
+  <details className="world3b-legacy-archive"><summary>Retrouver les expériences classiques 3B et les autres espaces</summary>
   <div className="home-entry-actions"><RouteLink page="scanner" goTo={goTo} className="home-scanner-direct"><ScanLine size={24} aria-hidden="true"/><span><strong>Ouvrir le scanner</strong><small>Faire apparaître une scène autour de toi</small></span><ArrowUpRight size={20} aria-hidden="true"/></RouteLink></div>
   <WorldPortalCard goTo={goTo}/>
   <RouteLink page="maintenant" goTo={goTo} className="threeb-now-entry"><Compass className="threeb-now-entry-icon" size={34} strokeWidth={1.4}/><span className="threeb-now-entry-copy"><small>3B MAINTENANT · NOUVEAU</small><strong>Et si ta journée commençait ici ?</strong><span>Apprendre, bouger, aider, explorer, transmettre — à ton rythme.</span></span><ArrowUpRight className="threeb-now-entry-arrow" size={25}/></RouteLink>
@@ -26,6 +29,8 @@ export default function HomePage({goTo,menuItems,member,installation}){
     <div className="universe-grid">{group.items.map(item=><SectionCard key={item.id} item={item} goTo={goTo}/>)}</div>
    </section>)}
   </section>
+
+  </details>
 
   <section className="home-guide-zone" aria-labelledby="home-software-title">
    <div><h2 id="home-software-title">Logiciels 3B</h2><p>Images en lot et outils pour créateurs.</p></div>
