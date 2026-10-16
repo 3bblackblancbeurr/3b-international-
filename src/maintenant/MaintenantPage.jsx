@@ -14,6 +14,7 @@ import {
  safeParseStorage,safeWriteStorage,nextValueState
 } from './model.js';
 import './maintenant.css';
+import './plan-polish.css';
 
 const ICONS={boussole:Compass,cercle:Orbit,coup:HeartHandshake,scanner:ScanLine,heritage:BookOpen,universel:Accessibility};
 const GOAL_ICONS={bouger:Footprints,apprendre:BookOpen,aider:HandHeart,explorer:Globe2,creer:PenLine,jouer:Gamepad2};
