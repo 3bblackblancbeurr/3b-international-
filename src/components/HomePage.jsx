@@ -1,7 +1,7 @@
 import { NAV_GROUPS, RouteLink } from './AppNavigation.jsx';
 import SectionCard from './SectionCard.jsx';
 import WorldPortalCard from './WorldPortalCard.jsx';
-import { ScanLine, ArrowUpRight } from 'lucide-react';
+import { ScanLine, ArrowUpRight, Compass } from 'lucide-react';
 import {Button} from '../design-system/index.jsx';
 
 const GUIDE_ID = 'guide';
@@ -18,6 +18,7 @@ export default function HomePage({goTo,menuItems,member,installation}){
  return <section className="home-dashboard home-dashboard-simplified home-app-hub">
   <div className="home-entry-actions"><RouteLink page="scanner" goTo={goTo} className="home-scanner-direct"><ScanLine size={24} aria-hidden="true"/><span><strong>Ouvrir le scanner</strong><small>Faire apparaître une scène autour de toi</small></span><ArrowUpRight size={20} aria-hidden="true"/></RouteLink></div>
   <WorldPortalCard goTo={goTo}/>
+  <RouteLink page="maintenant" goTo={goTo} className="threeb-now-entry"><Compass className="threeb-now-entry-icon" size={34} strokeWidth={1.4}/><span className="threeb-now-entry-copy"><small>3B MAINTENANT · NOUVEAU</small><strong>Et si ta journée commençait ici ?</strong><span>Apprendre, bouger, aider, explorer, transmettre — à ton rythme.</span></span><ArrowUpRight className="threeb-now-entry-arrow" size={25}/></RouteLink>
 
   <section className="universe-directory" aria-label="Les espaces 3B">
    {secondaryGroups.map(group=><section className="universe-group" key={group.title} aria-label={group.title}>

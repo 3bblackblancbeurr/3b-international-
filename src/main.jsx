@@ -16,7 +16,9 @@ import "./styles/home-aaa-animated.css";
 import { setupNativeApp } from './native/runtime.js';
 import { captureAppOpen } from './lib/analytics.js';
 import AppUpdateManager from "./update/AppUpdateManager.jsx";
+import { restoreReadMode } from "./maintenant/accessibility.js";
 
+restoreReadMode();
 document.documentElement.classList.add('js-app-ready');
 const nativeSetup = setupNativeApp().catch(() => () => {});
 if (import.meta.hot) import.meta.hot.dispose(() => { nativeSetup.then(dispose => dispose()); });
