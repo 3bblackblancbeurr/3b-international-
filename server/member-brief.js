@@ -24,7 +24,7 @@ function readTag(block,tag) {
 }
 function parseRss(xml,config) {
   const blocks=xml.match(/<item(?:\s[^>]*)?>[\s\S]*?<\/item>/gi)||[];
-  const dedup=new Set();const now=Date.now();const result=[];
+  const dedup=new Set(),titles=new Set();const now=Date.now();const result=[];
   for(const block of blocks) {
     const title=readTag(block,'title').slice(0,230);
     const rawLink=readTag(block,'link');
@@ -35,8 +35,10 @@ function parseRss(xml,config) {
       if(candidate.protocol!=='https:'||!config.hosts.includes(candidate.hostname))continue;
       link=candidate.href;
     }catch{continue;}
-    if(dedup.has(link))continue;
-    dedup.add(link);result.push({title,link,published:new Date(date).toISOString(),source:config.source});
+    const titleKey=title.toLocaleLowerCase('fr').replace(/\\s+/g,' ').trim();
+    if(dedup.has(link)||titles.has(titleKey))continue;
+    dedup.add(link);titles.add(titleKey);
+    result.push({title,link,published:new Date(date).toISOString(),source:config.source});
     if(result.length>=8)break;
   }
   return result;
