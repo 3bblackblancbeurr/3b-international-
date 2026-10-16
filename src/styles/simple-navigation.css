@@ -17,7 +17,7 @@
 .app-menu-search input{width:100%;min-width:0;min-height:44px;padding:var(--3b-space-3) 0;border:0;background:transparent;color:var(--3b-text);font:inherit;font-size:.9rem}
 .app-menu-search input::placeholder{color:var(--3b-muted)}
 .app-menu-categories{display:flex;flex-wrap:wrap;gap:0 var(--3b-space-3);padding:0 var(--3b-space-6);border-bottom:1px solid var(--3b-line-menu)}
-.app-menu-categories button{min-height:44px;padding:var(--3b-space-2) 0;border:0;border-bottom:2px solid transparent;border-radius:var(--3b-radius-flat);background:transparent;color:var(--3b-muted);font:inherit;font-size:.83rem;cursor:pointer}
+.app-menu-categories button{flex:0 0 auto;width:auto;min-width:max-content;white-space:nowrap;min-height:44px;padding:var(--3b-space-2) 0;border:0;border-bottom:2px solid transparent;border-radius:var(--3b-radius-flat);background:transparent;color:var(--3b-muted);font:inherit;font-size:.83rem;cursor:pointer}
 .app-menu-categories button[aria-selected="true"]{border-bottom-color:var(--3b-champagne);color:var(--3b-champagne)}
 .app-menu-content{min-height:0;overflow:auto;overscroll-behavior:contain;padding:0 var(--3b-space-6);scrollbar-width:thin;outline:none}
 .app-menu-list{display:flex;flex-direction:column}

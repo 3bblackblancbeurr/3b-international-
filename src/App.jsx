@@ -46,6 +46,8 @@ import GuidePage from "./components/GuidePage.jsx";
 import ComingSoon from "./components/ComingSoon.jsx";
 import ReligionPage from "./components/ReligionPage.jsx";
 const CommunityPage = lazy(() => import("./community/CommunityPage.jsx"));
+const MangaPage = lazy(() => import("./manga/MangaPage.jsx"));
+const EsportsPage = lazy(() => import("./esports/EsportsPage.jsx"));
 import SportPage from "./sport/SportPage.jsx";
 const WorldExperience=lazy(()=>import('./world/WorldEntry.jsx'));
 const InvisibleExperience=lazy(()=>import('./world/invisible/InvisiblePage.jsx'));
@@ -72,7 +74,6 @@ const BASE_MENU_ITEMS = [
     id: "manga",
     label: "Manga 3B",
     icon: "📖",
-    status: "soon",
     description: "Le manga de l’univers 3B.",
   },
   {
@@ -96,10 +97,9 @@ const BASE_MENU_ITEMS = [
   },
   {
     id: "games",
-    label: "Jeux 3B",
+    label: "G3B · Jeux 3B",
     icon: "🎮",
-    status: "soon",
-    description: "Les jeux de l’univers 3B.",
+    description: "Tous les jeux 3B, dont Créer ma Ville et le football.",
   },
   {
     id: "religion",
@@ -111,7 +111,6 @@ const BASE_MENU_ITEMS = [
     id: "community",
     label: "Communauté",
     icon: "👥",
-    status: "soon",
     description: "Réseau, membres, créateurs et échanges.",
   },
   {
@@ -124,14 +123,18 @@ const BASE_MENU_ITEMS = [
     id: "sport",
     label: "Espace sport 3B",
     icon: "🏆",
-    status: "soon",
     description: "Actualités multisports, défis et collaborations.",
+  },
+  {
+    id: "esports",
+    label: "16-18 e-sport",
+    icon: "🎯",
+    description: "L’équipe 16-18 de 3B ESPORTS · Warzone.",
   },
   {
     id: "ia",
     label: "Espace textile & IA",
     icon: "⚙️",
-    status: "soon",
     description: "Création textile avec l’IA.",
   },
   {
@@ -142,7 +145,7 @@ const BASE_MENU_ITEMS = [
   },
 ];
 
-const PREPARATION_ROUTE_IDS = new Set(["nosbloc", "games", "manga", "sport"]);
+const PREPARATION_ROUTE_IDS = new Set(["nosbloc"]);
 
 const CONTROL_MENU_ITEM = {
   id: "control",
@@ -354,7 +357,7 @@ export default function App() {
     </main>;
   }
 
-  const isPreparationRoute = PREPARATION_ROUTE_IDS.has(page) || page === "game";
+  const isPreparationRoute = PREPARATION_ROUTE_IDS.has(page);
 
   if (isPreparationRoute) {
     const preparationTitle = page === "game" ? "Jeux 3B" : currentPageTitle;
@@ -376,7 +379,7 @@ export default function App() {
     );
   }
 
-  const passportAllowed = new Set(["home", "passport", "member", "religion", "control", "shop", "guide", "invisible", "deals", "health"]);
+  const passportAllowed = new Set(["home", "passport", "member", "religion", "control", "shop", "guide", "invisible", "deals", "health", "games", "game", "manga", "sport", "esports", "community", "ia", "ia-textile", "ia-trio"]);
   const needsPassport = !loyalty.loading && !hasPassport && !passportAllowed.has(page);
 
   if (needsPassport) {
@@ -425,8 +428,9 @@ export default function App() {
         : <RemoteGamePage slug={gameSlug} onBack={() => goTo("games")} />)}
       {page === "religion" && <ReligionPage />}
       {page === "guide" && <GuidePage goTo={goTo} menuItems={[...BASE_MENU_ITEMS, MEMBER_MENU_ITEM]} />}
-      {page === "manga" && <ComingSoon goTo={goTo} />}
-      {page === "community" && <ComingSoon goTo={goTo} eyebrow="COMMUNAUTÉ · 3B" title="Communauté 3B" description="Profils, échanges, défis et modération sont en cours de finalisation pour ouvrir la communauté dans une version plus solide et plus claire." />}
+      {page === "manga" && <MangaPage goTo={goTo} />}
+       {page === "esports" && <EsportsPage goTo={goTo} />}
+      {page === "community" && <CommunityPage goTo={goTo} />}
       {page === "secret" && <PremierSecretPage goTo={goTo} dailySecret={secret} />}
       {page === "world3b" && <Suspense fallback={<AppLoadingState label="Ouverture du Monde 3B…" />}><WorldExperience goTo={goTo}/></Suspense>}
       {page === "invisible" && <InvisibleExperience key={loyalty.user?.id||'guest'} goTo={goTo}/>}
@@ -445,7 +449,7 @@ export default function App() {
       {page === "health" && <HealthPage />}
       {page === "deals" && <DealsPage />}
       {page === "control" && <ControlCenterPage goTo={goTo} />}
-      {["ia", "ia-textile", "ia-trio"].includes(page) && <ComingSoon goTo={goTo} eyebrow="CRÉATION · 3B" title="Espace textile & IA" description="L’atelier textile, la maroquinerie et les outils IA 3B sont en cours de finition pour une expérience mobile plus lisible et plus fiable." />}
+      {["ia", "ia-textile", "ia-trio"].includes(page) && <AiPage page={page} goTo={goTo} />}
       {page === "shop" && <ShopPage key={route.search} goTo={goTo} reducedMotion={options.reducedMotion || !options.animations} />}
       </Suspense>
       </main>

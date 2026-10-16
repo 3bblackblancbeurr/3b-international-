@@ -9,16 +9,19 @@ export const PRINCIPAL_DESTINATIONS=Object.freeze([
 export const NAV_GROUPS=Object.freeze([
  {title:'Identité & progression',ids:['passport','member','loyalty']},
  {title:'Univers 3B',ids:['world3b','invisible','secret']},
+ {title:'Jeux & compétition',ids:['games','manga','sport','esports']},
  {title:'Services & avantages',ids:['health','deals','shop','control']},
- {title:'En préparation',ids:['nosbloc','games','manga','sport','community','ia']},
+ {title:'Création & communauté',ids:['community','ia']},
+ {title:'En préparation',ids:['nosbloc']},
  {title:'Comprendre 3B',ids:['guide','religion']},
 ]);
 
 export const MENU_CATEGORIES=Object.freeze([
  {id:'principal',label:'Essentiel',ids:['home','invisible','world3b','shop','health','deals']},
- {id:'world',label:'Monde',ids:['world3b','invisible','secret','games','nosbloc','arena']},
+ {id:'world',label:'Monde',ids:['world3b','invisible','secret','nosbloc','arena']},
+ {id:'play',label:'Jeux & sport',ids:['games','sport','esports']},
  {id:'account',label:'Compte',ids:['member','passport','loyalty','control']},
- {id:'discover',label:'Repères',ids:['guide','community','manga','religion','sport','ia']},
+ {id:'discover',label:'Découvrir',ids:['guide','community','manga','religion','ia']},
  {id:'settings',label:'Réglages',ids:[]},
 ]);
 

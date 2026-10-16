@@ -1,0 +1,32 @@
+/* Rubriques rouvertes : une direction artistique 3B minimaliste, sans empilement de cadres. */
+.manga3b-open,.esports3b-open{width:min(1160px,calc(100% - 30px));margin:0 auto;padding:clamp(18px,4vw,56px) 0 90px;color:#f7f4eb}
+.manga3b-hero{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:clamp(26px,5vw,78px);align-items:center;min-height:clamp(390px,53vw,610px)}
+.manga3b-art{position:relative;aspect-ratio:4/5;max-height:600px;overflow:hidden;border-radius:3px 30px 3px 30px;background:linear-gradient(160deg,#17202f,#04080e);box-shadow:0 28px 70px #0009,0 0 0 1px #dbb66c2e}
+.manga3b-art::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#05080b20,#0313245c),linear-gradient(0deg,#05080b99,transparent 42%);pointer-events:none}
+.manga3b-art img{width:100%;height:100%;object-fit:cover;object-position:center;filter:saturate(.92) contrast(1.08)}
+.manga3b-kicker,.esports3b-kicker{display:flex;align-items:center;gap:10px;color:#dbc28f;letter-spacing:.18em;font-size:11px;font-weight:800;text-transform:uppercase}
+.manga3b-copy h1,.esports3b-content h1{font-size:clamp(45px,7vw,92px);letter-spacing:-.06em;line-height:1.01;margin:20px 0 24px;font-weight:800}
+.manga3b-copy h1 em,.esports3b-content h1 em{font-style:normal;color:#e7c88c}
+.manga3b-lead{max-width:590px;font-size:clamp(17px,2vw,21px);line-height:1.65;color:#d8dde1}
+.manga3b-meta{font-size:12px;letter-spacing:.16em;color:#98c6db;margin:28px 0}
+.manga3b-actions{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+.manga3b-primary,.manga3b-secondary,.esports3b-link{display:inline-flex;align-items:center;justify-content:center;gap:12px;min-height:49px;padding:12px 19px;border-radius:8px;text-decoration:none;font-family:inherit;font-weight:700;font-size:14px;line-height:1.3;cursor:pointer;transition:transform .2s ease,background .2s ease}
+.manga3b-primary{color:#10151a;background:#e7c88c;border:1px solid #e7c88c}
+.manga3b-secondary,.esports3b-link{color:#ebdfc2;background:transparent;border:1px solid #b7a37773}
+.manga3b-primary:hover,.manga3b-secondary:hover,.esports3b-link:hover{transform:translateY(-2px)}
+.manga3b-primary:focus-visible,.manga3b-secondary:focus-visible,.esports3b-link:focus-visible{outline:3px solid #7bd8ff;outline-offset:3px}
+.manga3b-values{display:flex;flex-wrap:wrap;gap:12px;margin:36px 0 16px;padding-top:24px;border-top:1px solid #e7c88c35}
+.manga3b-values span{padding:6px 0;margin-right:14px;color:#e5d3ad;font-size:13px;letter-spacing:.08em}
+.manga3b-note{color:#8da0af;font-size:13px;line-height:1.6}
+.esports3b-open{position:relative;min-height:min(76svh,760px);display:flex;align-items:center;justify-content:center;isolation:isolate;overflow:hidden;background:radial-gradient(ellipse at 25% 45%,#1484ab22,transparent 45%),radial-gradient(ellipse at 75% 70%,#e9b55f18,transparent 39%)}
+.esports3b-emblem{position:absolute;inset:0;z-index:-1;display:flex;align-items:center;justify-content:center;gap:clamp(6px,2vw,35px);font-weight:900;font-size:clamp(130px,26vw,365px);letter-spacing:-.12em;line-height:1;color:#d9b8750a;white-space:nowrap;user-select:none;pointer-events:none}
+.esports3b-emblem i{font-size:.65em;font-style:normal}
+.esports3b-content{text-align:center;max-width:740px;padding:50px 22px}
+.esports3b-kicker{justify-content:center}
+.esports3b-content h1{margin:18px 0}
+.esports3b-content>p:not(.esports3b-kicker):not(.esports3b-subline){margin:0 auto;max-width:550px;color:#c0d0d9;line-height:1.7;font-size:clamp(16px,1.8vw,20px)}
+.esports3b-divider{width:110px;height:2px;background:linear-gradient(90deg,transparent,#d9bd87,transparent);margin:32px auto}
+.esports3b-subline{display:flex;align-items:center;justify-content:center;gap:10px;color:#ddc79b;font-size:13px;letter-spacing:.1em}
+.esports3b-link{margin-top:24px}
+@media(max-width:730px){.manga3b-hero{grid-template-columns:1fr;gap:25px}.manga3b-art{aspect-ratio:16/10;max-height:320px}.manga3b-copy h1{font-size:clamp(42px,12vw,68px)}.esports3b-open{min-height:68svh}.esports3b-content{padding:40px 16px}}
+@media(prefers-reduced-motion:reduce){.manga3b-primary,.manga3b-secondary,.esports3b-link{transition:none;transform:none!important}}

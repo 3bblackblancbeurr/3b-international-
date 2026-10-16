@@ -41,7 +41,9 @@ test('Nosbloc is an official routed 3B space', () => {
 });
 
 test('3B MA VILLE identity is preserved as the first official Nosbloc block', () => {
-  assert.match(home, /title="Créer ma ville"/);
+  assert.doesNotMatch(home, /title="Créer ma ville"|city-essential-card/);
+  assert.match(read('../src/games/catalog.js'), /title:'Créer ma Ville'/);
+  assert.match(read('../src/games/GamesHub.jsx'), /NexusCityGateway open/);
   assert.doesNotMatch(passport, /<button\b|<Button\b|passport-portal-trigger/);
   assert.match(nosbloc, /PREMIER BLOC OFFICIEL/);
   assert.match(nosbloc, /3B MA VILLE/);

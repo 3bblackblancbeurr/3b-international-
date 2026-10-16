@@ -6,7 +6,8 @@ import {GAME_CATALOG,KEY_RACE_URL} from '../src/games/catalog.js';
 import {createStepper} from '../src/games/runtime.js';
 
 test('the library keeps Penalty Rush, DADA 3B and Power 3B visible while preserving the original key race',()=>{
- assert.deepEqual(GAME_CATALOG.map(g=>g.id),['penalty-rush','arena','tower','maze','key-race','dada3b','power3b']);
+ assert.deepEqual(GAME_CATALOG.map(g=>g.id),['penalty-rush','city3b','arena','tower','maze','key-race','dada3b','power3b']);
+ assert.equal(GAME_CATALOG.find(g=>g.id==='city3b')?.title,'Créer ma Ville');
  assert.equal(GAME_CATALOG[0].title,'PENALTY RUSH');
  assert.equal(GAME_CATALOG.find(g=>g.id==='key-race').href,KEY_RACE_URL);
  assert.equal(GAME_CATALOG.find(g=>g.id==='dada3b').title,'DADA 3B — Le Cercle des 8 Portes');
