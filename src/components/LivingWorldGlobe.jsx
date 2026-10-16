@@ -1,6 +1,7 @@
 import {worldLivingCanvasPalette} from '../design-system/tokens.js';
 import {useEffect,useRef} from 'react';
 import {WORLD_REALMS} from './world-living-data.js';
+import {clampGlobeZoom} from './world-globe-zoom.js';
 
 // 21 simplified Natural Earth/GSHHS land rings, quantized to one tenth of a degree.
 // Unlike a screenshot, this globe is projected and repainted from actual geographic outlines.
@@ -25,15 +26,17 @@ function project(lon,lat,centerLon,centerLat,cx,cy,r){
  return {x:cx+r*clat*Math.sin(lambda),y:cy-r*(slat*Math.cos(centerLat)-clat*Math.cos(lambda)*Math.sin(centerLat)),z};
 }
 
-export default function LivingWorldGlobe({selectedId='france',onSelect}){
- const ref=useRef(null),control=useRef({angle:10*RAD,lat:23*RAD,draw:()=>{},selectedId,onSelect,drag:null});
+export default function LivingWorldGlobe({selectedId='france',onSelect,zoom=1,onZoomChange}){
+ const ref=useRef(null),control=useRef({angle:10*RAD,lat:23*RAD,draw:()=>{},refresh:()=>{},selectedId,onSelect,zoom:1,onZoomChange,drag:null,pointers:new Map(),pinch:null});
  control.current.onSelect=onSelect;
+ control.current.onZoomChange=onZoomChange;
  useEffect(()=>{
   const item=WORLD_REALMS.find(r=>r.id===selectedId);
   control.current.selectedId=selectedId;
   if(item){control.current.angle=item.lon*RAD;control.current.lat=Math.max(-5,Math.min(48,item.lat*.42))*RAD;}
   control.current.draw();
  },[selectedId]);
+ useEffect(()=>{control.current.zoom=clampGlobeZoom(zoom);control.current.draw();},[zoom]);
  useEffect(()=>{
   const canvas=ref.current,ctx=canvas?.getContext('2d',{alpha:true});
   if(!ctx)return;
@@ -53,7 +56,7 @@ export default function LivingWorldGlobe({selectedId='france',onSelect}){
    draw();
   }
   function draw(){
-   const size=width,cx=size/2,cy=size/2,r=size*.431;
+   const size=width,cx=size/2,cy=size/2,r=size*.431*state.zoom;
    ctx.clearRect(0,0,size,size);
    const halo=ctx.createRadialGradient(cx,cy,r*.4,cx,cy,r*1.15);
    halo.addColorStop(0,'rgba(44,149,245,.02)');halo.addColorStop(.78,'rgba(34,134,255,.045)');halo.addColorStop(.96,'rgba(54,171,255,.35)');halo.addColorStop(1,'rgba(52,159,255,0)');
@@ -107,45 +110,89 @@ export default function LivingWorldGlobe({selectedId='france',onSelect}){
    ctx.strokeStyle='rgba(255,204,118,.8)';ctx.lineWidth=2.4;ctx.stroke();
   }
   state.draw=draw;
+  const canAnimate=()=>active&&visible&&!menuOpen&&!document.hidden&&!reduced()&&!state.drag&&!state.pinch;
   function tick(time){
-   if(!active)return;
-   if(visible&&!menuOpen&&!document.hidden&&!reduced()&&!state.drag&&time-last>frameInterval()){
+   raf=0;if(!canAnimate())return;
+   if(time-last>frameInterval()){
     state.angle+=.000008*Math.min(70,time-last||34);
     draw();last=time;
    }
-   raf=requestAnimationFrame(tick);
+   schedule();
   }
-  const onVisibility=()=>{if(!document.hidden)draw();};
-  const onMenu=event=>{menuOpen=!!event.detail?.open;if(!menuOpen)draw();};
-  const observer=typeof IntersectionObserver!=='undefined'?new IntersectionObserver(entries=>{visible=!!entries[0]?.isIntersecting;if(visible)draw();},{threshold:.05}):null;
+  function schedule(){if(canAnimate()&&!raf)raf=requestAnimationFrame(tick);}
+  function refresh(){if(canAnimate())schedule();else if(raf){cancelAnimationFrame(raf);raf=0;}}
+  state.refresh=refresh;
+  const onVisibility=()=>{if(!document.hidden)draw();refresh();};
+  const onMenu=event=>{menuOpen=!!event.detail?.open;if(!menuOpen)draw();refresh();};
+  const onMedia=()=>{draw();refresh();};
+  const observer=typeof IntersectionObserver!=='undefined'?new IntersectionObserver(entries=>{visible=!!entries[0]?.isIntersecting;if(visible)draw();refresh();},{threshold:.05}):null;
   observer?.observe(canvas);
+  const motionObserver=typeof MutationObserver!=='undefined'?new MutationObserver(onMedia):null;
+  motionObserver?.observe(document.documentElement,{attributes:true,attributeFilter:['data-motion']});
+  media?.addEventListener?.('change',onMedia);
   const resizeObserver=typeof ResizeObserver!=='undefined'?new ResizeObserver(resize):null;
-  resizeObserver?.observe(canvas);
+  resizeObserver?.observe(canvas.parentElement||canvas);
   window.addEventListener('resize',resize);
   window.addEventListener('threeb:app-menu-state',onMenu);
   document.addEventListener('visibilitychange',onVisibility);
-  resize();raf=requestAnimationFrame(tick);
-  return()=>{active=false;cancelAnimationFrame(raf);observer?.disconnect();resizeObserver?.disconnect();window.removeEventListener('resize',resize);window.removeEventListener('threeb:app-menu-state',onMenu);document.removeEventListener('visibilitychange',onVisibility);state.draw=()=>{};};
- },[]);
+  resize();refresh();
+  return()=>{active=false;if(raf)cancelAnimationFrame(raf);observer?.disconnect();motionObserver?.disconnect();media?.removeEventListener?.('change',onMedia);resizeObserver?.disconnect();window.removeEventListener('resize',resize);window.removeEventListener('threeb:app-menu-state',onMenu);document.removeEventListener('visibilitychange',onVisibility);state.draw=()=>{};state.refresh=()=>{};}; },[]);
  function onPointerDown(event){
-  if(event.button!==0)return;
-  control.current.drag={x:event.clientX,y:event.clientY,origX:event.clientX,origY:event.clientY};
+  if(event.pointerType==='mouse'&&event.button!==0)return;
+  const state=control.current;
+  state.pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
   event.currentTarget.setPointerCapture?.(event.pointerId);
+  if(state.pointers.size===1)state.drag={pointerId:event.pointerId,x:event.clientX,y:event.clientY,origX:event.clientX,origY:event.clientY};
+  else if(state.pointers.size===2){
+   const [a,b]=[...state.pointers.values()];
+   state.pinch={distance:Math.max(1,Math.hypot(a.x-b.x,a.y-b.y)),zoom:state.zoom};
+   state.drag=null;
+  }
+  state.refresh();
  }
  function onPointerMove(event){
-  const d=control.current.drag;if(!d)return;
-  control.current.angle-=(event.clientX-d.x)*.009;
-  control.current.lat=Math.max(-.8,Math.min(1.1,control.current.lat+(event.clientY-d.y)*.004));
-  d.x=event.clientX;d.y=event.clientY;control.current.draw();
+  const state=control.current;
+  if(!state.pointers.has(event.pointerId))return;
+  state.pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
+  if(state.pinch&&state.pointers.size>=2){
+   const [a,b]=[...state.pointers.values()];
+   const distance=Math.max(1,Math.hypot(a.x-b.x,a.y-b.y));
+   const next=clampGlobeZoom(state.pinch.zoom*distance/state.pinch.distance);
+   if(next!==state.zoom){state.zoom=next;state.onZoomChange?.(next);state.draw();}
+   return;
+  }
+  const d=state.drag;if(!d||d.pointerId!==event.pointerId)return;
+  state.angle-=(event.clientX-d.x)*.009;
+  state.lat=Math.max(-.8,Math.min(1.1,state.lat+(event.clientY-d.y)*.004));
+  d.x=event.clientX;d.y=event.clientY;state.draw();
  }
  function onPointerUp(event){
-  const d=control.current.drag;control.current.drag=null;if(!d)return;
-  if(Math.hypot(event.clientX-d.origX,event.clientY-d.origY)>12)return;
-  const rect=event.currentTarget.getBoundingClientRect(),size=rect.width,cx=size/2,cy=rect.height/2,r=size*.431;
+  const state=control.current,d=state.drag,wasPinching=!!state.pinch;
+  state.pointers.delete(event.pointerId);state.drag=null;
+  if(wasPinching){
+   state.pinch=null;
+   if(state.pointers.size===1){
+    const [id,pt]=state.pointers.entries().next().value;
+    state.drag={pointerId:id,x:pt.x,y:pt.y,origX:pt.x,origY:pt.y};
+   }
+   state.refresh();return;
+  }
+  state.refresh();
+  if(!d||d.pointerId!==event.pointerId||Math.hypot(event.clientX-d.origX,event.clientY-d.origY)>12)return;
+  const rect=event.currentTarget.getBoundingClientRect(),size=rect.width,cx=size/2,cy=rect.height/2,r=size*.431*state.zoom;
   const x=event.clientX-rect.left,y=event.clientY-rect.top;
-  const hits=WORLD_REALMS.map(item=>({...item,...project(item.lon,item.lat,control.current.angle,control.current.lat,cx,cy,r)})).filter(p=>p.z>.02);
+  const hits=WORLD_REALMS.map(item=>({...item,...project(item.lon,item.lat,state.angle,state.lat,cx,cy,r)})).filter(p=>p.z>.02);
   const hit=hits.sort((a,b)=>Math.hypot(x-a.x,y-a.y)-Math.hypot(x-b.x,y-b.y))[0];
-  if(hit&&Math.hypot(x-hit.x,y-hit.y)<26)control.current.onSelect?.(hit.id);
+  if(hit&&Math.hypot(x-hit.x,y-hit.y)<26)state.onSelect?.(hit.id);
+ }
+ function onPointerCancel(event){
+  const state=control.current;state.pointers.delete(event.pointerId);state.drag=null;state.pinch=null;state.refresh();
+ }
+ function onWheel(event){
+  if(!event.ctrlKey)return; // Normal page scrolling is never trapped.
+  event.preventDefault();
+  const state=control.current,next=clampGlobeZoom(state.zoom+(event.deltaY<0?.1:-.1));
+  if(next!==state.zoom){state.zoom=next;state.onZoomChange?.(next);state.draw();}
  }
  function onKeyDown(event){
   const state=control.current;
@@ -153,11 +200,15 @@ export default function LivingWorldGlobe({selectedId='france',onSelect}){
    event.preventDefault();state.angle+=(event.key==='ArrowLeft'?-1:1)*.22;state.draw();
   }else if(event.key==='ArrowUp'||event.key==='ArrowDown'){
    event.preventDefault();state.lat=Math.max(-.8,Math.min(1.1,state.lat+(event.key==='ArrowUp'?1:-1)*.12));state.draw();
+  }else if(event.key==='+'||event.key==='='){
+   event.preventDefault();state.zoom=clampGlobeZoom(state.zoom+.1);state.onZoomChange?.(state.zoom);state.draw();
+  }else if(event.key==='-'){
+   event.preventDefault();state.zoom=clampGlobeZoom(state.zoom-.1);state.onZoomChange?.(state.zoom);state.draw();
   }else if(event.key==='Home'){
    event.preventDefault();state.angle=10*Math.PI/180;state.lat=23*Math.PI/180;state.draw();
   }
  }
  return <canvas ref={ref} className="world-living-globe-canvas" width="480" height="480"
   aria-label="Globe interactif des huit royaumes du Monde du 3B. Glissez pour le faire tourner, utilisez les flèches ou choisissez un pays dans la liste."
-  role="img" tabIndex={0} onKeyDown={onKeyDown} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={()=>{control.current.drag=null;}}/>;
+  role="img" tabIndex={0} onKeyDown={onKeyDown} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerCancel} onWheel={onWheel}/>;
 }
