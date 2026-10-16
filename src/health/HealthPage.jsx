@@ -5,6 +5,7 @@ import { FOODS, GUIDES, RECIPES, SOURCES, HEALTH_NOTES } from './content.js';
 import { boundedNumber, displayNumber, localDay, previousDays, searchText, shoppingList, sleepDuration } from './model.js';
 import { useHealth, useToday } from './useHealth.js';
 import './health.css';
+import './health-mobile-master.css';
 import FOOD_PHOTOS from './foodPhotos.js';
 import { EnergyCheckIn, HealthHistory, HealthReminders, NativeStepsPanel } from './HealthInsights.jsx';
 import { NutritionAtlas, NutritionDetail } from './NutritionAtlas.jsx';
