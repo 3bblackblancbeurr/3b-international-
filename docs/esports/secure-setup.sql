@@ -8,7 +8,7 @@ create table if not exists public.esports_staff (
 );
 alter table public.esports_staff enable row level security;
 revoke all on public.esports_staff from anon,authenticated;
-grant select on public.esports_staff to authenticated;
+grant select on public.esports_staff to anon,authenticated;
 create policy "esports staff may read own role"
   on public.esports_staff for select to authenticated using (user_id=(select auth.uid()));
 
