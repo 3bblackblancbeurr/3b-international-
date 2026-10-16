@@ -6,6 +6,7 @@ import {MEMBER_SPACES, COUNTRY_INDEX, ADMIN_GUIDES, CINEMA_GUIDES, FINANCE_GUIDE
 import {fetchFoodProduct} from '../server/food-product.js';
 import {fetchMemberBrief} from '../server/member-brief.js';
 import {fetchOfficialDirectory,validLocality,cleanOfficialRecord} from '../server/official-directory.js';
+import {fetchFrenchPublicEvents,parseFrenchPublicEvents} from '../server/french-public-events.js';
 import catalog from '../api/catalog.js';
 import foodApi from '../api/food-product.js';
 import pwaAuditRoute from '../server/pwa-audit-route.js';
@@ -97,9 +98,39 @@ test('food API returns a nutrition card but no personal member data',async()=>{
   }finally{globalThis.fetch=previous;}
 });
 
+
+test('French cultural events filter expired and unsafe notices without inventing dates',()=>{
+ const old='<item><title>Old</title><link>https://openagenda.com/culture/events/old</link><ev:startdate>2026-10-01T09:30:00</ev:startdate></item>';
+ const valid='<item><title>Festival &amp; patrimoine</title><link>https://openagenda.com/culture/events/festival-2026</link><ev:startdate>2026-10-20T10:30:00</ev:startdate><ev:enddate>2026-10-20T19:00:00</ev:enddate><ev:location>Lyon, France</ev:location><pubDate>Fri, 16 Oct 2026 13:00:00 GMT</pubDate></item>';
+ const evil='<item><title>Malicious</title><link>https://bad.example/festival</link><ev:startdate>2026-10-20T10:30:00</ev:startdate></item>';
+ const items=parseFrenchPublicEvents('<rss><channel>'+old+valid+evil+'</channel></rss>',new Date('2026-10-16T15:00:00Z'));
+ assert.equal(items.length,1);
+ assert.equal(items[0].title,'Festival & patrimoine');
+ assert.equal(items[0].starts_local,'2026-10-20T10:30:00');
+ assert.equal(items[0].location,'Lyon, France');
+ assert.equal(items[0].source,'Ministère de la Culture · OpenAgenda');
+});
+test('real event API path uses a single allowlisted open data source',async()=>{
+ const previous=globalThis.fetch,received=[];
+ try{
+  globalThis.fetch=async u=>{
+   received.push(String(u));
+   return new Response('<rss><item><title>Concert</title><link>https://openagenda.com/culture/events/concert</link><ev:startdate>2099-01-02T10:00:00</ev:startdate></item></rss>',{status:200,headers:{'Content-Type':'application/rss+xml'}});
+  };
+  const result=await catalog.fetch(new Request('https://3b.example/api/catalog?__3b_route=member-events'));
+  const payload=await result.json();
+  assert.equal(result.status,200);
+  assert.equal(payload.items.length,1);
+  assert.equal(new URL(received[0]).hostname,'openagenda.com');
+  assert.match(received[0],/events\.v2\.rss/);
+  assert.equal(payload.license,'Licence Ouverte 2.0');
+  assert.ok(!JSON.stringify(payload).includes('user_id'));
+ }finally{globalThis.fetch=previous;}
+});
+
 test('member services share the original Vercel catalog router and do not require paid functions',()=>{
   const config=JSON.parse(readFileSync(new URL('../vercel.json',import.meta.url),'utf8'));
-  const items=['member-brief','pwa-audit'];
+  const items=['member-brief','member-events','official-directory','pwa-audit'];
   for(const id of items){
     assert.ok(config.rewrites.some(x=>x.source==='/api/'+id&&x.destination===(id==='pwa-audit'?'/api/pwa-quickkit-status?__3b_route=pwa-audit':'/api/catalog?__3b_route='+id)));
   }
