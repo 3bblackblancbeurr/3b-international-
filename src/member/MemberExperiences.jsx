@@ -2,6 +2,8 @@ import React, {useEffect, useMemo, useState} from 'react';
 import {ArrowRight, ArrowUpRight, CalendarDays, Clapperboard, Compass, FileText, Film, Globe2, Handshake, HeartHandshake, Landmark, LockKeyhole, Mail, MapPin, Newspaper, Plane, Radio, RefreshCw, ShieldCheck, Sparkles, Star, UsersRound, WalletCards} from 'lucide-react';
 import {MEMBER_SPACES, COUNTRY_INDEX, CONTACT_EMAIL, contactHref, countryFor, countryNewsHref, countryEventsHref, ADMIN_GUIDES, CINEMA_GUIDES, FINANCE_GUIDES, OPPORTUNITIES} from './memberSources.js';
 import './member-experiences.css';
+const OfficialDirectory = React.lazy(() => import('./OfficialDirectory.jsx'));
+
 
 const ICONS = {wallet: WalletCards, globe:Globe2, heart:HeartHandshake, handshake:Handshake, landmark:Landmark, plane:Plane, users:UsersRound, tv:Clapperboard, file:FileText, film:Film};
 const FAVORITES_KEY = 'threeb_member_spaces_favorites_v1';
@@ -167,6 +169,7 @@ export default function MemberExperiences({goTo,profile}) {
         {active==='admin'&&<>
           <SectionIntro eyebrow="DES SERVICES QUI EXISTENT" title="Le bon chemin pour chaque démarche.">Logement, emploi, santé, identité, impôts, entreprise, justice et Europe. 3B te conduit vers les organismes officiels : ne communique jamais tes identifiants administratifs à une imitation de site.</SectionIntro>
           <SourceRows rows={ADMIN_GUIDES}/>
+          <React.Suspense fallback={<p className="mx-status" role="status">Ouverture de l’annuaire public…</p>}><OfficialDirectory/></React.Suspense>
           <p className="mx-honesty"><ShieldCheck size={16}/> Aucun dossier personnel n’est copié ou conservé dans cette rubrique. Les démarches s’effectuent sur les sites officiels.</p>
         </>}
 
