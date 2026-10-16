@@ -19,7 +19,7 @@ test('home hides technical status cards and keeps the ecosystem guide at the bot
  const guide=home.lastIndexOf('Le guide 3B');
  assert.ok(guide>home.indexOf('secondaryGroups.map'));
  assert.deepEqual(NAV_GROUPS.find(group=>group.title==='Identité & progression').ids,['passport','member']);
- assert.match(account,/<MemberExperiences goTo=\\{goTo\\} profile=\\{profile\\}\\/>/);
+ assert.ok(account.includes('<MemberExperiences goTo={goTo} profile={profile}/>'));
  assert.match(app,/page === "loyalty" && <LoyaltyPage/);
  assert.deepEqual(NAV_GROUPS.find(group=>group.title==='Univers 3B').ids,['world3b','invisible','secret']);
  assert.doesNotMatch(home,/<InstallCards|dashboard-footer/);
