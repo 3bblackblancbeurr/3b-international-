@@ -65,7 +65,7 @@ function WorldBrief({country, onCountryChange, mode, setMode}) {
       {!!items.length&&<div className="mx-news-feed">{items.map(item=><a key={item.link} href={item.link} target="_blank" rel="noopener noreferrer"><span><small>{item.source} · {formatPublished(item.published)}</small><strong>{item.title}</strong></span><ArrowUpRight size={18}/></a>)}</div>}
       <SourceLink primary href={countryNewsHref(country)}>Actualités de {chosen[1]} sur Google Actualités</SourceLink>
     </>:<>
-      <SectionIntro eyebrow="SORTIES, RENCONTRES, CULTURE" title={'Que se passe-t-il en '+(country==='FR'?'France':''+chosen[1]+' ?')}>Consulte les agendas directement à la source : les dates et les lieux doivent être confirmés par l’organisateur. Aucun événement inventé ni ancienne affiche présentée comme actuelle.</SectionIntro>
+      <SectionIntro eyebrow="SORTIES, RENCONTRES, CULTURE" title={'Que se passe-t-il en '+(country==='FR'?'France':' '+chosen[1])+' ?'}>Consulte les agendas directement à la source : les dates et les lieux doivent être confirmés par l’organisateur. Aucun événement inventé ni ancienne affiche présentée comme actuelle.</SectionIntro>
       <SourceLink primary href={countryEventsHref(country)}>{country==='FR'?'Explorer les agendas OpenAgenda':'Chercher des événements dans le pays'}</SourceLink>
       {country==='FR'&&<p className="mx-honesty">OpenAgenda : calendrier public externe. Son API intégrée demande une clé, elle n’est pas activée ici.</p>}
     </>}
