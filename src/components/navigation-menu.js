@@ -11,13 +11,17 @@ export const NAV_GROUPS=Object.freeze([
  {title:'Univers 3B',ids:['world3b','invisible','secret']},
  {title:'Jeux & compétition',ids:['games','manga','sport','esports']},
  {title:'Services & avantages',ids:['health','deals','shop','control']},
+ {title:'Informations & quotidien',ids:['news','foodscan','finance','travel','admin','cinema']},
+ {title:'Association & opportunités',ids:['association','partners','join','tv']},
  {title:'Création & communauté',ids:['community','ia']},
  {title:'En préparation',ids:['nosbloc']},
  {title:'Comprendre 3B',ids:['guide','religion']},
 ]);
 
 export const MENU_CATEGORIES=Object.freeze([
- {id:'principal',label:'Essentiel',ids:['home','maintenant','invisible','world3b','shop','health','deals']},
+ {id:'principal',label:'Essentiel',ids:['home','maintenant','invisible','world3b','shop','health','foodscan','news','deals']},
+ {id:'services',label:'Vie & services',ids:['news','foodscan','finance','travel','admin','cinema']},
+ {id:'together',label:'Ensemble',ids:['association','partners','join','tv','community']},
  {id:'world',label:'Monde',ids:['world3b','invisible','secret','nosbloc','arena']},
  {id:'play',label:'Jeux & sport',ids:['games','sport','esports']},
  {id:'account',label:'Compte',ids:['member','passport','control']},
