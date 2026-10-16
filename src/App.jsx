@@ -97,7 +97,7 @@ const BASE_MENU_ITEMS = [
   },
   {
     id: "games",
-    label: "G3B · Jeux 3B",
+    label: "Jeux 3B",
     icon: "🎮",
     description: "Tous les jeux 3B, dont Créer ma Ville et le football.",
   },
