@@ -131,7 +131,6 @@ export default function HealthPage() {
       <div className="h-week-summary"><div className="h-section-heading"><h2>Tes 7 derniers jours</h2><HealthButton variant="health" className="h-link" onClick={()=>setSheet({type:'journal'})}>Compléter <ChevronRight size={16}/></HealthButton></div><div className="h-week-bars">{previousDays().map(d=>{const minutes=health.data.days[d]?.activeMinutes;return <div key={d}><strong>{minutes==null?'—':`${minutes}′`}</strong><div><span style={{height:minutes==null?'0%':`${Math.min(100,minutes/60*100)}%`}}/></div><small>{new Intl.DateTimeFormat('fr-FR',{weekday:'short'}).format(new Date(d+'T12:00:00'))}</small></div>;})}</div><p>Minutes d’activité déclarées. Une case vide signifie « non renseigné ».</p></div></details>
     </>}
      {tab==='food'&&<>
-       <p className="h-eyebrow">NUTRITION 3B · UN ALIMENT À LA FOIS</p>
        <PillTabs label="Manger" value={foodTab} onChange={id=>{setFoodTab(id);setQuery('');}} options={[{id:'foods',label:'Fruits & légumes'},{id:'recipes',label:'Repas'},{id:'plan',label:'Ma semaine'}]}/>
        {foodTab==='foods'?<NutritionAtlas foods={FOODS} favorites={health.data.favorites} onOpen={item=>open(item,'food')}/> : foodTab==='plan'?<MealPlanner health={health} onOpen={open}/> : <>
          <div className="h-section-heading"><h2>Des repas simples, à ton rythme.</h2></div>
