@@ -177,6 +177,9 @@
  .world3b-albert-orb{width:64px;height:64px}
  .world3b-albert-open{grid-column:2;justify-self:start}
 }
+@media(max-width:720px) and (pointer:coarse){
+ .world-living-globe-canvas{filter:none}
+}
 @media(max-width:720px){
  .world3b-home,.albert3b-experience{padding:14px 12px 45px}
  .world3b-brand{font-size:29px}
