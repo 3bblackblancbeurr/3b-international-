@@ -8,13 +8,13 @@
 | Routines au réveil / avant le repos et énergie ressentie | Oui | Oui |
 | Historique 7 / 30 / 90 jours, export et suppression | Oui | Oui |
 | Rappels | Fichier calendrier, import volontaire, 30 occurrences | Notifications locales facultatives |
-| Pas automatiques du téléphone | Non ; estimation expérimentale distincte | Health Connect ou HealthKit, lecture seule après autorisation |
+| Pas automatiques du téléphone | Pas système indisponibles ; aucune saisie manuelle ni estimation affichée | Health Connect ou HealthKit, lecture seule après autorisation, rafraîchissement automatique quand Santé est visible |
 
 La livraison web ne met pas à jour le binaire mobile. La distribution Android/iOS nécessite une version native nouvellement construite et installée. Les essais physiques et la signature de distribution ne sont pas remplacés par les tests de contrats, les simulations du pont JavaScript ou une compilation de simulateur.
 
 ## Données et fiabilité
 
-- La clé de journal v1 est conservée : aucune migration destructive des anciennes saisies.
+- La clé de journal v1 est conservée. Les anciens champs de pas manuels/estimés sont normalisés à `null` et ne participent plus à aucun total.
 - La sauvegarde locale reste volontaire. Sans consentement de sauvegarde, les données du journal restent en mémoire pendant la visite.
 - Les jours sans mesure restent absents ; zéro est une mesure valide. Les pas de différentes sources ne sont jamais additionnés.
 - Les pas importés sont un instantané des 30 derniers jours calendaires locaux ; le journal personnel couvre jusqu’à 90 jours. Une lecture complète remplace l’ancien instantané importé. Un échec conserve la dernière lecture et sa date visible.
