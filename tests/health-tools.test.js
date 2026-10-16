@@ -5,19 +5,19 @@ import { blankHealth, effectiveSteps, historyValue, mergeNativeSteps, normalizeH
 import { normalizeReminders, reminderCalendar, validReminderTime } from '../src/health/reminders.js';
 const now=new Date('2026-10-15T12:00:00Z'),date='2026-10-15',stamp=now.toISOString();
 
-test('old journals migrate without losing existing values and default every new opt-in to off',()=>{
+test('old journals keep non-step values while retired manual steps are cleared',()=>{
   const result=normalizeHealth({version:1,days:{[date]:{steps:2100,sleepHours:7.5}},favorites:['pomme']},now);
-  assert.equal(result.nativeEnabled,false);assert.equal(result.days[date].steps,2100);assert.equal(result.days[date].energy,null);assert.deepEqual(result.days[date].routines,[]);assert.deepEqual(result.favorites,['pomme']);
+  assert.equal(result.nativeEnabled,false);assert.equal(result.days[date].steps,null);assert.equal(result.days[date].sleepHours,7.5);assert.equal(result.days[date].energy,null);assert.deepEqual(result.days[date].routines,[]);assert.deepEqual(result.favorites,['pomme']);
 });
 test('energy and routine inputs reject invalid scores and unknown routine IDs',()=>{
   for(const energy of [0,6,1.5,'4',true,[],NaN])assert.equal(normalizeHealth({...blankHealth(),days:{[date]:{energy}}},now).days[date].energy,null);
   const day=normalizeHealth({...blankHealth(),days:{[date]:{energy:4,routines:['wake-move','wake-move','bad',null,'rest-care']}}},now).days[date];assert.equal(day.energy,4);assert.deepEqual(day.routines,['wake-move','rest-care']);
 });
-test('native totals replace snapshots and never sum manual, estimate, phone or watch counts',()=>{
+test('native totals are the only step source and disconnect leaves no fallback count',()=>{
   const data={...blankHealth(),days:{[date]:{steps:1200,estimatedSteps:40},'2026-10-14':{nativeSteps:{steps:999,source:'apple-health',syncedAt:stamp}}}};
   const result=mergeNativeSteps(data,{source:'health-connect',syncedAt:stamp,days:[{date,steps:1000},{date:'2026-10-14',steps:null}]},now);
-  assert.equal(effectiveSteps(result.days[date]).value,1000);assert.equal(result.days[date].steps,1200);assert.equal(result.days[date].estimatedSteps,40);assert.equal(result.days['2026-10-14'].nativeSteps,null);assert.equal(result.nativeEnabled,true);
-  const cleared=withoutNativeSteps(result);assert.equal(effectiveSteps(cleared.days[date]).value,1200);assert.equal(cleared.nativeEnabled,false);
+  assert.equal(effectiveSteps(result.days[date]).value,1000);assert.equal(result.days[date].steps,null);assert.equal(result.days[date].estimatedSteps,null);assert.equal(result.days['2026-10-14'].nativeSteps,null);assert.equal(result.nativeEnabled,true);
+  const cleared=withoutNativeSteps(result);assert.equal(effectiveSteps(cleared.days[date]).value,null);assert.equal(cleared.nativeEnabled,false);
 });
 test('missing native data is not zero; real zero is retained and foreign sources are rejected',()=>{
   for(const steps of [null,undefined,'5',false,-1,1.5,Infinity]){const result=mergeNativeSteps(blankHealth(),{source:'apple-health',syncedAt:stamp,days:[{date,steps}]},now);assert.equal(effectiveSteps(result.days[date]).value,null);}
