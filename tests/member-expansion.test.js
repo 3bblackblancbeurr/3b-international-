@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {validFoodBarcode} from '../src/health/foodBarcode.js';
+import {allergenLabel} from '../src/health/allergenLabels.js';
 import {MEMBER_SPACES, COUNTRY_INDEX, ADMIN_GUIDES, CINEMA_GUIDES, FINANCE_GUIDES, countryEventsHref,countryNewsHref,countryFor,contactHref} from '../src/member/memberSources.js';
 import {fetchFoodProduct} from '../server/food-product.js';
 import {fetchMemberBrief} from '../server/member-brief.js';
@@ -32,6 +33,13 @@ test('scanner validates common GTIN-13 check digits',()=>{
   assert.equal(validFoodBarcode('12345678901'),false);
   assert.equal(validFoodBarcode(''),false);
   assert.equal(validFoodBarcode('123456789012345'),false);
+});
+
+test('food allergen terms are localized without changing the original taxonomy',()=>{
+ assert.equal(allergenLabel('en:milk'),'lait');
+ assert.equal(allergenLabel('en:nuts'),'fruits à coque');
+ assert.equal(allergenLabel('en:soybeans'),'soja');
+ assert.equal(allergenLabel('en:unknown-ingredient'),'unknown ingredient');
 });
 
 test('food lookup rejects invalid routes and unsafe barcodes without network access',async()=>{
