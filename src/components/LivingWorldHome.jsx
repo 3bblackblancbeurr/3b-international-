@@ -1,3 +1,4 @@
+import {Button} from '../design-system/index.jsx';
 import {useEffect,useMemo,useState} from 'react';
 import {ArrowDown,ArrowRight,BadgePercent,BookImage,BookOpen,ChevronLeft,ChevronRight,Clapperboard,Compass,CreditCard,Eye,FileText,Gamepad2,Globe2,HandHeart,Handshake,Headphones,HeartPulse,IdCard,Landmark,MapPin,Newspaper,Plane,Search,ShieldCheck,ShoppingBag,Sparkles,Star,Trophy,UserRound,Users,X} from 'lucide-react';
 import {RouteLink} from './AppNavigation.jsx';
@@ -71,14 +72,14 @@ export default function LivingWorldHome({goTo,menuItems=[]}){
     <div className="world3b-globe-caption"><span>8 ROYAUMES</span><span>22 UNIVERS</span></div>
    </div>
    <div className="world3b-realm-selector">
-    <button type="button" onClick={()=>stepRealm(-1)} aria-label="Royaume précédent"><ChevronLeft size={20}/></button>
+    <Button variant="ghost" type="button" onClick={()=>stepRealm(-1)} aria-label="Royaume précédent"><ChevronLeft size={20}/></Button>
     <div aria-live="polite" className="world3b-realm-current"><span>{realm.flag} {realm.name}</span><small>{realm.value} · {realm.guardian}</small></div>
-    <button type="button" onClick={()=>stepRealm(1)} aria-label="Royaume suivant"><ChevronRight size={20}/></button>
+    <Button variant="ghost" type="button" onClick={()=>stepRealm(1)} aria-label="Royaume suivant"><ChevronRight size={20}/></Button>
    </div>
-   <div className="world3b-hero-bottom"><p>Tourne la planète ou touche un royaume</p><button type="button" onClick={()=>document.getElementById('world3b-modules')?.scrollIntoView({behavior:'smooth',block:'start'})}>Découvrir les 22 univers <ArrowDown size={16}/></button></div>
+   <div className="world3b-hero-bottom"><p>Tourne la planète ou touche un royaume</p><Button variant="ghost" type="button" onClick={()=>document.getElementById('world3b-modules')?.scrollIntoView({behavior:'smooth',block:'start'})}>Découvrir les 22 univers <ArrowDown size={16}/></Button></div>
   </div>
   <nav className="world3b-tabs" aria-label="Explorer la carte mondiale">
-   {TABS.map(({id,label,Icon})=><button type="button" key={id} className={tab===id?'is-active':''} aria-current={tab===id?'page':undefined} onClick={()=>setTab(id)}><Icon size={18}/>{label}</button>)}
+   {TABS.map(({id,label,Icon})=><Button variant="ghost" type="button" key={id} className={tab===id?'is-active':''} aria-current={tab===id?'page':undefined} onClick={()=>setTab(id)}><Icon size={18}/>{label}</Button>)}
   </nav>
   <section className="world3b-active-view" aria-label="Section sélectionnée">
    <div className="world3b-active-copy"><span className="world3b-eyebrow">{copy.eyebrow}</span><h2>{copy.title}</h2><p>{copy.description}</p></div>
@@ -89,21 +90,21 @@ export default function LivingWorldHome({goTo,menuItems=[]}){
   <section className="world3b-country-section" aria-labelledby="world3b-country-title">
    <div className="world3b-section-title"><div><span className="world3b-eyebrow">LES HUIT HÉRITAGES</span><h2 id="world3b-country-title">Royaumes à découvrir</h2></div><span className="world3b-subtle">Univers du Monde 3B</span></div>
    <div className="world3b-country-rail">
-    {WORLD_REALMS.map(item=><button key={item.id} type="button" aria-pressed={activeRealm===item.id} onClick={()=>{setActiveRealm(item.id);setTab('realms');}} className={'world3b-country-card'+(activeRealm===item.id?' is-selected':'')}>
+    {WORLD_REALMS.map(item=><Button variant="ghost" key={item.id} type="button" aria-pressed={activeRealm===item.id} onClick={()=>{setActiveRealm(item.id);setTab('realms');}} className={'world3b-country-card'+(activeRealm===item.id?' is-selected':'')}>
       <span className="world3b-country-flag" aria-hidden="true">{item.flag}</span>
       <span className="world3b-country-name">{item.name}</span>
       <small>{item.value} · {item.guardian}</small>
       <MapPin size={15} aria-hidden="true"/>
-    </button>)}
+    </Button>)}
    </div>
    <p className="world3b-clarity"><ShieldCheck size={15}/> Ces pays représentent les royaumes narratifs de 3B. Ils ne désignent pas des locaux ou des hubs physiques officiellement ouverts.</p>
   </section>
   <section className="world3b-module-section" id="world3b-modules" aria-labelledby="world3b-modules-title">
    <div className="world3b-section-title"><div><span className="world3b-eyebrow">UN SEUL UNIVERS · DES ACCÈS RÉELS</span><h2 id="world3b-modules-title">Les 22 univers 3B</h2></div><span className="world3b-count">22</span></div>
-   <div className="world3b-searchbar"><Search size={21} aria-hidden="true"/><label htmlFor="world3b-search" className="visually-hidden">Rechercher une rubrique 3B</label><input id="world3b-search" value={query} onChange={event=>setQuery(event.target.value)} placeholder="Rechercher un univers, un service…" autoComplete="off"/>{query&&<button type="button" onClick={()=>setQuery('')} aria-label="Effacer la recherche"><X size={19}/></button>}</div>
+   <div className="world3b-searchbar"><Search size={21} aria-hidden="true"/><label htmlFor="world3b-search" className="visually-hidden">Rechercher une rubrique 3B</label><input id="world3b-search" value={query} onChange={event=>setQuery(event.target.value)} placeholder="Rechercher un univers, un service…" autoComplete="off"/>{query&&<Button variant="ghost" type="button" onClick={()=>setQuery('')} aria-label="Effacer la recherche"><X size={19}/></Button>}</div>
    <div className="world3b-filter-rail" aria-label="Filtrer les univers">
-    {WORLD_MODULE_GROUPS.map(group=><button key={group.id} type="button" aria-pressed={category===group.id} className={category===group.id?'is-active':''} onClick={()=>setCategory(group.id)}>{group.label}</button>)}
-    <button type="button" className={category==='favorites'?'is-active':''} aria-pressed={category==='favorites'} onClick={()=>setCategory('favorites')}><Star size={14}/> Favoris</button>
+    {WORLD_MODULE_GROUPS.map(group=><Button variant="ghost" key={group.id} type="button" aria-pressed={category===group.id} className={category===group.id?'is-active':''} onClick={()=>setCategory(group.id)}>{group.label}</Button>)}
+    <Button variant="ghost" type="button" className={category==='favorites'?'is-active':''} aria-pressed={category==='favorites'} onClick={()=>setCategory('favorites')}><Star size={14}/> Favoris</Button>
    </div>
    <div className="world3b-universes" aria-live="polite">
     {items.map(item=>{
@@ -116,7 +117,7 @@ export default function LivingWorldHome({goTo,menuItems=[]}){
        <strong>{actual?.id==='member'&&actual.label==='Connexion / Inscription'?'Mon compte':item.label}</strong>
        <span className="world3b-universe-arrow" aria-hidden="true"><ArrowRight size={14}/></span>
       </RouteLink>
-      <button type="button" className={'world3b-universe-fav'+(favorites.includes(item.id)?' is-favorite':'')} onClick={()=>toggleFavorite(item.id)} aria-label={(favorites.includes(item.id)?'Retirer '+item.label+' des favoris':'Ajouter '+item.label+' aux favoris')} aria-pressed={favorites.includes(item.id)}><Star size={14} fill={favorites.includes(item.id)?'currentColor':'none'}/></button>
+      <Button variant="ghost" type="button" className={'world3b-universe-fav'+(favorites.includes(item.id)?' is-favorite':'')} onClick={()=>toggleFavorite(item.id)} aria-label={(favorites.includes(item.id)?'Retirer '+item.label+' des favoris':'Ajouter '+item.label+' aux favoris')} aria-pressed={favorites.includes(item.id)}><Star size={14} fill={favorites.includes(item.id)?'currentColor':'none'}/></Button>
      </article>;
     })}
    </div>
@@ -130,7 +131,7 @@ export default function LivingWorldHome({goTo,menuItems=[]}){
    <RouteLink goTo={goTo} page="albert" className="world3b-albert-open">Découvrir Albert <ArrowRight size={17}/></RouteLink>
   </section>
   <section className="world3b-extra" aria-labelledby="world3b-extra-title">
-   <div className="world3b-section-title"><div><span className="world3b-eyebrow">ET BIEN PLUS ENCORE</span><h2 id="world3b-extra-title">Les autres services 3B</h2></div><button type="button" onClick={()=>setAllServices(value=>!value)} aria-expanded={allServices} aria-controls="world3b-extra-list">{allServices?'Réduire':'Voir tout'} <ArrowRight size={16}/></button></div>
+   <div className="world3b-section-title"><div><span className="world3b-eyebrow">ET BIEN PLUS ENCORE</span><h2 id="world3b-extra-title">Les autres services 3B</h2></div><Button variant="ghost" type="button" onClick={()=>setAllServices(value=>!value)} aria-expanded={allServices} aria-controls="world3b-extra-list">{allServices?'Réduire':'Voir tout'} <ArrowRight size={16}/></Button></div>
    <div className={'world3b-extra-links'+(allServices?' is-expanded':'')} id="world3b-extra-list">
     {WORLD_MORE_SERVICES.map(item=><RouteLink key={item.id} page={item.id} goTo={goTo}>{item.label}<ArrowRight size={16}/></RouteLink>)}
    </div>

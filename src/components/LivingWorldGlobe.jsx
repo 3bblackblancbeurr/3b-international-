@@ -1,3 +1,4 @@
+import {worldLivingCanvasPalette} from '../design-system/tokens.js';
 import {useEffect,useRef} from 'react';
 import {WORLD_REALMS} from './world-living-data.js';
 
@@ -57,7 +58,7 @@ export default function LivingWorldGlobe({selectedId='france',onSelect}){
    ctx.fillStyle=halo;ctx.beginPath();ctx.arc(cx,cy,r*1.15,0,TAU);ctx.fill();
    ctx.save();ctx.beginPath();ctx.arc(cx,cy,r,0,TAU);ctx.clip();
    const ocean=ctx.createRadialGradient(cx-r*.36,cy-r*.45,r*.08,cx,cy,r*1.35);
-   ocean.addColorStop(0,'#135b9a');ocean.addColorStop(.36,'#073a74');ocean.addColorStop(.78,'#04182e');ocean.addColorStop(1,'#02070f');
+   ocean.addColorStop(0,worldLivingCanvasPalette.t135b9a);ocean.addColorStop(.36,worldLivingCanvasPalette.t073a74);ocean.addColorStop(.78,worldLivingCanvasPalette.t04182e);ocean.addColorStop(1,worldLivingCanvasPalette.t02070f);
    ctx.fillStyle=ocean;ctx.fillRect(cx-r,cy-r,r*2,r*2);
    ctx.strokeStyle='rgba(78,174,245,.13)';ctx.lineWidth=.85;
    for(let lat=-75;lat<=75;lat+=15){
@@ -92,8 +93,8 @@ export default function LivingWorldGlobe({selectedId='france',onSelect}){
    }
    for(const dot of dots){
     const selected=dot.id===state.selectedId;
-    ctx.beginPath();ctx.arc(dot.x,dot.y,selected?7:4.4,0,TAU);ctx.fillStyle=selected?'#ffe5a8':'#66c7ff';ctx.shadowColor=selected?'#f2b94b':'#0a9afa';ctx.shadowBlur=selected?17:9;ctx.fill();ctx.shadowBlur=0;
-    if(selected){ctx.beginPath();ctx.arc(dot.x,dot.y,13,0,TAU);ctx.strokeStyle='#f8d393';ctx.lineWidth=1.8;ctx.stroke();}
+    ctx.beginPath();ctx.arc(dot.x,dot.y,selected?7:4.4,0,TAU);ctx.fillStyle=selected?worldLivingCanvasPalette.tffe5a8:worldLivingCanvasPalette.t66c7ff;ctx.shadowColor=selected?worldLivingCanvasPalette.tf2b94b:worldLivingCanvasPalette.t0a9afa;ctx.shadowBlur=selected?17:9;ctx.fill();ctx.shadowBlur=0;
+    if(selected){ctx.beginPath();ctx.arc(dot.x,dot.y,13,0,TAU);ctx.strokeStyle=worldLivingCanvasPalette.tf8d393;ctx.lineWidth=1.8;ctx.stroke();}
    }
    ctx.restore();
    ctx.beginPath();ctx.arc(cx,cy,r+1,0,TAU);

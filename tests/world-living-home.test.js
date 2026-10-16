@@ -79,3 +79,19 @@ test('deep-linked world / Albert loads without four-second splash and conflictin
  assert.match(qa,/Direct link bypasses cinema overlay/);
  assert.match(qa,/Floating companion does not cover Albert conversation/);
 });
+
+test('World Living Gold Master sources tokens and shared controls',()=>{
+ const components=['src/components/AlbertPublicPreview.jsx','src/components/LivingWorldHome.jsx'];
+ for(const path of components){
+  const source=read(path);
+  assert.doesNotMatch(source, /<button\\b/);
+  assert.match(source, /<Button variant="ghost"/);
+ }
+ const css=read('src/styles/world-living-home.css');
+ assert.doesNotMatch(css, /#[0-9a-fA-F]{3,8}\\b/);
+ assert.doesNotMatch(css, /border-radius\\s*:\\s*(?!var\\()/);
+ assert.doesNotMatch(css, /box-shadow\\s*:\\s*(?!var\\()/);
+ const canvas=read('src/components/LivingWorldGlobe.jsx');
+ assert.match(canvas,/worldLivingCanvasPalette/);
+ assert.doesNotMatch(canvas, /#[0-9a-fA-F]{3,8}\\b/);
+});
