@@ -50,6 +50,25 @@ test('world news is restricted to two allowlisted feeds',async()=>{
   assert.equal(invalid.status,400);
   assert.equal(invalid.headers.get('x-content-type-options'),'nosniff');
 });
+
+test('France 24 live feed parser accepts an authentic RSS shape and rejects untrusted article links',async()=>{
+  const original=globalThis.fetch;
+  const date=new Date().toUTCString();
+  const xml='<?xml version="1.0"?><rss version="2.0"><channel>'
+   +'<item><title>France &amp; Europe</title><link>https://www.france24.com/fr/europe/actualite</link><pubDate>'+date+'</pubDate></item>'
+   +'<item><title>Fake external link</title><link>https://phishing.example/evil</link><pubDate>'+date+'</pubDate></item>'
+   +'</channel></rss>';
+  try {
+    globalThis.fetch=async()=>new Response(xml,{status:200,headers:{'content-type':'application/rss+xml'}});
+    const reply=await fetchMemberBrief(new Request('https://3b.example/api/member-brief?feed=fr'));
+    assert.equal(reply.status,200);
+    const data=await reply.json();
+    assert.equal(data.items.length,1);
+    assert.equal(data.items[0].title,'France & Europe');
+    assert.equal(data.items[0].source,'France 24');
+  } finally {globalThis.fetch=original;}
+});
+
 test('member services share the original Vercel catalog router and do not require paid functions',()=>{
   const config=JSON.parse(readFileSync(new URL('../vercel.json',import.meta.url),'utf8'));
   const items=['member-brief','pwa-audit'];
