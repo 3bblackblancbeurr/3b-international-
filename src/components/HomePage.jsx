@@ -18,8 +18,8 @@ export default function HomePage({goTo,menuItems,member,installation}){
 
  return <section className="home-dashboard home-dashboard-simplified home-app-hub">
   <LivingWorldHome goTo={goTo} menuItems={menuItems}/>
-  <details className="world3b-legacy-archive"><summary>Retrouver les expériences classiques 3B et les autres espaces</summary>
   <div className="home-entry-actions"><RouteLink page="scanner" goTo={goTo} className="home-scanner-direct"><ScanLine size={24} aria-hidden="true"/><span><strong>Ouvrir le scanner</strong><small>Faire apparaître une scène autour de toi</small></span><ArrowUpRight size={20} aria-hidden="true"/></RouteLink></div>
+  <details className="world3b-legacy-archive"><summary>Retrouver les expériences classiques 3B et les autres espaces</summary>
   <WorldPortalCard goTo={goTo}/>
   <RouteLink page="maintenant" goTo={goTo} className="threeb-now-entry"><Compass className="threeb-now-entry-icon" size={34} strokeWidth={1.4}/><span className="threeb-now-entry-copy"><small>3B MAINTENANT · NOUVEAU</small><strong>Et si ta journée commençait ici ?</strong><span>Apprendre, bouger, aider, explorer, transmettre — à ton rythme.</span></span><ArrowUpRight className="threeb-now-entry-arrow" size={25}/></RouteLink>
 
