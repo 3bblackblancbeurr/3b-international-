@@ -14,12 +14,49 @@ export function EnergyCheckIn({day,onChange}) {
 
 export function NativeStepsPanel({native,day}) {
   const state=native.status, provider=state.platform==='ios'?'Apple Santé':'Health Connect', total=effectiveSteps({nativeSteps:day.nativeSteps}), sync=native.lastSync||day.nativeSteps?.syncedAt;
-  return <section className="h-connected-steps" aria-label="Pas du téléphone"><div className="h-connected-heading"><span className="h-connect-icon"><Smartphone size={28}/></span><div><span className="h-eyebrow">LES PAS DE TON TÉLÉPHONE</span><h2>Marche. Il s’en souvient.</h2></div></div>
-    {state.available?<><div className="h-auto-total"><strong>{displayNumber(total.value)}</strong><span>pas aujourd’hui · {provider}</span></div><p>Le téléphone et ses applications compatibles enregistrent les pas. 3B actualise le total à l’ouverture de Santé et au retour dans l’application.</p><p className="h-caption">Lecture des pas uniquement, sur 30 jours. Aucune écriture dans {provider}, aucun envoi au serveur 3B. La sauvegarde du journal reste facultative.</p><div className="h-inline-actions">{native.connected?<><HealthButton variant="health" className="h-primary" disabled={native.busy} onClick={native.refresh}><RefreshCw size={16}/>{native.busy?'Lecture…':'Actualiser mes pas'}</HealthButton><HealthButton variant="health" className="h-link" disabled={native.busy} onClick={native.disconnect}><Unplug size={16}/> Déconnecter</HealthButton></>:<HealthButton variant="health" className="h-primary" disabled={native.busy} onClick={native.connect}><Footprints size={17}/>{native.busy?'Demande en cours…':`Connecter ${provider}`}</HealthButton>}<HealthButton variant="health" className="h-link" onClick={native.openSettings}>Réglages du téléphone</HealthButton></div>{sync&&<p className="h-caption">Dernière lecture : {new Intl.DateTimeFormat('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(sync))}. Un tiret signifie « aucune donnée lisible », pas zéro.</p>}</>:
-      <><p className="h-native-promise">Les vrais pas automatiques sont accessibles dans la version native Android ou iPhone équipée de la connexion Santé.</p><div className="h-platform-labels"><span>Android · Health Connect</span><span>iPhone · Apple Santé</span></div><p>{state.status==='checking'?'Vérification de la connexion disponible…':state.status==='needs-update'?'Health Connect doit être installé ou mis à jour sur ce téléphone.':state.platform==='web'?'Tu utilises la version web. Même ajoutée à l’écran d’accueil, elle ne peut pas lire les pas d’Apple Santé ou de Samsung Health.':'Cette version installée ou ce téléphone ne dispose pas encore de la connexion. Les autres outils Santé restent utilisables.'}</p>{state.status==='needs-update'&&<HealthButton variant="health" className="h-secondary" onClick={native.openSettings}>Ouvrir Health Connect</HealthButton>}</>}
-    {!state.available&&native.connected&&<HealthButton variant="health" className="h-secondary" disabled={native.busy} onClick={native.disconnect}><Unplug size={16}/> Arrêter la lecture et effacer les pas importés</HealthButton>}
+  const connected=native.connected;
+  return <section className="h-connected-steps" aria-label="Compteur de pas automatique">
+    <div className="h-connected-heading">
+      <span className={'h-connect-icon'+(connected?' is-live':'')}><Smartphone size={28}/></span>
+      <div><span className="h-eyebrow">COMPTEUR AUTOMATIQUE</span><h2>Ton téléphone marche avec toi.</h2></div>
+      <span className={'h-auto-badge'+(connected?' is-live':'')}><i aria-hidden="true"/>{connected?'ACTIF':'INACTIF'}</span>
+    </div>
+
+    {state.available ? <>
+      <div className="h-auto-total"><strong>{displayNumber(total.value)}</strong><span>pas aujourd’hui · {provider}</span></div>
+      <p>{connected
+        ? '3B récupère automatiquement le total enregistré par ton téléphone. Quand cet écran reste ouvert, une synchronisation silencieuse est relancée régulièrement ; le système du téléphone continue de compter indépendamment de 3B.'
+        : 'Autorise une seule fois la lecture des pas. Ensuite, aucun nombre de pas à saisir : le téléphone devient la source de vérité.'}</p>
+      {state.platform==='android'&&state.onDeviceSteps&&<p className="h-native-highlight"><Sparkles size={15}/> Ce téléphone est compatible avec le comptage de pas directement dans Health Connect.</p>}
+      <p className="h-caption">Lecture des pas uniquement, jusqu’à 30 jours. Aucune écriture dans {provider}, aucun envoi des pas au serveur 3B.</p>
+      <div className="h-inline-actions">
+        {connected ? <>
+          <HealthButton variant="health" className="h-primary" disabled={native.busy} onClick={native.refresh}><RefreshCw size={16}/>{native.busy?'Synchronisation…':'Synchroniser maintenant'}</HealthButton>
+          <HealthButton variant="health" className="h-link" disabled={native.busy} onClick={native.disconnect}><Unplug size={16}/> Arrêter</HealthButton>
+        </> : <HealthButton variant="health" className="h-primary h-connect-main" disabled={native.busy} onClick={native.connect}><Footprints size={17}/>{native.busy?'Demande en cours…':`Activer avec ${provider}`}</HealthButton>}
+        <HealthButton variant="health" className="h-link" onClick={native.openSettings}>Réglages du téléphone</HealthButton>
+      </div>
+      {sync&&<p className="h-caption">Dernière synchronisation : {new Intl.DateTimeFormat('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(sync))}. Les fournisseurs santé peuvent publier les nouveaux pas avec un léger délai.</p>}
+    </> : <>
+      <p className="h-native-promise">Le compteur automatique complet est disponible dans l’application 3B installée sur Android ou iPhone.</p>
+      <div className="h-platform-labels"><span>Android · Health Connect</span><span>iPhone · Apple Santé</span></div>
+      <p>{state.status==='checking'
+        ? 'Vérification de la connexion disponible…'
+        : state.status==='needs-update'
+          ? 'Health Connect doit être installé ou mis à jour sur ce téléphone.'
+          : state.platform==='web'
+            ? 'La version web/PWA ne peut pas lire les pas système. Elle n’affiche plus de faux compteur ni de saisie manuelle.'
+            : 'Cette version installée ou ce téléphone ne dispose pas encore de la connexion. Les autres outils Santé restent utilisables.'}</p>
+      {state.status==='needs-update'&&<HealthButton variant="health" className="h-secondary" onClick={native.openSettings}>Ouvrir Health Connect</HealthButton>}
+    </>}
+    {!state.available&&connected&&<HealthButton variant="health" className="h-secondary" disabled={native.busy} onClick={native.disconnect}><Unplug size={16}/> Arrêter la lecture et effacer les pas importés</HealthButton>}
     {native.message&&<p className="h-sensor-status" role="status">{native.message}</p>}
-    <details className="h-detail"><summary>Samsung, iPhone, montre : comment ça fonctionne ?</summary><p><strong>Samsung / Android :</strong> dans Samsung Health → Paramètres → Health Connect, autorise le partage des pas. Dans la version native 3B compatible, touche « Connecter Health Connect » puis autorise leur lecture. Les sources sont regroupées par Android pour éviter de compter deux fois les mêmes pas. La disponibilité des pas du téléphone dépend aussi de sa version Android.</p><p><strong>iPhone :</strong> dans la version native 3B compatible, touche « Connecter Apple Santé ». Choisis uniquement les données que tu veux autoriser. Apple ne révèle pas à 3B si tu as refusé la lecture : un résultat vide peut aussi simplement signifier qu’aucun pas n’a été enregistré.</p><p>Le total connecté est affiché en priorité. Il n’est jamais additionné à une saisie manuelle ou à l’estimation web. Les montres peuvent transmettre leurs données avec un délai.</p><a href="https://developer.samsung.com/health/health-connect-faq.html" target="_blank" rel="noopener noreferrer">Connexion Samsung ↗</a> · <a href="https://support.apple.com/fr-fr/108779" target="_blank" rel="noopener noreferrer">Gérer Apple Santé ↗</a></details>
+    <details className="h-detail"><summary>Samsung, iPhone, montre : comment ça fonctionne ?</summary>
+      <p><strong>Samsung / Android :</strong> autorise les pas dans Health Connect. Si Samsung Health est ta source, active aussi son partage vers Health Connect. Android agrège les sources compatibles pour éviter les doubles comptes.</p>
+      <p><strong>iPhone :</strong> autorise la lecture des pas dans Apple Santé. Les pas de l’iPhone et des appareils compatibles sont agrégés par Santé selon ses règles.</p>
+      <p>3B affiche uniquement ce total système. Aucun total manuel ni estimation web ne peut le remplacer ou s’y ajouter.</p>
+      <a href="https://developer.samsung.com/health/health-connect-faq.html" target="_blank" rel="noopener noreferrer">Connexion Samsung ↗</a> · <a href="https://support.apple.com/fr-fr/108779" target="_blank" rel="noopener noreferrer">Gérer Apple Santé ↗</a>
+    </details>
   </section>;
 }
 
@@ -33,7 +70,7 @@ export function HealthHistory({health,onEdit}) {
     <div className="h-history-summary"><div><strong>{displayNumber(average)}<small> {definition.unit}</small></strong><span>Moyenne · {known.length} jour{known.length>1?'s':''} renseigné{known.length>1?'s':''}</span></div><span>{dateLabel(dates[0])} — {dateLabel(dates.at(-1))}</span></div>
     <div className="h-history-scroll"><div className="h-history-chart" style={{minWidth:period>7?`${period*24}px`:undefined}} aria-label={`${definition.label}, ${period} jours`}>{items.map(item=><HealthButton variant="health" key={item.date} aria-label={`${dateLabel(item.date)} : ${item.value===null?'non renseigné':displayNumber(item.value)+' '+definition.unit}`} aria-pressed={active.date===item.date} onClick={()=>setSelected(item.date)}><span className={`h-history-bar ${item.value===null?'missing':''}`} style={{height:item.value===null?'2px':`${Math.max(2,item.value/max*118)}px`}}/><small>{new Date(item.date+'T12:00:00').getDate()}</small></HealthButton>)}</div></div>
     <div className="h-history-day" aria-live="polite"><div><span>{dateLabel(active.date)}</span><strong>{active.value===null?'Non renseigné':metric==='energy'?ENERGY[active.value-1]:`${displayNumber(active.value)} ${definition.unit}`}</strong>{metric==='steps'&&active.value!==null&&<small>Source : {effectiveSteps(health.data.days[active.date]).label}</small>}</div><HealthButton variant="health" className="h-secondary" onClick={()=>onEdit(active.date)}>Ouvrir ce jour <ArrowRight size={15}/></HealthButton></div>
-    <p className="h-caption">{metric==='steps'?'Priorité au total connecté, puis à la saisie, puis à l’estimation web. Les sources ne sont pas additionnées. Pas connectés : jusqu’à 30 jours lisibles.':metric==='mobility'?'Temps chronométré puis confirmé dans les séances guidées, séparé des minutes saisies. Ce n’est pas une détection de tes mouvements.':metric==='energy'?'Échelle personnelle de 1 à 5, sans interprétation médicale.':'Valeurs déclarées dans ton journal.'} {health.saved?'Historique enregistré sur cet appareil.':'Active la sauvegarde locale si tu veux conserver cet historique après ta visite.'}</p>
+    <p className="h-caption">{metric==='steps'?'Pas du téléphone uniquement · jusqu’à 30 jours lisibles. Un jour sans donnée reste vide.':metric==='mobility'?'Temps chronométré puis confirmé dans les séances guidées, séparé des minutes saisies. Ce n’est pas une détection de tes mouvements.':metric==='energy'?'Échelle personnelle de 1 à 5, sans interprétation médicale.':'Valeurs déclarées dans ton journal.'} {health.saved?'Historique enregistré sur cet appareil.':'Active la sauvegarde locale si tu veux conserver cet historique après ta visite.'}</p>
     <details className="h-detail"><summary>Voir les valeurs jour par jour</summary><div className="h-history-table"><table><caption>{definition.label} · jours renseignés</caption><thead><tr><th>Date</th><th>Valeur</th>{metric==='steps'&&<th>Source</th>}</tr></thead><tbody>{known.slice().reverse().map(item=><tr key={item.date}><td>{dateLabel(item.date)}</td><td>{displayNumber(item.value)} {definition.unit}</td>{metric==='steps'&&<td>{effectiveSteps(health.data.days[item.date]).label}</td>}</tr>)}</tbody></table>{!known.length&&<p>Aucune valeur pour cette période.</p>}</div></details>
   </section>;
 }
