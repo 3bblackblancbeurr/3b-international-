@@ -218,6 +218,10 @@
   ],
   "rewrites": [
     {
+      "source": "/api/member-events",
+      "destination": "/api/catalog?__3b_route=member-events"
+    },
+    {
       "source": "/api/official-directory",
       "destination": "/api/catalog?__3b_route=official-directory"
     },
