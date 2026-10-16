@@ -40,7 +40,7 @@ test('Albert public concierge guides to existing routes without pretending local
  assert.equal(albertLocalGuideAnswer('Je veux voir les jeux').destination.id,'games');
  assert.equal(albertLocalGuideAnswer('Qui es-tu ?').destination,null);
  assert.equal(albertLocalGuideAnswer('Où est le chatbot ?').destination.id,'ia-trio');
- assert.ok(albertLocalGuideAnswer('Qui es-tu ?').message.includes('non'));
+ assert.match(albertLocalGuideAnswer('Qui es-tu ?').message,/pas connecté/);
  const src=read('src/components/AlbertPublicPreview.jsx');
  assert.match(src,/Mode guide local/);
  assert.match(src,/Albert personnel non connecté/);
