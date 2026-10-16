@@ -264,3 +264,11 @@ html[data-motion="reduced"] .world3b-home *,html[data-motion="reduced"] .albert3
  .world3b-tabs button{font-size:10px}
  .world3b-active-copy{min-width:0}
 }
+
+/* Verified root cause of 320px overflow: supplemental service names are wider
+   than two half-width columns once the arrow and touch padding are included. */
+.world3b-extra-links a{min-width:0;overflow-wrap:anywhere}
+.world3b-extra-links a>svg{flex-shrink:0}
+@media(max-width:370px){
+ .world3b-extra-links{grid-template-columns:minmax(0,1fr)}
+}
