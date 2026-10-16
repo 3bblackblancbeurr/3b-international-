@@ -43,10 +43,11 @@ export default function EsportsPage({goTo}){
  const [loading,setLoading]=useState(true);
  const nextEvents=useMemo(()=>filterEvents({onlyFuture:true}),[]);
  const filteredEvents=useMemo(()=>filterEvents({game,search,onlyFuture:upcoming}),[game,search,upcoming]);
+ const scrollBehavior=()=>window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth';
  const showView=id=>{
   setView(id);setNotice('');setError('');
   const area=document.getElementById('es16-main-area');
-  if(area)window.requestAnimationFrame(()=>area.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'}));
+  if(area)window.requestAnimationFrame(()=>area.scrollIntoView({behavior:scrollBehavior(),block:'start'}));
  };
  const refresh=useCallback(async()=>{
   setRefreshing(true);
@@ -174,7 +175,7 @@ export default function EsportsPage({goTo}){
      </div><aside className="es16-recruit-right"><MiniEyebrow>LES PROFILS QUE NOUS ACCUEILLONS</MiniEyebrow><h3>Au-delà du score.</h3><p>Il nous faut des joueurs qui s’entraînent, communiquent, respectent les autres et représentent bien le club.</p><div className="es16-roles">{RECRUITMENT_ROLES.map(r=><span key={r}><Check size={15}/>{r}</span>)}</div><div className="es16-ethics"><ShieldCheck size={24}/><p>Pas de pièce d’identité dans le formulaire. Les règles d'âge, d'anti-triche, de vérification de compte et de nationalité/résidence se contrôlent séparément avant chaque tournoi.</p></div></aside></div>
     </div>}
     {view==='medias'&&<div className="es16-sections">
-     <div className="es16-section-heading"><div><MiniEyebrow>CLIPS · GAMEPLAY · COULISSES</MiniEyebrow><h2>16‑18 TV.</h2><p>Les meilleures actions de nos joueurs, les futurs matchs, entraînements et reportages. Une publication n’est visible qu’après validation des responsables.</p></div><button type="button" className="es16-cta es16-cta-secondary" onClick={()=>document.getElementById('es16-publish-form')?.scrollIntoView({behavior:'smooth'})}><Clapperboard size={18}/> Proposer un gameplay</button></div>
+     <div className="es16-section-heading"><div><MiniEyebrow>CLIPS · GAMEPLAY · COULISSES</MiniEyebrow><h2>16‑18 TV.</h2><p>Les meilleures actions de nos joueurs, les futurs matchs, entraînements et reportages. Une publication n’est visible qu’après validation des responsables.</p></div><button type="button" className="es16-cta es16-cta-secondary" onClick={()=>document.getElementById('es16-publish-form')?.scrollIntoView({behavior:scrollBehavior(),block:'start'})}><Clapperboard size={18}/> Proposer un gameplay</button></div>
      <div className="es16-media-grid">{snapshot.published?.length?snapshot.published.map(item=><article className="es16-media-tile" key={item.id}><div className="es16-media-art"><Gamepad2 size={46} strokeWidth={1.1}/><button type="button" onClick={()=>watch(item)} aria-label={'Regarder '+item.title}><Play size={23} fill="currentColor"/></button></div><p>{gameName(item.game_id)}</p><h3>{item.title}</h3><small>Contenu de la communauté 16‑18</small></article>):<EmptyState title="La chaîne attend ses premières vidéos." description="Aucun gameplay n’a encore été approuvé. Sois le premier à partager une belle action ou une présentation du club !" />}</div>
      <form id="es16-publish-form" className="es16-upload" onSubmit={submitMedia}><div><MiniEyebrow>STUDIO DE L’ÉQUIPE</MiniEyebrow><h3>Proposer une vidéo.</h3><p>Un lien YouTube, Twitch ou TikTok pour les vidéos longues, ou un fichier MP4/WebM jusqu'à 30 Mo pour un clip court sur notre stockage limité.</p></div>
       {!user?<button type="button" className="es16-cta es16-cta-primary" onClick={()=>goTo('member')}>Se connecter pour publier <ArrowRight size={18}/></button>:<div className="es16-form es16-upload-controls">
