@@ -182,3 +182,43 @@
   .h-nutrition-portion strong{font-size:11px}
 }
 @media(prefers-reduced-motion:reduce){.h-atlas-feature>img,.h-atlas-photo img{transition:none!important}}
+
+
+/* Mobile visual QA 2026-10-16: keep white typography legible over real food photos.
+   Artwork belongs behind a true overlay; do not rely on negative-z pseudo layers. */
+.health3b .h-atlas-feature>img{z-index:-1}
+.health3b .h-atlas-feature::after{
+  z-index:0;
+  pointer-events:none;
+  background:
+    linear-gradient(90deg,rgba(3,17,12,.92) 0%,rgba(5,24,16,.80) 44%,rgba(5,24,16,.42) 100%),
+    linear-gradient(0deg,rgba(2,13,9,.87) 0%,transparent 74%);
+}
+.health3b .h-atlas-feature-text{
+  position:relative;
+  z-index:1;
+  text-shadow:0 2px 9px rgba(0,0,0,.48);
+}
+.health3b .h-atlas-feature-text>small,
+.health3b .h-atlas-feature-text>span{color:#f0f2e9}
+.health3b .h-atlas-feature-action{
+  z-index:1;
+  background:#071d14bb;
+  border-color:#f4f4e699;
+}
+@media(max-width:760px){
+  .health3b .h-atlas-intro h2{font-size:31px}
+  .health3b .h-atlas-feature{min-height:187px}
+  .health3b .h-atlas-feature-text{gap:7px;padding:20px}
+  .health3b .h-atlas-feature-text>strong{font-size:36px}
+  .health3b .h-atlas-feature-text>span{font-size:11px;line-height:1.35}
+  .health3b .h-atlas-explore-tools{margin-top:7px}
+  .health3b .h-atlas-results-header{margin:13px 0 11px}
+  .health3b .h-atlas-family{margin:6px 0 14px}
+}
+@media(max-width:360px){
+  .health3b .h-atlas-feature{min-height:170px}
+  .health3b .h-atlas-feature-text{max-width:84%}
+  .health3b .h-atlas-feature-text>small{font-size:9px}
+  .health3b .h-atlas-feature-text>strong{font-size:34px}
+}
