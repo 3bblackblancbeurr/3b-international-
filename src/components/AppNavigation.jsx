@@ -9,7 +9,7 @@ import CompanionPresenceControl from '../companion/CompanionPresenceControl.jsx'
 import { PRINCIPAL_DESTINATIONS, availableCategories, categoryForPage, itemsForCategory, searchNavigation } from './navigation-menu.js';
 import '../styles/simple-navigation.css';
 
-const ICONS = { health: HeartPulse, deals: BadgePercent, invisible: ScanLine, home: Home, passport: Fingerprint, loyalty: CreditCard, manga: BookOpen, world3b: Globe2, nosbloc: Boxes, games: Gamepad2, religion: BookOpen, guide: Compass, community: Users, secret: LockKeyhole, sport: Trophy, esports: Swords, ia: Sparkles, shop: ShoppingBag, member: UserRound };
+const ICONS = { now: Compass, health: HeartPulse, deals: BadgePercent, invisible: ScanLine, home: Home, passport: Fingerprint, loyalty: CreditCard, manga: BookOpen, world3b: Globe2, nosbloc: Boxes, games: Gamepad2, religion: BookOpen, guide: Compass, community: Users, secret: LockKeyhole, sport: Trophy, esports: Swords, ia: Sparkles, shop: ShoppingBag, member: UserRound };
 export function SectionIcon({ page, ...props }) {
   const Icon = ICONS[page] || Globe2;
   return <Icon size={22} strokeWidth={1.65} aria-hidden="true" {...props} />;

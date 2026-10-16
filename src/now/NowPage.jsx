@@ -1,5 +1,5 @@
 import {Button} from '../design-system/index.jsx';
-import {useEffect,useState} from 'react';
+import {useEffect,useId,useState} from 'react';
 import {ArrowRight,ArrowUpRight,Check,ChevronRight,Compass,HeartHandshake,ScanLine,ShieldCheck,Sparkles,Sun,Volume2,BookHeart,Accessibility} from 'lucide-react';
 import {useLoyalty} from '../loyalty/LoyaltyContext.jsx';
 import {CIRCLE_VALUES,NOW_SECTIONS,LIFE_GOALS,DURATIONS,dayKey,planFor,progressPercent,loadNowProgress,saveNowProgress} from './routines.js';
@@ -12,20 +12,21 @@ import './now.css';
 const SECTIONS_ICONS={boussole:Compass,cercle:Sparkles,aide:HeartHandshake,scanner:ScanLine,heritage:BookHeart,universel:Accessibility};
 const RADIUS=116,CIRCUMFERENCE=2*Math.PI*RADIUS;
 function LivingCircle({completed=[],compact=false}){
+ const gradientId=useId().replaceAll(':','');
  const count=completed.length;
  return <div className={'now-ring '+(compact?'now-ring--compact':'')} role="img" aria-label={'Cercle vivant : '+count+' valeurs marquées sur huit aujourd’hui'}>
   <span className="now-ring-light now-ring-light-one" aria-hidden="true"/>
   <span className="now-ring-light now-ring-light-two" aria-hidden="true"/>
   <svg viewBox="0 0 320 320" className="now-ring-svg" aria-hidden="true">
    <defs>
-    <linearGradient id="threeb-now-gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="var(--3b-champagne-highlight)"/><stop offset=".47" stopColor="var(--3b-champagne)"/><stop offset="1" stopColor="var(--3b-champagne-highlight)"/></linearGradient>
+    <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="var(--3b-champagne-highlight)"/><stop offset=".47" stopColor="var(--3b-champagne)"/><stop offset="1" stopColor="var(--3b-champagne-highlight)"/></linearGradient>
    </defs>
    <circle cx="160" cy="160" r="104" className="now-ring-underlay" fill="none"/>
    <g transform="rotate(-90 160 160)">
     {CIRCLE_VALUES.map((item,i)=>{
      const active=completed.includes(item.id);
      return <circle key={item.id} cx="160" cy="160" r={RADIUS} fill="none"
-      stroke={active?'url(#threeb-now-gold)':'var(--3b-now-steel)'} strokeWidth={active?15:10}
+      stroke={active?'url(#'+gradientId+')':'var(--3b-now-steel)'} strokeWidth={active?15:10}
       strokeLinecap="round" strokeDasharray={(CIRCUMFERENCE/8-13)+' '+CIRCUMFERENCE}
       strokeDashoffset={-(i*CIRCUMFERENCE/8)+1} opacity={active?1:.54} className="now-ring-segment"/>;
     })}
