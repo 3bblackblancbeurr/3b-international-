@@ -5,6 +5,7 @@ import {allergenLabel} from '../src/health/allergenLabels.js';
 import {MEMBER_SPACES, COUNTRY_INDEX, ADMIN_GUIDES, CINEMA_GUIDES, FINANCE_GUIDES, countryEventsHref,countryNewsHref,countryFor,contactHref} from '../src/member/memberSources.js';
 import {fetchFoodProduct} from '../server/food-product.js';
 import {fetchMemberBrief} from '../server/member-brief.js';
+import {fetchOfficialDirectory,validLocality,cleanOfficialRecord} from '../server/official-directory.js';
 import catalog from '../api/catalog.js';
 import foodApi from '../api/food-product.js';
 import pwaAuditRoute from '../server/pwa-audit-route.js';
@@ -107,4 +108,54 @@ test('member services share the original Vercel catalog router and do not requir
   assert.equal(typeof pwaAuditRoute.fetch,'function');
   assert.equal(typeof pwaStatus.fetch,'function');
   assert.ok(!config.rewrites.some(x=>x.source==='/api/food-product'));
+});
+
+test('official directory validates free-form city queries before calling the government API',async()=>{
+ assert.equal(validLocality('Thonon-les-Bains'),true);
+ assert.equal(validLocality('Saint-Étienne'),true);
+ assert.equal(validLocality(''),false);
+ assert.equal(validLocality('X'),false);
+ assert.equal(validLocality('x\" OR 1=1 --'),false);
+ assert.equal(validLocality('https://localhost'),false);
+ const bad=await fetchOfficialDirectory(new Request('https://3b.example/api/official-directory?ville='+encodeURIComponent('x\" OR 1=1')));
+ assert.equal(bad.status,400);
+ const method=await fetchOfficialDirectory(new Request('https://3b.example/api/official-directory?ville=Paris',{method:'POST'}));
+ assert.equal(method.status,405);
+});
+test('only genuine official DILA directory entries can appear in the app',()=>{
+ const row={nom:'Mairie - Thonon-les-Bains',
+  adresse:JSON.stringify([{type_adresse:'Adresse',numero_voie:'1 place de l\'Hôtel-de-Ville',code_postal:'74200',nom_commune:'Thonon-les-Bains'}]),
+  telephone:JSON.stringify([{valeur:'04 50 70 69 68'}]),
+  url_service_public:'https://lannuaire.service-public.gouv.fr/auvergne-rhone-alpes/haute-savoie/123',
+  date_modification_datetime:'2026-10-01T12:00:00Z',
+ };
+ const data=cleanOfficialRecord(row);
+ assert.equal(data.name,'Mairie - Thonon-les-Bains');
+ assert.match(data.address,/74200 Thonon/);
+ assert.equal(data.phone,'04 50 70 69 68');
+ assert.ok(!cleanOfficialRecord({...row,url_service_public:'https://lannuaire.service-public.gouv.fr.evil.example/steal'}));
+ assert.ok(!cleanOfficialRecord({...row,url_service_public:'javascript:alert(1)'}));
+});
+test('directory lookup returns public services without leaking user data or GPS',async()=>{
+ const orig=globalThis.fetch;
+ let requested;
+ try{
+  globalThis.fetch=async url=>{
+   requested=url;
+   return new Response(JSON.stringify({results:[
+    {nom:'Maison France Services - Lyon',adresse:'[]',telephone:'[]',
+     url_service_public:'https://lannuaire.service-public.gouv.fr/auvergne-rhone-alpes/rhone/a'},
+    {nom:'Phishing',url_service_public:'https://evil.example/'}
+   ]}),{status:200,headers:{'Content-Type':'application/json'}});
+  };
+  const result=await catalog.fetch(new Request('https://3b.example/api/catalog?__3b_route=official-directory&ville=Lyon'));
+  const data=await result.json();
+  assert.equal(result.status,200);
+  assert.equal(data.services.length,1);
+  assert.equal(data.services[0].name,'Maison France Services - Lyon');
+  assert.equal(new URL(requested).hostname,'api-lannuaire.service-public.gouv.fr');
+  assert.match(new URL(requested).searchParams.get('where'),/search\(nom, "Lyon"\)/);
+  assert.equal(data.services[0].lat,undefined);
+  assert.equal(data.services[0].user_id,undefined);
+ }finally{globalThis.fetch=orig;}
 });
