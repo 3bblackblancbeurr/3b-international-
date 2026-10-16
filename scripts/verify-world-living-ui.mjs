@@ -48,6 +48,15 @@ try{
   const canvas=home.locator('canvas.world-living-globe-canvas');
   check('Interactive geographic globe '+width,await canvas.isVisible()&&await canvas.evaluate(el=>el.getBoundingClientRect().width>180&&el.getBoundingClientRect().height>180));
   if(width<720){
+   const realmCard=page.locator('.world3b-country-card').first();
+   const realmLayout=await realmCard.evaluate(el=>{
+    const card=el.getBoundingClientRect(),note=el.querySelector('small')?.getBoundingClientRect(),style=getComputedStyle(el);
+    return {display:style.display,cardRight:card.right,cardBottom:card.bottom,noteRight:note?.right||0,noteBottom:note?.bottom||0};
+   });
+   check('Realm cards keep grid layout on phone '+width,realmLayout.display==='grid');
+   check('Realm value and guardian stay inside card '+width,realmLayout.noteRight<=realmLayout.cardRight+1&&realmLayout.noteBottom<=realmLayout.cardBottom+1);
+  }
+  if(width<720){
    const globeBudget=await canvas.evaluate(el=>{const box=el.getBoundingClientRect(),style=getComputedStyle(el);return {bitmapWidth:el.width,cssWidth:box.width,touchAction:style.touchAction,display:style.display};});
    check('Phone globe caps raster density '+width,globeBudget.bitmapWidth<=globeBudget.cssWidth*1.3+3);
    check('Phone globe receives intended touch/display styles '+width,globeBudget.touchAction==='none'&&globeBudget.display==='block');
