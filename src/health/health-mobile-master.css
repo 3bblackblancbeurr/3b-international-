@@ -1,0 +1,39 @@
+/* 3B Santé Master mobile 2026 · hierarchy without empty cards */
+.health3b .h-switch-to-kitchen{display:flex;align-items:center;gap:13px;text-align:left;width:100%;padding:17px 0!important;margin:13px 0;border:0!important;border-top:1px solid #d0e2d02a!important;border-bottom:1px solid #d0e2d02a!important;border-radius:0;background:none!important;color:#ebf3e5}
+.health3b .h-switch-to-kitchen>span{display:flex;flex-direction:column;gap:3px;flex:1}
+.health3b .h-switch-to-kitchen strong{font-size:16px;font-weight:550}
+.health3b .h-switch-to-kitchen small{font-size:11px;color:#bbcebb}
+.h-switch-to-kitchen>svg:first-child{color:#c5e2ca}
+.h-body-routines{margin:16px 0;border-top:1px solid #d1dfca2b}
+.h-body-routines>summary{display:flex;gap:10px;align-items:center;min-height:49px;color:#ebdbc0;font-size:13px;cursor:pointer;list-style:none}
+.h-body-routines>summary::-webkit-details-marker{display:none}
+.h-body-routines>summary svg:last-child{margin-left:auto}
+.h-body-routines[open]>summary svg:last-child{transform:rotate(90deg)}
+.h-body-routines .h-guides{margin:6px 0}
+.health3b .h-metrics.h-metrics-compact{grid-template-columns:repeat(2,minmax(0,1fr));border:0;padding:4px 0}
+.health3b .h-metrics-compact button{padding:8px 11px;border:0;border-bottom:1px solid #d9e8d928;background:none!important}
+.health3b .h-metrics-compact button:last-child{border-bottom:1px solid #d9e8d928}
+.health3b .h-metrics-compact strong{font-size:19px}
+.health3b .h-connected-steps{border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;padding:13px 0!important;margin:0}
+.health3b .h-nav{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));justify-content:stretch;border-top:0!important;margin-bottom:14px;gap:0;width:100%;max-width:100%;overflow:visible;scrollbar-width:none;background:#0b1614ed}
+.health3b .h-nav button{display:flex;flex-direction:column;gap:5px;min-width:0!important;width:100%;min-height:55px!important;padding:6px 2px!important;background:transparent!important;border:0!important;font-size:11px!important;line-height:1.1;white-space:nowrap}
+.health3b .h-nav button svg{width:19px;height:19px}
+.health3b .h-nav button[aria-current=page]{color:#f8f6ec}
+.health3b .h-nav button[aria-current=page]:after{left:18%;right:18%;height:2px}
+@media(max-width:760px){
+ .health3b{padding-bottom:calc(113px + env(safe-area-inset-bottom,0px))!important}
+ .health3b .h-top{padding-top:1px;padding-bottom:8px}
+ .health3b .h-nav{gap:0;overflow:visible;padding:0 1px}
+ .health3b .h-nav button{min-width:0!important;flex:initial!important;min-height:51px!important;padding:6px 0!important;font-size:9px!important;gap:4px}
+ .health3b .h-nav button svg{width:18px;height:18px}
+ .health3b .h-hero{min-height:225px}
+ .health3b .h-hero>div{padding:19px}
+ .health3b .h-hero h2{font-size:29px}
+ .health3b .h-utility-menu{margin-bottom:7px}
+ .health3b .h-daily-head{margin:13px 0 5px}
+ .health3b .h-metrics-compact strong{font-size:17px}
+ .health3b .h-today-discover{margin-top:10px}
+ .health3b .h-footer{margin-top:20px}
+ .health3b .h-switch-to-kitchen strong{font-size:15px}
+}
+@media(max-width:345px){.health3b .h-nav button{font-size:8px!important}.health3b .h-nav button svg{width:16px;height:16px}}
