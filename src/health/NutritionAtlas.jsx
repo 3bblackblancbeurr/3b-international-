@@ -66,7 +66,7 @@ export function NutritionAtlas({ foods, favorites = [], onOpen }) {
       {FAMILIES.map(entry => <HealthButton variant="health" type="button" key={entry.id} aria-pressed={entry.id === family} onClick={() => setFamily(entry.id)}>{entry.label}</HealthButton>)}
     </div>
     <div className="h-atlas-interest"><span>JE VEUX COMPRENDRE…</span><div className="h-atlas-topics" role="group" aria-label="Explorer les rôles des nutriments dans le corps">
-      {ORGAN_TOPICS.map(topic => { const Icon = ICONS[topic.id] || Leaf; return <HealthButton variant="health" type="button" aria-pressed={organ === topic.id} key={topic.id} onClick={() => setOrgan(topic.id)}>{organ === topic.id && <Check size={14}/ >}{topic.id !== 'all' && <Icon size={15}/ >}{topic.label}</HealthButton>; })}
+      {ORGAN_TOPICS.map(topic => { const Icon = ICONS[topic.id] || Leaf; return <HealthButton variant="health" type="button" aria-pressed={organ === topic.id} key={topic.id} onClick={() => setOrgan(topic.id)}>{organ === topic.id && <Check size={14}/>}{topic.id !== 'all' && <Icon size={15}/>}{topic.label}</HealthButton>; })}
     </div></div>
     {organ !== 'all' && <div className="h-atlas-insight" role="status"><span>{selection.label.toUpperCase()}</span><p>{selection.detail}</p>{organ === 'liver' && <small>Aucun classement « meilleur aliment détox » : les fiches ci-dessous restent purement nutritionnelles.</small>}</div>}
     <div className="h-atlas-results-header"><strong>{organ === 'all' ? 'La collection' : 'À explorer'}</strong><span>{visible.length ? 'Fais glisser pour voir la suite →' : 'Aucun aliment correspondant'}</span></div>
