@@ -109,16 +109,16 @@ export default function FoodScanner(){
 
   return <section className="foodscan" aria-labelledby="foodscan-title">
     <header className="fs-intro"><div><span className="fs-eyebrow"><ScanLine size={15}/> 3B SANTÉ · SCANNER ALIMENTAIRE</span><h2 id="foodscan-title">Ton produit.<br/><em>En clair.</em></h2><p>Scanne son code-barres avec la caméra pour retrouver ingrédients, Nutri-Score et valeurs nutritionnelles depuis Open Food Facts.</p></div><div className="fs-mark" aria-hidden="true"><Barcode size={70}/></div></header>
+    <div className="fs-commands">{scanning?<button type="button" className="fs-stop" onClick={stopCamera}><StopCircle size={20}/> Arrêter la caméra</button>:<button type="button" className="fs-start" onClick={startCamera} disabled={support==='checking'}><Camera size={20}/>{support==='checking'?'Vérification du téléphone…':'Scanner avec mon téléphone'}</button>}</div>
     <div className={'fs-camera '+(scanning?'is-active':'')} >
       <video ref={videoRef} playsInline muted autoPlay aria-label="Aperçu caméra pour le scan des codes-barres" style={{display:scanning?'block':'none'}}/>
       {scanning?<div className="fs-guides" aria-hidden="true"><span/><span/><span/><span/><i/></div>:<div className="fs-placeholder" aria-hidden="true"><ScanLine size={66}/><span>PRÊT À SCANNER</span></div>}
       {scanning&&<span className="fs-live"><span/> CAMÉRA ACTIVE · LOCAL</span>}
     </div>
-    <div className="fs-commands">{scanning?<button type="button" className="fs-stop" onClick={stopCamera}><StopCircle size={20}/> Arrêter la caméra</button>:<button type="button" className="fs-start" onClick={startCamera} disabled={support==='checking'}><Camera size={20}/>{support==='checking'?'Vérification du téléphone…':'Scanner avec mon téléphone'}</button>}</div>
     {support==='unsupported'&&<p className="fs-support" role="status"><CircleHelp size={17}/> Scanner en direct non disponible sur ce navigateur. Chrome Android et certains navigateurs Samsung le prennent en charge ; le code imprimé reste utilisable.</p>}
     <form className="fs-fallback" onSubmit={e=>{e.preventDefault();lookup(code);}}>
       <label htmlFor="fs-code">Ou saisir le code-barres du produit</label>
-      <div><input id="fs-code" type="text" inputMode="numeric" pattern="[0-9]{8,14}" maxLength="14" autoComplete="off" placeholder="8 à 14 chiffres" value={code} onChange={e=>setCode(e.target.value.replace(/\D/g,''))} aria-describedby="fs-code-help"/><button type="submit" disabled={loading||scanning||!validFoodBarcode(code)}>Rechercher</button></div>
+      <div><input id="fs-code" type="text" inputMode="numeric" pattern="(?:[0-9]{8}|[0-9]{12}|[0-9]{13}|[0-9]{14})" maxLength="14" autoComplete="off" placeholder="EAN, UPC ou GTIN" value={code} onChange={e=>setCode(e.target.value.replace(/\D/g,''))} aria-describedby="fs-code-help"/><button type="submit" disabled={loading||scanning||!validFoodBarcode(code)}>Rechercher</button></div>
       <small id="fs-code-help">Solution de secours si ton appareil ne permet pas la détection vidéo.</small>
     </form>
     {loading&&<p className="fs-notice" role="status"><LoaderCircle size={18} className="fs-spin"/> Recherche de la fiche alimentaire…</p>}
