@@ -8,7 +8,7 @@
 
 ## Parcours navigateur
 
-14 contrôles de parcours réussis dans Chromium headless, zéro exception JavaScript : accès sans Passeport ; journal temporaire par défaut ; consentement, rechargement et suppression ; saisies ; fiches, favoris et Échap ; filtre végétarien, personnes et courses téléchargées ; refus du capteur sans pas inventés ; respiration et sommeil à cheval sur minuit ; guide corps ; cinq onglets sans débordement en 360/390/768/1440 px ; absence de télémétrie PostHog/présence sur la route Santé.
+14 contrôles de parcours réussis dans Chromium headless, zéro exception JavaScript : accès sans Passeport ; journal temporaire par défaut ; consentement, rechargement et suppression ; journal sans saisie manuelle des pas ; fiches, favoris et Échap ; filtre végétarien, personnes et courses téléchargées ; absence de faux podomètre dans la PWA ; respiration et sommeil à cheval sur minuit ; guide corps ; cinq onglets sans débordement en 360/390/768/1440 px ; absence de télémétrie PostHog/présence sur la route Santé.
 
 Commande reproductible avec Playwright installé : `CHROMIUM_PATH=/chemin/vers/chromium node scripts/verify-health-browser.mjs`. Omettre CHROMIUM_PATH pour le navigateur géré par Playwright. Le serveur de test et le navigateur sont lancés et fermés ensemble. Sorties dans `/tmp/3b-health-qa` ou `HEALTH_QA_DIR`.
 
@@ -25,3 +25,9 @@ Commande reproductible avec Playwright installé : `CHROMIUM_PATH=/chemin/vers/c
 - La vérification complète a identifié trois attentes obsolètes déjà présentes sur `main` après la refonte de l’accueil : espace dans l’import Button et ancien portail 3D remplacé par HomeCinematicArtwork. Ces attentes sont alignées sur l’accueil approuvé, en conservant ses contrats de navigation, de réduction des mouvements et du composant WebGL autonome. Aucun composant de l’accueil n’est modifié par cette correction.
 
 Commande supplémentaire : `CHROMIUM_PATH=/chemin/vers/chromium node scripts/verify-health-tools-browser.mjs` (Playwright installé). Résultats dans `HEALTH_QA_DIR` ou `/tmp/3b-health-tools-qa`. Le workflow Fortress exécute à nouveau la suite complète avant fusion ; le workflow mobile compile Android et iOS.
+
+### Compteur automatique — contrôle 16 octobre 2026
+- UI : suppression du champ de pas manuel et de l’estimation `DeviceMotion` dans Santé.
+- Modèle : seuls `health-connect` et `apple-health` peuvent alimenter le total de pas affiché.
+- Rafraîchissement : 30 jours à la connexion, puis jour courant périodiquement quand Santé est visible ; une actualisation partielle ne supprime plus l’historique importé.
+- Accessibilité : les animations de statut/orbite sont neutralisées avec `prefers-reduced-motion`.
