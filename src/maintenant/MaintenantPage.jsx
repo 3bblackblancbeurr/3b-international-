@@ -26,6 +26,7 @@ export default function MaintenantPage({goTo}){
  const [selectedValue,setSelectedValue]=useState('justice');
  const [selectedHelp,setSelectedHelp]=useState('ecouter');
  const [stepsDone,setStepsDone]=useState([]);
+ const [journeyStarted,setJourneyStarted]=useState(false);
  const [notice,setNotice]=useState('');
  const [speaking,setSpeaking]=useState(false);
  const speech=useRef(null);
@@ -39,7 +40,7 @@ export default function MaintenantPage({goTo}){
  useEffect(()=>{saveReadMode(readMode);},[readMode]);
  useEffect(()=>()=>{window.speechSynthesis?.cancel();speech.current=null;},[]);
  useEffect(()=>{setStepsDone([]);},[journey.goal,journey.minutes,journey.intensity]);
- function changeJourney(patch){setNotice('');setJourney(old=>normalizeJourney({...old,...patch}));}
+ function changeJourney(patch){setNotice('');setStepsDone([]);setJourneyStarted(false);setJourney(old=>normalizeJourney({...old,...patch}));}
  function go(tab){
   setActive(tab);
   if(speech.current){window.speechSynthesis?.cancel();speech.current=null;setSpeaking(false);}
@@ -52,7 +53,7 @@ export default function MaintenantPage({goTo}){
   go(EXPERIENCES[next].id);
   document.getElementById('now-tab-'+EXPERIENCES[next].id)?.focus({preventScroll:true});
  }
- function selectGoal(id){changeJourney({goal:id});setStepsDone([]);}
+ function selectGoal(id){changeJourney({goal:id});setStepsDone([]);setJourneyStarted(false);}
  function toggleStep(index){setStepsDone(old=>old.includes(index)?old.filter(i=>i!==index):[...old,index].sort());}
  function toggleValue(){
   setNotice('');
@@ -119,7 +120,7 @@ export default function MaintenantPage({goTo}){
        {INTENSITIES.map(t=><Button variant="ghost" key={t.id} type="button" aria-pressed={journey.intensity===t.id} onClick={()=>changeJourney({intensity:t.id})}>{t.label}</Button>)}
       </div></fieldset>
      </div>
-     <div className="now-mission">
+     <div className="now-mission" aria-live="polite">
       <div className="now-mission-top"><span>TON PARCOURS · {TIME_LABEL[plan.minutes]}</span><span>{stepsDone.length}/3 repères personnels</span></div>
       <h3>{plan.subtitle}<em> — {plan.pace}</em></h3>
       <p className="now-plan-coaching">{plan.coaching}</p>
@@ -129,7 +130,7 @@ export default function MaintenantPage({goTo}){
         <span><strong>{s.title}<em className="now-step-time">{s.allocatedMinutes} min</em></strong><small>{s.detail}</small></span>
        </Button>
       </li>)}</ol>
-      <Button variant="champagne" className="now-primary" type="button" onClick={()=>goTo(plan.route)}>Continuer dans {GOALS.find(g=>g.id===journey.goal)?.label==='Bouger'?'Santé 3B':'3B'} <ArrowRight size={19}/></Button>
+      <Button variant="champagne" className="now-primary" type="button" onClick={()=>{setJourneyStarted(true);goTo(plan.route);}}>Continuer dans {GOALS.find(g=>g.id===journey.goal)?.label==='Bouger'?'Santé 3B':'3B'} <ArrowRight size={19}/></Button>
       <p className="now-small">Cocher une étape est un repère facultatif, pas une preuve ni une récompense officielle.</p>
      </div>
     </section>}
