@@ -59,7 +59,7 @@ html[data-luxury="v2"] body .app3b[data-page="home"] .home-scanner-direct>svg:fi
 html[data-luxury="v2"] body .app3b[data-page="home"] .home-app-hub .universe-group .compact-card.gm-card{
  border:0!important;
  border-bottom:1px solid var(--3b-editorial-border)!important;
- border-radius:0!important;
+ border-radius:var(--3b-radius-flat)!important;
  background:transparent!important;
  box-shadow:var(--3b-shadow-contact);
 }
