@@ -5,6 +5,8 @@ import {MEMBER_SPACES, COUNTRY_INDEX, ADMIN_GUIDES, CINEMA_GUIDES, FINANCE_GUIDE
 import {fetchFoodProduct} from '../server/food-product.js';
 import {fetchMemberBrief} from '../server/member-brief.js';
 import catalog from '../api/catalog.js';
+import foodApi from '../api/food-product.js';
+import pwaAuditRoute from '../server/pwa-audit-route.js';
 import {readFileSync} from 'node:fs';
 
 test('member destinations are unique and can be explored without duplicated loyalty data',()=>{
@@ -47,9 +49,12 @@ test('world news is restricted to two allowlisted feeds',async()=>{
 });
 test('member services share the original Vercel catalog router and do not require paid functions',()=>{
   const config=JSON.parse(readFileSync(new URL('../vercel.json',import.meta.url),'utf8'));
-  const items=['member-brief','food-product'];
+  const items=['member-brief','pwa-audit'];
   for(const id of items){
     assert.ok(config.rewrites.some(x=>x.source==='/api/'+id&&x.destination==='/api/catalog?__3b_route='+id));
   }
   assert.equal(typeof catalog.fetch,'function');
+  assert.equal(typeof foodApi.fetch,'function');
+  assert.equal(typeof pwaAuditRoute.fetch,'function');
+  assert.ok(!config.rewrites.some(x=>x.source==='/api/food-product'));
 });
