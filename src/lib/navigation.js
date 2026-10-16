@@ -1,5 +1,5 @@
 export const PAGE_HASHES = {
-  health: "sante", deals: "3-bons-plans", maintenant: "maintenant", intro: "", home: "accueil", passport: "passeport", loyalty: "cartes", member: "membre",
+  health: "sante", foodscan: "scanner-alimentaire", news: "informations-actuelles", association: "association-3b", partners: "partenaires-3b", finance: "banque-crypto", travel: "voyage-3b", join: "nous-recherchons", tv: "3b-origins-tv", admin: "administration-3b", cinema: "cinema-3b", deals: "3-bons-plans", maintenant: "maintenant", intro: "", home: "accueil", passport: "passeport", loyalty: "cartes", member: "membre",
   manga: "manga", world3b: "monde-3b", invisible: "monde-invisible", nosbloc: "nosbloc", arena: "arene", games: "jeux", religion: "religion", guide: "guide", community: "communaute",
   secret: "secret", sport: "sport", esports: "16-18-esport", ia: "ia", "ia-textile": "ia-textile", "ia-trio": "mode-3-ia", control: "commande", shop: "boutique",
 };

@@ -37,3 +37,19 @@
  .health3b .h-switch-to-kitchen strong{font-size:15px}
 }
 @media(max-width:345px){.health3b .h-nav button{font-size:8px!important}.health3b .h-nav button svg{width:16px;height:16px}}
+
+/* Seven spaces share ONE tactile, swipeable navigation rail — never a stranded second row. */
+@media (max-width:760px){
+ .health3b .h-nav{
+  display:flex!important;flex-wrap:nowrap!important;justify-content:flex-start!important;
+  gap:4px!important;overflow-x:auto!important;overflow-y:hidden!important;
+  scrollbar-width:none;scroll-snap-type:x proximity;overscroll-behavior-x:contain;
+  -webkit-overflow-scrolling:touch;padding:2px 3px 4px!important;
+ }
+ .health3b .h-nav::-webkit-scrollbar{display:none}
+ .health3b .h-nav button{
+  flex:0 0 66px!important;min-width:66px!important;max-width:72px!important;
+  scroll-snap-align:start;min-height:54px!important;padding:5px 2px!important;
+  font-size:10px!important;white-space:normal!important;
+ }
+}

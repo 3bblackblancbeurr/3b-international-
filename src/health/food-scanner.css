@@ -1,0 +1,52 @@
+/* Scanner alimentaire · one fluid camera surface, no dashboard clutter */
+.foodscan{--fs-cream:var(--3b-health-champagne);--fs-azure:var(--3b-feature-sea-teal);--fs-divider:rgba(214,231,226,.16);color:var(--3b-white);margin:18px auto 45px;max-width:1050px;padding:0 4px;text-align:left}
+.foodscan *{box-sizing:border-box}
+.foodscan button,.foodscan input{font:inherit}
+.fs-intro{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:clamp(22px,5vw,44px) 0 25px}
+.fs-intro h2{font-size:clamp(2.8rem,7vw,5.7rem);letter-spacing:-.07em;line-height:.99;margin:16px 0 20px;color:white;font-weight:730}
+.fs-intro h2 em{font-style:normal;color:var(--fs-cream)}
+.fs-intro p{font-size:.96rem;max-width:620px;color:var(--3b-hub-muted);line-height:1.74;margin:0}
+.fs-eyebrow{display:flex;align-items:center;gap:8px;color:var(--fs-cream);font-size:.72rem;font-weight:800;letter-spacing:.17em}
+.fs-mark{flex:none;width:128px;height:128px;border-radius:var(--3b-radius-circle);display:grid;place-items:center;color:var(--fs-cream);background:radial-gradient(circle,rgba(113,226,211,.16),transparent 70%);border:1px solid rgba(213,220,189,.2);transform:rotate(-18deg)}
+.fs-camera{height:clamp(250px,46vw,470px);width:100%;position:relative;border-radius:var(--3b-scanner-radius-camera);overflow:hidden;isolation:isolate;background:radial-gradient(circle at 53% 44%,var(--3b-hub-surface-hover),var(--3b-hub-inset) 70%);border:1px solid rgba(123,219,212,.22);box-shadow:var(--3b-shadow-scanner-camera)}
+.fs-camera:after{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(216,241,231,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(216,241,231,.035) 1px,transparent 1px);background-size:36px 36px;pointer-events:none}
+.fs-camera video{width:100%;height:100%;object-fit:cover}
+.fs-placeholder{height:100%;display:grid;place-content:center;justify-items:center;gap:20px;color:var(--fs-azure)}.fs-placeholder svg{filter:drop-shadow(0 0 20px rgba(127,226,219,.6))}.fs-placeholder span{font-size:.82rem;letter-spacing:.24em;font-weight:760;color:var(--3b-hub-muted)}
+.fs-guides{position:absolute;inset:20% 12%;z-index:3;pointer-events:none}
+.fs-guides span{position:absolute;width:42px;height:42px;border:4px solid var(--fs-azure);border-radius:var(--3b-radius-sm);filter:drop-shadow(0 0 12px rgba(98,226,217,.55))}
+.fs-guides span:nth-child(1){top:0;left:0;border-right:0;border-bottom:0}.fs-guides span:nth-child(2){top:0;right:0;border-left:0;border-bottom:0}.fs-guides span:nth-child(3){bottom:0;left:0;border-right:0;border-top:0}.fs-guides span:nth-child(4){bottom:0;right:0;border-left:0;border-top:0}
+.fs-guides i{position:absolute;inset:12% 5% auto;height:2px;background:linear-gradient(90deg,transparent,var(--fs-azure),transparent);box-shadow:var(--3b-shadow-scanner-laser);animation:fs-scanline 2.8s ease-in-out infinite alternate}
+@keyframes fs-scanline{from{top:12%}to{top:88%}}
+.fs-live{position:absolute;left:20px;top:20px;z-index:4;color:var(--3b-health-text);background:rgba(1,17,19,.72);padding:8px 12px;border-radius:var(--3b-radius-pill);font-size:.69rem;letter-spacing:.1em;display:flex;align-items:center;gap:8px}
+.fs-live span{width:8px;height:8px;border-radius:var(--3b-radius-circle);background:var(--3b-feature-scan-success);box-shadow:var(--3b-shadow-scanner-live)}
+.fs-commands{display:flex;justify-content:center;margin:12px 0 23px;position:relative;z-index:6}
+.fs-start,.fs-stop{min-height:58px;padding:16px 30px;display:flex;align-items:center;justify-content:center;gap:12px;border:0;border-radius:var(--3b-radius-pill);font-weight:790;font-size:.93rem;cursor:pointer;touch-action:manipulation}
+.fs-start{background:linear-gradient(130deg,var(--3b-health-champagne),var(--3b-feature-sea-sage));color:var(--3b-feature-surface-ink);box-shadow:var(--3b-shadow-scanner-start)}.fs-stop{background:var(--3b-hub-surface);border:1px solid var(--3b-feature-muted);color:var(--3b-white)}.fs-start:disabled{opacity:.65;cursor:wait}
+.fs-fallback{max-width:660px;margin:13px 0 24px}.fs-fallback>label{font-size:.9rem;font-weight:710;color:var(--3b-health-text)}
+.fs-fallback>div{display:flex;gap:10px;margin-top:11px}.fs-fallback input{background:var(--3b-hub-raised);color:white;padding:13px 15px;border:1px solid var(--3b-health-moss);border-radius:var(--3b-radius-field);min-height:48px;flex:1;min-width:110px;letter-spacing:.08em}
+.fs-fallback button{padding:12px 21px;border:0;border-radius:var(--3b-radius-field);background:var(--3b-health-text);color:var(--3b-feature-surface-ink);font-weight:750;cursor:pointer}.fs-fallback button:disabled{opacity:.5;cursor:not-allowed}
+.fs-fallback small{color:var(--3b-feature-muted);font-size:.77rem;line-height:1.6;display:block;margin-top:8px}
+.fs-support,.fs-error,.fs-notice{display:flex;gap:10px;align-items:flex-start;font-size:.87rem;line-height:1.5;padding:11px 0;max-width:720px;color:var(--3b-health-text)}.fs-error{color:var(--3b-feature-warm-cream)}.fs-notice{color:var(--3b-map-focus)}.fs-support svg,.fs-error svg,.fs-notice svg{flex:none}
+.fs-spin{animation:fs-spin 1.4s linear infinite}@keyframes fs-spin{to{transform:rotate(360deg)}}
+.fs-product{padding:clamp(23px,4vw,40px);margin-top:32px;background:linear-gradient(135deg,rgba(20,42,40,.94),rgba(8,21,25,.98));border:1px solid rgba(206,228,216,.18);border-radius:var(--3b-radius-hero);box-shadow:var(--3b-shadow-scanner-product)}
+.fs-product-title h3{font-size:clamp(1.8rem,4vw,3rem);letter-spacing:-.05em;margin:11px 0;color:white;line-height:1.15}.fs-product-title p{margin:4px 0 20px;color:var(--3b-feature-muted)}
+.fs-badges{display:flex;flex-wrap:wrap;gap:11px;margin:19px 0 32px}.fs-badges>span{display:inline-flex;align-items:center;gap:10px;border:1px solid rgba(214,231,226,.2);border-radius:var(--3b-radius-pill);padding:9px 12px;color:var(--3b-health-text);font-size:.84rem}.fs-nutriscore strong{font-size:1.1rem;color:var(--fs-cream)}
+.fs-product h4{font-size:1rem;margin:26px 0 13px;color:var(--fs-cream);font-weight:720}
+.fs-nutrients{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 24px;margin:0;padding:0}
+.fs-nutrients div{display:flex;justify-content:space-between;gap:16px;padding:15px 0;border-bottom:1px solid var(--fs-divider)}
+.fs-nutrients dt{font-size:.85rem;color:var(--3b-health-muted)}.fs-nutrients dd{font-size:.88rem;color:var(--3b-white);font-weight:760;margin:0;text-align:right}
+.fs-ingredients,.fs-allergens{line-height:1.74;color:var(--3b-hub-muted);font-size:.89rem}.fs-allergens strong{color:var(--3b-champagne-highlight)}
+.fs-alert{display:flex;align-items:flex-start;gap:14px;color:var(--3b-text);border-left:3px solid var(--3b-member-champagne);padding:14px 19px;background:rgba(248,186,118,.07);line-height:1.65;font-size:.85rem}.fs-alert svg{flex:none;margin-top:3px}
+.fs-source{display:inline-flex;align-items:center;gap:9px;color:var(--3b-feature-sea-sage);text-decoration:none;font-size:.91rem;font-weight:650;margin:18px 0}.fs-source:hover{text-decoration:underline}
+.fs-again{display:flex;gap:9px;align-items:center;background:transparent;border:1px solid rgba(171,220,213,.5);border-radius:var(--3b-radius-pill);padding:12px 17px;color:var(--3b-health-text);cursor:pointer}
+.fs-footer{display:flex;align-items:flex-start;gap:12px;border-top:1px solid var(--fs-divider);padding:25px 0;margin-top:27px;color:var(--3b-feature-muted);font-size:.8rem;line-height:1.65}.fs-footer svg{flex:none;color:var(--fs-azure)}
+.foodscan :is(button,input):focus-visible,.fs-source:focus-visible{outline:3px solid var(--fs-azure);outline-offset:3px}
+@media(max-width:640px){.foodscan{padding:0 5px}.fs-intro{padding:16px 0 24px}.fs-mark{width:75px;height:75px}.fs-mark svg{width:47px}.fs-intro h2{font-size:2.75rem}.fs-intro p{font-size:.86rem}.fs-camera{height:310px;border-radius:var(--3b-radius-hero)}.fs-commands{margin-bottom:30px}.fs-start,.fs-stop{font-size:.82rem;min-height:55px;padding:14px 22px}.fs-fallback>div{flex-wrap:wrap}.fs-fallback input{flex-basis:55%}.fs-fallback button{flex:1}.fs-product{padding:23px 18px}.fs-nutrients{grid-template-columns:1fr}.fs-eyebrow{font-size:.65rem;letter-spacing:.11em}.fs-alert{padding:13px}}
+@media(prefers-reduced-motion:reduce){.fs-guides i,.fs-spin{animation:none}}
+
+/* Mobile keyboard/code search remains readable after Gold Master Button adoption. */
+@media(max-width:640px){
+  .foodscan .fs-fallback>div{display:grid;grid-template-columns:minmax(0,1fr) 120px;gap:8px}
+  .foodscan .fs-fallback input{width:100%;min-width:0;flex-basis:auto}
+  .foodscan .fs-fallback button{width:100%;min-width:0;white-space:nowrap;padding:10px 8px;font-size:.83rem}
+}

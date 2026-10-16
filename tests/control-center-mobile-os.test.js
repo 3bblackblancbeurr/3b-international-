@@ -27,10 +27,17 @@ test('Command OS stays mobile-first while remaining responsive for the owner on 
  assert.match(css,/\.control-page\.is-desktop/);
  assert.match(css,/@media \(pointer:coarse\)/);
  assert.match(app,/\['world3b','arena','game','control','invisible'\]/);
- const publicRoutes=JSON.parse(app.match(/passportAllowed = new Set\((\[[^;]+?\])\)/)[1]);
- assert.ok(publicRoutes.includes("control"));
- assert.ok(publicRoutes.includes("deals"));
- assert.ok(!publicRoutes.includes("world3b"));
+ // The public allowlist now combines explicit routes with the published member destinations.
+ // Check the actual expression instead of parsing executable JavaScript as JSON.
+ const allowlist=app.match(/passportAllowed = new Set\(\[([^;]+?)\]\)/)?.[1];
+ assert.ok(allowlist,'public route allowlist must exist');
+ assert.match(allowlist,/\.\.\.Object\.keys\(MEMBER_SPACE_ROUTES\)/);
+ const explicitRoutes=[...allowlist.matchAll(/"([^"]+)"/g)].map(match=>match[1]);
+ assert.ok(explicitRoutes.includes("control"));
+ assert.ok(explicitRoutes.includes("deals"));
+ assert.ok(explicitRoutes.includes("foodscan"));
+ assert.ok(!explicitRoutes.includes("world3b"));
+ assert.match(app,/news: 'news', association: 'association', partners: 'partners'/);
 });
 
 test('Command OS V2 exposes a truthful Nexus, privacy mode and fact-only brief',()=>{

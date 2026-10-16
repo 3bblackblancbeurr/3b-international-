@@ -1,0 +1,38 @@
+.mx-directory{color:var(--3b-white);margin:30px 0 18px;padding:25px 0 12px;border-top:1px solid rgba(221,213,184,.18)}
+.mx-directory header{max-width:690px}
+.mx-directory header .mx-eyebrow{display:flex;gap:8px;align-items:center}
+.mx-directory h4{font-size:clamp(1.48rem,2.8vw,2.15rem);letter-spacing:-.05em;line-height:1.14;margin:16px 0;color:var(--3b-white)}
+.mx-directory header p{font-size:.91rem;line-height:1.75;color:var(--3b-feature-muted);margin:0 0 21px}
+.mx-directory-form{max-width:780px;padding:0;margin:0 0 16px}
+.mx-directory-form>label{font-size:.8rem;font-weight:740;color:var(--3b-feature-warm-cream)}
+.mx-directory-form-row{margin:10px 0 6px;min-height:56px;display:flex;align-items:center;gap:12px;border:1px solid rgba(150,200,207,.35);border-radius:var(--3b-radius-card);background:rgba(13,31,42,.84);padding:5px 5px 5px 15px;transition:border-color .2s}
+.mx-directory-form-row:focus-within{border-color:var(--3b-map-focus)}
+.mx-directory-form-row>svg{color:var(--3b-feature-sea-teal);flex:none}
+.mx-directory-form-row input{flex:1;min-width:0;min-height:44px;background:transparent;border:0;outline:0;color:var(--3b-white);font-size:.94rem;padding:0}
+.mx-directory-form-row input::placeholder{color:var(--3b-feature-muted)}
+.mx-directory-form-row button{display:flex;align-items:center;justify-content:center;gap:8px;flex:none;min-height:44px;border-radius:var(--3b-radius-field);border:0;background:linear-gradient(120deg,var(--3b-health-champagne),var(--3b-member-bronze-highlight));color:var(--3b-feature-glass-night);font-weight:760;font-size:.85rem;padding:11px 17px;cursor:pointer}
+.mx-directory-form-row button:disabled{opacity:.58;cursor:not-allowed}
+.mx-directory-form small{font-size:.75rem;color:var(--3b-feature-muted);line-height:1.5;display:block;margin-top:9px}
+.mx-directory-feedback,.mx-directory-count{display:flex;gap:10px;align-items:center;color:var(--3b-hub-muted);line-height:1.5;font-size:.86rem;max-width:800px;margin:17px 0}
+.mx-directory-feedback.is-error{color:var(--3b-champagne-highlight);display:block}
+.mx-directory-feedback a{color:var(--3b-feature-warm-cream);display:inline-flex;align-items:center;gap:4px;font-weight:700;margin-left:6px}
+.mx-directory-count svg{flex:none;color:var(--3b-feature-sea-sage)}
+.mx-directory-list{margin:10px 0 14px;max-width:800px}
+.mx-directory-item{display:flex;gap:21px;align-items:flex-start;padding:22px 1px;border-bottom:1px solid rgba(222,232,224,.12)}
+.mx-directory-index{flex:none;color:var(--3b-member-gold-soft);font-size:.85rem;letter-spacing:.1em;font-weight:800}
+.mx-directory-description{display:flex;flex-direction:column;gap:8px;min-width:0}
+.mx-directory-description strong{font-size:1.02rem;line-height:1.4;color:var(--3b-feature-white);font-weight:720}
+.mx-directory-description span{font-size:.82rem;color:var(--3b-feature-muted)}
+.mx-directory-description a{display:inline-flex;align-items:center;gap:8px;width:fit-content;color:var(--3b-health-text);font-size:.83rem;text-decoration:none}
+.mx-directory-description a:hover{text-decoration:underline;color:var(--3b-white)}
+.mx-directory-description .mx-directory-profile{color:var(--3b-member-champagne);font-weight:740;margin-top:2px}
+.mx-dir-spin{animation:mx-dir-spin 1.4s linear infinite}
+@keyframes mx-dir-spin{to{transform:rotate(360deg)}}
+@media(max-width:600px){.mx-directory{margin-top:20px}.mx-directory h4{font-size:1.65rem}.mx-directory-form-row{gap:8px;padding-left:11px}.mx-directory-form-row button{padding:10px 11px;min-width:48px}.mx-directory-form-row button span{display:none}.mx-directory-item{gap:14px}.mx-directory-index{font-size:.7rem}}
+@media(prefers-reduced-motion:reduce){.mx-dir-spin{animation:none}.mx-directory-form-row{transition:none}}
+
+.mx-dir-more{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:47px;margin:20px 0 14px;border-radius:var(--3b-radius-pill);border:1px solid rgba(239,209,152,.44);color:var(--3b-feature-warm-cream);background:transparent;font:inherit;font-size:.85rem;font-weight:720;cursor:pointer}
+.mx-dir-more:hover{background:rgba(226,191,125,.11)}
+.mx-dir-more:focus-visible,.mx-directory-form button:focus-visible{outline:3px solid var(--3b-feature-sea-teal);outline-offset:3px}
+.mx-directory-limit{font-size:.79rem;line-height:1.6;color:var(--3b-feature-muted);margin:14px 0}
+.mx-directory-limit a{color:var(--3b-member-champagne);text-decoration:none;font-weight:730}

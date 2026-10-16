@@ -1,6 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "regions": ["cdg1"],
+  "regions": [
+    "cdg1"
+  ],
   "git": {
     "deploymentEnabled": {
       "*": false,
@@ -215,6 +217,22 @@
     }
   ],
   "rewrites": [
+    {
+      "source": "/api/member-events",
+      "destination": "/api/catalog?__3b_route=member-events"
+    },
+    {
+      "source": "/api/official-directory",
+      "destination": "/api/catalog?__3b_route=official-directory"
+    },
+    {
+      "source": "/api/pwa-audit",
+      "destination": "/api/pwa-quickkit-status?__3b_route=pwa-audit"
+    },
+    {
+      "source": "/api/member-brief",
+      "destination": "/api/catalog?__3b_route=member-brief"
+    },
     {
       "source": "/api/command-integrations",
       "destination": "/api/catalog?__3b_route=command-integrations"

@@ -1,6 +1,6 @@
 import { Button as HealthButton } from '../design-system/index.jsx';
 import React, { useEffect, useRef, useState } from 'react';
-import { Activity, Bell, History, Smartphone, Apple, ArrowDownToLine, ArrowRight, BookOpen, Check, ChevronRight, Droplets, Footprints, Heart, ChefHat, Leaf, ListChecks, Moon, Pause, Play, Plus, Search, Settings2, ShieldCheck, ShoppingBasket, Sparkles, Sun, Timer, Trash2, Utensils, Wind, X } from 'lucide-react';
+import { Activity, Bell, History, Smartphone, Apple, ArrowDownToLine, ArrowRight, BookOpen, Check, ChevronRight, Droplets, Footprints, Heart, ChefHat, Leaf, ScanLine, ListChecks, Moon, Pause, Play, Plus, Search, Settings2, ShieldCheck, ShoppingBasket, Sparkles, Sun, Timer, Trash2, Utensils, Wind, X } from 'lucide-react';
 import { FOODS, GUIDES, RECIPES, SOURCES, HEALTH_NOTES } from './content.js';
 import { boundedNumber, displayNumber, localDay, previousDays, searchText, shoppingList, sleepDuration } from './model.js';
 import { useHealth, useToday } from './useHealth.js';
@@ -11,6 +11,7 @@ import { EnergyCheckIn, HealthHistory, HealthReminders, NativeStepsPanel } from 
 import { NutritionAtlas, NutritionDetail } from './NutritionAtlas.jsx';
 import Kitchen3B, { KitchenRecipeDetail } from './Kitchen3B.jsx';
 import BodyExplorer from './BodyExplorer.jsx';
+import FoodScanner from './FoodScanner.jsx';
 import { DailyRoutines, MobilitySessions } from './WellnessTools.jsx';
 import { useNativeSteps } from './useNativeSteps.js';
 import { effectiveSteps, recordMobility } from './model.js';
@@ -19,7 +20,7 @@ import HealthVaultPanel from './HealthVaultPanel.jsx';
 import HealthRhythm from './HealthRhythm.jsx';
 
 const PHOTO = '/health/photos/';
-const TABS = [{ id:'today', label:'Jour', icon:Sun }, { id:'food', label:'Aliments', icon:Apple }, { id:'kitchen', label:'Cuisine', icon:ChefHat }, { id:'move', label:'Bouger', icon:Footprints }, { id:'body', label:'Corps', icon:Heart }, { id:'rest', label:'Repos', icon:Moon }];
+const TABS = [{ id:'today', label:'Jour', icon:Sun }, { id:'food', label:'Aliments', icon:Apple }, { id:'scanner', label:'Scanner', icon:ScanLine }, { id:'kitchen', label:'Cuisine', icon:ChefHat }, { id:'move', label:'Bouger', icon:Footprints }, { id:'body', label:'Corps', icon:Heart }, { id:'rest', label:'Repos', icon:Moon }];
 const photoFor = item => item?.category === 'body' ? 'body' : item?.category === 'move' ? 'walking' : item?.category === 'rest' ? 'rest' : item?.group === 'fruit' ? 'fruit' : item?.group ? 'vegetables' : 'hero';
 const formatDate = date => new Intl.DateTimeFormat('fr-FR', { weekday:'short', day:'numeric', month:'short' }).format(new Date(`${date}T12:00:00`));
 function download(name, content, type = 'application/json') {
@@ -86,13 +87,13 @@ function MealPlanner({ health, onOpen }) {
   return <><div className="h-section-heading"><div><h2>Une semaine plus simple.</h2><p>Un repas à prévoir par jour. Le reste reste libre.</p></div><ListChecks size={24}/></div><div className="h-week-planner">{dates.map(date=>{const recipe=RECIPES.find(item=>item.id===plan[date]);return <div key={date}><span>{formatDate(date)}</span><select aria-label={`Repas du ${formatDate(date)}`} value={plan[date]||''} onChange={event=>health.setData(current=>({...current,plan:{...current.plan,[date]:event.target.value},shoppingChecked:[]}))}><option value="">Choisir un repas</option>{RECIPES.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select>{recipe&&<HealthButton variant="health" aria-label={`Ouvrir ${recipe.name}`} onClick={()=>onOpen(recipe,'recipe')}><ChevronRight size={20}/></HealthButton>}</div>;})}</div><div className="h-shopping"><div className="h-section-heading"><div><h2>Ta liste de courses</h2><p>{list.length ? `${list.length} ingrédients · quantités indicatives` : 'Ajoute un repas pour remplir la liste.'}</p></div><ShoppingBasket size={24}/></div><label className="h-field h-small-field">Personnes par repas<select aria-label="Personnes par repas" value={servings} onChange={event=>setServings(Number(event.target.value))}>{[1,2,3,4,5,6].map(n=><option key={n}>{n}</option>)}</select></label>{list.map(ingredient=><label className="h-shopping-item" key={ingredient.key}><input type="checkbox" checked={health.data.shoppingChecked.includes(ingredient.key)} onChange={()=>health.setData(current=>({...current,shoppingChecked:current.shoppingChecked.includes(ingredient.key)?current.shoppingChecked.filter(key=>key!==ingredient.key):[...current.shoppingChecked,ingredient.key]}))}/><span>{ingredient.name}</span><strong>{displayNumber(ingredient.quantity)} {ingredient.unit}</strong></label>)}{list.length>0&&<HealthButton variant="health" className="h-secondary" onClick={()=>download('3B-liste-de-courses.txt',`SANTÉ 3B — COURSES\n${servings} personne(s) par repas\n\n`+list.map(i=>`${health.data.shoppingChecked.includes(i.key)?'✓':'□'} ${i.name} — ${typeof i.quantity==='number'?displayNumber(i.quantity):i.quantity} ${i.unit||''}`).join('\n'),'text/plain;charset=utf-8')}><ArrowDownToLine size={17}/> Télécharger la liste</HealthButton>}</div></>;
 }
 
-export default function HealthPage() {
+export default function HealthPage({initialTab='today'}={}) {
   const health = useHealth();
   const native = useNativeSteps(health);
   const today = useToday();
   const lastToday = useRef(today);
   const [clearing,setClearing]=useState(false);
-  const [tab,setTab]=useState('today'),[sheet,setSheet]=useState(null),[date,setDate]=useState(localDay()),[confirmClear,setConfirmClear]=useState(false);
+  const [tab,setTab]=useState(()=>TABS.some(item=>item.id===initialTab)?initialTab:'today'),[sheet,setSheet]=useState(null),[date,setDate]=useState(localDay()),[confirmClear,setConfirmClear]=useState(false);
   useEffect(() => { const previous = lastToday.current; setDate(current => current === previous ? today : current); lastToday.current = today; }, [today]);
   const day = health.data.days[date] || {};
   const month = new Date().getMonth()+1;
@@ -131,10 +132,12 @@ export default function HealthPage() {
       <div className="h-week-summary"><div className="h-section-heading"><h2>Tes 7 derniers jours</h2><HealthButton variant="health" className="h-link" onClick={()=>setSheet({type:'journal'})}>Compléter <ChevronRight size={16}/></HealthButton></div><div className="h-week-bars">{previousDays().map(d=>{const minutes=health.data.days[d]?.activeMinutes;return <div key={d}><strong>{minutes==null?'—':`${minutes}′`}</strong><div><span style={{height:minutes==null?'0%':`${Math.min(100,minutes/60*100)}%`}}/></div><small>{new Intl.DateTimeFormat('fr-FR',{weekday:'short'}).format(new Date(d+'T12:00:00'))}</small></div>;})}</div><p>Minutes d’activité déclarées. Une case vide signifie « non renseigné ».</p></div></details>
     </>}
     {tab==='food'&&<>
+      <HealthButton variant="health" type="button" className="h-switch-to-kitchen" onClick={()=>changeTab('scanner')}><ScanLine size={22}/><span><strong>Scanner un produit alimentaire</strong><small>Code-barres, ingrédients, allergènes et valeurs nutritionnelles</small></span><ArrowRight size={19}/></HealthButton>
       <NutritionAtlas foods={FOODS} favorites={health.data.favorites} onOpen={item=>open(item,'food')}/>
       <HealthButton variant="health" type="button" className="h-switch-to-kitchen" onClick={()=>changeTab('kitchen')}><ChefHat size={22}/><span><strong>Passer en cuisine</strong><small>22 recettes pas à pas, menus et courses</small></span><ArrowRight size={19}/></HealthButton>
       <details className="h-detail"><summary>Repères pour une alimentation variée</summary><p>Pour les adultes : au moins cinq portions de fruits et légumes par jour en variant, et des légumes secs au moins deux fois par semaine. Les besoins individuels peuvent différer.</p><a href="https://www.mangerbouger.fr/" target="_blank" rel="noopener noreferrer">Santé publique France ↗</a></details>
     </>}
+    {tab==='scanner'&&<FoodScanner/>}
     {tab==='kitchen'&&<Kitchen3B favorites={health.data.favorites} onOpen={item=>open(item,'recipe')} onOpenNutrition={()=>changeTab('food')} planner={<MealPlanner health={health} onOpen={open}/>}/>}
     {tab==='move'&&<><PhotoTile title="Ton mouvement. Ton rythme." subtitle="Un peu aujourd’hui, à ton niveau" photo="walking" onClick={()=>document.getElementById('h-steps')?.scrollIntoView({behavior:'smooth'})} className="h-banner"/><div id="h-steps"><NativeStepsPanel native={native} day={health.data.days[today]||{}}/></div><MobilitySessions onComplete={session=>{health.setData(current=>recordMobility(current,session));health.setNotice('Séance ajoutée au journal, séparément des minutes saisies.');}}/><div className="h-guides"><h2>Des gestes accessibles</h2>{guides.map(item=><HealthButton variant="health" key={item.id} onClick={()=>open(item,'guide')}><Activity size={22}/><span><strong>{item.name}</strong><small>{item.summary}</small></span><ChevronRight size={19}/></HealthButton>)}</div><details className="h-detail"><summary>Des minutes, pas un objectif de 10 000 pas imposé</summary><p>L’OMS recommande aux adultes 150 à 300 minutes d’activité d’endurance modérée par semaine et du renforcement au moins deux jours par semaine. Commence progressivement, selon tes capacités. Chaque occasion de bouger compte.</p><a href="https://www.who.int/fr/news-room/fact-sheets/detail/physical-activity" target="_blank" rel="noopener noreferrer">Recommandations OMS ↗</a></details></>}
     {tab==='rest'&&<><div className="h-section-heading h-section-intro"><div><span className="h-eyebrow">RALENTIR AUSSI, C’EST AVANCER</span><h2>Un peu d’espace pour toi.</h2></div><Wind size={27}/></div><div className="h-rest-layout"><Breathing/><SleepJournal key={date} date={date} day={day} updateDay={health.updateDay}/></div><div className="h-guides"><h2>Retrouver des repères</h2>{guides.map(item=><HealthButton variant="health" key={item.id} onClick={()=>open(item,'guide')}><Moon size={22}/><span><strong>{item.name}</strong><small>{item.summary}</small></span><ChevronRight size={19}/></HealthButton>)}</div></>}

@@ -5,6 +5,7 @@ import {NAV_GROUPS,PRINCIPAL_DESTINATIONS} from '../src/components/navigation-me
 
 const home=readFileSync(new URL('../src/components/HomePage.jsx',import.meta.url),'utf8');
 const app=readFileSync(new URL('../src/App.jsx',import.meta.url),'utf8');
+const account=readFileSync(new URL('../src/loyalty/AccountPage.jsx',import.meta.url),'utf8');
 const nav=readFileSync(new URL('../src/components/AppNavigation.jsx',import.meta.url),'utf8');
 const portal=readFileSync(new URL('../src/components/WorldPortalCard.jsx',import.meta.url),'utf8');
 const games=readFileSync(new URL('../src/games/premium.css',import.meta.url),'utf8');
@@ -17,7 +18,9 @@ test('home hides technical status cards and keeps the ecosystem guide at the bot
  assert.ok(home.indexOf('<WorldPortalCard') < home.indexOf('Les espaces 3B'));
  const guide=home.lastIndexOf('Le guide 3B');
  assert.ok(guide>home.indexOf('secondaryGroups.map'));
- assert.deepEqual(NAV_GROUPS.find(group=>group.title==='Identité & progression').ids,['passport','member','loyalty']);
+ assert.deepEqual(NAV_GROUPS.find(group=>group.title==='Identité & progression').ids,['passport','member']);
+ assert.ok(account.includes('<MemberExperiences goTo={goTo} profile={profile}/>'));
+ assert.match(app,/page === "loyalty" && <LoyaltyPage/);
  assert.deepEqual(NAV_GROUPS.find(group=>group.title==='Univers 3B').ids,['world3b','invisible','secret']);
  assert.doesNotMatch(home,/<InstallCards|dashboard-footer/);
  assert.match(home,/item.status!=='soon'/);
