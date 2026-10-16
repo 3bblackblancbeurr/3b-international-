@@ -1,0 +1,59 @@
+name: Verify 3B Health
+
+on:
+  pull_request:
+    paths:
+      - 'src/health/**'
+      - 'tests/health*.test.js'
+      - 'scripts/verify-health-*.mjs'
+      - '.github/workflows/verify-health.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/health/**'
+      - 'tests/health*.test.js'
+      - 'scripts/verify-health-*.mjs'
+      - '.github/workflows/verify-health.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: health-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Health unit and native-contract tests
+        run: node --test tests/health*.test.js tests/android-health-contract.test.js tests/ios-health-contract.test.js
+      - name: Production build
+        run: npm run build
+      - name: Install Playwright runner
+        run: npm install --no-save --package-lock=false @playwright/test@1.56.1
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Health primary browser journey
+        run: node scripts/verify-health-browser.mjs
+        env:
+          HEALTH_QA_DIR: artifacts/health/browser
+      - name: Health tools and native bridge journey
+        run: node scripts/verify-health-tools-browser.mjs
+        env:
+          HEALTH_QA_DIR: artifacts/health/tools
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: health-ui-${{ github.sha }}
+          path: artifacts/health/
+          retention-days: 7
