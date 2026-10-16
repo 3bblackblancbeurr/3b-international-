@@ -30,7 +30,7 @@ export default function HealthRhythm({ data, date, onSetTarget, onOpenSteps, onO
           <circle cx="120" cy="120" r="91" className="h-rhythm-progress" pathLength="100" strokeDasharray={(percent ?? 0) + ' 100'} transform="rotate(-90 120 120)"/>
           <circle cx="120" cy="120" r="76" className="h-rhythm-inner"/>
         </svg>
-        <div className="h-rhythm-reading" aria-hidden="true"><Footprints size={21}/><strong>{displayNumber(today.value)}</strong><span>PAS RENSEIGNÉS</span>{percent !== null && <small>{percent} % du repère</small>}</div>
+        <div className="h-rhythm-reading" aria-hidden="true"><Footprints size={21}/><strong>{displayNumber(today.value)}</strong><span>PAS ENREGISTRÉS</span>{percent !== null && <small>{percent} % du repère</small>}</div>
       </div>
       <div className="h-rhythm-control">
         <span className="h-rhythm-kicker">MON REPÈRE FACULTATIF</span>
@@ -57,7 +57,7 @@ export default function HealthRhythm({ data, date, onSetTarget, onOpenSteps, onO
           <small>{shortDay(item.date)}</small>
         </div>)}
       </div>
-      <p className="h-rhythm-foot">Total du téléphone prioritaire, sinon saisie manuelle, sinon estimation clairement signalée. Un jour vide n’entre pas dans la moyenne. Le repère est conservé uniquement avec ton journal local.</p>
+      <p className="h-rhythm-foot">Les pas du téléphone connecté apparaissent automatiquement. Les anciennes mesures restent séparées ; les sources ne sont jamais additionnées. Un jour sans lecture ne signifie pas zéro. Le repère reste dans ton journal local.</p>
     </div>
   </section>;
 }
