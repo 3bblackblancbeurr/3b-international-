@@ -48,6 +48,7 @@ import ReligionPage from "./components/ReligionPage.jsx";
 const CommunityPage = lazy(() => import("./community/CommunityPage.jsx"));
 const MangaPage = lazy(() => import("./manga/MangaPage.jsx"));
 const EsportsPage = lazy(() => import("./esports/EsportsPage.jsx"));
+const MaintenantPage = lazy(() => import("./maintenant/MaintenantPage.jsx"));
 import SportPage from "./sport/SportPage.jsx";
 const WorldExperience=lazy(()=>import('./world/WorldEntry.jsx'));
 const InvisibleExperience=lazy(()=>import('./world/invisible/InvisiblePage.jsx'));
@@ -55,6 +56,7 @@ const ArenaExperience=lazy(()=>import('./arena/ArenaPage.jsx'));
 const NosblocPage=lazy(()=>import('./nosbloc/NosblocPremiumPage.jsx'));
 
 const BASE_MENU_ITEMS = [
+  { id: "maintenant", label: "3B Maintenant", icon: "✦", description: "La Boussole, le Cercle Vivant et six expériences pour agir." },
   { id: "health", label: "Santé", description: "Manger, bouger et prendre soin de soi." },
   { id: "deals", label: "3 bons plans", description: "Des offres datées et sourcées pour le quotidien." },
   { id: "guide", label: "Guide & XP", description: "Les repères pour commencer." },
@@ -379,7 +381,7 @@ export default function App() {
     );
   }
 
-  const passportAllowed = new Set(["home", "passport", "member", "religion", "control", "shop", "guide", "invisible", "deals", "health", "games", "game", "manga", "sport", "esports", "community", "ia", "ia-textile", "ia-trio"]);
+  const passportAllowed = new Set(["home", "passport", "member", "religion", "control", "shop", "guide", "invisible", "deals", "health", "maintenant", "games", "game", "manga", "sport", "esports", "community", "ia", "ia-textile", "ia-trio"]);
   const needsPassport = !loyalty.loading && !hasPassport && !passportAllowed.has(page);
 
   if (needsPassport) {
@@ -422,6 +424,7 @@ export default function App() {
 
       {page === "loyalty" && <LoyaltyPage goTo={goTo} member={member} />}
       {page === "nosbloc" && <NosblocPage goTo={goTo} />}
+      {page === "maintenant" && <MaintenantPage goTo={goTo} />}
       {page === "games" && <GamesHub key={loyalty.user?.id || "guest"} goTo={goTo} goToGame={goToGame} />}
       {page === "game" && (gameSlug === "penalty-rush"
         ? <PenaltyRush onClose={() => goTo("games")} onAccount={() => goTo("member")} />
