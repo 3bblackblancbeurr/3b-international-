@@ -319,3 +319,23 @@ html[data-motion="reduced"] .world3b-home *,html[data-motion="reduced"] .albert3
  .world3b-realm-selector{margin-bottom:12px}
  .albert3b-topmark{display:none}
 }
+
+/* Intuitive pinch + keyboard zoom, with native-size touch targets and no scroll trap. */
+.world3b-globe-controls{
+ position:absolute;z-index:3;top:30%;right:1%;display:flex;flex-direction:column;
+ align-items:center;gap:7px;pointer-events:auto
+}
+.world3b-globe-controls .gm-button{
+ width:42px;height:42px;min-width:42px;min-height:42px;padding:0;
+ display:grid;place-items:center;border:1px solid rgba(203,190,157,.48);
+ border-radius:var(--3b-world-radius-03);color:var(--wl-gold-bright);
+ background:rgba(3,17,30,.88)
+}
+.world3b-globe-controls .gm-button:hover:not(:disabled){background:rgba(36,91,133,.88)}
+.world3b-globe-controls .gm-button:disabled{opacity:.38;cursor:default}
+.world3b-zoom-readout{font-size:10px;font-weight:800;letter-spacing:.02em;color:var(--wl-gold-bright);
+ text-shadow:0 1px 8px rgba(0,0,0,.95)}
+@media(max-width:370px){
+ .world3b-globe-controls{top:29%;right:0;gap:5px}
+ .world3b-globe-controls .gm-button{width:36px;height:36px;min-width:36px;min-height:36px}
+}
