@@ -38,6 +38,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
+          cache: gradle
       - run: npm ci
       - run: npm run build
       - run: npx --no-install cap sync android
