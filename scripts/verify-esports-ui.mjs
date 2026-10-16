@@ -33,6 +33,10 @@ try{
   const nav=root.locator('.es16-navigation');
   check('Club navigation visible '+width,await nav.isVisible());
   check('Club navigation remains reachable '+width,await nav.evaluate(el=>{const r=el.getBoundingClientRect();return r.width>0&&r.height>0;}));
+  if(width<720){
+   check('Touch navigation avoids backdrop blur '+width,await nav.evaluate(el=>{const s=getComputedStyle(el);return (s.backdropFilter||s.webkitBackdropFilter||'none')==='none';}));
+   check('Touch hero avoids filtered image compositing '+width,await root.locator('.es16-hero-visual img').evaluate(el=>getComputedStyle(el).filter==='none'));
+  }
   await root.getByRole('button',{name:'Recrutement',exact:true}).click();
   await page.getByRole('heading',{name:'Recherche de joueurs.'}).waitFor();
   check('Recruitment is multigame '+width,(await root.innerText()).includes('candidats de tous les jeux'));
