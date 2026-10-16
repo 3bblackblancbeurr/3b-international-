@@ -6,6 +6,8 @@ import FOOD_PHOTOS from './foodPhotos.js';
 import { searchText } from './model.js';
 import { FOOD_NUTRITION, NUTRITION_SOURCES, ORGAN_TOPICS, NO_CURE_NOTE, describeFoodForTopic, getFoodTopics, getNutrition, scaleAmount } from './nutrition-data.js';
 import './nutrition-atlas.css';
+import { explainNutrient } from './nutrient-roles.js';
+import './nutrient-interactions.css';
 
 const FAMILIES = [
   { id: 'all', label: 'Tout' },
@@ -87,6 +89,7 @@ export function NutritionAtlas({ foods, favorites = [], onOpen }) {
 export function NutritionDetail({ item, isFavorite, onFavorite }) {
   const [section, setSection] = useState('composition');
   const [grams, setGrams] = useState(100);
+  const [nutrient,setNutrient] = useState('Fibres');
   const entry = getNutrition(item.id);
   const [body, setBody] = useState(entry?.organs[0] || 'digestion');
   const choices = entry?.organs || [];
@@ -103,9 +106,10 @@ export function NutritionDetail({ item, isFavorite, onFavorite }) {
         <div className="h-nutrition-portion"><div><span>COMPOSITION MOYENNE</span><strong>{entry.preparation}</strong></div><div role="group" aria-label="Quantité théorique"><HealthButton variant="health" type="button" onClick={() => setGrams(100)} aria-pressed={grams === 100}>100 g</HealthButton><HealthButton variant="health" type="button" onClick={() => setGrams(150)} aria-pressed={grams === 150}>150 g</HealthButton></div></div>
         <div className="h-nutrition-energy"><span>ÉNERGIE</span><div><strong>{number(scaleAmount(entry.values.kcal, grams))}</strong><small>kcal</small></div><p>La valeur change avec la quantité choisie.</p></div>
         <div className="h-nutrition-macro" aria-label="Macronutriments">
-          {[['Glucides','carbs'],['dont sucres','sugars'],['Protéines','protein'],['Fibres','fiber'],['Matières grasses','fats']].map(([label,key]) => <div key={key}><span>{label}</span><strong>{amount(entry.values[key], grams, 'g')}</strong></div>)}
+          {[['Glucides','carbs'],['dont sucres','sugars'],['Protéines','protein'],['Fibres','fiber'],['Matières grasses','fats']].map(([label,key]) => <HealthButton variant="health" type="button" className="h-nutrient-choice" key={key} aria-pressed={nutrient===label} onClick={()=>setNutrient(label)}><span>{label}</span><strong>{amount(entry.values[key], grams, 'g')}</strong></HealthButton>)}
         </div>
-        <div className="h-nutrition-vitamins"><h3>Vitamines & minéraux</h3>{entry.micronutrients.map(n => <div key={n.label}><span>{n.label}</span><strong>{amount(n.value, grams, n.unit)}</strong></div>)}{entry.highlights.map(value => <p key={value}><Sparkles size={14}/>{value}</p>)}</div>
+        <div className="h-nutrition-vitamins"><h3>Vitamines & minéraux</h3>{entry.micronutrients.map(n => <HealthButton variant="health" type="button" className="h-nutrient-choice" key={n.label} aria-pressed={nutrient===n.label} onClick={()=>setNutrient(n.label)}><span>{n.label}</span><strong>{amount(n.value, grams, n.unit)}</strong></HealthButton>)}{entry.highlights.map(value => <p key={value}><Sparkles size={14}/>{value}</p>)}</div>
+        {explainNutrient(nutrient)&&<div className="h-nutrient-explainer" aria-live="polite"><span>COMPRENDRE · {nutrient.toUpperCase()}</span><p>{explainNutrient(nutrient).role}</p><a href={explainNutrient(nutrient).source} target="_blank" rel="noopener noreferrer">Référence scientifique ↗</a></div>}
         <p className="h-nutrition-method"><ShieldCheck size={15}/> Valeurs moyennes indicatives pour la partie comestible et l’état précisés, hors ajout d’huile ou de sauce. Les tirets signalent une donnée non renseignée, pas une teneur nulle. Certaines vitamines varient fortement à la cuisson.</p>
       </> : <div className="h-nutrition-no-data"><BookOpen size={27}/><h3>Les chiffres ne sont pas encore suffisamment documentés pour cette préparation.</h3><p>Nous préférons afficher une donnée absente plutôt qu’inventer des calories, des vitamines ou des pourcentages.</p></div>}
     </div>}

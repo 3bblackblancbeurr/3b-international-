@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { HealthBridge, hasHealthBridge, healthError, nativePlatform, onHealthResume } from './nativeHealth.js';
-import { blankHealth, mergeNativeSteps, withoutNativeSteps } from './model.js';
+import { blankHealth, mergeNativeSteps, mergeRecentNativeSteps, withoutNativeSteps } from './model.js';
 
 export function useNativeSteps(health) {
   const [status,setStatus] = useState({available:false,platform:nativePlatform(),status:'checking'});
@@ -12,7 +12,7 @@ export function useNativeSteps(health) {
     if (!hasHealthBridge()) { const result={available:false,platform:nativePlatform(),status:nativePlatform()==='web'?'web':'update'}; if(alive.current)setStatus(result); return result; }
     const result = await HealthBridge.getStatus(); if(alive.current)setStatus(result); return result;
   },[]);
-  const refresh = useCallback(async (ask=false) => {
+  const refresh = useCallback(async (ask=false, recent=false) => {
     if (locked.current || (!ask && !enabled.current) || !hasHealthBridge()) return;
     const lock={}; locked.current=lock; setBusy(true); setMessage('');
     const token=epoch.current;
@@ -29,18 +29,27 @@ export function useNativeSteps(health) {
       } else if (state.platform==='android' && state.permission!=='granted') {
         enabled.current=false;health.setData(current=>withoutNativeSteps(current)); throw {code:'permission_denied'};
       }
-      const result=await HealthBridge.readSteps({days:30});
+      const result=await HealthBridge.readSteps({days:recent?1:30});
       if(!alive.current || epoch.current!==token) return;
-      mergeNativeSteps(blankHealth(),result); // Validate before a React state updater can run asynchronously.
-      health.setData(current=>(alive.current && epoch.current===token)?mergeNativeSteps(current,result):current);
+      if (recent) mergeRecentNativeSteps(blankHealth(),result); else mergeNativeSteps(blankHealth(),result); // Validate before React state updater.
+      health.setData(current=>(alive.current && epoch.current===token)?(recent?mergeRecentNativeSteps(current,result):mergeNativeSteps(current,result)):current);
       enabled.current=true; setLastSync(result.syncedAt);
       const hasValues=result.days.some(day=>typeof day.steps==='number');
-      setMessage(hasValues?'Les pas du téléphone sont à jour. Les saisies manuelles restent séparées.':state.platform==='ios'?'Aucun pas lisible. Apple ne permet pas de distinguer un refus de lecture d’une absence de données. Vérifie Santé → ton profil → Apps → 3B.':'Aucun pas disponible. Vérifie la synchronisation de Samsung Health et les sources de Health Connect.');
+      setMessage(hasValues?'Les pas du téléphone sont à jour. Aucune saisie manuelle nécessaire.':state.platform==='ios'?'Aucun pas lisible. Apple ne permet pas de distinguer un refus de lecture d’une absence de données. Vérifie Santé → ton profil → Apps → 3B.':'Aucun pas disponible. Vérifie la synchronisation de Samsung Health et les sources de Health Connect.');
     } catch(error) { if(alive.current && epoch.current===token)setMessage(healthError(error)); }
     finally { if(locked.current===lock){locked.current=null;if(alive.current)setBusy(false);} }
   },[check,health.setData]);
   useEffect(() => { check().catch(()=>{if(alive.current)setStatus({available:false,platform:nativePlatform(),status:'unavailable'});}); },[check]);
   useEffect(() => { if(health.data.nativeEnabled)refresh(); return onHealthResume(()=>{if(enabled.current)refresh();}); },[health.data.nativeEnabled,refresh]);
+  // Foreground synchronization only, with explicit permission. Health Connect
+  // batches on-device steps; polling more than once per minute adds no accuracy.
+  useEffect(() => {
+    if (!health.data.nativeEnabled || !hasHealthBridge()) return;
+    const timer = setInterval(() => {
+      if (document.visibilityState === 'visible' && enabled.current) refresh(false, true);
+    }, 60000);
+    return () => clearInterval(timer);
+  }, [health.data.nativeEnabled, refresh]);
   const disconnect=useCallback(async () => {
     if(locked.current?.disconnect)return;
     const lock={disconnect:true};locked.current=lock;setBusy(true);
