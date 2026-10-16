@@ -2,7 +2,7 @@
 export function validFoodBarcode(input) {
   const code=String(input||'');
   if(!/^\d{8,14}$/.test(code))return false;
-  if(![8,12,13,14].includes(code.length))return true;
+  if(![8,12,13,14].includes(code.length))return false;
   const digits=code.split('').map(Number);
   const expected=digits.pop();
   let sum=0;
