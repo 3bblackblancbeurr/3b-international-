@@ -67,12 +67,6 @@ const BASE_MENU_ITEMS = [
     description: "Ton identité 3B.",
   },
   {
-    id: "loyalty",
-    label: "Cartes de fidélité",
-    icon: "💳",
-    description: "Points, avantages et récompenses.",
-  },
-  {
     id: "manga",
     label: "Manga 3B",
     icon: "📖",
