@@ -94,6 +94,8 @@ try{
    check('Selecting a realm changes visible globe context',await home.locator('.world3b-realm-current').innerText().then(t=>t.includes('Maroc')));
    await home.locator('#world3b-search').fill('sante');
    check('Search removes accents',await home.locator('.world3b-universe-link').count()===1);
+   await home.locator('#world3b-search').fill('scanner');
+   check('Search exposes extra scanner service',await home.locator('.world3b-search-extra-links a[href*="scanner-alimentaire"]').count()===1);
    await home.locator('#world3b-search').fill('');
    await home.locator('.world3b-universe-fav').first().click();
    await home.getByRole('button',{name:'Favoris',exact:true}).click();
