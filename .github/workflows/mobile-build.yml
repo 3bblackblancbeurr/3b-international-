@@ -38,6 +38,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
+          cache: gradle
       - run: npm ci
       - run: npm run build
       - run: npx --no-install cap sync android
@@ -45,7 +46,26 @@ jobs:
         run: node scripts/verify-android-play-readiness.mjs
       - name: Build Android test APK and unsigned bundle
         working-directory: android
-        run: ./gradlew --no-daemon testDebugUnitTest assembleDebug bundleRelease
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            if ./gradlew --no-daemon --max-workers=2 testDebugUnitTest assembleDebug bundleRelease > "$RUNNER_TEMP/gradle-build.log" 2>&1; then
+              cat "$RUNNER_TEMP/gradle-build.log"
+              exit 0
+            fi
+            if ! grep -Eq "Received status code 429|Too Many Requests" "$RUNNER_TEMP/gradle-build.log"; then
+              cat "$RUNNER_TEMP/gradle-build.log"
+              exit 1
+            fi
+            echo "::warning::Maven returned HTTP 429; Gradle attempt $attempt/3 failed."
+            tail -n 35 "$RUNNER_TEMP/gradle-build.log"
+            if [ "$attempt" = "3" ]; then
+              cat "$RUNNER_TEMP/gradle-build.log"
+              exit 1
+            fi
+            sleep $((30 * attempt))
+          done
       - name: Generate Android SHA-256 checksums
         shell: bash
         run: |

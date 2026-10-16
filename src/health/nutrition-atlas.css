@@ -1,0 +1,184 @@
+/* 3B Santé · Atlas éditorial 2026 — visuels d'abord, pas d'encadrement gratuit. */
+.health3b .h-atlas{--h-atlas-line:rgba(209,223,207,.15);color:#f6f3ec;min-width:0;}
+.health3b .h-atlas button,.h-sheet--nutrition button{font-family:inherit}
+.health3b .h-atlas .gm-button,.h-sheet--nutrition .gm-button{box-shadow:none!important}
+.h-atlas-intro{display:flex;align-items:end;justify-content:space-between;gap:14px;margin:20px 0 18px}
+.h-atlas-kicker,.h-atlas-feature-text>small,.h-nutrition-hero small,.h-atlas-interest>span,.h-atlas-insight>span,.h-nutrition-portion>div>span,.h-nutrition-energy>span{font-size:10px;letter-spacing:.16em;font-weight:700;color:#d4c49e}
+.health3b .h-atlas-intro h2{font-size:clamp(30px,4.1vw,52px);letter-spacing:-.055em;line-height:1.06;margin:8px 0;color:#faf8f2;font-weight:550}
+.h-atlas-intro h2 em{font-style:normal;color:#a8e4c6}
+.health3b .h-atlas-intro p{color:#b8c5bd;font-size:13px;margin:8px 0 0}
+.h-atlas-count{flex-shrink:0;font-size:11px;color:#cad8cd;white-space:nowrap;padding-bottom:7px}
+.health3b .h-atlas-feature{width:100%;min-height:250px;position:relative;display:flex;align-items:end;overflow:hidden;text-align:left;border:0!important;border-radius:20px;background:#132920!important;isolation:isolate;color:#fff;padding:0}
+.h-atlas-feature>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 52%;transition:transform .45s ease;z-index:-2}
+.h-atlas-feature:after{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,#081710f2 0%,#081710b8 39%,#0a1b1240 100%),linear-gradient(0deg,#06120b88,transparent 55%)}
+.h-atlas-feature:hover>img,.h-atlas-feature:focus-visible>img{transform:scale(1.035)}
+.h-atlas-feature-text{display:flex;flex-direction:column;align-items:start;gap:10px;padding:32px;max-width:78%}
+.h-atlas-feature-text>strong{font-size:clamp(35px,4.3vw,56px);font-weight:550;letter-spacing:-.05em;line-height:1}
+.h-atlas-feature-text>span{font-size:13px;line-height:1.45;color:#e0e9dd}
+.h-atlas-feature-action{position:absolute;right:26px;bottom:28px;width:44px;height:44px;display:grid;place-items:center;border:1px solid #e5ecd970;border-radius:50%}
+.h-atlas-explore-tools{display:flex;align-items:center;gap:16px;justify-content:space-between;margin:18px 0 4px}
+.h-atlas-search{flex:1;display:flex;align-items:center;gap:12px;color:#c9dbcf;border-bottom:1px solid #d7e2cf50;min-width:0;min-height:48px}
+.h-atlas-search input{font:inherit;color:#f6f4ec;background:transparent;border:0!important;outline:none;min-width:0;flex:1;font-size:13px}
+.h-atlas-search input::placeholder{color:#aebdb3;opacity:1}
+.h-atlas-search button{min-width:32px;min-height:32px;color:#d6dece;background:transparent!important;border:0!important;padding:3px}
+.h-atlas-small-filters{display:flex;gap:5px;flex-shrink:0}
+.health3b .h-atlas-small-filters>button{border:0!important;background:transparent!important;color:#c3d4c7;display:flex;align-items:center;gap:6px;padding:10px;font-size:11px;border-radius:999px}
+.health3b .h-atlas-small-filters>button.is-on{background:#cce9d2!important;color:#153525}
+.h-atlas-family,.h-atlas-topics{display:flex;gap:7px;overflow:auto hidden;scrollbar-width:none;touch-action:pan-x;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+.h-atlas-family::-webkit-scrollbar,.h-atlas-topics::-webkit-scrollbar,.h-atlas-grid::-webkit-scrollbar{display:none}
+.h-atlas-family{margin:15px 0 22px}
+.health3b .h-atlas-family>button{flex:0 0 auto;border:0!important;background:none!important;color:#b8c7b9;padding:9px 12px;font-size:12px;min-height:38px;border-bottom:2px solid transparent!important;border-radius:0}
+.health3b .h-atlas-family>button[aria-pressed=true]{color:#fff;border-bottom-color:#d3c091!important}
+.h-atlas-interest>span{display:block;margin:0 0 11px}
+.h-atlas-topics{padding-bottom:10px;gap:8px}
+.health3b .h-atlas-topics>button{display:flex;align-items:center;gap:7px;flex:0 0 auto;border:1px solid #c9d8cc33!important;border-radius:50px;background:#18372b66!important;color:#d8e6d8;padding:9px 13px;font-size:11px;min-height:41px}
+.health3b .h-atlas-topics>button[aria-pressed=true]{background:#d3e9d6!important;color:#163b2a;border-color:#d3e9d6!important}
+.h-atlas-insight{padding:17px 0 4px;margin:11px 0 16px;border-top:1px solid #cee0d22a}
+.health3b .h-atlas-insight p{color:#e2eadd;font-size:14px;max-width:730px;line-height:1.65;margin:7px 0}
+.h-atlas-insight small{font-size:12px;color:#cbd5ca}
+.h-atlas-results-header{display:flex;justify-content:space-between;align-items:baseline;margin:29px 0 17px;gap:12px}
+.h-atlas-results-header strong{font-size:18px;font-weight:550;letter-spacing:-.02em}
+.h-atlas-results-header span{font-size:11px;color:#b2c3b5}
+.h-atlas-grid{display:grid;grid-template-rows:repeat(2,minmax(0,auto));grid-auto-flow:column;grid-auto-columns:calc((100% - 60px)/4.35);gap:20px;overflow:auto hidden;scroll-snap-type:x mandatory;overscroll-behavior-inline:contain;scrollbar-width:none;scroll-padding-inline:4px;padding:3px 3px 12px;margin-inline:-3px}
+.h-atlas-grid-item{scroll-snap-align:start;min-width:0}
+.health3b .h-atlas-tile{width:100%;display:flex;flex-direction:column;align-items:stretch;gap:7px;text-align:left;padding:0!important;min-width:0;background:transparent!important;color:#fafbf5;border:0!important;border-radius:0!important}
+.h-atlas-photo{width:100%;aspect-ratio:1/1.02;display:block;position:relative;overflow:hidden;border-radius:14px;background:radial-gradient(circle at 50% 40%,#395847,#17251f)}
+.h-atlas-photo img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .35s ease}
+.h-atlas-tile:hover .h-atlas-photo img,.h-atlas-tile:focus-visible .h-atlas-photo img{transform:scale(1.045)}
+.h-atlas-heart{position:absolute;right:10px;top:10px;filter:drop-shadow(0 1px 5px #0009);color:#f8e2a5}
+.h-atlas-tile-name{font-size:16px;font-weight:550;letter-spacing:-.025em;display:flex;align-items:center;justify-content:space-between;gap:6px}
+.h-atlas-tile-name svg{width:16px;flex-shrink:0;color:#c8dbca}
+.h-atlas-tile small{font-size:11px;color:#b7c8b8;line-height:1.25;min-height:26px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.h-atlas-scroll-controls{display:flex;justify-content:end;gap:8px;margin:5px 0 10px}
+.health3b .h-atlas-scroll-controls>button{display:grid;place-items:center;border:1px solid #d6e0cb38!important;border-radius:100%;background:transparent!important;color:#f5f6ed;width:40px;height:40px;padding:0}
+.h-atlas-source-line{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:11px!important;margin:8px 0 0!important;color:#b7c5bb!important}
+.h-atlas-empty{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:38px 12px;border-top:1px solid #ffffff22;text-align:center}
+.health3b .h-atlas-empty button{border:0!important;background:transparent!important;color:#d6cfad;display:flex;align-items:center;gap:8px}
+/* Sheet immersive, sans cartes empilées */
+.h-sheet.h-sheet--nutrition{max-width:680px;width:calc(100vw - 28px);max-height:95dvh;background:#0b1713;color:#f8f6ef;border:1px solid #dae9d227;border-radius:19px;overflow-y:auto;overscroll-behavior:contain}
+.h-sheet--nutrition>header{position:sticky;top:0;z-index:3;background:#0b1713e8;backdrop-filter:blur(12px);border-bottom:1px solid #d9ebd41d}
+.h-sheet--nutrition>header h2{font-size:17px}
+.h-sheet--nutrition>.h-sheet-body{padding:0 0 24px}
+.h-nutrition-hero{height:250px;position:relative;overflow:hidden;isolation:isolate;background:#263e30}
+.h-nutrition-hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2}
+.h-nutrition-hero:after{content:'';position:absolute;inset:0;background:linear-gradient(0deg,#06130ee9 0%,#06130e6e 52%,#06130e00 100%);z-index:-1}
+.h-nutrition-hero>div{position:absolute;bottom:19px;left:26px;right:24px}
+.h-nutrition-hero h2{font-size:45px!important;line-height:1.03;color:#fff!important;font-weight:550;letter-spacing:-.05em;margin:8px 0 6px}
+.h-nutrition-hero>div>span{color:#e4eee4;font-size:12px}
+.h-nutrition-subactions{padding:14px 25px;display:flex;align-items:center;justify-content:space-between;gap:14px}
+.h-nutrition-subactions p{font-size:12px!important;margin:0!important;color:#ceded1!important}
+.h-sheet--nutrition .h-nutrition-favorite{border:1px solid #dbe7d14a!important;background:transparent!important;display:grid;place-items:center;width:39px;height:39px;border-radius:50%;color:#eed49b;flex-shrink:0;padding:0}
+.h-nutrition-tabs{display:flex;gap:0;margin:0 25px 24px;border-bottom:1px solid #d0e0d529;overflow-x:auto}
+.h-sheet--nutrition .h-nutrition-tabs button{white-space:nowrap;flex:1;min-height:45px;font-size:12px;padding:7px 9px;color:#aebdb2;border:0!important;border-bottom:2px solid transparent!important;background:transparent!important;border-radius:0}
+.h-sheet--nutrition .h-nutrition-tabs button[aria-pressed=true]{color:#fff;border-bottom-color:#e0c891!important}
+.h-nutrition-composition,.h-nutrition-effects,.h-nutrition-kitchen{padding:0 25px 14px}
+.h-nutrition-portion{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.h-nutrition-portion>div>span{display:block;font-size:9px}
+.h-nutrition-portion strong{display:block;font-size:12px;line-height:1.4;margin:7px 0;font-weight:500}
+.h-nutrition-portion>div:last-child{display:flex;border:1px solid #cfd9ce35;border-radius:99px;overflow:hidden;flex-shrink:0}
+.h-sheet--nutrition .h-nutrition-portion button{border:0!important;border-radius:0;background:transparent!important;padding:7px 11px;font-size:11px;color:#b9cebd;min-width:55px}
+.h-sheet--nutrition .h-nutrition-portion button[aria-pressed=true]{background:#e3d6b8!important;color:#1f3426}
+.h-nutrition-energy{padding:15px 0 11px}
+.h-nutrition-energy>div{display:flex;align-items:baseline;gap:7px;margin-top:2px}
+.h-nutrition-energy strong{font-size:clamp(58px,8vw,76px);letter-spacing:-.075em;font-weight:500;line-height:1.12;color:#f4f2e9}
+.h-nutrition-energy small{font-size:17px;color:#dce6d9}
+.h-nutrition-energy p{font-size:11px!important;margin:4px 0!important}
+.h-nutrition-macro{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 23px;border-top:1px solid #cfdfcf30;margin:10px 0 22px}
+.h-nutrition-macro>div,.h-nutrition-vitamins>div{display:flex;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid #d6e9d021}
+.h-nutrition-macro span,.h-nutrition-vitamins span{font-size:12px;color:#b9cbbd}
+.h-nutrition-macro strong,.h-nutrition-vitamins strong{font-size:13px;white-space:nowrap;color:#f5f6ed;font-weight:600}
+.h-nutrition-vitamins h3,.h-nutrition-effects h3,.h-nutrition-kitchen h3{font-size:20px;line-height:1.3;font-weight:550;margin:11px 0}
+.h-nutrition-vitamins p{display:flex;align-items:center;gap:9px;font-size:11px!important;color:#bdddca!important}
+.h-nutrition-method{font-size:11px!important;line-height:1.65;color:#bdcbbf!important;display:flex;gap:9px;align-items:flex-start;padding-top:14px}
+.h-nutrition-method svg{flex-shrink:0}
+.h-nutrition-no-data{text-align:left;padding:34px 0;color:#bacdbd}
+.h-nutrition-no-data h3{line-height:1.3;margin:10px 0}
+.h-nutrition-effects>p{font-size:13px!important}
+.h-nutrition-body-choices{display:flex;gap:7px;overflow:auto hidden;scrollbar-width:none;padding:8px 0 17px}
+.h-sheet--nutrition .h-nutrition-body-choices button{border:1px solid #dce9d133!important;background:transparent!important;color:#d5e2d4;font-size:11px;display:inline-flex;align-items:center;gap:6px;border-radius:999px;white-space:nowrap;padding:10px 12px}
+.h-sheet--nutrition .h-nutrition-body-choices button[aria-pressed=true]{background:#cce6d3!important;border-color:transparent!important;color:#153222}
+.h-nutrition-body-feature{position:relative;padding:27px 0 24px;border-top:1px solid #caddcf35;border-bottom:1px solid #caddcf35}
+.h-nutrition-body-feature>svg{color:#9edcb8;margin-bottom:9px}
+.h-nutrition-body-feature>span{display:block;font-size:10px;color:#dec99f;letter-spacing:.12em}
+.h-nutrition-body-feature>p{color:#fff!important;font-size:16px!important;line-height:1.7;margin:10px 0 14px!important}
+.h-nutrition-body-feature>small{font-size:11px;color:#bed1c0;line-height:1.5;display:block}
+.h-nutrition-liver{padding:16px 0;color:#d3dfd2;font-size:12px}
+.h-nutrition-liver summary,.h-nutrition-kitchen summary,.h-nutrition-references summary{cursor:pointer;min-height:39px;display:flex;align-items:center;gap:7px;color:#e4dcc1}
+.h-nutrition-kitchen ol{counter-reset:steps;list-style:none;margin:14px 0 23px;padding:0}
+.h-nutrition-kitchen ol li{counter-increment:steps;padding:16px 0;border-bottom:1px solid #cbe0c526;display:flex;gap:15px;align-items:start;font-size:13px}
+.h-nutrition-kitchen ol li:before{content:counter(steps,decimal-leading-zero);color:#b5d9b7;font-size:11px}
+.h-nutrition-kitchen ul{font-size:12px;padding-left:18px;color:#c8d8ca}
+.h-nutrition-safety{display:flex;gap:12px;align-items:start;padding:15px 0}
+.h-nutrition-safety svg{color:#e2cda4;flex-shrink:0}
+.h-nutrition-safety strong{font-size:13px}
+.h-nutrition-safety p{font-size:12px!important;margin:6px 0!important}
+.h-nutrition-references{margin:8px 25px;border-top:1px solid #d3e9ce2a}
+.h-nutrition-references summary{justify-content:space-between;font-size:12px}
+.h-nutrition-references details[open] summary>svg:last-child{transform:rotate(90deg)}
+.h-nutrition-references details>div{padding:6px 0 24px}
+.h-nutrition-references a{display:block;font-size:11px;margin:12px 0;line-height:1.4}
+.h-nutrition-references p{font-size:11px!important;color:#b7c7bd!important}
+/* Réduction du bruit visuel sur TOUTE la rubrique */
+.health3b .h-nav{border-top:0;background:#0b1614ed;backdrop-filter:blur(15px);margin-bottom:13px}
+.health3b .h-nav button{border:0!important;background:transparent!important;box-shadow:none!important}
+.health3b .h-section-heading{margin:20px 0 13px}
+.health3b .h-utility-menu{margin:0 0 11px;font-size:12px}
+.health3b .h-utility-menu>summary{display:inline-flex;align-items:center;gap:8px;cursor:pointer;min-height:37px;color:#c8daca;list-style:none}
+.health3b .h-utility-menu>summary::-webkit-details-marker{display:none}
+.health3b .h-utility-menu[open] .h-utility-row{margin:7px 0 14px}
+.health3b .h-today-discover{margin:16px 0 0;border-top:1px solid #c4d8cc22}
+.health3b .h-today-discover>summary{cursor:pointer;color:#dbdac6;min-height:46px;font-size:13px;padding:13px 0}
+@media(max-width:760px){
+  .health3b{padding:2px 15px 35px}
+  .health3b .h-top{padding-bottom:9px}
+  .health3b .h-top h1{font-size:32px;margin:1px 0}
+  .health3b .h-nav{min-height:49px;gap:0;overflow:auto hidden;scrollbar-width:none;justify-content:flex-start}
+  .health3b .h-nav button{min-width:63px;min-height:48px;flex:1 0 auto;gap:4px;flex-direction:column;padding:5px 8px;font-size:10px}
+  .health3b .h-nav button svg{width:17px;height:17px}
+  .health3b .h-nav button[aria-current=page]:after{left:12%;right:12%}
+  .health3b .h-hero{min-height:245px;border-radius:12px}
+  .health3b .h-hero>div{padding:23px;width:95%}
+  .health3b .h-hero h2{font-size:31px;margin:8px 0}
+  .health3b .h-hero p{font-size:12px}
+  .health3b .h-hero-seal{display:none}
+  .health3b .h-daily-head{margin:18px 0 4px}
+  .h-atlas-intro{margin:9px 0 12px}
+  .health3b .h-atlas-intro h2{font-size:33px}
+  .h-atlas-count{font-size:10px}
+  .health3b .h-atlas-feature{min-height:205px;border-radius:13px}
+  .h-atlas-feature-text{padding:21px;max-width:86%;gap:8px}
+  .h-atlas-feature-text>strong{font-size:39px}
+  .h-atlas-feature-text>span{font-size:11px;max-width:90%}
+  .h-atlas-feature-action{right:13px;bottom:14px;width:36px;height:36px}
+  .h-atlas-explore-tools{margin:9px 0 0;gap:4px}
+  .h-atlas-search{min-height:48px}
+  .h-atlas-search input{font-size:12px;max-width:100%}
+  .health3b .h-atlas-small-filters>button{font-size:0;padding:8px}
+  .health3b .h-atlas-small-filters>button svg{width:17px;height:17px}
+  .h-atlas-family{margin:8px 0 17px}
+  .health3b .h-atlas-family>button{font-size:11px;min-height:36px;padding:6px 10px}
+  .h-atlas-interest>span{font-size:9px}
+  .h-atlas-topics{gap:6px}
+  .health3b .h-atlas-topics>button{min-height:38px;font-size:10px;padding:8px 11px}
+  .h-atlas-results-header{margin:16px 0 12px}
+  .h-atlas-results-header strong{font-size:17px}
+  .h-atlas-results-header span{font-size:10px}
+  .h-atlas-grid{grid-auto-columns:calc((100% - 11px)/2.15);gap:15px 11px;padding-bottom:11px}
+  .h-atlas-photo{border-radius:11px}
+  .h-atlas-tile-name{font-size:14px}
+  .h-atlas-tile small{font-size:10px}
+  .h-sheet.h-sheet--nutrition{width:100vw;max-width:100vw;max-height:96dvh;margin:4dvh auto 0;border:0;border-top-left-radius:17px;border-top-right-radius:17px;border-bottom-left-radius:0;border-bottom-right-radius:0}
+  .h-sheet--nutrition>header{padding:11px 17px;min-height:53px}
+  .h-sheet--nutrition>header h2{font-size:16px}
+  .h-nutrition-hero{height:205px}
+  .h-nutrition-hero>div{left:19px}
+  .h-nutrition-hero h2{font-size:39px!important}
+  .h-nutrition-subactions{padding:12px 19px}
+  .h-nutrition-tabs{margin:0 19px 18px}
+  .h-nutrition-composition,.h-nutrition-effects,.h-nutrition-kitchen{padding:0 19px 10px}
+  .h-nutrition-macro{gap:0 13px}
+  .h-nutrition-macro span,.h-nutrition-vitamins span{font-size:11px}
+  .h-nutrition-references{margin:8px 19px}
+  .h-nutrition-portion strong{font-size:11px}
+}
+@media(prefers-reduced-motion:reduce){.h-atlas-feature>img,.h-atlas-photo img{transition:none!important}}
