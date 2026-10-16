@@ -57,9 +57,10 @@ try{
    check('Realm value and guardian stay inside card '+width,realmLayout.noteRight<=realmLayout.cardRight+1&&realmLayout.noteBottom<=realmLayout.cardBottom+1);
   }
   if(width<720){
-   const globeBudget=await canvas.evaluate(el=>{const box=el.getBoundingClientRect(),style=getComputedStyle(el);return {bitmapWidth:el.width,cssWidth:box.width,touchAction:style.touchAction,display:style.display};});
+   const globeBudget=await canvas.evaluate(el=>{const box=el.getBoundingClientRect(),style=getComputedStyle(el);return {bitmapWidth:el.width,cssWidth:box.width,touchAction:style.touchAction,display:style.display,filter:style.filter};});
    check('Phone globe caps raster density '+width,globeBudget.bitmapWidth<=globeBudget.cssWidth*1.3+3);
    check('Phone globe receives intended touch/display styles '+width,globeBudget.touchAction==='none'&&globeBudget.display==='block');
+   check('Phone globe avoids filtered canvas compositing '+width,globeBudget.filter==='none');
   }
   const overflow=await home.evaluate(el=>{
    const root=el.getBoundingClientRect();
