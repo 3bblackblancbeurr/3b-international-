@@ -148,7 +148,14 @@ export default function LivingWorldGlobe({selectedId='france',onSelect}){
   if(hit&&Math.hypot(x-hit.x,y-hit.y)<26)control.current.onSelect?.(hit.id);
  }
  function onKeyDown(event){
-  if(event.key==='ArrowLeft'||event.key==='ArrowRight'){event.preventDefault();control.current.angle+=(event.key==='ArrowLeft'?-1:1)*.22;control.current.draw();}
+  const state=control.current;
+  if(event.key==='ArrowLeft'||event.key==='ArrowRight'){
+   event.preventDefault();state.angle+=(event.key==='ArrowLeft'?-1:1)*.22;state.draw();
+  }else if(event.key==='ArrowUp'||event.key==='ArrowDown'){
+   event.preventDefault();state.lat=Math.max(-.8,Math.min(1.1,state.lat+(event.key==='ArrowUp'?1:-1)*.12));state.draw();
+  }else if(event.key==='Home'){
+   event.preventDefault();state.angle=10*Math.PI/180;state.lat=23*Math.PI/180;state.draw();
+  }
  }
  return <canvas ref={ref} className="world-living-globe-canvas" width="480" height="480"
   aria-label="Globe interactif des huit royaumes du Monde du 3B. Glissez pour le faire tourner, utilisez les flèches ou choisissez un pays dans la liste."
