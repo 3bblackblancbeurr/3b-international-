@@ -47,6 +47,21 @@ try{
   check('22 real primary modules '+width,await home.locator('.world3b-universe-link').count()===22);
   const canvas=home.locator('canvas.world-living-globe-canvas');
   check('Interactive geographic globe '+width,await canvas.isVisible()&&await canvas.evaluate(el=>el.getBoundingClientRect().width>180&&el.getBoundingClientRect().height>180));
+  if(width===390){
+   const zoomIn=home.getByRole('button',{name:'Agrandir la planète'});
+   const zoomOut=home.getByRole('button',{name:'Réduire la planète'});
+   const reset=home.getByRole('button',{name:'Réinitialiser le zoom'});
+   const readout=home.locator('.world3b-zoom-readout');
+   check('Zoom starts at 100%',(await readout.innerText()).includes('100%'));
+   await zoomIn.click();
+   check('Globe zoom-in changes scene scale', (await readout.innerText()).includes('115%'));
+   await zoomOut.click();
+   check('Globe zoom-out restores default', (await readout.innerText()).includes('100%'));
+   await zoomIn.click();await zoomIn.click();
+   check('Globe accepts repeated zoom', (await readout.innerText()).includes('130%'));
+   await reset.click();
+   check('Reset zoom restores full world',(await readout.innerText()).includes('100%'));
+  }
   if(width<720){
    const realmCard=page.locator('.world3b-country-card').first();
    const realmLayout=await realmCard.evaluate(el=>{
