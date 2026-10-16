@@ -6,6 +6,7 @@ export default function OfficialDirectory(){
   const [city,setCity]=useState('');
   const [requested,setRequested]=useState('');
   const [results,setResults]=useState([]);
+  const [visible,setVisible]=useState(5),[total,setTotal]=useState(null);
   const [error,setError]=useState('');
   const [busy,setBusy]=useState(false);
   const abortRef=useRef(null);
@@ -16,14 +17,14 @@ export default function OfficialDirectory(){
     if(!VALID.test(name)){setError('Écris simplement le nom de ta ville (2 à 50 caractères).');return;}
     abortRef.current?.abort();
     const ctrl=new AbortController();abortRef.current=ctrl;
-    setError('');setResults([]);setRequested(name);setBusy(true);
+    setError('');setResults([]);setVisible(5);setTotal(null);setRequested(name);setBusy(true);
     try{
       const response=await fetch('/api/official-directory?ville='+encodeURIComponent(name),{
         method:'GET',credentials:'omit',signal:ctrl.signal,headers:{Accept:'application/json'},
       });
       const data=await response.json();
       if(!response.ok || !Array.isArray(data.services)) throw new Error(data.error||'Annuaire indisponible.');
-      if(!ctrl.signal.aborted)setResults(data.services);
+      if(!ctrl.signal.aborted){setResults(data.services);setTotal(Number.isInteger(data.total)?data.total:null);}
     }catch(e){if(!ctrl.signal.aborted)setError(e.message||'Impossible de chercher maintenant.');}
     finally{if(!ctrl.signal.aborted)setBusy(false);}
   }
@@ -46,8 +47,8 @@ export default function OfficialDirectory(){
     {busy&&<p className="mx-directory-feedback" role="status"><RefreshCw size={17} className="mx-dir-spin"/> Consultation de l’annuaire public…</p>}
     {error&&<p className="mx-directory-feedback is-error" role="alert">{error} <a href="https://lannuaire.service-public.gouv.fr/" target="_blank" rel="noopener noreferrer">Ouvrir l’annuaire officiel <ArrowUpRight size={14}/></a></p>}
     {requested&&!busy&&!error&&<>
-      <p className="mx-directory-count" role="status"><ShieldCheck size={15}/> {results.length ? `${results.length} résultats dans « ${requested} »` : `Aucun résultat pour « ${requested} » dans les noms de services.`}</p>
-      <div className="mx-directory-list">{results.map((item,index)=><article key={item.profile} className="mx-directory-item">
+      <p className="mx-directory-count" role="status"><ShieldCheck size={15}/> {results.length ? `${Math.min(visible,results.length)} affichés · ${total??results.length} correspondances officielles pour « ${requested} »` : `Aucun résultat pour « ${requested} » dans les noms de services.`}</p>
+      <div className="mx-directory-list">{results.slice(0,visible).map((item,index)=><article key={item.profile} className="mx-directory-item">
         <span className="mx-directory-index">{String(index+1).padStart(2,'0')}</span>
         <div className="mx-directory-description">
           <strong>{item.name}</strong>
@@ -56,6 +57,8 @@ export default function OfficialDirectory(){
           <a className="mx-directory-profile" href={item.profile} target="_blank" rel="noopener noreferrer">Voir la fiche officielle <ArrowUpRight size={16}/></a>
         </div>
       </article>)}</div>
+      {results.length>visible&&<button type="button" className="mx-dir-more" onClick={()=>setVisible(n=>Math.min(results.length,n+5))}>Voir les {Math.min(5,results.length-visible)} services suivants</button>}
+      {total>results.length&&<p className="mx-directory-limit">D’autres services sont référencés. <a href="https://lannuaire.service-public.gouv.fr/" target="_blank" rel="noopener noreferrer">Consulter l’annuaire complet <ArrowUpRight size={14}/></a></p>}
     </>}
     <p className="mx-honesty"><ShieldCheck size={16}/> Données publiques DILA · annuaire Service-Public, actualisées par l’administration. Les horaires et informations sont à confirmer auprès de l’organisme. 3B ne réalise aucune démarche à ta place.</p>
   </section>;
