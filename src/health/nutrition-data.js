@@ -62,7 +62,7 @@ export const FOOD_NUTRITION = {
   poireau: make('Poireau, cru', '20039', { kcal:30, protein:1.5, carbs:4.6, sugars:3.9, fats:0.3, fiber:1.8 }, k(180,12,64), ['digestion','defenses'], ['Fibres', 'Folates (B9)']),
   betterave: make('Betterave, cuite', '20003', { kcal:42, protein:1.4, carbs:7.1, sugars:6.7, fats:0.4, fiber:2.5 }, k(320,null,12), ['heart','circulation','digestion'], ['Fibres', 'Potassium']),
   'chou-fleur': make('Chou-fleur, cru', '20016', { kcal:25, protein:1.8, carbs:2.1, sugars:1.7, fats:0.7, fiber:2.2 }, k(270,48,56), ['skin','defenses','digestion'], ['Vitamine C']),
-  courge: make('Courge butternut, crue (variété précise)', '20292', { kcal:29, protein:1.1, carbs:5.2, sugars:4, fats:null, fiber:1.8 }, k(340,2,31), ['eyes','digestion'], ['Caroténoïdes : quantité non chiffrée'])
+  courge: make('Courge butternut, chair sans peau, cuite', '20292', { kcal:29, protein:1.1, carbs:5.2, sugars:4, fats:null, fiber:1.8 }, k(340,2,31), ['eyes','digestion'], ['Caroténoïdes : quantité non chiffrée'])
 };
 
 // Nutritional links should never be mistaken for a cure.
