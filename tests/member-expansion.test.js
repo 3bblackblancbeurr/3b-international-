@@ -29,6 +29,7 @@ test('scanner validates common GTIN-13 check digits',()=>{
   assert.equal(validFoodBarcode('3017620422003'),true);
   assert.equal(validFoodBarcode('3017620422004'),false);
   assert.equal(validFoodBarcode('abc'),false);
+  assert.equal(validFoodBarcode('12345678901'),false);
   assert.equal(validFoodBarcode(''),false);
   assert.equal(validFoodBarcode('123456789012345'),false);
 });
@@ -38,6 +39,7 @@ test('food lookup rejects invalid routes and unsafe barcodes without network acc
   const invalid=await fetchFoodProduct(new Request('https://3b.example/api/food-product?code=https://example.com/'));
   assert.equal(badMethod.status,405);
   assert.equal(invalid.status,400);
+  assert.equal((await fetchFoodProduct(new Request('https://3b.example/api/food-product?code=12345678901'))).status,400);
   assert.equal((await invalid.json()).error,'Code-barres invalide');
   assert.equal(invalid.headers.get('x-content-type-options'),'nosniff');
 });
