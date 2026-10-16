@@ -65,14 +65,14 @@
 .world3b-section-title h2{font:500 clamp(24px,3.6vw,35px)/1.12 Georgia,'Times New Roman',serif;color:var(--3b-world-tone-fff4de);margin:9px 0 0}
 .world3b-subtle{color:var(--wl-muted);font-size:12px;text-align:right}
 .world3b-country-rail{display:flex;gap:12px;overflow-x:auto;overscroll-behavior-inline:contain;scroll-snap-type:x mandatory;padding:4px 2px 14px;scrollbar-width:thin;scrollbar-color:rgba(201,169,111,.5) transparent}
-.world3b-country-card{display:grid;grid-template-columns:1fr auto;align-content:space-between;gap:6px;flex:0 0 clamp(142px,21%,212px);height:144px;padding:18px;text-align:left;border:1px solid rgba(118,158,202,.28);border-radius:var(--3b-world-radius-08);background:linear-gradient(155deg,var(--3b-world-tone-0b304e),var(--3b-world-tone-091523) 72%);color:var(--3b-world-tone-fff);position:relative;scroll-snap-align:start;transition:transform .2s,border-color .2s,box-shadow .2s}
+.world3b-country-card,.world3b-country-card.gm-button{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto 1fr;align-content:space-between;align-items:start;justify-content:stretch;gap:6px;flex:0 0 clamp(142px,21%,212px);height:144px;padding:18px;text-align:left;border:1px solid rgba(118,158,202,.28);border-radius:var(--3b-world-radius-08);background:linear-gradient(155deg,var(--3b-world-tone-0b304e),var(--3b-world-tone-091523) 72%);color:var(--3b-world-tone-fff);position:relative;scroll-snap-align:start;transition:transform .2s,border-color .2s,box-shadow .2s}
 .world3b-country-card:nth-child(even){background:linear-gradient(145deg,var(--3b-world-tone-183247),var(--3b-world-tone-0d1520) 70%)}
 .world3b-country-card.is-selected{border-color:var(--wl-gold-bright);box-shadow:var(--3b-world-shadow-05)}
 .world3b-country-card:hover{transform:translateY(-3px)}
 .world3b-country-flag{grid-column:1 / -1;font-size:23px}
 .world3b-country-name{grid-column:1 / -1;font-weight:850;font-size:17px}
-.world3b-country-card small{min-width:0;color:var(--3b-world-tone-b9cce0);font-size:11px;white-space:nowrap}
-.world3b-country-card>svg{color:var(--wl-gold);align-self:end}
+.world3b-country-card small{grid-column:1;grid-row:3;min-width:0;max-width:100%;color:var(--3b-world-tone-b9cce0);font-size:11px;line-height:1.35;white-space:normal;overflow-wrap:anywhere;align-self:end}
+.world3b-country-card>svg{grid-column:2;grid-row:3;color:var(--wl-gold);align-self:end;justify-self:end}
 .world3b-clarity{display:flex;align-items:flex-start;gap:8px;margin:11px 0 0;font-size:12px;line-height:1.65;color:var(--3b-world-tone-b5c2cf)}
 .world3b-clarity svg{flex:0 0 auto;margin-top:2px;color:var(--3b-world-tone-d6b77d)}
 .world3b-count{border:1px solid rgba(235,195,122,.55);border-radius:var(--3b-world-radius-03);display:grid;place-items:center;font-family:Georgia,serif;font-size:30px;color:var(--3b-world-tone-fff0c9);min-width:54px;min-height:54px}
@@ -202,7 +202,7 @@
  .world3b-outline-link{justify-self:start;white-space:normal}
  .world3b-country-section,.world3b-module-section,.world3b-extra{margin-top:29px}
  .world3b-section-title h2{font-size:27px}
- .world3b-country-card{flex-basis:158px;height:135px}
+ .world3b-country-card{flex-basis:170px;height:142px;padding:16px}
  .world3b-subtle{font-size:10px}
  .world3b-universes{grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
  .world3b-universe,.world3b-universe-link{min-height:112px}
