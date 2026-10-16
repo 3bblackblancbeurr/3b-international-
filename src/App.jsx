@@ -2,6 +2,7 @@ import { LuxuryBoot, useLuxuryRuntime } from "./design-system/LuxuryExperience.j
 import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 
 const HealthPage = lazy(() => import("./health/HealthPage.jsx"));
+const MemberExperiences = lazy(() => import("./member/MemberExperiences.jsx"));
 const DealsPage = lazy(() => import("./deals/DealsPage.jsx"));
 const ShopPage = lazy(() => import("./shop/ShopPage.jsx"));
 const AiPage = lazy(() => import("./ai/AiPage.jsx"));
@@ -55,10 +56,26 @@ const InvisibleExperience=lazy(()=>import('./world/invisible/InvisiblePage.jsx')
 const ArenaExperience=lazy(()=>import('./arena/ArenaPage.jsx'));
 const NosblocPage=lazy(()=>import('./nosbloc/NosblocPremiumPage.jsx'));
 
+// Public destinations reuse the same carefully sourced experiences available in the member space.
+const MEMBER_SPACE_ROUTES = Object.freeze({
+  news: 'news', association: 'association', partners: 'partners', finance: 'finance',
+  travel: 'travel', join: 'join', tv: 'tv', admin: 'admin', cinema: 'cinema',
+});
+
 const BASE_MENU_ITEMS = [
   { id: "maintenant", label: "3B Maintenant", icon: "✦", description: "La Boussole, le Cercle Vivant et six expériences pour agir." },
   { id: "health", label: "Santé", description: "Manger, bouger et prendre soin de soi." },
   { id: "deals", label: "3 bons plans", description: "Des offres datées et sourcées pour le quotidien." },
+  { id: "news", label: "Informations actuelles", description: "Actualités et événements datés, avec leurs sources." },
+  { id: "association", label: "Association 3B", description: "Projet associatif 3B, entraide et actions culturelles." },
+  { id: "partners", label: "Partenariats & collaborations", description: "Créer des projets avec 3B sans annoncer de faux partenaires." },
+  { id: "finance", label: "Banque & crypto", description: "Informations et protection financière, sans service bancaire 3B." },
+  { id: "travel", label: "Voyage 3B", description: "Destinations, voyages et conseils officiels." },
+  { id: "join", label: "Nous recherchons", description: "Talents, artistes, développeurs, associations et testeurs." },
+  { id: "tv", label: "3B Origins TV", description: "Les créations 3B et les futurs programmes originaux." },
+  { id: "admin", label: "Administration", description: "Trouver les démarches et services publics officiels." },
+  { id: "cinema", label: "Cinéma", description: "Trouver des films sur les plateformes légales." },
+  { id: "foodscan", label: "Scanner alimentaire", description: "Scanner un code-barres et consulter les ingrédients et allergènes." },
   { id: "guide", label: "Guide & XP", description: "Les repères pour commencer." },
   {
     id: "passport",
@@ -361,7 +378,7 @@ export default function App() {
       <div className="app3b" data-page={page} data-glow={options.premiumGlow} data-matrix={options.matrix}>
         <div className="app3b-background" aria-hidden="true" />
         <div className={options.matrix ? "matrix-layer active" : "matrix-layer"} aria-hidden="true" />
-        {page !== "health" && <CompanionLayer goTo={goTo} page={page} secretPhase={secret.phase} memberRegistered={member.isRegistered} />}
+        {!["health","foodscan"].includes(page) && <CompanionLayer goTo={goTo} page={page} secretPhase={secret.phase} memberRegistered={member.isRegistered} />}
         <AppNavigation page={page} title={preparationTitle} menuItems={menuItems} goTo={goTo} secret={secret} options={options} toggleOption={toggleOption} installation={installation} />
         <main id="main-content" tabIndex={-1}>
           <ComingSoon
@@ -375,7 +392,7 @@ export default function App() {
     );
   }
 
-  const passportAllowed = new Set(["home", "passport", "member", "religion", "control", "shop", "guide", "invisible", "deals", "health", "maintenant", "games", "game", "manga", "sport", "esports", "community", "ia", "ia-textile", "ia-trio"]);
+  const passportAllowed = new Set([...Object.keys(MEMBER_SPACE_ROUTES), "foodscan", "home", "passport", "member", "religion", "control", "shop", "guide", "invisible", "deals", "health", "maintenant", "games", "game", "manga", "sport", "esports", "community", "ia", "ia-textile", "ia-trio"]);
   const needsPassport = !loyalty.loading && !hasPassport && !passportAllowed.has(page);
 
   if (needsPassport) {
@@ -392,13 +409,13 @@ export default function App() {
       <div className="app3b-background" aria-hidden="true" />
       <div className={options.matrix ? "matrix-layer active" : "matrix-layer"} aria-hidden="true" />
 
-      {page !== "health" && <CompanionLayer goTo={goTo} page={page} secretPhase={secret.phase} memberRegistered={member.isRegistered} />}
+      {!["health","foodscan"].includes(page) && <CompanionLayer goTo={goTo} page={page} secretPhase={secret.phase} memberRegistered={member.isRegistered} />}
 
       <AppNavigation immersive={['world3b','arena','game','control','invisible'].includes(page)} page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} secret={secret} options={options} toggleOption={toggleOption} installation={installation} />
       <main id="main-content" tabIndex={-1}>
       <div className="route-announcer" aria-live="polite" aria-atomic="true">{currentPageTitle}</div>
       <Suspense fallback={<AppLoadingState label={`Ouverture · ${currentPageTitle}`} />}>
-      {page !== "health" && <ExplorationRewards page={page}/>}
+      {!["health","foodscan"].includes(page) && <ExplorationRewards page={page}/>}
       {storageNotice && <p className="storage-notice" role="status">{storageNotice}</p>}
 
       {page === "home" && (
@@ -444,6 +461,8 @@ export default function App() {
 
       {page === "sport" && <SportPage goTo={goTo} />}
       {page === "health" && <HealthPage />}
+      {page === "foodscan" && <HealthPage initialTab="scanner" />}
+      {MEMBER_SPACE_ROUTES[page] && <MemberExperiences key={page} goTo={goTo} profile={loyalty.profile || null} initialSpace={MEMBER_SPACE_ROUTES[page]} />}
       {page === "deals" && <DealsPage />}
       {page === "control" && <ControlCenterPage goTo={goTo} />}
       {["ia", "ia-textile", "ia-trio"].includes(page) && <AiPage page={page} goTo={goTo} />}
