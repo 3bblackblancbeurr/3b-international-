@@ -339,3 +339,14 @@ html[data-motion="reduced"] .world3b-home *,html[data-motion="reduced"] .albert3
  .world3b-globe-controls{top:29%;right:0;gap:5px}
  .world3b-globe-controls .gm-button{width:36px;height:36px;min-width:36px;min-height:36px}
 }
+
+/* Global search includes the existing services outside the 22 canonical entries. */
+.world3b-search-extras{margin:18px 0 8px;padding:16px;border:1px solid var(--wl-line);
+ border-radius:var(--3b-world-radius-16);background:rgba(6,29,48,.79)}
+.world3b-search-extras h3{margin:0 0 12px;color:var(--wl-gold-bright);font-size:14px;font-weight:750}
+.world3b-search-extra-links{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,185px),1fr));gap:9px}
+.world3b-search-extra-links a{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:48px;
+ padding:10px 13px;border:1px solid rgba(126,187,222,.38);border-radius:var(--3b-world-radius-08);
+ background:rgba(8,44,72,.76);font-size:13px;font-weight:700;overflow-wrap:anywhere}
+.world3b-search-extra-links a:hover{border-color:var(--wl-gold-bright)}
+.world3b-search-extra-links svg{flex-shrink:0;color:var(--wl-gold-bright)}
