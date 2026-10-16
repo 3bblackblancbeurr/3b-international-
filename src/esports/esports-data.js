@@ -38,7 +38,7 @@ export const AVAILABILITIES = Object.freeze(['Soirs de semaine','Week-end','Soir
 export const CIRCUITS = Object.freeze([
  {id:'faceit',name:'FACEIT',subtitle:'Tournois ouverts sur plusieurs jeux · filtres par région',url:'https://www.faceit.com/fr',games:['cs2','valorant','overwatch','rocketleague','warzone']},
  {id:'startgg',name:'start.gg',subtitle:'Tournois de communauté, jeux de combat et compétitions locales',url:'https://www.start.gg/',games:['fighting','rocketleague','other']},
- {id:'rocket',name:'RLCS',subtitle:'Calendrier officiel Rocket League',url:'https://www.rocketleague.com/competitive/schedule?lang=fr',games:['rocketleague']},
+ {id:'rocket',name:'RLCS · Qualification ouverte annoncée',subtitle:'Tournoi en ligne annoncé pour novembre 2026 : dates et conditions encore à publier, 4 places vers Londres',url:'https://www.rocketleague.com/news/rlcs-returns-to-london-this-december-for-the-club-championship-with-dollar25m-up-for-grabs',games:['rocketleague']},
  {id:'challengers',name:'CoD Challengers',subtitle:'Voie compétitive Call of Duty · EMEA à vérifier',url:'https://www.callofdutyleague.com/en-us/challengers/how-to-compete',games:['cod']},
  {id:'fortnite',name:'Fortnite Compétitif',subtitle:'Formats et tournois officiels à retrouver en jeu',url:'https://www.fortnite.com/competitive',games:['fortnite']},
  {id:'warzone',name:'Warzone Esports',subtitle:'Circuit officiel et prochains règlements à surveiller',url:'https://callofduty.worldseriesofwarzone.com/resurgence',games:['warzone']},
