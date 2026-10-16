@@ -18,6 +18,17 @@ export default function HeritageVault({uid}){
  const [removeId,setRemoveId]=useState(''),[pendingImport,setPendingImport]=useState(null);
  const [recording,setRecording]=useState(false),[audioReady,setAudioReady]=useState('');
  useEffect(()=>{
+  const onBackground=()=>{
+   if(!document.hidden)return;
+   passRef.current='';setUnlocked(false);setStories([]);setPhrase('');setConfirm('');setTitle('');setBody('');
+   if(recorder.current?.state==='recording'){recorder.current.ondataavailable=null;recorder.current.onstop=null;recorder.current.stop();}
+   audioStream.current?.getTracks().forEach(track=>track.stop());audioStream.current=null;setRecording(false);
+   setAudioReady('');setMessage('Carnet verrouillé après le passage de 3B en arrière-plan.');
+  };
+  document.addEventListener('visibilitychange',onBackground);
+  return()=>document.removeEventListener('visibilitychange',onBackground);
+ },[]);
+ useEffect(()=>{
   mounted.current=true;
   passRef.current='';setUnlocked(false);setStories([]);setExists(!!stored(key));setPhrase('');setConfirm('');setMessage('');
   return()=>{
@@ -101,7 +112,7 @@ export default function HeritageVault({uid}){
   setMessage('');
   try{
    const stream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
-   if(!mounted.current){stream.getTracks().forEach(track=>track.stop());return;}
+   if(!mounted.current||document.hidden){stream.getTracks().forEach(track=>track.stop());return;}
    audioStream.current=stream;
    const parts=[];
    const options=['audio/webm;codecs=opus','audio/mp4'].find(type=>MediaRecorder.isTypeSupported?.(type));

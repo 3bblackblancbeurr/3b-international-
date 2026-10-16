@@ -85,6 +85,7 @@ try{
    if(viewport.width===390)await page.screenshot({path:out+'/'+hash+'-390.png'});
   }
   await page.goto(origin+'/#maintenant');await page.locator('#now-heading').waitFor();
+  if(viewport.width===390)await page.screenshot({path:out+'/maintenant-hero-390.png'});
   check(`3B Maintenant has six real sections ${viewport.width}`,await page.locator('.now-feature-nav button[role="tab"]').count()===6);
   check(`3B Maintenant default Boussole is interactive ${viewport.width}`,await page.locator('.now-compass-grid button').count()>=6);
   await page.getByRole('tab',{name:/Cercle vivant/i}).click();
