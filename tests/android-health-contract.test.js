@@ -46,3 +46,18 @@ test('Android step totals use prioritized aggregation, preserve absence and neve
   assert.match(store, /put\("id", id\)\.put\("time", time\)/);
   assert.match(store, /VISIBILITY_PRIVATE/);
 });
+
+test('all 3B Capacitor native plugins are registered before BridgeActivity initialization', () => {
+  const activity = read(`${root}java/app/vercel/threebinternational/MainActivity.java`);
+  const start = activity.indexOf('protected void onCreate(Bundle savedInstanceState)');
+  const bridgeInit = activity.indexOf('super.onCreate(savedInstanceState);', start);
+  assert.ok(start >= 0 && bridgeInit > start, 'Android startup must initialize the bridge');
+  for (const nativePlugin of [
+    'CompanionPlugin', 'ImmersivePlugin', 'HiddenWorldARPlugin',
+    'ThreeBHealthPlugin', 'ThreeBHealthRemindersPlugin',
+  ]) {
+    const declaration = activity.indexOf(`registerPlugin(${nativePlugin}.class);`, start);
+    assert.ok(declaration >= start && declaration < bridgeInit,
+      `${nativePlugin} must register before Capacitor initializes its bridge`);
+  }
+});

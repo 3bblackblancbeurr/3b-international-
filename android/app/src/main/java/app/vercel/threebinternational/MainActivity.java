@@ -13,12 +13,15 @@ public class MainActivity extends BridgeActivity {
     private boolean healthWebReady;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+        // Capacitor builds the bridge inside super.onCreate(). All local plugins
+        // MUST be registered first, otherwise Capacitor.isPluginAvailable()
+        // can return false even though the Android APK compiled successfully.
         registerPlugin(CompanionPlugin.class);
         registerPlugin(ImmersivePlugin.class);
         registerPlugin(HiddenWorldARPlugin.class);
         registerPlugin(ThreeBHealthPlugin.class);
         registerPlugin(ThreeBHealthRemindersPlugin.class);
+        super.onCreate(savedInstanceState);
         getBridge().addWebViewListener(new WebViewListener() {
             @Override public void onPageLoaded(WebView webView) {
                 healthWebReady = true;
