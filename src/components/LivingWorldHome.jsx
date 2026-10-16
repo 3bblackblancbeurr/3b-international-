@@ -37,7 +37,7 @@ export default function LivingWorldHome({goTo,menuItems=[]}){
  const [category,setCategory]=useState('all');
  const [favorites,setFavorites]=useState(readFavorites);
  const [storageNotice,setStorageNotice]=useState('');
- const [allServices,setAllServices]=useState(false);
+ const [allServices,setAllServices]=useState(true);
  const items=useMemo(()=>findWorldModules({query,category,favorites}),[query,category,favorites]);
  const realm=WORLD_REALMS.find(item=>item.id===activeRealm)||WORLD_REALMS[0];
  const copy=TAB_COPY[tab];
@@ -75,7 +75,7 @@ export default function LivingWorldHome({goTo,menuItems=[]}){
     <div aria-live="polite" className="world3b-realm-current"><span>{realm.flag} {realm.name}</span><small>{realm.value} · {realm.guardian}</small></div>
     <button type="button" onClick={()=>stepRealm(1)} aria-label="Royaume suivant"><ChevronRight size={20}/></button>
    </div>
-   <div className="world3b-hero-bottom"><p>Tourne la planète ou touche un royaume</p><a href="#world3b-modules">Découvrir les 22 univers <ArrowDown size={16}/></a></div>
+   <div className="world3b-hero-bottom"><p>Tourne la planète ou touche un royaume</p><button type="button" onClick={()=>document.getElementById('world3b-modules')?.scrollIntoView({behavior:'smooth',block:'start'})}>Découvrir les 22 univers <ArrowDown size={16}/></button></div>
   </div>
   <nav className="world3b-tabs" aria-label="Explorer la carte mondiale">
    {TABS.map(({id,label,Icon})=><button type="button" key={id} className={tab===id?'is-active':''} aria-current={tab===id?'page':undefined} onClick={()=>setTab(id)}><Icon size={18}/>{label}</button>)}
