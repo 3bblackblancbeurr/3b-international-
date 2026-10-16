@@ -10,7 +10,9 @@ import {
 test('each published nutrition record is a real catalog item with a distinct Ciqual code and stated preparation', () => {
   const catalogIds = new Set(FOODS.map(food => food.id));
   const codes = new Set();
-  assert.ok(Object.keys(FOOD_NUTRITION).length >= 14);
+  assert.equal(FOODS.filter(food => ['fruit','vegetable'].includes(food.group)).length, 18);
+  assert.equal(Object.keys(FOOD_NUTRITION).length, 18, 'all fruit and vegetable cards must have reviewed data');
+  for (const item of FOODS.filter(food => ['fruit','vegetable'].includes(food.group))) assert.ok(getNutrition(item.id), 'nutrition missing for ' + item.id);
   for (const [id, record] of Object.entries(FOOD_NUTRITION)) {
     assert.ok(catalogIds.has(id), id + ' absent from the existing catalog');
     assert.match(record.ciqualCode, /^\d{5}$/);
@@ -43,7 +45,10 @@ test('recipe and preparation precision is not silently conflated', () => {
   assert.match(getNutrition('epinard').preparation, /cuit/i);
   assert.match(getNutrition('brocoli').preparation, /cru/i);
   assert.match(getNutrition('courge').preparation, /butternut/i);
-  assert.equal(getNutrition('peche'), null, 'unsourced values must not be invented');
+  assert.match(getNutrition('peche').preparation, /sans peau/);
+  assert.equal(getNutrition('tomate').ciqualCode, '20276');
+  assert.equal(getNutrition('courgette').ciqualCode, '20020');
+  assert.equal(getNutrition('lentille'), null, 'unsourced pulse values must not be invented');
 });
 
 test('per-portion scaling preserves unknown rather than turning it into zero', () => {
