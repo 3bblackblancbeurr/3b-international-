@@ -7,6 +7,7 @@ import {fetchMemberBrief} from '../server/member-brief.js';
 import catalog from '../api/catalog.js';
 import foodApi from '../api/food-product.js';
 import pwaAuditRoute from '../server/pwa-audit-route.js';
+import pwaStatus from '../api/pwa-quickkit-status.js';
 import {readFileSync} from 'node:fs';
 
 test('member destinations are unique and can be explored without duplicated loyalty data',()=>{
@@ -51,10 +52,11 @@ test('member services share the original Vercel catalog router and do not requir
   const config=JSON.parse(readFileSync(new URL('../vercel.json',import.meta.url),'utf8'));
   const items=['member-brief','pwa-audit'];
   for(const id of items){
-    assert.ok(config.rewrites.some(x=>x.source==='/api/'+id&&x.destination==='/api/catalog?__3b_route='+id));
+    assert.ok(config.rewrites.some(x=>x.source==='/api/'+id&&x.destination===(id==='pwa-audit'?'/api/pwa-quickkit-status?__3b_route=pwa-audit':'/api/catalog?__3b_route='+id)));
   }
   assert.equal(typeof catalog.fetch,'function');
   assert.equal(typeof foodApi.fetch,'function');
   assert.equal(typeof pwaAuditRoute.fetch,'function');
+  assert.equal(typeof pwaStatus.fetch,'function');
   assert.ok(!config.rewrites.some(x=>x.source==='/api/food-product'));
 });
