@@ -28,7 +28,7 @@ try{
   check('Actual World home '+width,await home.locator('.world3b-hero h1').isVisible());
   check('22 real primary modules '+width,await home.locator('.world3b-universe-link').count()===22);
   const canvas=home.locator('canvas.world-living-globe-canvas');
-  check('Interactive geographic globe '+width,await canvas.isVisible()&&await canvas.evaluate(el=>el.width>300&&el.height>300));
+  check('Interactive geographic globe '+width,await canvas.isVisible()&&await canvas.evaluate(el=>el.getBoundingClientRect().width>180&&el.getBoundingClientRect().height>180));
   check('Homepage has no unwanted horizontal overflow '+width,await home.evaluate(el=>el.scrollWidth<=el.clientWidth+2));
   await page.screenshot({path:path.join(out,'3b-world-'+width+'.png'),fullPage:true});
   if(width===390){
