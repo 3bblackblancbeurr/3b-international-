@@ -68,7 +68,7 @@ export function countryEventsHref(code) {
   const country=countryFor(code);
   if(code==='FR')return 'https://openagenda.com/fr';
   // Explicitly an external event search rather than a fabricated event listing.
-  return 'https://www.google.com/search?'+new URLSearchParams({q:'événements culturels concerts expositions '+country[1]+' 2026'}).toString();
+  return 'https://www.google.com/search?'+new URLSearchParams({q:'événements culturels concerts expositions '+country[1]}).toString();
 }
 
 export const ADMIN_GUIDES = Object.freeze([
