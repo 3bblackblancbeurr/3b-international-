@@ -4,7 +4,7 @@
 // nutriment inventé pour les aliments qui ne sont pas encore documentés.
 export const NUTRITION_SOURCES = {
   ciqual: {
-    name: 'Anses · Ciqual 2025 · composition des aliments',
+    name: 'Anses. 2025. Table de composition nutritionnelle des aliments Ciqual',
     url: 'https://doi.org/10.57745/RDMHWY'
   },
   vitaminA: { name: 'NIH · Vitamine A et vision', url: 'https://ods.od.nih.gov/factsheets/VitaminA-Consumer/' },
