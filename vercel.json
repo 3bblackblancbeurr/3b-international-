@@ -219,7 +219,7 @@
   "rewrites": [
     {
       "source": "/api/pwa-audit",
-      "destination": "/api/catalog?__3b_route=pwa-audit"
+      "destination": "/api/pwa-quickkit-status?__3b_route=pwa-audit"
     },
     {
       "source": "/api/member-brief",
