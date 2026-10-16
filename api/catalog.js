@@ -1,5 +1,6 @@
 import { createShop } from "../server/shop.js";
 import { fetchMemberBrief } from "../server/member-brief.js";
+import { fetchFrenchPublicEvents } from "../server/french-public-events.js";
 import { fetchOfficialDirectory } from "../server/official-directory.js";
 import { fetchFoodProduct } from "../server/food-product.js";
 import { handleSportLive } from "../server/sport-live.js";
@@ -11,6 +12,7 @@ export default {
     const url = new URL(request.url);
     const route = url.searchParams.get("__3b_route");
     if (route === "member-brief") return fetchMemberBrief(request);
+    if (route === "member-events") return fetchFrenchPublicEvents(request);
     if (route === "official-directory") return fetchOfficialDirectory(request);
     if (route === "food-product") return fetchFoodProduct(request);
     if (route === "sport-live") return handleSportLive(request);
