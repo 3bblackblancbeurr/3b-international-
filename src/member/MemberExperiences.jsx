@@ -3,6 +3,7 @@ import {ArrowRight, ArrowUpRight, CalendarDays, Clapperboard, Compass, FileText,
 import {MEMBER_SPACES, COUNTRY_INDEX, CONTACT_EMAIL, contactHref, countryFor, countryNewsHref, countryEventsHref, ADMIN_GUIDES, CINEMA_GUIDES, FINANCE_GUIDES, OPPORTUNITIES} from './memberSources.js';
 import './member-experiences.css';
 const OfficialDirectory = React.lazy(() => import('./OfficialDirectory.jsx'));
+const FrenchEvents = React.lazy(() => import('./FrenchEvents.jsx'));
 
 
 const ICONS = {wallet: WalletCards, globe:Globe2, heart:HeartHandshake, handshake:Handshake, landmark:Landmark, plane:Plane, users:UsersRound, tv:Clapperboard, file:FileText, film:Film};
@@ -67,9 +68,10 @@ function WorldBrief({country, onCountryChange, mode, setMode}) {
       {!!items.length&&<div className="mx-news-feed">{items.map(item=><a key={item.link} href={item.link} target="_blank" rel="noopener noreferrer"><span><small>{item.source} · {formatPublished(item.published)}</small><strong>{item.title}</strong></span><ArrowUpRight size={18}/></a>)}</div>}
       <SourceLink primary href={countryNewsHref(country)}>Actualités de {chosen[1]} sur Google Actualités</SourceLink>
     </>:<>
-      <SectionIntro eyebrow="SORTIES, RENCONTRES, CULTURE" title={'Que se passe-t-il en '+(country==='FR'?'France':' '+chosen[1])+' ?'}>Consulte les agendas directement à la source : les dates et les lieux doivent être confirmés par l’organisateur. Aucun événement inventé ni ancienne affiche présentée comme actuelle.</SectionIntro>
-      <SourceLink primary href={countryEventsHref(country)}>{country==='FR'?'Explorer les agendas OpenAgenda':'Chercher des événements dans le pays'}</SourceLink>
-      {country==='FR'&&<p className="mx-honesty">OpenAgenda : calendrier public externe. Son API intégrée demande une clé, elle n’est pas activée ici.</p>}
+      <SectionIntro eyebrow="SORTIES, RENCONTRES, CULTURE" title={country==='FR'?'Que se passe-t-il en France ?':'Événements en '+chosen[1]}>Consulte les agendas directement à la source : les dates et les lieux doivent être confirmés par l’organisateur. Aucun événement inventé ni ancienne affiche présentée comme actuelle.</SectionIntro>
+      {country==='FR'&&<React.Suspense fallback={<p role="status" className="mx-status">Ouverture des événements publics…</p>}><FrenchEvents/></React.Suspense>}
+      <SourceLink primary href={countryEventsHref(country)}>{country==='FR'?'Explorer tous les agendas OpenAgenda':'Chercher des événements dans le pays'}</SourceLink>
+      {country==='FR'&&<p className="mx-honesty">Le flux RSS libre d’accès couvre une sélection d’événements culturels ; les autres programmes restent accessibles auprès de leurs organisateurs.</p>}
     </>}
   </>;
 }
