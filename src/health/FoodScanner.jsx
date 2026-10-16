@@ -2,6 +2,7 @@ import React,{useCallback,useEffect,useRef,useState} from 'react';
 import {AlertTriangle, ArrowUpRight, Barcode, Camera, CheckCircle2, CircleHelp, LoaderCircle, RotateCcw, ScanLine, ShieldCheck, StopCircle, X} from 'lucide-react';
 import './food-scanner.css';
 import {validFoodBarcode} from './foodBarcode.js';
+import {allergenLabel} from './allergenLabels.js';
 
 const SCANNABLE = ['ean_13','ean_8','upc_a','upc_e','itf'];
 const NUMERIC = [
@@ -14,7 +15,7 @@ const NUMERIC = [
   ['proteins','Protéines','g'],
 ];
 const safeNumber=value=>typeof value==='number'&&Number.isFinite(value)?new Intl.NumberFormat('fr-FR',{maximumFractionDigits:1}).format(value):'—';
-const readableTag=value=>String(value||'').replace(/^[a-z]{2}:/i,'').replace(/[-_]/g,' ');
+
 export default function FoodScanner(){
   const videoRef=useRef(null), streamRef=useRef(null), timerRef=useRef(null), activeRef=useRef(false), requestRef=useRef(null);
   const [scanning,setScanning]=useState(false);
@@ -134,8 +135,8 @@ export default function FoodScanner(){
       <dl className="fs-nutrients">{NUMERIC.map(([id,label,unit])=><div key={id}><dt>{label}</dt><dd>{safeNumber(result.per100g?.[id])} {result.per100g?.[id]==null?'':unit}</dd></div>)}</dl>
       <h4>Ingrédients et allergènes</h4>
       <p className="fs-ingredients">{result.ingredients||'Ingrédients non renseignés dans la base.'}</p>
-      <p className="fs-allergens"><strong>Allergènes signalés : </strong>{result.allergens?.length?result.allergens.map(readableTag).join(', '):'non renseignés'}</p>
-      <p className="fs-allergens"><strong>Traces possibles signalées : </strong>{result.traces?.length?result.traces.map(readableTag).join(', '):'non renseignées'}</p>
+      <p className="fs-allergens"><strong>Allergènes signalés : </strong>{result.allergens?.length?result.allergens.map(allergenLabel).join(', '):'non renseignés'}</p>
+      <p className="fs-allergens"><strong>Traces possibles signalées : </strong>{result.traces?.length?result.traces.map(allergenLabel).join(', '):'non renseignées'}</p>
       <p className="fs-alert"><AlertTriangle size={19}/><span><strong>Allergies : ne te fie jamais uniquement au scanner.</strong> Cette base est contributive, parfois incomplète ou périmée. Seule l’étiquette du produit et, au besoin, un professionnel, peuvent guider ton choix.</span></p>
       {result.sourceUrl&&<a className="fs-source" href={result.sourceUrl} target="_blank" rel="noopener noreferrer">Voir la fiche Open Food Facts <ArrowUpRight size={17}/></a>}
       <button type="button" className="fs-again" onClick={()=>{setResult(null);setError('');setNotice('');setCode('');}}><RotateCcw size={18}/> Scanner un autre produit</button>
