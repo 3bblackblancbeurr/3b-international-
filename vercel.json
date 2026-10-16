@@ -218,12 +218,12 @@
   ],
   "rewrites": [
     {
-      "source": "/api/member-brief",
-      "destination": "/api/catalog?__3b_route=member-brief"
+      "source": "/api/pwa-audit",
+      "destination": "/api/catalog?__3b_route=pwa-audit"
     },
     {
-      "source": "/api/food-product",
-      "destination": "/api/catalog?__3b_route=food-product"
+      "source": "/api/member-brief",
+      "destination": "/api/catalog?__3b_route=member-brief"
     },
     {
       "source": "/api/command-integrations",
