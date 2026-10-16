@@ -134,37 +134,37 @@ export default function HeritageVault({uid}){
    {!exists&&<label className="now-field">Confirmer la phrase secrète
     <input type="password" autoComplete="off" minLength={12} required value={confirm} onChange={e=>setConfirm(e.target.value)} placeholder="Répète ta phrase"/>
    </label>}
-   <Button className="now-primary" disabled={busy} type="submit"><ShieldCheck size={18}/>{busy?'Chiffrement…':exists?'Déverrouiller':'Créer le coffre privé'}</Button>
+   <Button variant="neutral" className="now-primary" disabled={busy} type="submit"><ShieldCheck size={18}/>{busy?'Chiffrement…':exists?'Déverrouiller':'Créer le coffre privé'}</Button>
    <p className="now-discretion">Sans ta phrase, personne ne peut récupérer tes souvenirs. 3B ne peut pas réinitialiser ce coffre. Sur un appareil partagé, utilise ton propre compte et verrouille après consultation.</p>
   </form>:<>
    <div className="now-vault-toolbar">
     <span><BookHeart size={21}/> {stories.length} souvenir{stories.length>1?'s':''} sauvegardé{stories.length>1?'s':''}</span>
-    <Button type="button" className="now-quiet" onClick={lock}><LockKeyhole size={17}/> Verrouiller</Button>
+    <Button variant="neutral" type="button" className="now-quiet" onClick={lock}><LockKeyhole size={17}/> Verrouiller</Button>
    </div>
    <form className="now-help-form" onSubmit={add}>
     <label className="now-field">Un titre<input maxLength={100} minLength={2} required value={title} onChange={e=>setTitle(e.target.value)} placeholder="Le souvenir que je veux garder"/></label>
     <label className="now-field">Ton histoire<textarea rows={4} maxLength={5000} minLength={4} required value={body} onChange={e=>setBody(e.target.value)} placeholder="Écris librement ce que tu souhaites transmettre, sans obligation de le partager."/></label>
-    <Button className="now-primary" type="submit" disabled={busy}><Plus size={17}/> Enregistrer dans mon carnet</Button>
+    <Button variant="neutral" className="now-primary" type="submit" disabled={busy}><Plus size={17}/> Enregistrer dans mon carnet</Button>
    </form>
    {stories.length>0&&<div className="now-stories">
     {stories.map(story=><article key={story.id} className="now-story">
      <div><small>{story.date?new Date(story.date).toLocaleDateString('fr-FR'):'Souvenir'}</small><h3>{story.title}</h3><p>{story.body}</p></div>
-     <Button type="button" disabled={busy} className="now-quiet" onClick={()=>erase(story.id)}><Trash2 size={16}/>{removeId===story.id?'Confirmer la suppression':'Supprimer'}</Button>
+     <Button variant="neutral" type="button" disabled={busy} className="now-quiet" onClick={()=>erase(story.id)}><Trash2 size={16}/>{removeId===story.id?'Confirmer la suppression':'Supprimer'}</Button>
     </article>)}
    </div>}
    <div className="now-voice">
     <h3>Une voix à transmettre</h3><p>Un enregistrement local séparé du carnet chiffré : télécharge le fichier et conserve-le toi-même.</p>
     <div className="now-action-row">
-     <Button type="button" className={recording?'now-recording':'now-quiet'} onClick={record}>{recording?<MicOff size={18}/>:<Mic size={18}/>} {recording?'Arrêter l’enregistrement':'Enregistrer ma voix'}</Button>
+     <Button variant="neutral" type="button" className={recording?'now-recording':'now-quiet'} onClick={record}>{recording?<MicOff size={18}/>:<Mic size={18}/>} {recording?'Arrêter l’enregistrement':'Enregistrer ma voix'}</Button>
      {audioReady&&<a className="now-primary" href={audioUrl.current} download={'3b-souvenir-audio-'+dayKey()+'.'+audioReady}><Volume2 size={18}/> Télécharger l’audio</a>}
     </div>
    </div>
   </>}
   <div className="now-vault-actions">
-   <Button type="button" className="now-quiet" onClick={backup} disabled={!exists}><Download size={18}/> Exporter le coffre chiffré</Button>
+   <Button variant="neutral" type="button" className="now-quiet" onClick={backup} disabled={!exists}><Download size={18}/> Exporter le coffre chiffré</Button>
    <label className="now-file-input"><Upload size={18}/> Importer un coffre<input type="file" accept=".json,application/json" onChange={selectImport}/></label>
   </div>
-  {pendingImport&&<div className="now-restore"><strong>Remplacer le carnet local ?</strong><p>Cette opération effacera le carnet actuellement enregistré sur cet appareil. Garde une copie chiffrée avant de continuer.</p><Button type="button" className="now-primary" onClick={importBackup}>Je confirme le remplacement</Button><Button type="button" className="now-quiet" onClick={()=>setPendingImport(null)}>Annuler</Button></div>}
+  {pendingImport&&<div className="now-restore"><strong>Remplacer le carnet local ?</strong><p>Cette opération effacera le carnet actuellement enregistré sur cet appareil. Garde une copie chiffrée avant de continuer.</p><Button variant="neutral" type="button" className="now-primary" onClick={importBackup}>Je confirme le remplacement</Button><Button variant="neutral" type="button" className="now-quiet" onClick={()=>setPendingImport(null)}>Annuler</Button></div>}
   {message&&<p className="now-message" role="status">{message}</p>}
  </section>;
 }

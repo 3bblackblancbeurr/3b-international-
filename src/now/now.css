@@ -150,3 +150,23 @@
 @media(max-width:600px){.now-experience{width:calc(100% - 16px);padding-bottom:65px}.now-hero{border-radius:var(--3b-radius-card);padding:28px 19px 35px}.now-hero h1{font-size:clamp(47px,12vw,67px)}.now-hero-copy>p:not(.now-eyebrow){font-size:16px}.now-hero-actions{margin:26px 0 17px}.now-hero-actions>button{flex:1 1 auto;min-height:48px}.now-hero-visual{min-height:250px}.now-hero-visual .now-ring{max-width:265px}.now-ring-center>strong{font-size:52px}.now-feature-nav{gap:11px;margin-top:8px}.now-feature-nav>button{min-width:122px;flex-direction:column;gap:6px;font-size:12px;min-height:74px}.now-feature-content{padding:30px 11px;min-height:310px}.now-compass-grid{grid-template-columns:1fr;gap:0}.now-compass-grid button{min-height:62px}.now-duration{margin:25px 0}.now-duration strong{width:100%}.now-plan{padding-top:27px}.now-value-row{grid-template-columns:24px minmax(0,1fr) 44px;gap:10px;padding:19px 0}.now-value-copy p{font-size:12px}.now-value-check{grid-column:2;justify-self:start;min-height:38px}.now-value-link{grid-column:3;grid-row:1 / span 2}.now-story{flex-direction:column}.now-camera-area,.now-camera-placeholder{min-height:240px}.now-bottom{flex-direction:column;align-items:flex-start}.now-home-link{grid-template-columns:minmax(0,1fr) 75px;min-height:185px;padding:24px 19px;border-radius:var(--3b-radius-card)}.now-home-art{width:85px}.now-home-art:before{border-width:5px}.now-home-art b{font-size:26px}.now-home-art svg{width:18px}.now-home-eyebrow{font-size:9px}.now-home-copy>strong{font-size:clamp(29px,9vw,42px)}}
 @media(prefers-reduced-motion:reduce){.now-experience *, .now-home-gateway *{animation:none!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 html[data-threeb-calm="true"] .now-experience *,html[data-threeb-calm="true"] .now-home-gateway *{animation:none!important;transition-duration:.01ms!important}
+
+/* Reviewed QA: Gold Master Button defaults must not turn option tabs into gold blocks. */
+html[data-luxury="v2"] body .app3b[data-page="now"] .now-feature-nav>.gm-button{
+ background:transparent!important;box-shadow:var(--3b-shadow-flat)!important;
+ border:0;border-bottom:2px solid transparent;border-radius:var(--3b-radius-flat);
+ color:var(--3b-now-muted);padding:12px 13px;font-weight:630;
+}
+html[data-luxury="v2"] body .app3b[data-page="now"] .now-feature-nav>.gm-button[aria-selected="true"]{
+ background:transparent!important;color:var(--3b-now-gold)!important;border-bottom-color:var(--3b-now-gold);
+}
+html[data-luxury="v2"] body .app3b[data-page="now"] :is(.now-compass-grid,.now-settings,.now-help-choice) .gm-button--neutral{
+ background:transparent;box-shadow:var(--3b-shadow-flat);color:var(--3b-now-frost);
+}
+html[data-luxury="v2"] body .app3b[data-page="now"] .now-primary.gm-button{
+ background:var(--3b-gold-metal);color:var(--3b-gold-ink);border-color:var(--3b-champagne-highlight);
+}
+html[data-luxury="v2"] body .app3b[data-page="now"] .now-quiet.gm-button{
+ background:transparent;color:var(--3b-now-frost);border-color:var(--3b-border-matrix);
+ box-shadow:var(--3b-shadow-flat);
+}

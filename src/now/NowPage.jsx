@@ -43,21 +43,21 @@ function NowCompass({progress,save,goTo}){
   <h2 id="boussole-title">Qu’as-tu envie de faire aujourd’hui ?</h2>
   <p className="now-intro">Pas de questionnaire interminable. Un choix, du temps disponible et une action concrète dans les rubriques 3B qui existent déjà.</p>
   <div className="now-compass-grid" role="group" aria-label="Choisir une envie">
-   {LIFE_GOALS.map((item,index)=><Button type="button" key={item.id} aria-pressed={progress.goal===item.id} onClick={()=>save({...progress,goal:item.id,planDone:false})}>
+   {LIFE_GOALS.map((item,index)=><Button variant="neutral" type="button" key={item.id} aria-pressed={progress.goal===item.id} onClick={()=>save({...progress,goal:item.id,planDone:false})}>
     <span className="now-goal-index">{String(index+1).padStart(2,'0')}</span><strong>{item.name}</strong><ChevronRight size={18} aria-hidden="true"/>
    </Button>)}
   </div>
   <div className="now-duration" role="group" aria-label="Temps disponible">
    <strong>J’ai environ</strong>
-   {DURATIONS.map(minutes=><Button key={minutes} type="button" aria-pressed={progress.duration===minutes} onClick={()=>save({...progress,duration:minutes,planDone:false})}>{minutes===60?'1 heure':minutes+' min'}</Button>)}
+   {DURATIONS.map(minutes=><Button variant="neutral" key={minutes} type="button" aria-pressed={progress.duration===minutes} onClick={()=>save({...progress,duration:minutes,planDone:false})}>{minutes===60?'1 heure':minutes+' min'}</Button>)}
   </div>
   <div className="now-plan">
    <span className="now-eyebrow">TA MISSION · {plan.minutes} MINUTES</span>
    <h3>{plan.heading}</h3><p>{plan.description}</p>
    <ol><li>{plan.firstStep}</li>{plan.steps.map(item=><li key={item}>{item}</li>)}</ol>
    <div className="now-action-row">
-    <Button type="button" className="now-primary" onClick={()=>goTo(plan.route)}>Ouvrir {LIFE_GOALS.find(x=>x.id===progress.goal)?.name.toLowerCase()==='jouer'?'Jeux 3B':'la rubrique 3B'} <ArrowUpRight size={18}/></Button>
-    <Button type="button" className="now-quiet" aria-pressed={progress.planDone} onClick={()=>save({...progress,planDone:!progress.planDone})}>{progress.planDone?<Check size={18}/>:<Sun size={18}/>} {progress.planDone?'Fait aujourd’hui':'J’ai terminé'}</Button>
+    <Button variant="neutral" type="button" className="now-primary" onClick={()=>goTo(plan.route)}>Ouvrir {LIFE_GOALS.find(x=>x.id===progress.goal)?.name.toLowerCase()==='jouer'?'Jeux 3B':'la rubrique 3B'} <ArrowUpRight size={18}/></Button>
+    <Button variant="neutral" type="button" className="now-quiet" aria-pressed={progress.planDone} onClick={()=>save({...progress,planDone:!progress.planDone})}>{progress.planDone?<Check size={18}/>:<Sun size={18}/>} {progress.planDone?'Fait aujourd’hui':'J’ai terminé'}</Button>
    </div>
   </div>
   <p className="now-discretion">Tu confirmes toi-même tes actions : aucun pas, réussite ou XP n’est inventé. Rien n’est envoyé au Passeport ni à un partenaire.</p>
@@ -79,8 +79,8 @@ function NowCircle({progress,save,goTo}){
    {CIRCLE_VALUES.map((value,index)=><div className="now-value-row" role="listitem" key={value.id}>
     <span className="now-value-num">{String(index+1).padStart(2,'0')}</span>
     <div className="now-value-copy"><strong>{value.name}</strong><small>{value.country} · {value.guardian}</small><p>{value.quest}</p></div>
-    <Button className="now-value-check" type="button" aria-pressed={done.includes(value.id)} onClick={()=>save({...progress,completed:done.includes(value.id)?done.filter(x=>x!==value.id):[...done,value.id]})}>{done.includes(value.id)?<><Check size={17}/> Fait</>:'À faire'}</Button>
-    <Button type="button" className="now-value-link" onClick={()=>goTo(value.route)} aria-label={'Explorer '+value.name+' dans 3B'}><ArrowUpRight size={19}/></Button>
+    <Button variant="neutral" className="now-value-check" type="button" aria-pressed={done.includes(value.id)} onClick={()=>save({...progress,completed:done.includes(value.id)?done.filter(x=>x!==value.id):[...done,value.id]})}>{done.includes(value.id)?<><Check size={17}/> Fait</>:'À faire'}</Button>
+    <Button variant="neutral" type="button" className="now-value-link" onClick={()=>goTo(value.route)} aria-label={'Explorer '+value.name+' dans 3B'}><ArrowUpRight size={19}/></Button>
    </div>)}
   </div>
   <p className="now-discretion">Ces gestes sont déclaratifs et privés, pas des preuves d’identité, des validations d’activité ou des conditions d’accès au Passeport. Le Monde du 3B reste indépendant.</p>
@@ -121,7 +121,7 @@ export default function NowPage({goTo}){
     <p className="now-eyebrow"><span className="now-pulse"/> BLACK · BLANC · BEUR / L’EXPÉRIENCE QUOTIDIENNE</p>
     <h1 id="now-heading">3B <em>Maintenant.</em></h1>
     <p>Ton univers ne s’arrête plus à l’écran. Une petite action, une découverte, un souvenir ou un coup de main : <strong>choisis ce qui compte pour toi.</strong></p>
-    <div className="now-hero-actions"><Button className="now-primary" type="button" onClick={()=>choose('boussole')}><Compass size={19}/> Trouver ma direction</Button><Button type="button" className="now-quiet" onClick={()=>choose('cercle')}><Sparkles size={17}/> Voir mon Cercle</Button></div>
+    <div className="now-hero-actions"><Button variant="neutral" className="now-primary" type="button" onClick={()=>choose('boussole')}><Compass size={19}/> Trouver ma direction</Button><Button variant="neutral" type="button" className="now-quiet" onClick={()=>choose('cercle')}><Sparkles size={17}/> Voir mon Cercle</Button></div>
     <span className="now-hero-foot"><ShieldCheck size={15}/> Sans suivi permanent · Choix libre · Première expérience gratuite</span>
    </div>
    <div className="now-hero-visual"><LivingCircle completed={progress.completed}/><span className="now-visual-caption">{new Intl.DateTimeFormat('fr-FR',{day:'numeric',month:'long'}).format(new Date())}</span></div>
@@ -129,7 +129,7 @@ export default function NowPage({goTo}){
   <nav className="now-feature-nav" role="tablist" aria-label="Explorer les six expériences de 3B Maintenant">
    {NOW_SECTIONS.map((item,index)=>{
     const Icon=SECTIONS_ICONS[item.id];
-    return <Button key={item.id} role="tab" id={'now-tab-'+item.id} tabIndex={tab===item.id?0:-1} aria-selected={tab===item.id} aria-controls="now-feature-content" onClick={()=>choose(item.id)} onKeyDown={event=>navigateKeys(event,index)}>
+    return <Button variant="neutral" key={item.id} role="tab" id={'now-tab-'+item.id} tabIndex={tab===item.id?0:-1} aria-selected={tab===item.id} aria-controls="now-feature-content" onClick={()=>choose(item.id)} onKeyDown={event=>navigateKeys(event,index)}>
      <Icon size={21} strokeWidth={1.7} aria-hidden="true"/><span>{item.name}</span>
     </Button>;
    })}
@@ -143,6 +143,6 @@ export default function NowPage({goTo}){
    {tab==='universel'&&<UniversalModes/>}
   </div>
   {message&&<p className="now-message" role="status">{message}</p>}
-  <footer className="now-bottom"><span>3B INTERNATIONAL · TON CHEMIN, TON RYTHME.</span><Button type="button" className="now-quiet" onClick={()=>goTo('home')}>Retour à l’accueil <ArrowRight size={16}/></Button></footer>
+  <footer className="now-bottom"><span>3B INTERNATIONAL · TON CHEMIN, TON RYTHME.</span><Button variant="neutral" type="button" className="now-quiet" onClick={()=>goTo('home')}>Retour à l’accueil <ArrowRight size={16}/></Button></footer>
  </section>;
 }

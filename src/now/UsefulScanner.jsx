@@ -61,19 +61,19 @@ export default function UsefulScanner(){
    <VideoPlayer ref={video} title="Aperçu de la caméra" controls={false} playsInline muted autoPlay hidden={!on}/>
    {!on&&<div className="now-camera-placeholder" aria-hidden="true"><Camera size={54} strokeWidth={1}/><span>CAMÉRA À LA DEMANDE</span></div>}
    <div className="now-camera-actions">
-    {!on?<Button type="button" className="now-primary" disabled={busy} onClick={openCamera}><Camera size={18}/> {busy?'Autorisation…':'Activer la caméra'}</Button>:
-     <Button type="button" className="now-quiet" onClick={stop}><CameraOff size={18}/> Éteindre la caméra</Button>}
+    {!on?<Button variant="neutral" type="button" className="now-primary" disabled={busy} onClick={openCamera}><Camera size={18}/> {busy?'Autorisation…':'Activer la caméra'}</Button>:
+     <Button variant="neutral" type="button" className="now-quiet" onClick={stop}><CameraOff size={18}/> Éteindre la caméra</Button>}
    </div>
   </div>
   {on&&<div className="now-action-row">
-   <Button type="button" disabled={busy} className="now-quiet" onClick={()=>detect('texte')}><ScanText size={18}/> Reconnaître un texte</Button>
-   <Button type="button" disabled={busy} className="now-quiet" onClick={()=>detect('code')}><Barcode size={18}/> Lire un code</Button>
+   <Button variant="neutral" type="button" disabled={busy} className="now-quiet" onClick={()=>detect('texte')}><ScanText size={18}/> Reconnaître un texte</Button>
+   <Button variant="neutral" type="button" disabled={busy} className="now-quiet" onClick={()=>detect('code')}><Barcode size={18}/> Lire un code</Button>
   </div>}
   <label className="now-field">Texte à comprendre ou à écouter
    <textarea rows={4} maxLength={2400} value={content} onChange={e=>{setContent(e.target.value);setKind('Texte saisi');}} placeholder="Colle ici le texte d’une étiquette, d’un panneau ou d’un document."/>
   </label>
   <div className="now-action-row">
-   <Button type="button" className="now-primary" disabled={!text} onClick={read}><Volume2 size={18}/> Lire à voix haute</Button>
+   <Button variant="neutral" type="button" className="now-primary" disabled={!text} onClick={read}><Volume2 size={18}/> Lire à voix haute</Button>
    {text&&<a className="now-quiet" href={translateHref} target="_blank" rel="noreferrer noopener" onClick={()=>window.speechSynthesis?.cancel?.()}><ExternalLink size={18}/> Traduire sur Google</a>}
   </div>
   {text&&<p className="now-discretion">{kind} · La traduction ouvre un site externe et lui transmet uniquement le texte choisi. Ne transmets pas de données confidentielles.</p>}

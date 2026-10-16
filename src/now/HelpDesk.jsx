@@ -18,8 +18,8 @@ export default function HelpDesk({goTo}){
   <p className="now-eyebrow">03 / ENSEMBLE</p><h2 id="help-title">Le Coup de Main 3B.</h2>
   <p className="now-intro">Une compétence, un conseil, un projet collectif : commence par une proposition simple. La publication reste volontaire et soumise aux règles de la Communauté.</p>
   <div className="now-help-choice" role="group" aria-label="Type de proposition">
-   <Button type="button" aria-pressed={kind==='offer'} onClick={()=>setKind('offer')}><HeartHandshake size={20}/> Je propose mon aide</Button>
-   <Button type="button" aria-pressed={kind==='need'} onClick={()=>setKind('need')}><ShieldCheck size={20}/> J’ai besoin d’un conseil</Button>
+   <Button variant="neutral" type="button" aria-pressed={kind==='offer'} onClick={()=>setKind('offer')}><HeartHandshake size={20}/> Je propose mon aide</Button>
+   <Button variant="neutral" type="button" aria-pressed={kind==='need'} onClick={()=>setKind('need')}><ShieldCheck size={20}/> J’ai besoin d’un conseil</Button>
   </div>
   <form className="now-help-form" onSubmit={continueCommunity}>
    <label className="now-field">En quelques mots
@@ -28,7 +28,7 @@ export default function HelpDesk({goTo}){
    <label className="now-field">Ce que tu proposes ou recherches
     <textarea rows={4} maxLength={1400} required minLength={10} value={body} onChange={e=>setBody(e.target.value)} placeholder="Explique ton idée, sans coordonnées personnelles ni adresse précise."/>
    </label>
-   <Button type="submit" className="now-primary">Préparer dans la Communauté <ArrowRight size={18}/></Button>
+   <Button variant="neutral" type="submit" className="now-primary">Préparer dans la Communauté <ArrowRight size={18}/></Button>
   </form>
   <p className="now-discretion">Aucune mise en relation automatique, aucun partage public à cette étape. Les échanges se font dans la Communauté avec compte, consentement, signalement et modération. Ne publie ni numéro, ni adresse privée, ni donnée sensible.</p>
   {message&&<p className="now-message" role="status">{message}</p>}
