@@ -29,22 +29,24 @@ test('mobile navigation keeps an active destination instead of staged games',()=
  assert.ok(NAV_GROUPS.some(group=>group.title==='Services & avantages'));
 });
 
-test('sport manga games and nosbloc are locked in preparation without deleting their routes',()=>{
- for(const id of ['nosbloc','games','manga','sport']){
-  assert.match(app,new RegExp('id: "'+id+'"[\\s\\S]{0,120}status: "soon"'));
+test('only Nosbloc remains locked while existing modules reopen',()=>{
+ assert.match(app,/id: "nosbloc"[\s\S]{0,120}status: "soon"/);
+ for(const id of ['games','manga','sport','community','ia']){
+  const start=app.indexOf('id: "'+id+'"'),end=app.indexOf('},',start);
+  assert.ok(start>=0&&end>start,'known item '+id);
+  assert.doesNotMatch(app.slice(start,end),/status:\s*"soon"/);
  }
- assert.match(app,/const PREPARATION_ROUTE_IDS = new Set\(\["nosbloc", "games", "manga", "sport"\]\)/);
- assert.match(app,/PREPARATION_ROUTE_IDS\.has\(page\) \|\| page === "game"/);
- assert.match(app,/EN PRÉPARATION · 3B/);
- assert.doesNotMatch(app,/id: "religion"[\s\S]{0,80}status: "soon"/);
+ assert.match(app,/const PREPARATION_ROUTE_IDS = new Set\(\["nosbloc"\]\)/);
+ assert.match(app,/const isPreparationRoute = PREPARATION_ROUTE_IDS\.has\(page\)/);
+ for(const route of ['games','manga','sport','community','esports'])assert.match(app,new RegExp('page === "'+route+'" && <'));
+ assert.match(app,/<AiPage page=\{page\} goTo=\{goTo\}/);
+ assert.deepEqual(NAV_GROUPS.find(group=>group.title==='En préparation').ids,['nosbloc']);
  assert.ok(NAV_GROUPS.find(group=>group.title==='Comprendre 3B').ids.includes('religion'));
- for(const id of ['nosbloc','games','manga','sport'])assert.ok(NAV_GROUPS.find(group=>group.title==='En préparation').ids.includes(id));
 });
 
-test('community and textile AI remain explicitly staged as coming soon',()=>{
- for(const label of ['Communauté','Espace textile & IA']){
-  assert.match(app,new RegExp('label: "'+label+'"[\\s\\S]{0,90}status: "soon"'));
- }
+test('community and textile IA use their existing real modules',()=>{
+ assert.match(app,/page === "community" && <CommunityPage/);
+ assert.match(app,/<AiPage page=\{page\} goTo=\{goTo\}/);
  assert.doesNotMatch(nav,/app-menu-upcoming/);
  assert.equal(PRINCIPAL_DESTINATIONS.find(item=>item.label==='Scanner')?.id,'invisible');
 });
