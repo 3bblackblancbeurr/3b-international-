@@ -15,7 +15,7 @@ export const NAV_GROUPS=Object.freeze([
  {title:'Association & opportunités',ids:['association','partners','join','tv']},
  {title:'Création & communauté',ids:['community','ia']},
  {title:'En préparation',ids:['nosbloc']},
- {title:'Comprendre 3B',ids:['guide','religion']},
+ {title:'Comprendre 3B',ids:['guide','religion','albert']},
 ]);
 
 export const MENU_CATEGORIES=Object.freeze([
@@ -25,7 +25,7 @@ export const MENU_CATEGORIES=Object.freeze([
  {id:'world',label:'Monde',ids:['world3b','invisible','secret','nosbloc','arena']},
  {id:'play',label:'Jeux & sport',ids:['games','sport','esports']},
  {id:'account',label:'Compte',ids:['member','passport','control']},
- {id:'discover',label:'Découvrir',ids:['guide','community','manga','religion','ia']},
+ {id:'discover',label:'Découvrir',ids:['guide','community','manga','religion','ia','albert']},
  {id:'settings',label:'Réglages',ids:[]},
 ]);
 
