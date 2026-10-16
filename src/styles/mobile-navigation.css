@@ -182,7 +182,7 @@
   .mobile-navigation {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
-    background: #0b100ffd;
+    background: var(--3b-carbon);
   }
 }
 @media (max-width: 360px) {
