@@ -1,3 +1,4 @@
+import {Button as GoldButton} from '../design-system/index.jsx';
 import React, {useEffect, useMemo, useState} from 'react';
 import {ArrowRight, ArrowUpRight, CalendarDays, Clapperboard, Compass, FileText, Film, Globe2, Handshake, HeartHandshake, Landmark, LockKeyhole, Mail, MapPin, Newspaper, Plane, Radio, RefreshCw, ShieldCheck, Sparkles, Star, UsersRound, WalletCards} from 'lucide-react';
 import {MEMBER_SPACES, COUNTRY_INDEX, CONTACT_EMAIL, contactHref, countryFor, countryNewsHref, countryEventsHref, ADMIN_GUIDES, CINEMA_GUIDES, FINANCE_GUIDES, OPPORTUNITIES} from './memberSources.js';
@@ -23,7 +24,7 @@ function SectionIntro({eyebrow,title,children}) {
   return <div className="mx-section-intro"><span className="mx-eyebrow">{eyebrow}</span><h3>{title}</h3>{children&&<p>{children}</p>}</div>;
 }
 function PrimaryAction({children,onClick}) {
-  return <button type="button" className="mx-primary mx-link" onClick={onClick}>{children}<ArrowRight size={17} aria-hidden="true"/></button>;
+  return <GoldButton variant="health" type="button" className="mx-primary mx-link" onClick={onClick}>{children}<ArrowRight size={17} aria-hidden="true"/></GoldButton>;
 }
 function formatPublished(value) {
   const d = new Date(value);
@@ -57,14 +58,14 @@ function WorldBrief({country, onCountryChange, mode, setMode}) {
     <div className="mx-world-controls">
       <label className="mx-country"><span>Explorer un pays</span><select value={country} onChange={e=>onCountryChange(e.target.value)}>{COUNTRY_INDEX.map(c=><option key={c[0]} value={c[0]}>{c[3]} {c[1]}</option>)}</select></label>
       <div className="mx-switch" role="group" aria-label="Mode d’exploration">
-        <button type="button" aria-pressed={mode==='news'} onClick={()=>setMode('news')}><Newspaper size={16}/> Actualités</button>
-        <button type="button" aria-pressed={mode==='events'} onClick={()=>setMode('events')}><CalendarDays size={16}/> Événements</button>
+        <GoldButton variant="health" type="button" aria-pressed={mode==='news'} onClick={()=>setMode('news')}><Newspaper size={16}/> Actualités</GoldButton>
+        <GoldButton variant="health" type="button" aria-pressed={mode==='events'} onClick={()=>setMode('events')}><CalendarDays size={16}/> Événements</GoldButton>
       </div>
     </div>
     {mode==='news'?<>
       <SectionIntro eyebrow="INFORMATIONS DATÉES" title={country==='FR'?'Actus de France · France 24':'Vue mondiale · BBC News'}>{country==='FR'?'Titres d’un éditeur indépendant, liens vers les articles d’origine.':'Le fil intégré est mondial et non filtré par pays. Utilise le lien ci-dessous pour les actualités locales de '+chosen[1]+'.'}</SectionIntro>
       {loading&&<p className="mx-status" role="status">Récupération des titres publiés…</p>}
-      {error&&<p className="mx-status" role="status">Impossible de lire le flux actuellement. <button type="button" onClick={()=>setRetry(n=>n+1)}><RefreshCw size={15}/> Réessayer</button></p>}
+      {error&&<p className="mx-status" role="status">Impossible de lire le flux actuellement. <GoldButton variant="health" type="button" onClick={()=>setRetry(n=>n+1)}><RefreshCw size={15}/> Réessayer</GoldButton></p>}
       {!loading&&!error&&!items.length&&<p className="mx-status">Aucun titre récent disponible depuis cette source.</p>}
       {!!items.length&&<div className="mx-news-feed">{items.map(item=><a key={item.link} href={item.link} target="_blank" rel="noopener noreferrer"><span><small>{item.source} · {formatPublished(item.published)}</small><strong>{item.title}</strong></span><ArrowUpRight size={18}/></a>)}</div>}
       <SourceLink primary href={countryNewsHref(country)}>Actualités de {chosen[1]} sur Google Actualités</SourceLink>
@@ -107,14 +108,14 @@ export default function MemberExperiences({goTo,profile}) {
     </div>
 
     <nav className="mx-rail" aria-label="Rubriques de mon espace membre">
-      {MEMBER_SPACES.map(item=>{const ItemIcon=ICONS[item.icon];return <button type="button" key={item.id} aria-pressed={active===item.id} onClick={()=>changeSpace(item.id)}><ItemIcon size={20} strokeWidth={1.6}/><span>{item.name}</span>{favorites.includes(item.id)&&<Star size={12} className="mx-pinned" fill="currentColor" aria-label="Favori"/>}</button>})}
+      {MEMBER_SPACES.map(item=>{const ItemIcon=ICONS[item.icon];return <GoldButton variant="health" type="button" key={item.id} aria-pressed={active===item.id} onClick={()=>changeSpace(item.id)}><ItemIcon size={20} strokeWidth={1.6}/><span>{item.name}</span>{favorites.includes(item.id)&&<Star size={12} className="mx-pinned" fill="currentColor" aria-label="Favori"/>}</GoldButton>})}
     </nav>
 
     <div className="mx-stage" id="mx-content-title">
       <header className="mx-stage-heading">
         <div className="mx-stage-glyph"><Icon size={30} strokeWidth={1.4}/></div>
         <div><span className="mx-eyebrow">{space.eyebrow}</span><h3>{space.tagline}</h3><p>{space.hint}</p></div>
-        <button type="button" className="mx-star-action" onClick={toggleFavorite} aria-pressed={pinned} aria-label={pinned?'Retirer cette rubrique des favoris':'Ajouter cette rubrique aux favoris'} title={pinned?'Retirer des favoris':'Mettre en favori'}><Star size={20} fill={pinned?'currentColor':'none'}/></button>
+        <GoldButton variant="health" type="button" className="mx-star-action" onClick={toggleFavorite} aria-pressed={pinned} aria-label={pinned?'Retirer cette rubrique des favoris':'Ajouter cette rubrique aux favoris'} title={pinned?'Retirer des favoris':'Mettre en favori'}><Star size={20} fill={pinned?'currentColor':'none'}/></GoldButton>
       </header>
       <div className="mx-stage-body">
         {active==='loyalty'&&<>
@@ -165,7 +166,7 @@ export default function MemberExperiences({goTo,profile}) {
           <div className="mx-tv-screen"><span className="mx-tv-light"><Radio size={17}/> 3B ORIGINS TV</span><strong>Les histoires<br/>nous réunissent.</strong><span>MONDE · CRÉATION · CULTURE</span></div>
           <SectionIntro eyebrow="LE MÉDIA ORIGINAL 3B" title="De l’univers au grand écran.">Documentaires culturels, coulisses de la marque, événements 3B et récits du Monde du 3B : une grille éditoriale, pas un flux TV inventé.</SectionIntro>
           <PrimaryAction onClick={()=>goTo('world3b')}>Explorer le Monde du 3B</PrimaryAction>
-          <button className="mx-link" type="button" onClick={()=>goTo('manga')}>Découvrir le manga 3B <ArrowRight size={17}/></button>
+          <GoldButton variant="health" className="mx-link" type="button" onClick={()=>goTo('manga')}>Découvrir le manga 3B <ArrowRight size={17}/></GoldButton>
           <p className="mx-honesty">Pour diffuser un programme vidéo réel ici, il faudra des médias produits et autorisés, leur hébergement et les droits de diffusion correspondants.</p>
         </>}
 

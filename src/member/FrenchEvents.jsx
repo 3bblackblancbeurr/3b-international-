@@ -1,3 +1,4 @@
+import {Button as GoldButton} from '../design-system/index.jsx';
 import React,{useEffect,useState} from 'react';
 import {ArrowUpRight,CalendarDays,MapPin,RefreshCw,ShieldCheck} from 'lucide-react';
 import './french-events.css';
@@ -32,7 +33,7 @@ export default function FrenchEvents(){
       <p>Prochains événements publiés sur l’agenda national du Ministère de la Culture. Les dates et horaires viennent des organisateurs et peuvent changer.</p>
     </header>
     {loading&&<p className="mx-status" role="status">Actualisation des événements officiels…</p>}
-    {error&&<p role="status" className="mx-events-status">La programmation ne peut pas être récupérée actuellement. <button type="button" onClick={()=>setRefresh(v=>v+1)}><RefreshCw size={15}/> Réessayer</button></p>}
+    {error&&<p role="status" className="mx-events-status">La programmation ne peut pas être récupérée actuellement. <GoldButton variant="health" type="button" onClick={()=>setRefresh(v=>v+1)}><RefreshCw size={15}/> Réessayer</GoldButton></p>}
     {!loading&&!error&&!events.length&&<p className="mx-events-status" role="status">Aucun événement à venir disponible dans ce flux pour le moment.</p>}
     {!!events.length&&<ol className="mx-events-list">{events.slice(0,visible).map(event=><li key={event.link}>
       <div className="mx-events-when"><span>{displayDate(event.starts_local)}</span><small>Heure locale du lieu</small></div>
@@ -41,7 +42,7 @@ export default function FrenchEvents(){
         <a href={event.link} target="_blank" rel="noopener noreferrer">Voir les détails et confirmer la date <ArrowUpRight size={16}/></a>
       </div>
     </li>)}</ol>}
-    {events.length>visible&&<button type="button" className="mx-events-more" onClick={()=>setVisible(n=>Math.min(events.length,n+5))}>Voir les {Math.min(5,events.length-visible)} événements suivants</button>}
+    {events.length>visible&&<GoldButton variant="health" type="button" className="mx-events-more" onClick={()=>setVisible(n=>Math.min(events.length,n+5))}>Voir les {Math.min(5,events.length-visible)} événements suivants</GoldButton>}
     <p className="mx-honesty"><ShieldCheck size={16}/> Données ouvertes du Ministère de la Culture via OpenAgenda · Licence Ouverte 2.0. Sélection non exhaustive. Événements annulés, complets ou modifiés : vérifier l’annonce originale avant de se déplacer.</p>
   </section>;
 }

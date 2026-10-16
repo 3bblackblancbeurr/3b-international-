@@ -1,3 +1,4 @@
+import {Button as GoldButton} from '../design-system/index.jsx';
 import React,{useEffect,useRef,useState} from 'react';
 import {ArrowUpRight,Building2,MapPin,Search,ShieldCheck,Phone,RefreshCw} from 'lucide-react';
 import './official-directory.css';
@@ -40,7 +41,7 @@ export default function OfficialDirectory(){
         <input id="mx-dir-city" type="search" value={city} autoComplete="address-level2"
           maxLength={50} placeholder="Ex. Thonon-les-Bains, Lyon…" onChange={e=>setCity(e.target.value)}
           aria-describedby="mx-dir-help"/>
-        <button type="submit" aria-label="Rechercher les organismes officiels" disabled={busy || !VALID.test(city.trim())}><Search size={18}/><span>{busy?'Recherche…':'Rechercher'}</span></button>
+        <GoldButton variant="health" type="submit" aria-label="Rechercher les organismes officiels" disabled={busy || !VALID.test(city.trim())}><Search size={18}/><span>{busy?'Recherche…':'Rechercher'}</span></GoldButton>
       </div>
       <small id="mx-dir-help">Tu choisis ta ville. Aucune localisation GPS ni connexion à tes comptes administratifs.</small>
     </form>
@@ -57,7 +58,7 @@ export default function OfficialDirectory(){
           <a className="mx-directory-profile" href={item.profile} target="_blank" rel="noopener noreferrer">Voir la fiche officielle <ArrowUpRight size={16}/></a>
         </div>
       </article>)}</div>
-      {results.length>visible&&<button type="button" className="mx-dir-more" onClick={()=>setVisible(n=>Math.min(results.length,n+5))}>Voir les {Math.min(5,results.length-visible)} services suivants</button>}
+      {results.length>visible&&<GoldButton variant="health" type="button" className="mx-dir-more" onClick={()=>setVisible(n=>Math.min(results.length,n+5))}>Voir les {Math.min(5,results.length-visible)} services suivants</GoldButton>}
       {total>results.length&&<p className="mx-directory-limit">D’autres services sont référencés. <a href="https://lannuaire.service-public.gouv.fr/" target="_blank" rel="noopener noreferrer">Consulter l’annuaire complet <ArrowUpRight size={14}/></a></p>}
     </>}
     <p className="mx-honesty"><ShieldCheck size={16}/> Données publiques DILA · annuaire Service-Public, actualisées par l’administration. Les horaires et informations sont à confirmer auprès de l’organisme. 3B ne réalise aucune démarche à ta place.</p>

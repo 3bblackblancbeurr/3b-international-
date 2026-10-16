@@ -17,7 +17,7 @@
 .menu-trigger, .icon-button { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; border: 1px solid #ffffff26; color: #f8f0e1; background: #ffffff05; border-radius: 10px; padding: 0 14px; font-size: 13px; }
 .menu-trigger:hover, .icon-button:hover { background: #ffffff0e; border-color: #d1b476; }
 .icon-button { width: 44px; flex-shrink: 0; padding: 0; }
-.skip-link { position: fixed; left: 20px; top: -100px; z-index: 60; padding: 14px 20px; background: #f1d8a5; color: #111; border-radius: 8px; opacity: 0; clip-path: inset(50%); pointer-events: none; }
+.skip-link { position: fixed; left: 20px; top: -100px; z-index: 60; padding: 14px 20px; background: var(--3b-champagne-highlight); color: var(--3b-gold-ink); border-radius: var(--3b-radius-sm); opacity: 0; clip-path: inset(50%); pointer-events: none; }
 .skip-link:focus { top: 12px; opacity: 1; clip-path: none; pointer-events: auto; }
 .page-breadcrumb { position: relative; z-index: 2; display: flex; align-items: center; flex-wrap: wrap; gap: 12px; max-width: 1240px; margin: 18px auto; color: #bdb7aa; font-size: 13px; }
 .page-breadcrumb a { display: flex; align-items: center; gap: 8px; min-height: 44px; color: #e3c789; text-decoration: none; }
