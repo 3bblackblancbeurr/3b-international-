@@ -11,6 +11,7 @@ export default function HealthRhythm({ data, date, native, onSetTarget, onOpenSt
   const rhythm = healthRhythm(data, date);
   const { today, target, percent, week, known, average, max } = rhythm;
   const connected = native?.connected === true;
+  const canConnect = native?.status?.available === true;
   const provider = native?.status?.platform === 'ios' ? 'Apple Santé' : 'Health Connect';
   const source = today.value === null
     ? connected ? 'Synchronisation automatique active' : 'Compteur automatique non activé'
@@ -64,8 +65,11 @@ export default function HealthRhythm({ data, date, native, onSetTarget, onOpenSt
           ? 'Le total vient du téléphone. 3B le réactualise automatiquement quand Santé est ouverte et au retour dans l’application.'
           : 'Active une fois la connexion au téléphone. Ensuite, tu n’as plus de nombre de pas à taper.'}</p>
 
-        {!connected && <HealthButton variant="health" type="button" className="h-rhythm-connect" onClick={native?.connect} disabled={native?.busy}>
+        {!connected && canConnect && <HealthButton variant="health" type="button" className="h-rhythm-connect" onClick={native?.connect} disabled={native?.busy}>
           <Smartphone size={17}/>{native?.busy ? 'Connexion…' : 'Activer le compteur automatique'}
+        </HealthButton>}
+        {!connected && !canConnect && <HealthButton variant="health" type="button" className="h-rhythm-connect h-rhythm-learn" onClick={onOpenSteps}>
+          <Smartphone size={17}/> Voir comment activer les pas
         </HealthButton>}
 
         {connected && <HealthButton variant="health" type="button" className="h-rhythm-sync" onClick={native?.refresh} disabled={native?.busy}>
