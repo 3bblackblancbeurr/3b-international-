@@ -121,10 +121,11 @@ export default function MaintenantPage({goTo}){
      <div className="now-mission">
       <div className="now-mission-top"><span>TON PARCOURS · {TIME_LABEL[plan.minutes]}</span><span>{stepsDone.length}/3 repères personnels</span></div>
       <h3>{plan.subtitle}<em> — {plan.pace}</em></h3>
+      <p className="now-plan-coaching">{plan.coaching}</p>
       <ol>{plan.steps.map((s,i)=><li key={s.title}>
        <Button variant="ghost" type="button" onClick={()=>toggleStep(i)} aria-pressed={stepsDone.includes(i)}>
         <span className="now-step-marker">{stepsDone.includes(i)?<Check size={17}/>:String(i+1).padStart(2,'0')}</span>
-        <span><strong>{s.title}</strong><small>{s.detail}</small></span>
+        <span><strong>{s.title}<em className="now-step-time">{s.allocatedMinutes} min</em></strong><small>{s.detail}</small></span>
        </Button>
       </li>)}</ol>
       <Button variant="champagne" className="now-primary" type="button" onClick={()=>goTo(plan.route)}>Continuer dans {GOALS.find(g=>g.id===journey.goal)?.label==='Bouger'?'Santé 3B':'3B'} <ArrowRight size={19}/></Button>

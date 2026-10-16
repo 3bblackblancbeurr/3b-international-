@@ -68,7 +68,17 @@ export function journeyFor(value) {
  const p=normalizeJourney(value);
  const goal=GOALS.find(x=>x.id===p.goal)||GOALS[0];
  const pace=p.intensity==='calme'?'sans pression':p.intensity==='dynamique'?'avec un peu d’élan':'à ton rythme';
- return {...goal,minutes:p.minutes,pace,steps:goal.steps.map((s,i)=>({...s,index:i+1}))};
+ const fractions=p.minutes===15?[3,9,3]:p.minutes===60?[12,36,12]:[6,18,6];
+ const paces={
+  bouger:{calme:'Choisis une activité douce et fais des pauses quand tu en as besoin.',normal:'Alterne activité et récupération selon tes sensations.',dynamique:'Augmente progressivement le rythme si cela te convient.'},
+  apprendre:{calme:'Concentre-toi sur une seule idée importante.',normal:'Explore deux points de vue sans te presser.',dynamique:'Ajoute une question ou une comparaison à ton exploration.'},
+  aider:{calme:'Un message bienveillant peut suffire.',normal:'Choisis une aide réaliste et proportionnée à ton temps.',dynamique:'Prépare un projet concret, sans promettre plus que tu ne peux faire.'},
+  explorer:{calme:'Prends le temps de regarder un seul lieu.',normal:'Découvre une valeur et son gardien.',dynamique:'Poursuis l’aventure vers une autre découverte si tu le souhaites.'},
+  creer:{calme:'Reste sur une seule intention créative.',normal:'Dessine une idée et affine un détail.',dynamique:'Essaie plusieurs variantes avant de choisir.'},
+  jouer:{calme:'Choisis une partie courte, sans pression.',normal:'Profite d’un défi dans le temps disponible.',dynamique:'Essaie un autre mode si ta partie se termine plus tôt.'}
+ };
+ const coaching=paces[p.goal]?.[p.intensity]||paces.bouger.normal;
+ return {...goal,minutes:p.minutes,pace,coaching,steps:goal.steps.map((s,i)=>({...s,index:i+1,allocatedMinutes:fractions[i]}))};
 }
 
 export function circleProgress(value) {

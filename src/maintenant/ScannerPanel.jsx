@@ -21,6 +21,7 @@ export default function ScannerPanel({goTo}){
   try{
    const detector=new window.BarcodeDetector();
    bitmap=await createImageBitmap(file);
+   if(bitmap.width*bitmap.height>24000000)throw Error("Photo trop grande.");
    const found=await detector.detect(bitmap);
    if(generation!==running.current)return;
    const code=found.find(x=>typeof x.rawValue==='string'&&x.rawValue.trim());

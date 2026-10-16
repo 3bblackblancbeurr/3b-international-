@@ -45,6 +45,9 @@ test('canon 3B keeps countries and guardians coherent and self-reported values s
  assert.equal(circleProgress(nextValueState(one,'justice')),0);
  assert.equal(circleProgress(nextValueState(one,'invalid-value')),1);
  assert.equal(journeyFor({goal:'creer',minutes:60}).route,'ia');
+ assert.deepEqual(journeyFor({goal:'creer',minutes:15}).steps.map(s=>s.allocatedMinutes),[3,9,3]);
+ assert.deepEqual(journeyFor({goal:'creer',minutes:60}).steps.map(s=>s.allocatedMinutes),[12,36,12]);
+ assert.notEqual(journeyFor({goal:'creer',minutes:60,intensity:'calme'}).coaching,journeyFor({goal:'creer',minutes:60,intensity:'dynamique'}).coaching);
 });
 test('local preferences reject tampered payloads and do not invent reward or identity data',()=>{
  const parsed=normalizeJourney({goal:'hacker',minutes:1000000,intensity:'false',values:{justice:1,foi:true,'__proto__':true},passport:'admin'});
