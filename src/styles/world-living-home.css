@@ -33,8 +33,8 @@
 .world3b-hero-head h1 em{display:block;font-style:normal;color:var(--wl-gold-bright)}
 .world3b-hero-head p{font-size:clamp(13px,1.45vw,16px);line-height:1.65;color:var(--3b-world-tone-cbd9e4);max-width:550px;margin:10px auto 0}
 .world3b-globe-frame{width:min(100%,490px);margin:5px auto -22px;position:relative;z-index:1;aspect-ratio:1}
-.world3b-globe-canvas{display:block;position:relative;width:100%;aspect-ratio:1;touch-action:none;cursor:grab;outline-offset:-12px;filter:drop-shadow(0 12px 35px rgba(21,146,251,.24))}
-.world3b-globe-canvas:active{cursor:grabbing}
+.world3b-globe-canvas,.world-living-globe-canvas{display:block;position:relative;width:100%;aspect-ratio:1;touch-action:none;cursor:grab;outline-offset:-12px;filter:drop-shadow(0 12px 35px rgba(21,146,251,.24))}
+.world3b-globe-canvas:active,.world-living-globe-canvas:active{cursor:grabbing}
 .world3b-globe-aura{pointer-events:none;position:absolute;z-index:-1;inset:16%;border-radius:var(--3b-world-radius-03);background:var(--3b-world-tone-2275d3);filter:blur(75px);opacity:.22}
 .world3b-globe-emblem{position:absolute;pointer-events:none;top:50%;left:50%;transform:translate(-50%,-50%);width:92px;height:92px;display:flex;align-items:center;justify-content:center;flex-direction:column;border-radius:var(--3b-world-radius-03);border:1px solid rgba(244,192,105,.8);background:radial-gradient(circle at 30% 20%,rgba(23,70,105,.95),rgba(0,10,21,.96) 67%);box-shadow:var(--3b-world-shadow-03);text-shadow:0 2px 12px rgba(255,210,132,.6)}
 .world3b-globe-emblem span{font:900 45px/.97 Georgia,serif;letter-spacing:-.08em;color:var(--wl-gold-bright)}
@@ -250,7 +250,7 @@ html[data-motion="reduced"] .world3b-home *,html[data-motion="reduced"] .albert3
 .world3b-home,.world3b-home > *{min-width:0;max-width:100%}
 .world3b-hero,.world3b-active-view,.world3b-country-section,.world3b-module-section,.world3b-extra{min-width:0;max-width:100%}
 .world3b-globe-frame{width:100%;max-width:490px;min-width:0}
-.world3b-globe-canvas{width:100%!important;max-width:100%;height:auto;min-width:0}
+.world3b-globe-canvas,.world-living-globe-canvas{width:100%!important;max-width:100%;height:auto;min-width:0}
 .world3b-country-rail,.world3b-filter-rail{width:100%;max-width:100%;min-width:0}
 .world3b-tabs button{min-width:0;overflow-wrap:anywhere;text-align:center}
 .world3b-intro-name{min-width:0}
