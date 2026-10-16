@@ -39,7 +39,7 @@ export default function OfficialDirectory(){
         <input id="mx-dir-city" type="search" value={city} autoComplete="address-level2"
           maxLength={50} placeholder="Ex. Thonon-les-Bains, Lyon…" onChange={e=>setCity(e.target.value)}
           aria-describedby="mx-dir-help"/>
-        <button type="submit" disabled={busy || !VALID.test(city.trim())}><Search size={18}/><span>{busy?'Recherche…':'Rechercher'}</span></button>
+        <button type="submit" aria-label="Rechercher les organismes officiels" disabled={busy || !VALID.test(city.trim())}><Search size={18}/><span>{busy?'Recherche…':'Rechercher'}</span></button>
       </div>
       <small id="mx-dir-help">Tu choisis ta ville. Aucune localisation GPS ni connexion à tes comptes administratifs.</small>
     </form>
