@@ -35,6 +35,8 @@ test('each published nutrition record is a real catalog item with a distinct Ciq
 test('carrot illustrates vitamin-A role without imaginary visual acuity claims', () => {
   assert.equal(getNutrition('carotte').preparation, 'Carotte, cuite sans matière grasse');
   assert.equal(getNutrition('carotte').values.kcal, 33);
+  assert.ok(getNutrition('carotte').micronutrients.some(n => n.label.includes('Vitamine A') && n.value === 731 && n.unit === 'µg'));
+  assert.match(getNutrition('courge').preparation, /cuite/i);
   assert.ok(getFoodTopics('carotte').includes('eyes'));
   const claim = describeFoodForTopic('carotte', 'eyes');
   assert.match(claim, /vitamine A/);
