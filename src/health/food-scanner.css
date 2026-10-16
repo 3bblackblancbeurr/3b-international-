@@ -19,7 +19,7 @@
 @keyframes fs-scanline{from{top:12%}to{top:88%}}
 .fs-live{position:absolute;left:20px;top:20px;z-index:4;color:#d9fff2;background:rgba(1,17,19,.72);padding:8px 12px;border-radius:50px;font-size:.69rem;letter-spacing:.1em;display:flex;align-items:center;gap:8px}
 .fs-live span{width:8px;height:8px;border-radius:50%;background:#70e9bd;box-shadow:0 0 10px #70e9bd}
-.fs-commands{display:flex;justify-content:center;margin:-29px 0 30px;position:relative;z-index:6}
+.fs-commands{display:flex;justify-content:center;margin:12px 0 23px;position:relative;z-index:6}
 .fs-start,.fs-stop{min-height:58px;padding:16px 30px;display:flex;align-items:center;justify-content:center;gap:12px;border:0;border-radius:99px;font-weight:790;font-size:.93rem;cursor:pointer;touch-action:manipulation}
 .fs-start{background:linear-gradient(130deg,#e9ddbc,#91dacf);color:#0c2326;box-shadow:0 13px 32px rgba(103,209,191,.17)}.fs-stop{background:#1a2931;border:1px solid #a6c3be;color:#edffff}.fs-start:disabled{opacity:.65;cursor:wait}
 .fs-fallback{max-width:660px;margin:13px 0 24px}.fs-fallback>label{font-size:.9rem;font-weight:710;color:#d9e3dc}
