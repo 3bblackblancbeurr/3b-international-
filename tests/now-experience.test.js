@@ -1,0 +1,101 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {CIRCLE_VALUES,LIFE_GOALS,NOW_SECTIONS,planFor,dayKey,progressPercent,loadNowProgress,saveNowProgress,normalizeDailyProgress} from '../src/now/routines.js';
+import {encryptHeritage,decryptHeritage,isEncryptedVault,heritageStorageKey} from '../src/now/heritage-crypto.js';
+import {sanitizeUniversal,readUniversal,saveUniversal} from '../src/now/universal.js';
+import {PAGE_HASHES,readLocation,getPageHref} from '../src/lib/navigation.js';
+import {itemsForCategory,searchNavigation} from '../src/components/navigation-menu.js';
+
+const source=relative=>readFileSync(new URL(relative,import.meta.url),'utf8');
+test('3B Maintenant exposes six distinct capabilities behind one discoverable route',()=>{
+ assert.deepEqual(NOW_SECTIONS.map(x=>x.id),['boussole','cercle','aide','scanner','heritage','universel']);
+ assert.equal(PAGE_HASHES.now,'maintenant');
+ const url=new URL(getPageHref('now',new URL('https://3b.test/#accueil')),'https://3b.test');
+ assert.equal(readLocation(url).page,'now');
+ const items=[{id:'now',label:'3B Maintenant',description:'Six expériences'}];
+ assert.deepEqual(itemsForCategory(items,'principal').map(x=>x.id),['home','now']);
+ assert.equal(searchNavigation(items,'maintenant')[0].id,'now');
+ const app=source('../src/App.jsx'),home=source('../src/components/HomePage.jsx');
+ assert.match(app,/page === "now" && <NowPage/);
+ assert.match(home,/<NowGateway goTo=\{goTo\}/);
+ assert.match(home,/<WorldPortalCard goTo=\{goTo\}/);
+ assert.match(source('../src/main.jsx'),/initialiseUniversal\(\)/);
+});
+test('Cercle Vivant follows all eight canonical heritages with honest daily declarations',()=>{
+ assert.equal(CIRCLE_VALUES.length,8);
+ assert.equal(new Set(CIRCLE_VALUES.map(x=>x.id)).size,8);
+ assert.deepEqual(CIRCLE_VALUES.map(x=>x.country),['France','Algérie','Maroc','Tunisie','Espagne','Italie','Turquie','Estonie']);
+ assert.equal(progressPercent([]),0);
+ assert.equal(progressPercent(['justice','justice','loyaute']),25);
+ assert.equal(progressPercent(CIRCLE_VALUES.map(x=>x.id)),100);
+ assert.equal(normalizeDailyProgress({date:'2026-10-16',completed:['justice','fake','justice'],planDone:true},'2026-10-17').completed.length,0);
+ const page=source('../src/now/NowPage.jsx');
+ assert.match(page,/aucun pas, réussite ou XP n’est inventé/i);
+ assert.match(page,/pas des preuves d’identité/i);
+ assert.doesNotMatch(page,/grantXp|addPassportXp|earnRewards|walletCredit/);
+});
+test('Boussole routes to actual 3B pages with time bounds and explicit steps',()=>{
+ const ids=new Set(['health','religion','ia','community','games','deals','shop','sport','manga','guide']);
+ assert.equal(LIFE_GOALS.length>=6,true);
+ for(const g of LIFE_GOALS){assert.ok(ids.has(g.route));assert.ok(g.steps.length>=3);assert.equal(planFor(g.id,15).minutes,15);}
+ assert.equal(planFor('unknown',500).minutes,30);
+ assert.equal(dayKey(new Date(2026,9,16)),'2026-10-16');
+ const memory=new Map(),storage={getItem:k=>memory.get(k),setItem:(k,v)=>memory.set(k,v)};
+ const data={date:'2026-10-16',goal:'jouer',duration:60,completed:['justice'],planDone:true};
+ assert.equal(saveNowProgress('account-1',data,storage,'2026-10-16'),true);
+ assert.deepEqual(loadNowProgress('account-1',storage,'2026-10-16').completed,['justice']);
+ assert.equal(loadNowProgress('account-2',storage,'2026-10-16').completed.length,0);
+ assert.equal(loadNowProgress('account-1',storage,'2026-10-17').planDone,false);
+});
+test('Universal Mode saves reversible local preferences with no permission requests',()=>{
+ const store=new Map(),storage={getItem:k=>store.get(k),setItem:(k,v)=>store.set(k,v)};
+ const root={dataset:{}};
+ const prefs=saveUniversal({largeText:true,contrast:true,calm:true,simple:false},storage,root);
+ assert.equal(root.dataset.threebLarge,'true');
+ assert.equal(root.dataset.threebContrast,'true');
+ assert.equal(readUniversal(storage).calm,true);
+ assert.equal(sanitizeUniversal({calm:1,unknown:true}).calm,false);
+ const clean=saveUniversal({},storage,root);
+ assert.equal(clean.largeText,false);
+ assert.equal(root.dataset.threebContrast,'false');
+});
+test('Héritage is actual authenticated AES-GCM ciphertext, not plaintext or a server call',async()=>{
+ const stories=[{id:'memory-1',title:'Un souvenir familial',body:'Une recette de ma famille avec quelques mots privés.',date:'2026-10-16'}];
+ const payload=await encryptHeritage(stories,'Une phrase secrète suffisamment longue pour mon carnet');
+ assert.equal(isEncryptedVault(payload),true);
+ assert.equal(JSON.stringify(payload).includes('Une recette'),false);
+ const recovered=await decryptHeritage(payload,'Une phrase secrète suffisamment longue pour mon carnet');
+ assert.deepEqual(recovered,stories);
+ await assert.rejects(decryptHeritage(payload,'phrase incorrecte'),/Phrase secrète incorrecte/);
+ assert.notEqual(heritageStorageKey('account-1'),heritageStorageKey('account-2'));
+ const vault=source('../src/now/HeritageVault.jsx'),crypt=source('../src/now/heritage-crypto.js');
+ assert.match(vault,/Exporter le coffre chiffré/);
+ assert.match(crypt,/PBKDF2/);
+ assert.match(crypt,/AES-GCM/);
+ assert.doesNotMatch(vault,/fetch\(|ecosystem\(|supabase|axios/);
+});
+test('Camera, microphone and community posting remain opt-in and bounded',()=>{
+ const scanner=source('../src/now/UsefulScanner.jsx'),help=source('../src/now/HelpDesk.jsx'),community=source('../src/community/CommunityPage.jsx'),heritage=source('../src/now/HeritageVault.jsx');
+ assert.match(scanner,/getUserMedia/);
+ assert.match(scanner,/onClick=\{openCamera\}/);
+ assert.match(scanner,/track\.stop\(\)/);
+ assert.match(scanner,/document\.hidden/);
+ assert.match(scanner,/window\.TextDetector/);
+ assert.match(scanner,/window\.BarcodeDetector/);
+ assert.match(scanner,/noreferrer noopener/);
+ assert.match(help,/sessionStorage\.setItem\('3b-help-draft'/);
+ assert.match(help,/goTo\('community'\)/);
+ assert.match(community,/initialHelpDraft\(\)\?\.title/);
+ assert.match(community,/sessionStorage\.removeItem\('3b-help-draft'\)/);
+ assert.match(heritage,/getUserMedia\(\{audio:true,video:false\}\)/);
+ assert.match(heritage,/Télécharger l’audio/);
+});
+test('3B never unlocks Nosbloc, World assets are preserved and no finance/news section is added',()=>{
+ const app=source('../src/App.jsx');
+ assert.match(app,/const PREPARATION_ROUTE_IDS = new Set\(\["nosbloc"\]\)/);
+ assert.match(app,/id: "nosbloc"[\s\S]{0,100}status: "soon"/);
+ assert.doesNotMatch(app,/id: "banque"|id: "actualites"/);
+ assert.match(source('../src/components/WorldPortalCard.jsx'),/<HomeCinematicArtwork \/>/);
+ assert.match(source('../src/styles/unified-surfaces-3b.css'),/Not applied to the world/);
+});

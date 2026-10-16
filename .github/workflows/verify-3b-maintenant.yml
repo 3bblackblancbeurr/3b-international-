@@ -1,0 +1,46 @@
+name: Verify 3B Maintenant
+on:
+  pull_request:
+    paths:
+      - 'src/now/**'
+      - 'src/components/NowGateway.jsx'
+      - 'src/styles/unified-surfaces-3b.css'
+      - 'src/App.jsx'
+      - 'src/main.jsx'
+      - 'src/community/CommunityPage.jsx'
+      - 'src/components/HomePage.jsx'
+      - 'src/components/navigation-menu.js'
+      - 'src/lib/navigation.js'
+      - 'tests/now-experience.test.js'
+      - '.github/workflows/verify-3b-maintenant.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/now/**'
+      - 'src/components/NowGateway.jsx'
+      - 'src/styles/unified-surfaces-3b.css'
+      - 'src/App.jsx'
+      - 'src/main.jsx'
+      - 'src/community/CommunityPage.jsx'
+      - 'src/components/HomePage.jsx'
+      - 'src/components/navigation-menu.js'
+      - 'src/lib/navigation.js'
+      - 'tests/now-experience.test.js'
+      - '.github/workflows/verify-3b-maintenant.yml'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Unit and contract tests
+        run: node --test tests/now-experience.test.js tests/navigation-links.test.js tests/application-menu.test.js tests/home-premium-navigation.test.js tests/luxury-experience.test.js
+      - name: Build real web and native asset bundle
+        run: npm run build
