@@ -35,7 +35,7 @@ function parseRss(xml,config) {
       if(candidate.protocol!=='https:'||!config.hosts.includes(candidate.hostname))continue;
       link=candidate.href;
     }catch{continue;}
-    const titleKey=title.toLocaleLowerCase('fr').replace(/\\s+/g,' ').trim();
+    const titleKey=title.toLocaleLowerCase('fr').replace(/\s+/g,' ').trim();
     if(dedup.has(link)||titles.has(titleKey))continue;
     dedup.add(link);titles.add(titleKey);
     result.push({title,link,published:new Date(date).toISOString(),source:config.source});
