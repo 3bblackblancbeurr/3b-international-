@@ -7,6 +7,7 @@ import {
 import {authClient,memberRequest} from './client.js';
 import {useLoyalty} from './LoyaltyContext.jsx';
 import BoutiqueCard from './BoutiqueCard.jsx';
+import MemberExperiences from '../member/MemberExperiences.jsx';
 import PublicIdentityBadge from '../components/PublicIdentityBadge.jsx';
 import PassportAppearanceSettings from '../passport/PassportAppearance.jsx';
 import './boutique-loyalty.css';
@@ -216,6 +217,8 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
     </article>
    </div>
 
+   <MemberExperiences goTo={goTo} profile={profile}/>
+
    {!account.identityClaimsComplete&&<section className="account-command-center" aria-labelledby="identity-claim-title">
     <div className="account-command-heading">
      <div><span className="loyalty-eyebrow">PASSEPORT 3B / IDENTITÉ PRIVÉE</span><h2 id="identity-claim-title">Compléter mon identité civile</h2></div>
@@ -268,7 +271,6 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
      <button type="button" onClick={()=>goTo('passport')}><Fingerprint size={21}/><span><strong>Mon Passeport</strong><small>Identité, origine et portrait</small></span><ArrowUpRight size={16}/></button>
      <button type="button" onClick={()=>goTo('world3b')}><Globe2 size={21}/><span><strong>Monde du 3B</strong><small>Portes, missions et progression</small></span><ArrowUpRight size={16}/></button>
      <button type="button" onClick={()=>goTo('games')}><Gamepad2 size={21}/><span><strong>Mes jeux 3B</strong><small>Jouer et faire progresser le compte</small></span><ArrowUpRight size={16}/></button>
-     <Button variant="ghost" onClick={()=>goTo('loyalty')}><WalletCards size={21}/><span><strong>Ma carte de fidélité</strong><small>Points, avantages et récompenses</small></span><ArrowUpRight size={16}/></Button>
     </div>
    </section>
 
