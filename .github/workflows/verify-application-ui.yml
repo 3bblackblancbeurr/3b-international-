@@ -30,6 +30,9 @@ jobs:
       - run: node scripts/verify-application-ui.mjs
         env:
           APP_UI_OUT: artifacts/application-ui
+      - run: node scripts/verify-food-scanner-ui.mjs
+        env:
+          FOOD_SCANNER_UI_OUT: artifacts/application-ui/food-scanner
       - run: node scripts/verify-app-experience.mjs
         env:
           APP_EXPERIENCE_QA_OUT: artifacts/application-ui/experience
