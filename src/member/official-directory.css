@@ -30,3 +30,9 @@
 @keyframes mx-dir-spin{to{transform:rotate(360deg)}}
 @media(max-width:600px){.mx-directory{margin-top:20px}.mx-directory h4{font-size:1.65rem}.mx-directory-form-row{gap:8px;padding-left:11px}.mx-directory-form-row button{padding:10px 11px;min-width:48px}.mx-directory-form-row button span{display:none}.mx-directory-item{gap:14px}.mx-directory-index{font-size:.7rem}}
 @media(prefers-reduced-motion:reduce){.mx-dir-spin{animation:none}.mx-directory-form-row{transition:none}}
+
+.mx-dir-more{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:47px;margin:20px 0 14px;border-radius:100px;border:1px solid rgba(239,209,152,.44);color:#f1d5a1;background:transparent;font:inherit;font-size:.85rem;font-weight:720;cursor:pointer}
+.mx-dir-more:hover{background:rgba(226,191,125,.11)}
+.mx-dir-more:focus-visible,.mx-directory-form button:focus-visible{outline:3px solid #8bdde5;outline-offset:3px}
+.mx-directory-limit{font-size:.79rem;line-height:1.6;color:#adbec8;margin:14px 0}
+.mx-directory-limit a{color:#eecb91;text-decoration:none;font-weight:730}
