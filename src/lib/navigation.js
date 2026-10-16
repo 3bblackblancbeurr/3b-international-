@@ -1,7 +1,7 @@
 export const PAGE_HASHES = {
   health: "sante", deals: "3-bons-plans", intro: "", home: "accueil", passport: "passeport", loyalty: "cartes", member: "membre",
   manga: "manga", world3b: "monde-3b", invisible: "monde-invisible", nosbloc: "nosbloc", arena: "arene", games: "jeux", religion: "religion", guide: "guide", community: "communaute",
-  secret: "secret", sport: "sport", ia: "ia", "ia-textile": "ia-textile", "ia-trio": "mode-3-ia", control: "commande", shop: "boutique",
+  secret: "secret", sport: "sport", esports: "16-18-esport", ia: "ia", "ia-textile": "ia-textile", "ia-trio": "mode-3-ia", control: "commande", shop: "boutique",
 };
 
 const GAME_PATH = /^\/jeux\/([a-z0-9][a-z0-9-]{1,63})\/?$/;
