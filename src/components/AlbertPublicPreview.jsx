@@ -1,5 +1,5 @@
 import {useEffect,useRef,useState} from 'react';
-import {ArrowLeft,ArrowRight,AudioLines,BookOpen,Compass,Gamepad2,HeartPulse,Mic,MicOff,Plane,Send,ShieldCheck,Sparkles,Volume2,VolumeX} from 'lucide-react';
+import {ArrowLeft,ArrowRight,AudioLines,BookOpen,Compass,Gamepad2,Globe2,HeartPulse,Home,Mic,MicOff,Plane,Send,ShieldCheck,ShoppingBag,Sparkles,UserRound,Volume2,VolumeX} from 'lucide-react';
 import {RouteLink} from './AppNavigation.jsx';
 import {albertLocalGuideAnswer} from './world-living-data.js';
 import '../styles/world-living-home.css';
@@ -123,5 +123,12 @@ export default function AlbertPublicPreview({goTo}){
     <div className="albert3b-actual-ai"><AudioLines size={25}/><div><strong>Besoin d’une conversation IA ?</strong><p>Le Mode 3 IA est un espace existant, distinct d’Albert APEX.</p></div><RouteLink goTo={goTo} page="ia-trio">Mode 3 IA <ArrowRight size={16}/></RouteLink></div>
    </section>
   </div>
+  <nav className="albert3b-local-dock" aria-label="Navigation de l'espace Albert">
+   <RouteLink page="home" goTo={goTo}><Home size={21}/><span>Accueil</span></RouteLink>
+   <RouteLink page="world3b" goTo={goTo}><Globe2 size={21}/><span>Monde 3B</span></RouteLink>
+   <RouteLink page="ia-trio" goTo={goTo}><Sparkles size={22}/><span>IA 3B</span></RouteLink>
+   <RouteLink page="shop" goTo={goTo}><ShoppingBag size={21}/><span>Boutique</span></RouteLink>
+   <RouteLink page="member" goTo={goTo}><UserRound size={21}/><span>Mon compte</span></RouteLink>
+  </nav>
  </section>;
 }

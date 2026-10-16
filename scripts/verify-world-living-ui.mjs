@@ -25,6 +25,11 @@ try{
   page.on('pageerror',err=>errors.push(''+width+': '+err.message));
   await page.goto(origin+'/#accueil');
   const home=page.locator('.world3b-home');await home.waitFor({state:'visible'});
+  // A visible React node can still be hidden by the four-second cinematic launch.
+  // Capture real content, never a logo/splash frame incorrectly labelled as home.
+  await page.waitForFunction(()=>!document.querySelector('.threeb-launch') && !document.querySelector('.threeb-app-content[data-launch-hidden="true"]'));
+  check('Direct link bypasses cinema overlay '+width,await page.locator('.threeb-launch').count()===0);
+  check('Global companion does not cover the interactive world '+width,await page.locator('.companion3b-shell').count()===0);
   check('Actual World home '+width,await home.locator('.world3b-hero h1').isVisible());
   check('22 real primary modules '+width,await home.locator('.world3b-universe-link').count()===22);
   const canvas=home.locator('canvas.world-living-globe-canvas');
@@ -55,6 +60,8 @@ try{
   await home.getByRole('link',{name:/Albert APEX/}).first().click();
   await page.waitForURL(url=>url.hash==='#albert-3b');
   await page.locator('.albert3b-experience').waitFor({state:'visible'});
+  check('Concierge uses unobstructed local navigation '+width,await page.locator('.albert3b-local-dock').isVisible() && await page.locator('.mobile-navigation').isHidden());
+  check('Floating companion does not cover Albert conversation '+width,await page.locator('.companion3b-shell').count()===0);
   check('Albert route is reachable '+width,true);
   await page.screenshot({path:path.join(out,'albert-'+width+'.png'),fullPage:true});
   if(width===390){

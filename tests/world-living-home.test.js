@@ -67,3 +67,15 @@ test('3B World and Albert are real routed React components, not pasted promotion
  assert.match(styles,/prefers-reduced-motion:reduce/);
  assert.doesNotMatch(map,/1\.2M|850K|39 PAYS|fausses statistiques/i);
 });
+
+test('deep-linked world / Albert loads without four-second splash and conflicting floating companions',()=>{
+ const provider=read('src/design-system/LuxuryExperience.jsx');
+ const app=read('src/App.jsx');
+ const concierge=read('src/components/AlbertPublicPreview.jsx');
+ const qa=read('scripts/verify-world-living-ui.mjs');
+ assert.match(provider,/!window\.location\.hash \|\| window\.location\.hash === '#intro'/);
+ assert.match(app, /"home","albert"\]\.includes\(page\) && <CompanionLayer/);
+ assert.match(concierge,/albert3b-local-dock/);
+ assert.match(qa,/Direct link bypasses cinema overlay/);
+ assert.match(qa,/Floating companion does not cover Albert conversation/);
+});
