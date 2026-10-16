@@ -13,8 +13,8 @@ await mkdir(out,{recursive:true});
 const checks=[],errors=[];
 function check(label,value){assert.ok(value,label);checks.push(label);console.log('PASS',label);}
 try{
- for(const width of [390,320,768]){
-  const ctx=await browser.newContext({viewport:{width,height:844},isMobile:width<720,hasTouch:width<720,reducedMotion:width===320?'reduce':'no-preference'});
+ for(const [width,height] of [[320,568],[360,800],[390,844],[393,873],[768,1024],[1440,1000]]){
+  const ctx=await browser.newContext({viewport:{width,height},deviceScaleFactor:width<720?3:1,isMobile:width<720,hasTouch:width<720,reducedMotion:width===320?'reduce':'no-preference'});
   await ctx.route('**/*',route=>{
    const url=new URL(route.request().url());
    if(url.origin!==origin)return route.abort();
@@ -35,11 +35,18 @@ try{
    const nav=page.getByRole('navigation',{name:'Navigation mobile'});
    const b=await button.boundingBox(),n=await nav.boundingBox();
    check('Main-world action remains above mobile dock '+width,!!b&&!!n&&b.y+b.height<n.y-2);
+   const dockBlur=await nav.evaluate(el=>getComputedStyle(el).backdropFilter||getComputedStyle(el).webkitBackdropFilter||'none');
+   check('Mobile dock avoids fixed backdrop blur '+width,dockBlur==='none');
   }
   check('Actual World home '+width,await home.locator('.world3b-hero h1').isVisible());
   check('22 real primary modules '+width,await home.locator('.world3b-universe-link').count()===22);
   const canvas=home.locator('canvas.world-living-globe-canvas');
   check('Interactive geographic globe '+width,await canvas.isVisible()&&await canvas.evaluate(el=>el.getBoundingClientRect().width>180&&el.getBoundingClientRect().height>180));
+  if(width<720){
+   const globeBudget=await canvas.evaluate(el=>{const box=el.getBoundingClientRect(),style=getComputedStyle(el);return {bitmapWidth:el.width,cssWidth:box.width,touchAction:style.touchAction,display:style.display};});
+   check('Phone globe caps raster density '+width,globeBudget.bitmapWidth<=globeBudget.cssWidth*1.3+3);
+   check('Phone globe receives intended touch/display styles '+width,globeBudget.touchAction==='none'&&globeBudget.display==='block');
+  }
   const overflow=await home.evaluate(el=>{
    const root=el.getBoundingClientRect();
    return {scrollWidth:el.scrollWidth,clientWidth:el.clientWidth,offenders:[...el.querySelectorAll('*')]
