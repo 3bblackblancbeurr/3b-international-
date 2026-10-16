@@ -17,3 +17,7 @@
 .mx-events-status{color:#b0c6c9;font-size:.88rem;line-height:1.6}
 .mx-events-status button{display:inline-flex;align-items:center;gap:5px;color:#f2ce8d;background:transparent;border:0;font-weight:740;padding:8px;cursor:pointer}
 @media(max-width:680px){.mx-events-list li{display:grid;gap:13px;padding:19px 0}.mx-events-when{display:flex;gap:10px;align-items:center;flex:none}.mx-events-when small{font-size:.69rem}.mx-events-detail{padding-left:14px}.mx-events-detail strong{font-size:.97rem}}
+
+.mx-events-more{display:flex;justify-content:center;align-items:center;width:100%;border:1px solid rgba(239,209,152,.42);border-radius:100px;min-height:46px;background:transparent;color:#f0d6a2;font:inherit;font-size:.86rem;font-weight:700;cursor:pointer;margin:12px 0 24px}
+.mx-events-more:hover{background:rgba(226,191,125,.12)}
+.mx-events-more:focus-visible{outline:3px solid #80d9e6;outline-offset:3px}
