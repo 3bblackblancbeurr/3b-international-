@@ -41,6 +41,15 @@ export function useNativeSteps(health) {
   },[check,health.setData]);
   useEffect(() => { check().catch(()=>{if(alive.current)setStatus({available:false,platform:nativePlatform(),status:'unavailable'});}); },[check]);
   useEffect(() => { if(health.data.nativeEnabled)refresh(); return onHealthResume(()=>{if(enabled.current)refresh();}); },[health.data.nativeEnabled,refresh]);
+  // Poll OS-provided steps only while this native Santé view is in the foreground.
+  // No background sensor recording, network sync, or artificial increments.
+  useEffect(() => {
+    if(!health.data.nativeEnabled || !hasHealthBridge())return;
+    const timer=window.setInterval(()=>{
+      if(!document.hidden && enabled.current && !locked.current)void refresh(false);
+    },60000);
+    return ()=>window.clearInterval(timer);
+  },[health.data.nativeEnabled,refresh]);
   const disconnect=useCallback(async () => {
     if(locked.current?.disconnect)return;
     const lock={disconnect:true};locked.current=lock;setBusy(true);
