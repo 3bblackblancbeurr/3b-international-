@@ -84,6 +84,21 @@ try{
    }
    if(viewport.width===390)await page.screenshot({path:out+'/'+hash+'-390.png'});
   }
+  await page.goto(origin+'/#maintenant');await page.locator('#now-heading').waitFor();
+  check(`3B Maintenant has six real sections ${viewport.width}`,await page.locator('.now-feature-nav button[role="tab"]').count()===6);
+  check(`3B Maintenant default Boussole is interactive ${viewport.width}`,await page.locator('.now-compass-grid button').count()>=6);
+  await page.getByRole('tab',{name:/Cercle vivant/i}).click();
+  check(`Living Circle contains eight values ${viewport.width}`,await page.locator('.now-value-row').count()===8);
+  await page.locator('.now-value-check').first().click();
+  check(`Living Circle reflects voluntary progress ${viewport.width}`,await page.locator('.now-value-check').first().getAttribute('aria-pressed')==='true');
+  await page.getByRole('tab',{name:/Scanner utile/i}).click();
+  check(`Camera remains off until consent ${viewport.width}`,await page.locator('.now-camera-placeholder').isVisible()&&await page.locator('.now-camera-area video').isHidden());
+  await page.getByRole('tab',{name:/Héritage/i}).click();
+  check(`Héritage vault starts locked ${viewport.width}`,await page.locator('.now-vault-form input[type="password"]').count()>=1);
+  await page.getByRole('tab',{name:/Universel/i}).click();
+  check(`Universal accessibility mode offers four reversible choices ${viewport.width}`,await page.locator('.now-settings button').count()===4);
+  check(`Now page does not overflow horizontally ${viewport.width}`,await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+  if(viewport.width===390)await page.screenshot({path:out+'/maintenant-390.png'});
   await context.close();
  }
  const guestContext=await browser.newContext({viewport:{width:320,height:700},reducedMotion:'reduce'});
