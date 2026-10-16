@@ -1,8 +1,9 @@
 import {Button} from '../design-system/index.jsx';
 import {useEffect,useMemo,useState} from 'react';
-import {ArrowDown,ArrowRight,BadgePercent,BookImage,BookOpen,ChevronLeft,ChevronRight,Clapperboard,Compass,CreditCard,Eye,FileText,Gamepad2,Globe2,HandHeart,Handshake,Headphones,HeartPulse,IdCard,Landmark,MapPin,Newspaper,Plane,Search,ShieldCheck,ShoppingBag,Sparkles,Star,Trophy,UserRound,Users,X} from 'lucide-react';
+import {ArrowDown,ArrowRight,BadgePercent,BookImage,BookOpen,ChevronLeft,ChevronRight,Clapperboard,Compass,CreditCard,Eye,FileText,Gamepad2,Globe2,HandHeart,Handshake,Headphones,HeartPulse,IdCard,Landmark,MapPin,Newspaper,Plane,Search,ShieldCheck,ShoppingBag,Sparkles,Star,Trophy,UserRound,Users,X,ZoomIn,ZoomOut,RotateCcw} from 'lucide-react';
 import {RouteLink} from './AppNavigation.jsx';
 import LivingWorldGlobe from './LivingWorldGlobe.jsx';
+import {clampGlobeZoom,GLOBE_ZOOM_MIN,GLOBE_ZOOM_MAX} from './world-globe-zoom.js';
 import {WORLD_MODULE_GROUPS,WORLD_MODULES,WORLD_MORE_SERVICES,WORLD_REALMS,findWorldModules} from './world-living-data.js';
 import '../styles/world-living-home.css';
 
@@ -34,6 +35,7 @@ function readFavorites(){
 export default function LivingWorldHome({goTo,menuItems=[]}){
  const [tab,setTab]=useState('world');
  const [activeRealm,setActiveRealm]=useState('france');
+ const [globeZoom,setGlobeZoom]=useState(GLOBE_ZOOM_MIN);
  const [query,setQuery]=useState('');
  const [category,setCategory]=useState('all');
  const [favorites,setFavorites]=useState(readFavorites);
@@ -67,7 +69,13 @@ export default function LivingWorldHome({goTo,menuItems=[]}){
    </div>
    <div className="world3b-globe-frame">
     <div className="world3b-globe-aura" aria-hidden="true"/>
-    <LivingWorldGlobe selectedId={activeRealm} onSelect={setActiveRealm}/>
+    <LivingWorldGlobe selectedId={activeRealm} onSelect={setActiveRealm} zoom={globeZoom} onZoomChange={setGlobeZoom}/>
+    <div className="world3b-globe-controls" role="group" aria-label="Zoom de la planète">
+     <Button variant="ghost" type="button" aria-label="Agrandir la planète" disabled={globeZoom>=GLOBE_ZOOM_MAX} onClick={()=>setGlobeZoom(value=>clampGlobeZoom(value+.15))}><ZoomIn size={20}/></Button>
+     <Button variant="ghost" type="button" aria-label="Réduire la planète" disabled={globeZoom<=GLOBE_ZOOM_MIN} onClick={()=>setGlobeZoom(value=>clampGlobeZoom(value-.15))}><ZoomOut size={20}/></Button>
+     <Button variant="ghost" type="button" aria-label="Réinitialiser le zoom" disabled={globeZoom<=GLOBE_ZOOM_MIN} onClick={()=>setGlobeZoom(GLOBE_ZOOM_MIN)}><RotateCcw size={18}/></Button>
+     <span className="world3b-zoom-readout" aria-live="polite">{Math.round(globeZoom*100)}%</span>
+    </div>
     <div className="world3b-globe-emblem" aria-hidden="true"><span>3B</span><small>INTERNATIONAL</small></div>
     <div className="world3b-globe-caption"><span>8 ROYAUMES</span><span>22 UNIVERS</span></div>
    </div>
@@ -76,7 +84,7 @@ export default function LivingWorldHome({goTo,menuItems=[]}){
     <div aria-live="polite" className="world3b-realm-current"><span>{realm.flag} {realm.name}</span><small>{realm.value} · {realm.guardian}</small></div>
     <Button variant="ghost" type="button" onClick={()=>stepRealm(1)} aria-label="Royaume suivant"><ChevronRight size={20}/></Button>
    </div>
-   <div className="world3b-hero-bottom"><p>Tourne la planète ou touche un royaume</p><Button variant="ghost" type="button" onClick={()=>document.getElementById('world3b-modules')?.scrollIntoView({behavior:'smooth',block:'start'})}>Découvrir les 22 univers <ArrowDown size={16}/></Button></div>
+   <div className="world3b-hero-bottom"><p>Tourne la planète, pince pour zoomer ou touche un royaume</p><Button variant="ghost" type="button" onClick={()=>document.getElementById('world3b-modules')?.scrollIntoView({behavior:'smooth',block:'start'})}>Découvrir les 22 univers <ArrowDown size={16}/></Button></div>
   </div>
   <nav className="world3b-tabs" aria-label="Explorer la carte mondiale">
    {TABS.map(({id,label,Icon})=><Button variant="ghost" type="button" key={id} className={tab===id?'is-active':''} aria-current={tab===id?'page':undefined} onClick={()=>setTab(id)}><Icon size={18}/>{label}</Button>)}
