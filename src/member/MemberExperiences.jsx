@@ -78,8 +78,9 @@ function WorldBrief({country, onCountryChange, mode, setMode}) {
   </>;
 }
 
-export default function MemberExperiences({goTo,profile}) {
-  const [active,setActive]=useState('loyalty');
+export default function MemberExperiences({goTo,profile,initialSpace='loyalty'}) {
+  const [active,setActive]=useState(()=>MEMBER_SPACES.some(item=>item.id===initialSpace)?initialSpace:'loyalty');
+  useEffect(()=>{setActive(MEMBER_SPACES.some(item=>item.id===initialSpace)?initialSpace:'loyalty');},[initialSpace]);
   const [favorites,setFavorites]=useState(readFavorites);
   const [country,setCountry]=useState('FR');
   const [mode,setMode]=useState('news');
