@@ -33,8 +33,13 @@ try{
   if(width<720){
    const button=home.getByRole('button',{name:/Découvrir les 22 univers/});
    const nav=page.getByRole('navigation',{name:'Navigation mobile'});
+   // Short phones legitimately place the CTA below the first fold. Verify the
+   // actual reachable state after scrolling instead of treating off-screen
+   // content as if it were covered by the fixed dock.
+   await button.scrollIntoViewIfNeeded();
+   await page.waitForTimeout(80);
    const b=await button.boundingBox(),n=await nav.boundingBox();
-   check('Main-world action remains above mobile dock '+width,!!b&&!!n&&b.y+b.height<n.y-2);
+   check('Main-world action remains reachable above mobile dock '+width,!!b&&!!n&&b.y>=0&&b.y+b.height<n.y-2);
    const dockBlur=await nav.evaluate(el=>getComputedStyle(el).backdropFilter||getComputedStyle(el).webkitBackdropFilter||'none');
    check('Mobile dock avoids fixed backdrop blur '+width,dockBlur==='none');
   }
