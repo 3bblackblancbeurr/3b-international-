@@ -32,7 +32,7 @@ function PremiumSceneLayers() {
   );
 }
 
-export default function NexusCityGateway({ open, onClose, reducedMotion = false }) {
+export default function NexusCityGateway({ open, onClose, reducedMotion = false, backLabel = 'Retour' }) {
   const account = useLoyalty();
   const [cityOpen, setCityOpen] = useState(false);
   const [checking, setChecking] = useState(false);
@@ -158,7 +158,7 @@ export default function NexusCityGateway({ open, onClose, reducedMotion = false 
               </div>
             </div>
 
-            <button type="button" className="nexus-city-secondary" onClick={onClose}>Retour au Passeport</button>
+            <button type="button" className="nexus-city-secondary" onClick={onClose}>{backLabel}</button>
           </aside>
         </div>
 
