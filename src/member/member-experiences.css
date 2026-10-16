@@ -60,3 +60,13 @@
 @media(min-width:1100px){.mx-stage{padding-left:65px;padding-right:65px}}
 @media(max-width:680px){.mx-hero{min-height:390px;align-items:flex-start;padding:32px 25px}.mx-planet{position:absolute;bottom:-25px;right:-16px;width:170px;height:170px;opacity:.52}.mx-hero-copy{max-width:100%}.mx-hero-copy h2{font-size:3.15rem;max-width:340px}.mx-hero-copy>p{max-width:265px}.mx-hero-facts{max-width:270px;gap:8px 12px}.mx-hero-facts>span+span:before{margin-right:8px}.mx-stage-heading{gap:12px;align-items:start}.mx-stage-glyph{width:43px;height:43px;border-radius:15px}.mx-stage-glyph svg{width:23px;height:23px}.mx-stage-heading h3{font-size:1.55rem}.mx-star-action{width:38px;height:38px}.mx-stage{padding:24px 20px}.mx-stage-body{padding-top:26px}.mx-rail{margin-left:-7px;margin-right:-7px;padding-inline:7px}.mx-rail button{padding:13px}.mx-link.mx-primary{width:100%}.mx-world-controls{align-items:stretch}.mx-country,.mx-country select{width:100%}.mx-switch{width:100%;justify-content:space-around}.mx-switch button{flex:1;justify-content:center}.mx-source-rows .mx-link{padding-block:16px}.mx-destination>span{font-size:2.6rem}.mx-destination strong{font-size:1.4rem}.mx-tv-screen{padding:22px;min-height:240px}.mx-hero-copy h2{letter-spacing:-.055em}}
 @media(prefers-reduced-motion:reduce){.mx-planet-ring{animation:none}.mx-shell *, .mx-shell *:before,.mx-shell *:after{scroll-behavior:auto!important;transition:none!important}}
+
+/* Optional guides stay folded: the real official-search action comes first. */
+.mx-admin-guides{margin:23px 0 32px;border-top:1px solid var(--mx-line);padding-top:11px}
+.mx-admin-guides summary{display:flex;align-items:center;justify-content:space-between;gap:16px;cursor:pointer;list-style:none;color:#f2d8a7;font-weight:740;font-size:.9rem;padding:12px 0;min-height:47px}
+.mx-admin-guides summary::-webkit-details-marker{display:none}
+.mx-admin-guides summary svg{flex:none;transition:transform .22s ease}
+.mx-admin-guides[open] summary svg{transform:rotate(90deg)}
+.mx-admin-guides>p{color:#adbfca;line-height:1.65;font-size:.82rem;margin:7px 0 17px}
+.mx-admin-guides summary:focus-visible{outline:3px solid #8bdde5;outline-offset:3px;border-radius:6px}
+@media(prefers-reduced-motion:reduce){.mx-admin-guides summary svg{transition:none}}
