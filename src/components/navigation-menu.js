@@ -7,7 +7,7 @@ export const PRINCIPAL_DESTINATIONS=Object.freeze([
 
 // Keep this export compatible with the home directory while covering live routes.
 export const NAV_GROUPS=Object.freeze([
- {title:'Identité & progression',ids:['passport','member','loyalty']},
+ {title:'Identité & progression',ids:['passport','member']},
  {title:'Univers 3B',ids:['world3b','invisible','secret']},
  {title:'Jeux & compétition',ids:['games','manga','sport','esports']},
  {title:'Services & avantages',ids:['health','deals','shop','control']},
@@ -20,7 +20,7 @@ export const MENU_CATEGORIES=Object.freeze([
  {id:'principal',label:'Essentiel',ids:['home','maintenant','invisible','world3b','shop','health','deals']},
  {id:'world',label:'Monde',ids:['world3b','invisible','secret','nosbloc','arena']},
  {id:'play',label:'Jeux & sport',ids:['games','sport','esports']},
- {id:'account',label:'Compte',ids:['member','passport','loyalty','control']},
+ {id:'account',label:'Compte',ids:['member','passport','control']},
  {id:'discover',label:'Découvrir',ids:['guide','community','manga','religion','ia']},
  {id:'settings',label:'Réglages',ids:[]},
 ]);
