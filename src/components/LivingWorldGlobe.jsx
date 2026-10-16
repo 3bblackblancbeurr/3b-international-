@@ -40,10 +40,12 @@ export default function LivingWorldGlobe({selectedId='france',onSelect}){
   const state=control.current;
   let width=320,raf=0,last=0,visible=true,menuOpen=false,active=true;
   const media=window.matchMedia?.('(prefers-reduced-motion: reduce)');
+  const coarsePointer=window.matchMedia?.('(pointer: coarse)');
   const reduced=()=>media?.matches||document.documentElement.dataset.motion==='reduced';
+  const frameInterval=()=>coarsePointer?.matches||width<=720?48:34;
   function resize(){
    width=Math.max(190,Math.min(660,Math.round(canvas.parentElement?.getBoundingClientRect().width||canvas.getBoundingClientRect().width||320)));
-   const dpr=Math.min(window.devicePixelRatio||1,1.5);
+   const dpr=Math.min(window.devicePixelRatio||1,(coarsePointer?.matches||width<=720)?1.25:1.5);
    const target=Math.round(width*dpr);
    if(canvas.width!==target||canvas.height!==target){canvas.width=target;canvas.height=target;}
    canvas.style.width=width+'px';canvas.style.height=width+'px';
@@ -107,14 +109,14 @@ export default function LivingWorldGlobe({selectedId='france',onSelect}){
   state.draw=draw;
   function tick(time){
    if(!active)return;
-   if(visible&&!menuOpen&&!document.hidden&&time-last>34){
-    if(!reduced()&&!state.drag)state.angle+=.000008*Math.min(70,time-last||34);
+   if(visible&&!menuOpen&&!document.hidden&&!reduced()&&!state.drag&&time-last>frameInterval()){
+    state.angle+=.000008*Math.min(70,time-last||34);
     draw();last=time;
    }
    raf=requestAnimationFrame(tick);
   }
   const onVisibility=()=>{if(!document.hidden)draw();};
-  const onMenu=event=>{menuOpen=!!event.detail?.open;};
+  const onMenu=event=>{menuOpen=!!event.detail?.open;if(!menuOpen)draw();};
   const observer=typeof IntersectionObserver!=='undefined'?new IntersectionObserver(entries=>{visible=!!entries[0]?.isIntersecting;if(visible)draw();},{threshold:.05}):null;
   observer?.observe(canvas);
   const resizeObserver=typeof ResizeObserver!=='undefined'?new ResizeObserver(resize):null;
