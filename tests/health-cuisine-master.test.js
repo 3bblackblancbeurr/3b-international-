@@ -53,7 +53,7 @@ test('no more manually chosen pedometer targets; periodic reading requires permi
   assert.match(hook,/60000/);
   assert.match(hook,/document.visibilityState === 'visible'/);
   assert.match(hook,/!health.data.nativeEnabled \|\| !hasHealthBridge\(\)/);
-  assert.match(hook,/readSteps\(\{days:30\}\)/);
+  assert.match(hook,/readSteps\(\{days:recent\?1:30\}\)/);
 });
 
 test('touch-based body atlas includes liver warning and grounded cross-links to foods',()=>{
