@@ -26,8 +26,10 @@ export function normalizeHealth(raw, now = new Date()) {
   for (const [date, day] of Object.entries(raw.days || {})) {
     if (!validDays.has(date) || !day || typeof day !== 'object') continue;
     result.days[date] = {
-      steps: boundedNumber(day.steps, 0, 100000),
-      estimatedSteps: boundedNumber(day.estimatedSteps, 0, 100000),
+      // Legacy manual/web-estimated step values are deliberately retired.
+      // 3B now displays only the phone's authoritative health-provider total.
+      steps: null,
+      estimatedSteps: null,
       water: boundedNumber(day.water, 0, 40) ?? 0,
       plants: boundedNumber(day.plants, 0, 30) ?? 0,
       activeMinutes: boundedNumber(day.activeMinutes, 0, 1440),
@@ -58,8 +60,6 @@ export function normalizeNativeSteps(raw) {
 export function effectiveSteps(day = {}) {
   const native = normalizeNativeSteps(day.nativeSteps);
   if (native) return { value:native.steps, source:native.source, label:native.source === 'apple-health' ? 'Apple Santé' : 'Health Connect', estimated:false };
-  if (day.steps != null) return { value:day.steps, source:'manual', label:'saisis', estimated:false };
-  if (day.estimatedSteps != null) return { value:day.estimatedSteps, source:'estimate', label:'estimés', estimated:true };
   return { value:null, source:null, label:'', estimated:false };
 }
 export function withoutNativeSteps(data) {
@@ -67,13 +67,16 @@ export function withoutNativeSteps(data) {
 }
 export function mergeNativeSteps(data, response, now = new Date()) {
   if (!STEP_SOURCES.includes(response?.source) || !Array.isArray(response.days) || typeof response.syncedAt !== 'string' || !Number.isFinite(Date.parse(response.syncedAt))) throw new Error('Réponse du téléphone invalide.');
-  // A fresh snapshot replaces the previous import, including deleted/unreadable data.
-  const result = withoutNativeSteps(data), validDays = new Set(previousDays(30,now));
+  // Partial refreshes update only the returned dates so a one-day live refresh
+  // cannot erase the previous 29 days already imported from the phone.
+  const result = normalizeHealth(data, now), validDays = new Set(previousDays(30,now));
   result.nativeEnabled = true;
   for (const item of response.days) {
     if (!item || !validDays.has(item.date)) continue;
     const nativeSteps = normalizeNativeSteps({steps:item.steps,source:response.source,syncedAt:response.syncedAt});
-    if (nativeSteps) result.days[item.date] = {...result.days[item.date],nativeSteps};
+    const existing = result.days[item.date];
+    if (nativeSteps) result.days[item.date] = {...existing,nativeSteps};
+    else if (existing) result.days[item.date] = {...existing,nativeSteps:null};
   }
   return normalizeHealth(result,now);
 }
