@@ -6,7 +6,7 @@ Le plugin Capacitor `ThreeBHealth` lit les pas de **Santé Connect / Health Conn
 
 Le fournisseur continue son propre comptage lorsque 3B est fermé. 3B actualise l'affichage en premier plan. Le plugin ne demande aucune autorisation de lecture santé en arrière-plan ou d'historique étendu et ne crée aucun service de suivi.
 
-Sur Android 14+ avec extension SDK 20+ et capteur de pas, Health Connect peut compter directement les pas dès qu'une application détient `READ_STEPS`. Ailleurs, Samsung Health ou une autre application doit alimenter Health Connect, avec l'accord de la personne. L'utilisateur active séparément le partage Samsung Health → Santé Connect ; 3B ne modifie pas ce réglage. Les totaux peuvent arriver avec retard et dépendre des priorités définies dans Santé Connect.
+Sur Android 14+ avec extension SDK 20+ et capteur de pas, Health Connect peut compter directement les pas dès qu'une application détient `READ_STEPS`. Ailleurs, Samsung Health ou une autre application doit alimenter Health Connect, avec l'accord de la personne. L'utilisateur active séparément le partage Samsung Health → Santé Connect ; 3B ne modifie pas ce réglage. Les totaux peuvent arriver avec retard et dépendre des priorités définies dans Santé Connect. Dans l’interface 3B, le jour courant est relu automatiquement environ une fois par minute tant que Santé est visible, plus au retour au premier plan ; ce rafraîchissement ne remplace pas le comptage système en arrière-plan.
 
 ## Contrat JavaScript
 
@@ -66,3 +66,6 @@ Tests ajoutés : permissions minimales et garde API24, absence de somme brute/é
 - [Compatibilité Kotlin / Gradle / AGP](https://kotlinlang.org/docs/gradle-configure-project.html)
 
 Le manifest et les métadonnées du véritable AAR `connect-client-1.1.0.aar` ont aussi été inspectés : minSdk26, compileSdk36, AGP≥8.9.1.
+
+## Interface automatique
+La saisie manuelle de pas et l’estimation web ont été retirées. Le cercle de progression et l’historique utilisent uniquement l’agrégat Health Connect. Sur la PWA, l’interface explique qu’une application native est nécessaire au lieu d’inventer ou de demander un total.
