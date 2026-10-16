@@ -16,8 +16,13 @@ import "./styles/home-aaa-animated.css";
 import { setupNativeApp } from './native/runtime.js';
 import { captureAppOpen } from './lib/analytics.js';
 import AppUpdateManager from "./update/AppUpdateManager.jsx";
+import {initialiseUniversal} from "./now/universal.js";
+import "./now/now.css";
+import "./styles/unified-surfaces-3b.css";
 
 document.documentElement.classList.add('js-app-ready');
+const disposeUniversal=initialiseUniversal();
+if(import.meta.hot)import.meta.hot.dispose(disposeUniversal);
 const nativeSetup = setupNativeApp().catch(() => () => {});
 if (import.meta.hot) import.meta.hot.dispose(() => { nativeSetup.then(dispose => dispose()); });
 

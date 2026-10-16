@@ -3,6 +3,7 @@ import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from "rea
 
 const HealthPage = lazy(() => import("./health/HealthPage.jsx"));
 const DealsPage = lazy(() => import("./deals/DealsPage.jsx"));
+const NowPage = lazy(() => import("./now/NowPage.jsx"));
 const ShopPage = lazy(() => import("./shop/ShopPage.jsx"));
 const AiPage = lazy(() => import("./ai/AiPage.jsx"));
 const PremierSecretPage = lazy(() => import("./secret/PremierSecretPage.jsx"));
@@ -55,6 +56,7 @@ const ArenaExperience=lazy(()=>import('./arena/ArenaPage.jsx'));
 const NosblocPage=lazy(()=>import('./nosbloc/NosblocPremiumPage.jsx'));
 
 const BASE_MENU_ITEMS = [
+  { id: "now", label: "3B Maintenant", icon: "✦", description: "La Boussole, le Cercle Vivant et six façons d’agir." },
   { id: "health", label: "Santé", description: "Manger, bouger et prendre soin de soi." },
   { id: "deals", label: "3 bons plans", description: "Des offres datées et sourcées pour le quotidien." },
   { id: "guide", label: "Guide & XP", description: "Les repères pour commencer." },
@@ -379,7 +381,7 @@ export default function App() {
     );
   }
 
-  const passportAllowed = new Set(["home", "passport", "member", "religion", "control", "shop", "guide", "invisible", "deals", "health", "games", "game", "manga", "sport", "esports", "community", "ia", "ia-textile", "ia-trio"]);
+  const passportAllowed = new Set(["home", "passport", "member", "religion", "control", "shop", "guide", "invisible", "deals", "health", "now", "games", "game", "manga", "sport", "esports", "community", "ia", "ia-textile", "ia-trio"]);
   const needsPassport = !loyalty.loading && !hasPassport && !passportAllowed.has(page);
 
   if (needsPassport) {
@@ -408,6 +410,7 @@ export default function App() {
       {page === "home" && (
         <HomePage goTo={goTo} menuItems={menuItems} member={member} secret={secret} installation={installation} />
       )}
+      {page === "now" && <NowPage goTo={goTo} />}
 
       {page === "passport" && (
         <PassportExperience

@@ -1,6 +1,7 @@
 import { NAV_GROUPS, RouteLink } from './AppNavigation.jsx';
 import SectionCard from './SectionCard.jsx';
 import WorldPortalCard from './WorldPortalCard.jsx';
+import NowGateway from './NowGateway.jsx';
 import { ScanLine, ArrowUpRight } from 'lucide-react';
 import {Button} from '../design-system/index.jsx';
 
@@ -18,6 +19,7 @@ export default function HomePage({goTo,menuItems,member,installation}){
  return <section className="home-dashboard home-dashboard-simplified home-app-hub">
   <div className="home-entry-actions"><RouteLink page="scanner" goTo={goTo} className="home-scanner-direct"><ScanLine size={24} aria-hidden="true"/><span><strong>Ouvrir le scanner</strong><small>Faire apparaître une scène autour de toi</small></span><ArrowUpRight size={20} aria-hidden="true"/></RouteLink></div>
   <WorldPortalCard goTo={goTo}/>
+  <NowGateway goTo={goTo}/>
 
   <section className="universe-directory" aria-label="Les espaces 3B">
    {secondaryGroups.map(group=><section className="universe-group" key={group.title} aria-label={group.title}>

@@ -17,7 +17,7 @@ export const NAV_GROUPS=Object.freeze([
 ]);
 
 export const MENU_CATEGORIES=Object.freeze([
- {id:'principal',label:'Essentiel',ids:['home','invisible','world3b','shop','health','deals']},
+ {id:'principal',label:'Essentiel',ids:['home','now','invisible','world3b','shop','health','deals']},
  {id:'world',label:'Monde',ids:['world3b','invisible','secret','nosbloc','arena']},
  {id:'play',label:'Jeux & sport',ids:['games','sport','esports']},
  {id:'account',label:'Compte',ids:['member','passport','loyalty','control']},
