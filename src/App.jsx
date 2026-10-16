@@ -6,6 +6,7 @@ const MemberExperiences = lazy(() => import("./member/MemberExperiences.jsx"));
 const DealsPage = lazy(() => import("./deals/DealsPage.jsx"));
 const ShopPage = lazy(() => import("./shop/ShopPage.jsx"));
 const AiPage = lazy(() => import("./ai/AiPage.jsx"));
+const AlbertPublicPreview = lazy(() => import("./components/AlbertPublicPreview.jsx"));
 const PremierSecretPage = lazy(() => import("./secret/PremierSecretPage.jsx"));
 const ControlCenterPage = lazy(() => import("./control/ControlCenterPage.jsx"));
 import { controlCenterRequest } from "./control/client.js";
@@ -76,6 +77,7 @@ const BASE_MENU_ITEMS = [
   { id: "admin", label: "Administration", description: "Trouver les démarches et services publics officiels." },
   { id: "cinema", label: "Cinéma", description: "Trouver des films sur les plateformes légales." },
   { id: "foodscan", label: "Scanner alimentaire", description: "Scanner un code-barres et consulter les ingrédients et allergènes." },
+  { id: "albert", label: "Albert APEX · 3B", description: "Concierge 3B et orientation locale, connexion au moteur Albert personnel non activée." },
   { id: "guide", label: "Guide & XP", description: "Les repères pour commencer." },
   {
     id: "passport",
@@ -392,7 +394,7 @@ export default function App() {
     );
   }
 
-  const passportAllowed = new Set([...Object.keys(MEMBER_SPACE_ROUTES), "foodscan", "home", "passport", "member", "religion", "control", "shop", "guide", "invisible", "deals", "health", "maintenant", "games", "game", "manga", "sport", "esports", "community", "ia", "ia-textile", "ia-trio"]);
+  const passportAllowed = new Set([...Object.keys(MEMBER_SPACE_ROUTES), "foodscan", "home", "passport", "member", "religion", "control", "shop", "guide", "invisible", "deals", "health", "maintenant", "albert", "games", "game", "manga", "sport", "esports", "community", "ia", "ia-textile", "ia-trio"]);
   const needsPassport = !loyalty.loading && !hasPassport && !passportAllowed.has(page);
 
   if (needsPassport) {
@@ -465,6 +467,7 @@ export default function App() {
       {MEMBER_SPACE_ROUTES[page] && <MemberExperiences key={page} goTo={goTo} profile={loyalty.profile || null} initialSpace={MEMBER_SPACE_ROUTES[page]} />}
       {page === "deals" && <DealsPage />}
       {page === "control" && <ControlCenterPage goTo={goTo} />}
+       {page === "albert" && <AlbertPublicPreview goTo={goTo} />}
       {["ia", "ia-textile", "ia-trio"].includes(page) && <AiPage page={page} goTo={goTo} />}
       {page === "shop" && <ShopPage key={route.search} goTo={goTo} reducedMotion={options.reducedMotion || !options.animations} />}
       </Suspense>
