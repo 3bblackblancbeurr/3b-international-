@@ -4,7 +4,7 @@ import {ArrowDown,ArrowRight,BadgePercent,BookImage,BookOpen,ChevronLeft,Chevron
 import {RouteLink} from './AppNavigation.jsx';
 import LivingWorldGlobe from './LivingWorldGlobe.jsx';
 import {clampGlobeZoom,GLOBE_ZOOM_MIN,GLOBE_ZOOM_MAX} from './world-globe-zoom.js';
-import {WORLD_MODULE_GROUPS,WORLD_MODULES,WORLD_MORE_SERVICES,WORLD_REALMS,findWorldModules} from './world-living-data.js';
+import {WORLD_MODULE_GROUPS,WORLD_MODULES,WORLD_MORE_SERVICES,WORLD_REALMS,findWorldModules,findWorldExtraServices} from './world-living-data.js';
 import '../styles/world-living-home.css';
 
 const MODULE_ICONS={
@@ -42,6 +42,7 @@ export default function LivingWorldHome({goTo,menuItems=[]}){
  const [storageNotice,setStorageNotice]=useState('');
  const [allServices,setAllServices]=useState(true);
  const items=useMemo(()=>findWorldModules({query,category,favorites}),[query,category,favorites]);
+ const extraMatches=useMemo(()=>category==='all'?findWorldExtraServices(query):[],[query,category]);
  const realm=WORLD_REALMS.find(item=>item.id===activeRealm)||WORLD_REALMS[0];
  const copy=TAB_COPY[tab];
  const visibleModuleIds=new Set(menuItems.filter(item=>item.status!=='soon').map(item=>item.id));
@@ -129,7 +130,11 @@ export default function LivingWorldHome({goTo,menuItems=[]}){
      </article>;
     })}
    </div>
-   {items.length===0&&<p className="world3b-no-results">Aucune rubrique correspondante. Essaie un autre mot ou affiche « Tout ».</p>}
+   {extraMatches.length>0&&<section className="world3b-search-extras" aria-label="Autres services correspondant à la recherche">
+     <h3>Autres services correspondants</h3>
+     <div className="world3b-search-extra-links">{extraMatches.map(item=><RouteLink key={item.id} page={item.id} goTo={goTo}>{item.label}<ArrowRight size={16}/></RouteLink>)}</div>
+    </section>}
+   {items.length===0&&extraMatches.length===0&&<p className="world3b-no-results">Aucune rubrique correspondante. Essaie un autre mot ou affiche « Tout ».</p>}
    {storageNotice&&<p role="status" className="world3b-clarity">{storageNotice}</p>}
    <p className="world3b-clarity">Les cases ouvrent les pages existantes. Certaines fonctionnalités peuvent encore dépendre d’un compte, d’une autorisation ou d’une activation officielle.</p>
   </section>
