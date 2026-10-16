@@ -77,6 +77,21 @@ export function mergeNativeSteps(data, response, now = new Date()) {
   }
   return normalizeHealth(result,now);
 }
+// 2026: incremental native foreground read. A one-day update avoids querying
+// the last 30 days every minute, without deleting valid historical snapshots.
+// A null today means unreadable / revoked data, never an invented zero.
+export function mergeRecentNativeSteps(data, response, now = new Date()) {
+  if (!STEP_SOURCES.includes(response?.source) || !Array.isArray(response.days) ||
+      typeof response.syncedAt !== 'string' || !Number.isFinite(Date.parse(response.syncedAt)))
+    throw new Error('Réponse du téléphone invalide.');
+  const today = localDay(now);
+  const target = response.days.find(row => row && row.date === today);
+  if (!target) throw new Error('Le relevé du jour est absent.');
+  const nativeSteps = normalizeNativeSteps({ steps:target.steps, source:response.source, syncedAt:response.syncedAt });
+  const day = data.days?.[today] || {};
+  const days = { ...data.days, [today]:{ ...day, nativeSteps } };
+  return normalizeHealth({ ...data, nativeEnabled:true, days }, now);
+}
 export function recordMobility(data, session, now = new Date()) {
   const minutes = boundedNumber(session?.minutes, .01, 180, 2);
   if (!session || minutes === null || !Number.isFinite(Date.parse(session.completedAt))) return data;
