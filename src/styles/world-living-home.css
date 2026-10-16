@@ -244,3 +244,23 @@
  .world3b-home *,.albert3b-experience *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 }
 html[data-motion="reduced"] .world3b-home *,html[data-motion="reduced"] .albert3b-experience *{animation:none!important;transition:none!important}
+
+/* 320px phones: prevent min-content expansion from intrinsic canvas dimensions,
+   two-line menu labels and horizontal carousels. Horizontal swipe stays local. */
+.world3b-home,.world3b-home > *{min-width:0;max-width:100%}
+.world3b-hero,.world3b-active-view,.world3b-country-section,.world3b-module-section,.world3b-extra{min-width:0;max-width:100%}
+.world3b-globe-frame{width:100%;max-width:490px;min-width:0}
+.world3b-globe-canvas{width:100%!important;max-width:100%;height:auto;min-width:0}
+.world3b-country-rail,.world3b-filter-rail{width:100%;max-width:100%;min-width:0}
+.world3b-tabs button{min-width:0;overflow-wrap:anywhere;text-align:center}
+.world3b-intro-name{min-width:0}
+.world3b-intro-name p{overflow-wrap:anywhere}
+.world3b-intro{min-width:0}
+@media(max-width:370px){
+ .world3b-intro{flex-wrap:wrap}
+ .world3b-intro-name,.world3b-albert-shortcut{max-width:100%}
+ .world3b-section-title>div{min-width:0;overflow-wrap:anywhere}
+ .world3b-tabs{min-width:0}
+ .world3b-tabs button{font-size:10px}
+ .world3b-active-copy{min-width:0}
+}
