@@ -7,7 +7,7 @@ Une destination publique `#sante` dans le menu et les cartes de l’accueil exis
 - 26 aliments : préparation, usages, apports qualitatifs, précautions, saisons métropolitaines indicatives, recherche et favoris.
 - 12 recettes : ingrédients, étapes, personnes ajustables, allergènes déclarés, filtres rapide/végétarien/allergène, calendrier d’un repas par jour et liste de courses consolidée/exportable.
 - 12 guides : peau, soleil, mains, dents, pieds, sommeil, horaires décalés, marche, renforcement, pauses et respiration.
-- Journal quotidien : pas manuels et importés avec source explicite, estimations séparées, minutes d’activité, sommeil estimé, verres d’eau, portions de fruits/légumes et énergie ressentie facultative ; historique interactif de 7, 30 ou 90 jours.
+- Journal quotidien : pas automatiques du téléphone uniquement, minutes d’activité facultatives, sommeil estimé, verres d’eau, portions de fruits/légumes et énergie ressentie facultative ; historique interactif de 7, 30 ou 90 jours.
 - Trois séances de mobilité avec minuteur actif, pause automatique en arrière-plan, étapes et validation volontaire ; routines au réveil et avant le repos, adaptées aussi aux horaires décalés.
 - Rappels facultatifs : notifications locales dans les nouvelles versions natives ; export calendrier de 30 occurrences sur le web. Aucun rappel activé par défaut.
 - Respiration de 1, 3 ou 5 minutes avec pause, arrêt, interruption en arrière-plan et respect de la réduction des mouvements.
@@ -35,9 +35,9 @@ La télémétrie de présence et les événements de navigation sont suspendus p
 
 ## Podomètre : limites explicites
 
-Le mode web utilise de vrais événements `DeviceMotionEvent` après action volontaire, avec détection de pics, temporisation et filtre. Il s’agit d’une **estimation expérimentale non étalonnée**, pas du capteur de pas natif. Le temps ne génère jamais de pas. La session est suspendue quand la page devient invisible et au changement de journée. Les permissions refusées et l’absence d’événements affichent un état explicite. La source manuelle et les estimations ne sont jamais additionnées implicitement.
+Le mode web/PWA n’affiche plus de saisie manuelle ni de pseudo-podomètre. Les pas automatiques nécessitent la version native Android/iPhone et la permission système correspondante. Le reste de Santé reste disponible sur le web.
 
-**Les ponts natifs Health Connect (Android) et HealthKit (iOS) sont désormais implémentés**, en lecture seule des pas sur 30 jours, après action et permission explicites. Les données sont rafraîchies à l’ouverture de Santé et au retour au premier plan ; le fournisseur du téléphone enregistre les pas indépendamment de 3B. Samsung Health doit partager ses données avec Health Connect. Les agrégations du système évitent d’additionner les doublons de plusieurs sources. Priorité affichée : import natif, puis saisie manuelle, puis estimation expérimentale ; ces valeurs ne sont jamais additionnées.
+**Les ponts natifs Health Connect (Android) et HealthKit (iOS) sont désormais implémentés**, en lecture seule des pas sur 30 jours, après action et permission explicites. Les données sont rafraîchies à l’ouverture de Santé et au retour au premier plan ; le fournisseur du téléphone enregistre les pas indépendamment de 3B. Samsung Health doit partager ses données avec Health Connect. Les agrégations du système évitent d’additionner les doublons de plusieurs sources. Le total affiché provient exclusivement de l’import natif. Les anciennes saisies manuelles et estimations web sont ignorées et retirées lors de la normalisation du journal.
 
 **La publication web ne rend pas ces ponts accessibles dans un navigateur ou une PWA** : une nouvelle application native compilée, signée et installée est indispensable. Les anciennes versions natives affichent une invitation à se mettre à jour. Les déclarations de distribution et essais sur appareils réels restent nécessaires. Apple ne révèle pas un refus de lecture : une absence de données reste indéterminée. Aucun test physique de précision sur Samsung/Xiaomi/iPhone n’a été effectué ; ne pas revendiquer une précision clinique ni une lecture 3B en arrière-plan.
 
@@ -57,3 +57,7 @@ Les 24 photos individuelles couvrent les aliments dont une correspondance libre 
 - Ne pas mettre les informations de santé dans les logs, notifications, traceurs, erreurs ou les URL. Le module est isolé des événements de navigation globaux existants.
 - Avant tout usage clinique, tout stockage médical distant ou synchronisation nouvelle : analyse des risques, bases légales RGPD, éventuelle AIPD et évaluation de l'applicabilité de l'hébergement HDS.
 - Ne pas annoncer une certification ISO, HDS, ANSSI, RGPD ou une sécurité absolue : cette évolution n'est pas un audit indépendant.
+
+## Compteur automatique 2026
+
+Quand la connexion est active, Santé 3B lit 30 jours lors de la connexion puis réactualise silencieusement le jour courant environ toutes les 60 secondes lorsque l’écran Santé est visible, ainsi qu’au retour au premier plan. Le fournisseur système reste la source de vérité ; 3B ne synthétise jamais de pas à partir du temps écoulé.
