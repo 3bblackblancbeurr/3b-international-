@@ -2,7 +2,7 @@ import React from 'react';
 import { ArrowRight, Footprints, RefreshCw, ShieldCheck, Smartphone, TrendingUp } from 'lucide-react';
 import { Button as HealthButton } from '../design-system/index.jsx';
 import { displayNumber, localDay, previousDays, normalizeNativeSteps } from './model.js';
-import './health-rhythm.css';
+import './health-steps-modern.css';
 
 const dayLabel=date=>new Intl.DateTimeFormat('fr-FR',{weekday:'short'}).format(new Date(date+'T12:00:00'));
 const shortTime=iso=>{
