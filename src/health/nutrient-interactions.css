@@ -1,0 +1,17 @@
+/* Vitamines, minéraux et macros : toucher une ligne, comprendre son rôle. */
+.h-sheet--nutrition .h-nutrition-macro>.h-nutrient-choice,.h-sheet--nutrition .h-nutrition-vitamins>.h-nutrient-choice{
+  width:100%;min-width:0;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;min-height:43px;
+  margin:0;padding:11px 4px!important;border:0!important;border-bottom:1px solid #d6e9d021!important;border-radius:0!important;
+  color:#f3f5ed;background:transparent!important;box-shadow:none!important;transition:background .2s ease
+}
+.h-sheet--nutrition .h-nutrient-choice span{font-size:12px;font-weight:450;color:#b8cdbc}
+.h-sheet--nutrition .h-nutrient-choice strong{font-size:13px;font-weight:600;white-space:nowrap;color:#f7f4e9}
+.h-sheet--nutrition .h-nutrient-choice[aria-pressed=true] span{color:#f3d6a7}
+.h-sheet--nutrition .h-nutrient-choice[aria-pressed=true]{border-bottom-color:#d8caa860!important}
+.h-sheet--nutrition .h-nutrient-choice:focus-visible{outline:2px solid #decaa5;outline-offset:2px}
+.h-nutrient-explainer{margin:19px 0 11px;padding:18px 0 15px;border-top:1px solid #bddbc247;border-bottom:1px solid #bddbc222}
+.h-nutrient-explainer>span{color:#e6cfa8;font-size:10px;letter-spacing:.14em;font-weight:700}
+.h-nutrient-explainer>p{font-size:13px!important;color:#e6efe3!important;line-height:1.65;margin:11px 0}
+.h-nutrient-explainer>a{font-size:11px;color:#c8e5c4;text-decoration:underline}
+@media(max-width:700px){.h-sheet--nutrition .h-nutrient-choice span{font-size:11px}.h-sheet--nutrition .h-nutrient-choice strong{font-size:12px}.h-nutrient-explainer>p{font-size:12px!important}}
+@media(prefers-reduced-motion:reduce){.h-sheet--nutrition .h-nutrient-choice{transition:none}}
