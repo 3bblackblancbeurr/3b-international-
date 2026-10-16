@@ -86,7 +86,9 @@ try{
   });
   if(overflow.scrollWidth>overflow.clientWidth+2)console.log('OVERFLOW_DIAGNOSTIC',width,JSON.stringify(overflow));
   check('Homepage has no unwanted horizontal overflow '+width,overflow.scrollWidth<=overflow.clientWidth+2);
-  await page.screenshot({path:path.join(out,'3b-world-'+width+'.png'),fullPage:true});
+  // Freeze motion and capture CSS pixels: keeps long mobile screenshots stable without 3x GPU raster pressure.
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await page.screenshot({path:path.join(out,'3b-world-'+width+'.png'),fullPage:true,animations:'disabled',scale:'css',timeout:60000});
   if(width===390){
    await home.getByRole('button',{name:'Maroc Noblesse · Naël'}).click();
    check('Selecting a realm changes visible globe context',await home.locator('.world3b-realm-current').innerText().then(t=>t.includes('Maroc')));
@@ -106,7 +108,7 @@ try{
   check('Concierge uses unobstructed local navigation '+width,await page.locator('.albert3b-local-dock').isVisible() && await page.locator('.mobile-navigation').isHidden());
   check('Floating companion does not cover Albert conversation '+width,await page.locator('.companion3b-shell').count()===0);
   check('Albert route is reachable '+width,true);
-  await page.screenshot({path:path.join(out,'albert-'+width+'.png'),fullPage:true});
+  await page.screenshot({path:path.join(out,'albert-'+width+'.png'),fullPage:true,animations:'disabled',scale:'css',timeout:60000});
   if(width===390){
    await page.locator('#albert3b-input').fill('Je veux voir les jeux');
    await page.getByRole('button',{name:'Envoyer ma question'}).click();
