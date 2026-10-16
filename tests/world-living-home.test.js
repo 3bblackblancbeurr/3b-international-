@@ -63,6 +63,10 @@ test('3B World and Albert are real routed React components, not pasted promotion
  assert.match(globe,/onPointerMove/);
  assert.match(globe,/onKeyDown/);
  assert.match(globe,/requestAnimationFrame/);
+ assert.match(globe,/\(pointer: coarse\)/);
+ assert.match(globe,/\?1\.25:1\.5/);
+ assert.match(globe,/!reduced\(\)&&!state\.drag/);
+ assert.match(styles,/\.world-living-globe-canvas/);
  assert.match(styles,/@media\(max-width:370px\)/);
  assert.match(styles,/prefers-reduced-motion:reduce/);
  assert.doesNotMatch(map,/1\.2M|850K|39 PAYS|fausses statistiques/i);
@@ -78,6 +82,11 @@ test('deep-linked world / Albert loads without four-second splash and conflictin
  assert.match(concierge,/albert3b-local-dock/);
  assert.match(qa,/Direct link bypasses cinema overlay/);
  assert.match(qa,/Floating companion does not cover Albert conversation/);
+ assert.match(qa,/\[360,800\]/);
+ assert.match(qa,/\[393,873\]/);
+ assert.match(qa,/\[1440,1000\]/);
+ assert.match(qa,/Phone globe caps raster density/);
+ assert.match(qa,/Mobile dock avoids fixed backdrop blur/);
 });
 
 test('World Living Gold Master sources tokens and shared controls',()=>{
