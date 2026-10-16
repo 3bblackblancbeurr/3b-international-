@@ -4,6 +4,7 @@ import {MEMBER_SPACES, COUNTRY_INDEX, CONTACT_EMAIL, contactHref, countryFor, co
 import './member-experiences.css';
 const OfficialDirectory = React.lazy(() => import('./OfficialDirectory.jsx'));
 const FrenchEvents = React.lazy(() => import('./FrenchEvents.jsx'));
+const CinemaFinder = React.lazy(() => import('./CinemaFinder.jsx'));
 
 
 const ICONS = {wallet: WalletCards, globe:Globe2, heart:HeartHandshake, handshake:Handshake, landmark:Landmark, plane:Plane, users:UsersRound, tv:Clapperboard, file:FileText, film:Film};
@@ -180,7 +181,10 @@ export default function MemberExperiences({goTo,profile}) {
 
         {active==='cinema'&&<>
           <SectionIntro eyebrow="LA CULTURE EN TOUTE LÉGALITÉ" title="Trouve un film à regarder.">Accède aux catalogues officiels et aux offres légales. Les titres, coûts, abonnements et pays disponibles sont ceux de chaque diffuseur au moment de l’ouverture.</SectionIntro>
-          <SourceRows rows={CINEMA_GUIDES}/>
+          <React.Suspense fallback={<p role="status" className="mx-status">Ouverture du cinéma légal…</p>}><CinemaFinder/></React.Suspense>
+          <details className="mx-admin-guides"><summary>Autres catalogues légaux et droits de diffusion <ArrowRight size={17} aria-hidden="true"/></summary>
+            <SourceRows rows={CINEMA_GUIDES}/>
+          </details>
           <p className="mx-honesty"><Film size={16}/> 3B ne diffuse pas de films tiers sans licences de diffusion. Les éventuels abonnements des plateformes restent séparés de 3B.</p>
         </>}
       </div>
