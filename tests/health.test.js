@@ -37,8 +37,8 @@ test('journal retains exactly the last 90 local calendar days and rejects future
   assert.ok(result.days['2026-10-15']);
   assert.equal(result.days['2026-10-16'], undefined);
   assert.equal(result.days['2026-07-17'], undefined);
-  assert.equal(result.days['2026-10-15'].steps, 1000);
-  assert.equal(result.days['2026-10-15'].estimatedSteps, 37, 'sensor estimates stay separate from manually reported totals');
+  assert.equal(result.days['2026-10-15'].steps, null, 'legacy manual step totals are retired');
+  assert.equal(result.days['2026-10-15'].estimatedSteps, null, 'legacy web step estimates are retired');
 });
 
 test('unreadable storage and malformed JSON leave the temporary journal usable', () => {
