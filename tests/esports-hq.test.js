@@ -62,6 +62,8 @@ test('mobile touch, accessible navigation and motion safety are implemented',()=
  assert.match(css,/@media\(max-width:560px\)/);
  assert.match(css, /prefers-reduced-motion:reduce/);
  assert.match(css,/overflow-x:auto/);
+ assert.match(page,/scrollBehavior/);
+ assert.doesNotMatch(page,/behavior:'instant'/);
  assert.match(read('src/App.jsx'),/Club gaming multijeux/);
  assert.match(read('public/esports/16-18-arena.svg'),/<svg/);
 });
