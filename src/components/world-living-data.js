@@ -35,12 +35,12 @@ export const WORLD_MODULES = Object.freeze([
 
 // Additional actual routes are not squeezed out to force an artificial 22-item total.
 export const WORLD_MORE_SERVICES = Object.freeze([
- {id:'maintenant',label:'3B Maintenant'},
- {id:'foodscan',label:'Scanner alimentaire'},
- {id:'cinema',label:'Cinéma 3B'},
- {id:'join',label:'Nous recherchons'},
- {id:'secret',label:'Premier Secret'},
- {id:'guide',label:'Guide 3B'},
+ {id:'maintenant',label:'3B Maintenant',aliases:['boussole','coup de main','activités']},
+ {id:'foodscan',label:'Scanner alimentaire',aliases:['scanner','nutrition','code barre','allergènes']},
+ {id:'cinema',label:'Cinéma 3B',aliases:['films','film','cinéma','séances']},
+ {id:'join',label:'Nous recherchons',aliases:['recrutement','rechercher joueur','emploi','collaborateurs']},
+ {id:'secret',label:'Premier Secret',aliases:['énigme','mystère','secret']},
+ {id:'guide',label:'Guide 3B',aliases:['aide','assistance','débuter','comment faire']},
 ]);
 
 // These are CANONICAL FICTIONAL realms of Monde du 3B, not operational physical hubs.
@@ -57,6 +57,16 @@ export const WORLD_REALMS = Object.freeze([
 
 export function normalizeWorldSearch(value){
  return String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('fr').trim();
+}
+
+// Search extra real routes too, without pretending there are more than 22 primary tiles.
+export function findWorldExtraServices(query=''){
+ const words=normalizeWorldSearch(query).split(/\s+/).filter(Boolean);
+ if(!words.length)return [];
+ return WORLD_MORE_SERVICES.filter(item=>{
+  const blob=normalizeWorldSearch([item.id,item.label,...(item.aliases||[])].join(' '));
+  return words.every(word=>blob.includes(word));
+ });
 }
 
 export function findWorldModules({query='',category='all',favorites=[]}={}){
