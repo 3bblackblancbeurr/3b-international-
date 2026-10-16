@@ -29,7 +29,15 @@ try{
   check('22 real primary modules '+width,await home.locator('.world3b-universe-link').count()===22);
   const canvas=home.locator('canvas.world-living-globe-canvas');
   check('Interactive geographic globe '+width,await canvas.isVisible()&&await canvas.evaluate(el=>el.getBoundingClientRect().width>180&&el.getBoundingClientRect().height>180));
-  check('Homepage has no unwanted horizontal overflow '+width,await home.evaluate(el=>el.scrollWidth<=el.clientWidth+2));
+  const overflow=await home.evaluate(el=>{
+   const root=el.getBoundingClientRect();
+   return {scrollWidth:el.scrollWidth,clientWidth:el.clientWidth,offenders:[...el.querySelectorAll('*')]
+    .map(n=>({n,rect:n.getBoundingClientRect()}))
+    .filter(({rect})=>rect.right>root.right+2||rect.left<root.left-2)
+    .slice(0,20).map(({n,rect})=>({tag:n.tagName,cls:typeof n.className==='string'?n.className.slice(0,70):'',text:(n.innerText||'').slice(0,40),left:Math.round(rect.left),right:Math.round(rect.right)}))};
+  });
+  if(overflow.scrollWidth>overflow.clientWidth+2)console.log('OVERFLOW_DIAGNOSTIC',width,JSON.stringify(overflow));
+  check('Homepage has no unwanted horizontal overflow '+width,overflow.scrollWidth<=overflow.clientWidth+2);
   await page.screenshot({path:path.join(out,'3b-world-'+width+'.png'),fullPage:true});
   if(width===390){
    await home.getByRole('button',{name:'Maroc Noblesse · Naël'}).click();
