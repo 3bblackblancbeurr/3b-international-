@@ -7,6 +7,7 @@ import { searchText } from './model.js';
 import { FOOD_NUTRITION, NUTRITION_SOURCES, ORGAN_TOPICS, NO_CURE_NOTE, describeFoodForTopic, getFoodTopics, getNutrition, scaleAmount } from './nutrition-data.js';
 import './nutrition-atlas.css';
 import { explainNutrient } from './nutrient-roles.js';
+import './nutrient-interactions.css';
 
 const FAMILIES = [
   { id: 'all', label: 'Tout' },
