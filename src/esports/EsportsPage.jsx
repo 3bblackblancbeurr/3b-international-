@@ -66,10 +66,10 @@ export default function EsportsPage({goTo}){
   catch(cause){setNotice(getEsportsError(cause));}finally{setSending(false);}
  };
  const submitMedia=async e=>{
-  e.preventDefault();if(sending)return;setSending(true);setNotice('');
+  e.preventDefault();if(sending)return;const form=e.currentTarget;setSending(true);setNotice('');
   try{await sendEsportsMedia(user,{...media,file:uploadType==='file'?file:null,media_url:uploadType==='link'?media.media_url:null});
    setNotice('Vidéo reçue et placée dans la file de validation. Elle n’est pas encore publique.');setMedia(initialMedia);setFile(null);
-   e.currentTarget.reset();await refresh();}
+   form.reset();await refresh();}
   catch(cause){setNotice(getEsportsError(cause));}finally{setSending(false);}
  };
  const review=async(kind,id,status)=>{
