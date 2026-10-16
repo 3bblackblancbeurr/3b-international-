@@ -62,7 +62,7 @@ export async function fetchMemberBrief(request) {
     const length=Number(upstream.headers.get('content-length')||0);
     if(length>1000000)throw new Error('RSS too large');
     const xml=await upstream.text();
-    if(xml.length>1000000||!/<rss\\b|<item\\b/i.test(xml))throw new Error('Malformed RSS');
+    if(xml.length>1000000||!/<rss\b|<item\b/i.test(xml))throw new Error('Malformed RSS');
     return reply({source:config.source,items:parseRss(xml,config),retrieved_at:new Date().toISOString()},200,'public, s-maxage=600, stale-while-revalidate=1200');
   }catch{
     return reply({error:'Source indisponible, consulter le site éditeur'},503);
