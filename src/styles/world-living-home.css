@@ -304,3 +304,15 @@ html[data-motion="reduced"] .world3b-home *,html[data-motion="reduced"] .albert3
 /* Shared Gold Master Button uses its documented geometry; remove default inset
    on round controls while retaining the existing semantics and focus ring. */
 .world3b-universe-fav.gm-button,.world3b-realm-selector .gm-button,.albert3b-form .gm-button{padding:0}
+
+/* Last phone-fold review: the main AppNavigation already displays the 3B mark.
+   Remove its duplicate inside World so the globe's real CTA stays ABOVE the
+   one-thumb dock instead of sitting behind it at 320/390px. */
+@media(max-width:720px){
+ .world3b-intro-name{display:none}
+ .world3b-intro{justify-content:flex-end;min-height:42px;padding:0 2px 9px}
+ .world3b-hero{padding-top:22px}
+ .world3b-globe-frame{margin:0 auto -27px}
+ .world3b-realm-selector{margin-bottom:12px}
+ .albert3b-topmark{display:none}
+}

@@ -30,6 +30,12 @@ try{
   await page.waitForFunction(()=>!document.querySelector('.threeb-launch') && !document.querySelector('.threeb-app-content[data-launch-hidden="true"]'));
   check('Direct link bypasses cinema overlay '+width,await page.locator('.threeb-launch').count()===0);
   check('Global companion does not cover the interactive world '+width,await page.locator('.companion3b-shell').count()===0);
+  if(width<720){
+   const button=home.getByRole('button',{name:/Découvrir les 22 univers/});
+   const nav=page.getByRole('navigation',{name:'Navigation mobile'});
+   const b=await button.boundingBox(),n=await nav.boundingBox();
+   check('Main-world action remains above mobile dock '+width,!!b&&!!n&&b.y+b.height<n.y-2);
+  }
   check('Actual World home '+width,await home.locator('.world3b-hero h1').isVisible());
   check('22 real primary modules '+width,await home.locator('.world3b-universe-link').count()===22);
   const canvas=home.locator('canvas.world-living-globe-canvas');
