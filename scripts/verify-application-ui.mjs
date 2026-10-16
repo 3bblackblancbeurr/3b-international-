@@ -40,9 +40,11 @@ try{
   check(`Category labels remain on one readable line ${viewport.width}`,await dialog.locator('.app-menu-categories button').evaluateAll(buttons=>buttons.every(button=>{const range=document.createRange();range.selectNodeContents(button);return new Set([...range.getClientRects()].map(rect=>Math.round(rect.top))).size<=1&&button.scrollWidth<=button.clientWidth+1;})));
   await dialog.getByRole('tab',{name:'Monde',exact:true}).click();
   check(`Hidden world accessible ${viewport.width}`,await dialog.locator('[data-menu-id="invisible"]').isVisible());
-  check(`Unfinished games omitted from current menu ${viewport.width}`,await dialog.locator('[data-menu-id="games"]').count()===0);
+  await dialog.getByRole('tab',{name:'Jeux & sport',exact:true}).click();
+  check(`G3B, sport and 16-18 are open ${viewport.width}`,await dialog.locator('[data-menu-id="games"]').isVisible()&&await dialog.locator('[data-menu-id="sport"]').isVisible()&&await dialog.locator('[data-menu-id="esports"]').isVisible());
+  check(`Nosbloc remains blocked ${viewport.width}`,await dialog.locator('[data-menu-id="nosbloc"]').count()===0);
   await dialog.getByRole('searchbox').fill('jeux');
-  check(`Search only shows open destinations ${viewport.width}`,await dialog.locator('.app-menu-route').count()===0);
+  check(`Search opens G3B ${viewport.width}`,await dialog.locator('[data-menu-id="games"]').isVisible());
   await dialog.getByRole('searchbox').fill('caché');
   check(`Accent tolerant search ${viewport.width}`,await dialog.locator('.app-menu-route').count()===1);
   await dialog.getByRole('button',{name:'Effacer la recherche'}).click();
