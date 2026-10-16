@@ -67,6 +67,9 @@ test('3B World and Albert are real routed React components, not pasted promotion
  assert.match(globe,/prefers-reduced-motion/);
  assert.match(globe,/onPointerMove/);
  assert.match(globe,/onKeyDown/);
+ assert.match(globe,/ArrowUp/);
+ assert.match(globe,/ArrowDown/);
+ assert.match(globe,/event.key==='Home'/);
  assert.match(globe,/requestAnimationFrame/);
  assert.match(globe,/\(pointer: coarse\)/);
  assert.match(globe,/\?1\.25:1\.5/);
