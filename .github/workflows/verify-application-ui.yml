@@ -27,6 +27,9 @@ jobs:
       - run: npm run build
       - run: npm install --no-save --package-lock=false @playwright/test@1.56.1
       - run: npx playwright install --with-deps chromium
+      - run: node scripts/verify-world-living-ui.mjs
+        env:
+          WORLD_LIVING_QA_OUT: artifacts/application-ui/world-living
       - run: node scripts/verify-application-ui.mjs
         env:
           APP_UI_OUT: artifacts/application-ui
