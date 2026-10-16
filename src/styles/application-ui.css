@@ -206,3 +206,40 @@ html[data-luxury="v2"] body .hidden-world .hidden-realm { display: grid; white-s
 html[data-luxury="v2"] body .app3b[data-page="member"] .loyalty-intro h1 { font-family: Sora,Inter,ui-sans-serif,system-ui,sans-serif; font-size: clamp(30px,5vw,46px); line-height: 1.15; letter-spacing: -.025em; }
 
 html[data-luxury="v2"] body .app3b[data-page] .app-menu-categories > button::after { display: none; }
+
+
+/* 3B Maintenant lives in the shared shell, even before its lazy route is loaded. */
+/* Navigation entry is a purposeful invitation, not another generic menu tile. */
+html[data-luxury="v2"] body .app3b[data-page="home"] .threeb-now-entry{
+ display:flex;align-items:center;justify-content:space-between;gap:22px;min-height:117px;
+ margin:26px 0 14px;padding:24px 0;border:0;border-top:1px solid var(--3b-champagne-highlight);border-bottom:1px solid var(--3b-champagne-highlight);
+ border-radius:0;background:transparent;box-shadow:none;color:var(--3b-champagne-highlight);text-decoration:none;transition:color .2s /* gold-master-allow: reviewed shared 3B Now invitation */
+}
+.threeb-now-entry-icon{flex:0 0 43px;color:var(--3b-champagne-highlight)}
+.threeb-now-entry-copy{display:flex;flex-direction:column;gap:6px;flex:1;min-width:0}
+.threeb-now-entry-copy small{font-size:10px;letter-spacing:.18em;color:var(--3b-champagne-highlight);font-weight:700}
+.threeb-now-entry-copy strong{font-size:clamp(21px,2.7vw,32px);letter-spacing:-.035em;line-height:1.18}
+.threeb-now-entry-copy span{font-size:13px;color:var(--3b-champagne-highlight);line-height:1.55}
+.threeb-now-entry-arrow{color:var(--3b-champagne-highlight);flex:0 0 auto}
+html[data-luxury="v2"] body .app3b[data-page="home"] .threeb-now-entry:hover{color:var(--3b-champagne-highlight)}
+
+/* Accessibility mode applies carefully to reading and menus, not 3D game engines. */
+html[data-threeb-large-text="true"] body .app3b[data-page] :is(.app-menu-route-copy strong,.universe-group .compact-card-copy strong,.editorial-page p,.now-lead){font-size:1.12em;line-height:1.7}
+html[data-threeb-large-text="true"] body .app3b[data-page="maintenant"] .now-pane{font-size:1.1rem}
+html[data-threeb-high-contrast="true"] body .app3b[data-page] :is(.app-menu-route-copy small,.universe-group .compact-card-copy > span,.editorial-page p,.now-lead,.now-small){color:var(--3b-champagne-highlight)!important}
+html[data-threeb-high-contrast="true"] body .app3b[data-page] :is(.compact-card,.now-read-controls>button,.now-help-list>button){border-bottom-color:var(--3b-champagne-highlight)!important}
+html[data-threeb-calm-motion="true"] body .app3b .home-aaa-art :is(.home-aaa-rotating-circle,.home-aaa-ring-holder,.home-aaa-magic-sky,.home-aaa-ring-aura,.home-aaa-water-glow),
+html[data-threeb-calm-motion="true"] body .app3b .now-halo,html[data-threeb-calm-motion="true"] body .app3b .now-halo:before,html[data-threeb-calm-motion="true"] body .app3b .now-scan-corners:after{animation:none!important}
+
+
+/* Design unity — remove redundant chrome only on editorial panels, never on payment, health, passport or gameplay surfaces. */
+html[data-luxury="v2"] body .app3b[data-page="community"] .community-entry,
+html[data-luxury="v2"] body .app3b[data-page="ia"] .studio-step-panel,
+html[data-luxury="v2"] body .app3b[data-page="ia-textile"] .studio-step-panel {border:0;border-radius:var(--3b-radius-flat);box-shadow:var(--3b-shadow-flat);background:transparent;padding-inline:0}
+html[data-luxury="v2"] body .app3b[data-page] :is(.editorial-heading,.community-page,.sport-page,.studio-page) h1 {letter-spacing:-.045em;line-height:1.1}
+html[data-luxury="v2"] body .app3b[data-page] :is(.editorial-page,.community-page,.sport-page,.studio-page) :is(button,summary,a[href]) {min-height:44px}
+@media(max-width:720px){
+ html[data-luxury="v2"] body .app3b[data-page="home"] .threeb-now-entry{gap:11px;padding:22px 0;min-height:112px}
+ .threeb-now-entry-icon{flex-basis:29px;width:29px}
+ .threeb-now-entry-arrow{width:21px}
+}

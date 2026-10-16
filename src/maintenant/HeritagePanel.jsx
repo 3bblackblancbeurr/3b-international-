@@ -1,4 +1,5 @@
 import {useEffect,useRef,useState} from 'react';
+import {Button} from '../design-system/index.jsx';
 import {ArrowDownToLine,BookHeart,KeyRound,LockKeyhole,Plus,ShieldCheck,Trash2,Upload,UnlockKeyhole,X} from 'lucide-react';
 import {HERITAGE_VAULT_KEY,createHeritageVault,openHeritageVault,sealHeritage,validateHeritageEntries} from './heritage-vault.js';
 
@@ -110,28 +111,28 @@ export default function HeritagePanel(){
     {!exists&&<label>Confirmer la phrase secrète
      <input type="password" autoComplete="new-password" value={confirmation} onChange={e=>setConfirmation(e.target.value)} minLength={12} maxLength={200} required/>
     </label>}
-    <button className="now-cta" disabled={busy} type="submit">{busy?'Chiffrement en cours…':exists?'Déverrouiller mon coffre':'Créer mon coffre chiffré'} <UnlockKeyhole size={18}/></button>
+    <Button variant="champagne" className="now-cta" disabled={busy} type="submit">{busy?'Chiffrement en cours…':exists?'Déverrouiller mon coffre':'Créer mon coffre chiffré'} <UnlockKeyhole size={18}/></Button>
    </form>
    <div className="now-backup">
-    <button type="button" className="now-text-action" disabled={busy} onClick={()=>fileRef.current?.click()}><Upload size={16}/> Importer une sauvegarde chiffrée</button>
+    <Button variant="ghost" type="button" className="now-text-action" disabled={busy} onClick={()=>fileRef.current?.click()}><Upload size={16}/> Importer une sauvegarde chiffrée</Button>
     <input ref={fileRef} type="file" accept=".json,application/json" hidden aria-label="Importer un coffre Héritage chiffré" onChange={importVault}/>
    </div>
   </div>:<div className="now-heritage-open">
-   <div className="now-heritage-top"><span><UnlockKeyhole size={18}/> Coffre déverrouillé · {entries.length} souvenir{entries.length>1?'s':''}</span><button type="button" className="now-text-action" onClick={lockNow}><LockKeyhole size={16}/> Verrouiller</button></div>
+   <div className="now-heritage-top"><span><UnlockKeyhole size={18}/> Coffre déverrouillé · {entries.length} souvenir{entries.length>1?'s':''}</span><Button variant="ghost" type="button" className="now-text-action" onClick={lockNow}><LockKeyhole size={16}/> Verrouiller</Button></div>
    <form onSubmit={addEntry} className="now-stack">
     <label>Titre du souvenir<input maxLength={100} value={title} onChange={e=>setTitle(e.target.value)} placeholder="La recette de ma grand-mère…" required/></label>
     <label>Mon histoire<textarea rows={5} maxLength={3000} value={story} onChange={e=>setStory(e.target.value)} placeholder="Écris avec tes mots. Rien n’est partagé." required/></label>
-    <button type="submit" className="now-cta" disabled={busy||entries.length>=40}><Plus size={18}/> {busy?'Sauvegarde…':'Chiffrer et conserver ce souvenir'}</button>
+    <Button variant="champagne" type="submit" className="now-cta" disabled={busy||entries.length>=40}><Plus size={18}/> {busy?'Sauvegarde…':'Chiffrer et conserver ce souvenir'}</Button>
    </form>
-   {entries.length>0&&<div className="now-heritage-list" aria-label="Souvenirs chiffrés ouverts">{entries.map(e=><article key={e.id}><div><small>{e.created}</small><h3>{e.title}</h3><p>{e.story}</p></div><button type="button" aria-label={'Supprimer '+e.title} onClick={()=>removeEntry(e.id)} disabled={busy}><Trash2 size={17}/></button></article>)}</div>}
+   {entries.length>0&&<div className="now-heritage-list" aria-label="Souvenirs chiffrés ouverts">{entries.map(e=><article key={e.id}><div><small>{e.created}</small><h3>{e.title}</h3><p>{e.story}</p></div><Button variant="ghost" type="button" aria-label={'Supprimer '+e.title} onClick={()=>removeEntry(e.id)} disabled={busy}><Trash2 size={17}/></Button></article>)}</div>}
   </div>}
   {error&&<p className="now-error" role="alert">{error}</p>}
   {notice&&<p className="now-notice" role="status">{notice}</p>}
   {exists&&<div className="now-heritage-tools">
-   <button type="button" className="now-text-action" onClick={exportVault}><ArrowDownToLine size={17}/> Télécharger la sauvegarde chiffrée</button>
+   <Button variant="ghost" type="button" className="now-text-action" onClick={exportVault}><ArrowDownToLine size={17}/> Télécharger la sauvegarde chiffrée</Button>
    <details><summary>Effacer définitivement ce coffre</summary>
     <label>Écris EFFACER pour confirmer<input value={deleteConfirm} onChange={e=>setDeleteConfirm(e.target.value)} placeholder="EFFACER" maxLength={7}/></label>
-    <button type="button" disabled={deleteConfirm!=='EFFACER'||busy} onClick={eraseAll}><X size={16}/> Effacer le coffre local</button>
+    <Button variant="ghost" type="button" disabled={deleteConfirm!=='EFFACER'||busy} onClick={eraseAll}><X size={16}/> Effacer le coffre local</Button>
    </details>
   </div>}
   <p className="now-disclaimer">Important : si tu perds la phrase secrète ou ton appareil sans sauvegarde, 3B ne peut pas récupérer les souvenirs. Le contenu est lisible en mémoire uniquement tant que le coffre est ouvert ; un appareil compromis peut exposer les données affichées. Ne conserve pas ici des mots de passe ou documents d’identité.</p>

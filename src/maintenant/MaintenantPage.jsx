@@ -4,6 +4,7 @@ import {
  Globe2,HeartHandshake,LockKeyhole,Orbit,ScanLine,ShieldCheck,Sparkles,
  Volume2,VolumeX,Accessibility,PenLine,Gamepad2,HandHeart,CheckCircle2
 } from 'lucide-react';
+import {Button} from '../design-system/index.jsx';
 import HeritagePanel from './HeritagePanel.jsx';
 import ScannerPanel from './ScannerPanel.jsx';
 import {applyReadMode,readReadMode,saveReadMode} from './accessibility.js';
@@ -75,14 +76,14 @@ export default function MaintenantPage({goTo}){
  }
  return <section className="now-app" aria-labelledby="now-title">
   <header className="now-hero">
-   <button className="now-back" type="button" onClick={()=>goTo('home')}><ArrowLeft size={17}/> Accueil</button>
+   <Button variant="ghost" className="now-back" type="button" onClick={()=>goTo('home')}><ArrowLeft size={17}/> Accueil</Button>
    <p className="now-hero-kicker">3B INTERNATIONAL · BLACK BLANC BEUR</p>
    <div className="now-halo" aria-hidden="true"><span className="now-halo-core">3B</span><i className="now-halo-star now-halo-one"/><i className="now-halo-star now-halo-two"/></div>
    <div className="now-hero-copy">
     <span className="now-eyebrow">TON UNIVERS. TA VIE. TES POSSIBILITÉS.</span>
     <h1 id="now-title">3B <em>Maintenant.</em></h1>
     <p>Six façons d’avancer, de découvrir et de transmettre. Une seule expérience, à ton rythme.</p>
-    <button className="now-hero-action" type="button" onClick={()=>document.getElementById('now-experiences')?.scrollIntoView({behavior:readMode.calm?'instant':'smooth',block:'start'})}>Choisir mon expérience <ArrowRight size={19}/></button>
+    <Button variant="champagne" className="now-hero-action" type="button" onClick={()=>document.getElementById('now-experiences')?.scrollIntoView({behavior:readMode.calm?'instant':'smooth',block:'start'})}>Choisir mon expérience <ArrowRight size={19}/></Button>
    </div>
   </header>
 
@@ -91,12 +92,12 @@ export default function MaintenantPage({goTo}){
    <nav className="now-switcher" role="tablist" aria-label="Expériences de 3B Maintenant">
     {EXPERIENCES.map((e,index)=>{
      const Icon=ICONS[e.id];
-     return <button type="button" role="tab" key={e.id} id={'now-tab-'+e.id}
+     return <Button variant="ghost" type="button" role="tab" key={e.id} id={'now-tab-'+e.id}
       aria-selected={active===e.id} aria-controls="now-active-panel"
       tabIndex={active===e.id?0:-1} onClick={()=>go(e.id)}
       onKeyDown={event=>onTabKey(event,index)} className={active===e.id?'selected':''}>
       <Icon size={21} strokeWidth={1.65}/><span>{e.short}</span>
-     </button>;
+     </Button>;
     })}
    </nav>
    <div id="now-active-panel" role="tabpanel" aria-labelledby={'now-tab-'+active} tabIndex={-1} className="now-active-pane" key={active}>
@@ -106,28 +107,28 @@ export default function MaintenantPage({goTo}){
      <p className="now-lead">Choisis une intention. La Boussole te propose un vrai chemin à travers les espaces déjà présents dans 3B.</p>
      <div className="now-goals" aria-label="Choisis ton intention">{GOALS.map(g=>{
       const Icon=GOAL_ICONS[g.id];
-      return <button type="button" key={g.id} aria-pressed={journey.goal===g.id} onClick={()=>selectGoal(g.id)}>
+      return <Button variant="ghost" type="button" key={g.id} aria-pressed={journey.goal===g.id} onClick={()=>selectGoal(g.id)}>
        <Icon size={23} strokeWidth={1.55}/><span>{g.label}</span><small>{g.subtitle}</small>
-      </button>;
+      </Button>;
      })}</div>
      <div className="now-controls">
       <fieldset><legend>Combien de temps ?</legend><div className="now-choices">
-       {MINUTES.map(n=><button key={n} type="button" aria-pressed={journey.minutes===n} onClick={()=>changeJourney({minutes:n})}>{TIME_LABEL[n]}</button>)}
+       {MINUTES.map(n=><Button variant="ghost" key={n} type="button" aria-pressed={journey.minutes===n} onClick={()=>changeJourney({minutes:n})}>{TIME_LABEL[n]}</Button>)}
       </div></fieldset>
       <fieldset><legend>Quel rythme ?</legend><div className="now-choices">
-       {INTENSITIES.map(t=><button key={t.id} type="button" aria-pressed={journey.intensity===t.id} onClick={()=>changeJourney({intensity:t.id})}>{t.label}</button>)}
+       {INTENSITIES.map(t=><Button variant="ghost" key={t.id} type="button" aria-pressed={journey.intensity===t.id} onClick={()=>changeJourney({intensity:t.id})}>{t.label}</Button>)}
       </div></fieldset>
      </div>
      <div className="now-mission">
       <div className="now-mission-top"><span>TON PARCOURS · {TIME_LABEL[plan.minutes]}</span><span>{stepsDone.length}/3 repères personnels</span></div>
       <h3>{plan.subtitle}<em> — {plan.pace}</em></h3>
       <ol>{plan.steps.map((s,i)=><li key={s.title}>
-       <button type="button" onClick={()=>toggleStep(i)} aria-pressed={stepsDone.includes(i)}>
+       <Button variant="ghost" type="button" onClick={()=>toggleStep(i)} aria-pressed={stepsDone.includes(i)}>
         <span className="now-step-marker">{stepsDone.includes(i)?<Check size={17}/>:String(i+1).padStart(2,'0')}</span>
         <span><strong>{s.title}</strong><small>{s.detail}</small></span>
-       </button>
+       </Button>
       </li>)}</ol>
-      <button className="now-primary" type="button" onClick={()=>goTo(plan.route)}>Continuer dans {GOALS.find(g=>g.id===journey.goal)?.label==='Bouger'?'Santé 3B':'3B'} <ArrowRight size={19}/></button>
+      <Button variant="champagne" className="now-primary" type="button" onClick={()=>goTo(plan.route)}>Continuer dans {GOALS.find(g=>g.id===journey.goal)?.label==='Bouger'?'Santé 3B':'3B'} <ArrowRight size={19}/></Button>
       <p className="now-small">Cocher une étape est un repère facultatif, pas une preuve ni une récompense officielle.</p>
      </div>
     </section>}
@@ -140,7 +141,7 @@ export default function MaintenantPage({goTo}){
       <div className="now-circle-meter" role="progressbar" aria-label="Valeurs marquées personnellement" aria-valuemin={0} aria-valuemax={8} aria-valuenow={completed} style={{'--now-progress':String(completed*45)+'deg'}}>
        <div className="now-circle-meter-inner"><span>{completed}<small>/ 8</small></span><small>repères personnels</small></div>
       </div>
-      <div className="now-value-map">{VALUES.map(v=><button key={v.id} type="button" onClick={()=>setSelectedValue(v.id)} aria-pressed={selectedValue===v.id} data-saved={journey.values[v.id]?'true':'false'}><span>{v.name}</span><small>{v.country}</small></button>)}</div>
+      <div className="now-value-map">{VALUES.map(v=><Button variant="ghost" key={v.id} type="button" onClick={()=>setSelectedValue(v.id)} aria-pressed={selectedValue===v.id} data-saved={journey.values[v.id]?'true':'false'}><span>{v.name}</span><small>{v.country}</small></Button>)}</div>
      </div>
      <div className="now-value-detail">
       <p className="now-overline">{value.country.toUpperCase()} · {value.guardian.toUpperCase()}</p>
@@ -148,8 +149,8 @@ export default function MaintenantPage({goTo}){
       <p>{value.question}</p>
       <small>Une idée à essayer : {value.idea}</small>
       <div className="now-actions">
-       <button className="now-primary" type="button" onClick={toggleValue}>{journey.values[value.id]?<CheckCircle2 size={18}/>:<Check size={18}/>} {journey.values[value.id]?'Retirer mon repère':'Marquer comme exploré'}</button>
-       <button className="now-quiet" type="button" onClick={()=>goTo(value.route)}>Découvrir l’histoire <ChevronRight size={17}/></button>
+       <Button variant="champagne" className="now-primary" type="button" onClick={toggleValue}>{journey.values[value.id]?<CheckCircle2 size={18}/>:<Check size={18}/>} {journey.values[value.id]?'Retirer mon repère':'Marquer comme exploré'}</Button>
+       <Button variant="ghost" className="now-quiet" type="button" onClick={()=>goTo(value.route)}>Découvrir l’histoire <ChevronRight size={17}/></Button>
       </div>
      </div>
      <p className="now-disclaimer">Cette progression reste un souvenir personnel sur cet appareil. Elle ne vérifie aucune action réelle et ne modifie ni ton Passeport, ni tes XP, ni tes avantages.</p>
@@ -159,10 +160,10 @@ export default function MaintenantPage({goTo}){
      <p className="now-overline"><HeartHandshake size={16}/> 3B COUP DE MAIN</p>
      <h2 id="now-help-title">Un geste, un vrai lien.</h2>
      <p className="now-lead">Commence par un geste simple. Le collectif peut t’aider à échanger, sans forcer les rencontres ni exposer la vie privée des gens.</p>
-     <div className="now-help-list">{HELP_IDEAS.map(h=><button type="button" key={h.id} aria-pressed={selectedHelp===h.id} onClick={()=>setSelectedHelp(h.id)}><span className="now-help-number">{String(HELP_IDEAS.indexOf(h)+1).padStart(2,'0')}</span><span><strong>{h.title}</strong><small>{h.detail}</small></span><ChevronRight size={20}/></button>)}</div>
+     <div className="now-help-list">{HELP_IDEAS.map(h=><Button variant="ghost" type="button" key={h.id} aria-pressed={selectedHelp===h.id} onClick={()=>setSelectedHelp(h.id)}><span className="now-help-number">{String(HELP_IDEAS.indexOf(h)+1).padStart(2,'0')}</span><span><strong>{h.title}</strong><small>{h.detail}</small></span><ChevronRight size={20}/></Button>)}</div>
      <div className="now-help-detail">
       <span className="now-overline">MON IDÉE</span><h3>{help.title}</h3><p>{help.tip}</p>
-      <button className="now-primary" type="button" onClick={prepareHelp}>Préparer une proposition dans la Communauté <ArrowRight size={18}/></button>
+      <Button variant="champagne" className="now-primary" type="button" onClick={prepareHelp}>Préparer une proposition dans la Communauté <ArrowRight size={18}/></Button>
      </div>
      <p className="now-disclaimer"><ShieldCheck size={16}/> Aucune demande d’aide n’est publiée automatiquement. Vérifie toute proposition, protège les mineurs, évite les coordonnées publiques et signale les comportements suspects.</p>
     </section>}
@@ -175,13 +176,13 @@ export default function MaintenantPage({goTo}){
      <h2 id="now-universal-title">3B, à ta façon.</h2>
      <p className="now-lead">Moins de distractions. Des textes lisibles. Et une navigation accessible, sans te demander de devenir un expert du téléphone.</p>
      <div className="now-read-controls">
-      <button type="button" aria-pressed={readMode.large} onClick={()=>setReadMode(x=>({...x,large:!x.large}))}><span><strong>Textes plus grands</strong><small>Pour mieux lire dans les rubriques courantes.</small></span><span className="now-toggle" aria-hidden="true"/></button>
-      <button type="button" aria-pressed={readMode.contrast} onClick={()=>setReadMode(x=>({...x,contrast:!x.contrast}))}><span><strong>Contraste renforcé</strong><small>Pour rendre les informations plus nettes.</small></span><span className="now-toggle" aria-hidden="true"/></button>
-      <button type="button" aria-pressed={readMode.calm} onClick={()=>setReadMode(x=>({...x,calm:!x.calm}))}><span><strong>Animations apaisées</strong><small>Une interface plus calme, lorsque tu le souhaites.</small></span><span className="now-toggle" aria-hidden="true"/></button>
+      <Button variant="ghost" type="button" aria-pressed={readMode.large} onClick={()=>setReadMode(x=>({...x,large:!x.large}))}><span><strong>Textes plus grands</strong><small>Pour mieux lire dans les rubriques courantes.</small></span><span className="now-toggle" aria-hidden="true"/></Button>
+      <Button variant="ghost" type="button" aria-pressed={readMode.contrast} onClick={()=>setReadMode(x=>({...x,contrast:!x.contrast}))}><span><strong>Contraste renforcé</strong><small>Pour rendre les informations plus nettes.</small></span><span className="now-toggle" aria-hidden="true"/></Button>
+      <Button variant="ghost" type="button" aria-pressed={readMode.calm} onClick={()=>setReadMode(x=>({...x,calm:!x.calm}))}><span><strong>Animations apaisées</strong><small>Une interface plus calme, lorsque tu le souhaites.</small></span><span className="now-toggle" aria-hidden="true"/></Button>
      </div>
      <div className="now-read-out">
       <h3>Écouter mon parcours</h3><p>Lecture en français du parcours choisi dans la Boussole, par la fonction vocale du téléphone lorsque disponible.</p>
-      <button className="now-primary" type="button" onClick={toggleSpeech}>{speaking?<VolumeX size={19}/>:<Volume2 size={19}/>} {speaking?'Arrêter la lecture':'Écouter maintenant'}</button>
+      <Button variant="champagne" className="now-primary" type="button" onClick={toggleSpeech}>{speaking?<VolumeX size={19}/>:<Volume2 size={19}/>} {speaking?'Arrêter la lecture':'Écouter maintenant'}</Button>
      </div>
      <p className="now-disclaimer">La lecture vocale utilise les fonctions de ton appareil ; leur fonctionnement et leur confidentialité dépendent du système. Aucun microphone n’est activé ici. Les réglages visuels sont conservés localement.</p>
     </section>}
