@@ -1,5 +1,5 @@
 import {Button as GoldButton} from '../design-system/index.jsx';
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {ArrowRight, ArrowUpRight, CalendarDays, Clapperboard, Compass, FileText, Film, Globe2, Handshake, HeartHandshake, Landmark, LockKeyhole, Mail, MapPin, Newspaper, Plane, Radio, RefreshCw, ShieldCheck, Sparkles, Star, UsersRound, WalletCards} from 'lucide-react';
 import {MEMBER_SPACES, COUNTRY_INDEX, CONTACT_EMAIL, contactHref, countryFor, countryNewsHref, countryEventsHref, ADMIN_GUIDES, CINEMA_GUIDES, FINANCE_GUIDES, OPPORTUNITIES} from './memberSources.js';
 import './member-experiences.css';
@@ -88,6 +88,13 @@ export default function MemberExperiences({goTo,profile,initialSpace='loyalty',s
   const [favorites,setFavorites]=useState(readFavorites);
   const [country,setCountry]=useState('FR');
   const [mode,setMode]=useState('news');
+  const railRef=useRef(null);
+  useEffect(()=>{
+    const rail=railRef.current,selected=rail?.querySelector('[aria-pressed="true"]');
+    if(!rail||!selected)return;
+    const railRect=rail.getBoundingClientRect(),selectedRect=selected.getBoundingClientRect();
+    rail.scrollLeft+=selectedRect.left-railRect.left-(rail.clientWidth-selectedRect.width)/2;
+  },[active]);
   const space=useMemo(()=>MEMBER_SPACES.find(item=>item.id===active)||MEMBER_SPACES[0],[active]);
   const Icon=ICONS[space.icon]||Sparkles;
   const pinned = favorites.includes(active);
@@ -113,7 +120,7 @@ export default function MemberExperiences({goTo,profile,initialSpace='loyalty',s
       <div className="mx-planet" aria-hidden="true"><div className="mx-planet-ring"/><div className="mx-planet-core"><span>3B</span></div><i/><i/><i/></div>
     </div>
 
-    <nav className="mx-rail" aria-label="Rubriques de mon espace membre">
+    <nav ref={railRef} className="mx-rail" aria-label="Rubriques de mon espace membre">
       {MEMBER_SPACES.map(item=>{const ItemIcon=ICONS[item.icon];return <GoldButton variant="health" type="button" key={item.id} aria-pressed={active===item.id} onClick={()=>changeSpace(item.id)}><ItemIcon size={20} strokeWidth={1.6}/><span>{item.name}</span>{favorites.includes(item.id)&&<Star size={12} className="mx-pinned" fill="currentColor" aria-label="Favori"/>}</GoldButton>})}
     </nav>
 
