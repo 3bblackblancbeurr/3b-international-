@@ -91,9 +91,9 @@ export default function AlbertPublicPreview({goTo}){
    <span className="th-albert-stage-constellation" aria-hidden="true">3B · APEX / VISUAL PRESENCE</span>
   </header>
   <nav className="th-albert-toolbar" aria-label="Outils Albert APEX">
-   <button type="button" aria-pressed={panel==='talk'} onClick={()=>setPanel('talk')}><MessageCircle size={18}/> Dialoguer</button>
-   <button type="button" aria-pressed={panel==='discover'} onClick={()=>setPanel('discover')}><Compass size={18}/> Explorer</button>
-   <button type="button" aria-pressed={panel==='day'} onClick={()=>setPanel('day')}><CalendarDays size={18}/> Ma journée</button>
+   <Button variant="ghost" type="button" aria-pressed={panel==='talk'} onClick={()=>setPanel('talk')}><MessageCircle size={18}/> Dialoguer</Button>
+   <Button variant="ghost" type="button" aria-pressed={panel==='discover'} onClick={()=>setPanel('discover')}><Compass size={18}/> Explorer</Button>
+   <Button variant="ghost" type="button" aria-pressed={panel==='day'} onClick={()=>setPanel('day')}><CalendarDays size={18}/> Ma journée</Button>
   </nav>
   <div className="albert3b-content">
    <section className="albert3b-chat" hidden={panel!=='talk'} aria-label="Dialogue avec le guide 3B">
@@ -133,7 +133,7 @@ export default function AlbertPublicPreview({goTo}){
     <div className="albert3b-actual-ai"><AudioLines size={25}/><div><strong>Besoin d’une conversation IA ?</strong><p>Le Mode 3 IA est un espace existant, distinct d’Albert APEX.</p></div><RouteLink goTo={goTo} page="ia-trio">Mode 3 IA <ArrowRight size={16}/></RouteLink></div>
    </section>
    <section className="th-albert-agenda" hidden={panel!=='day'} aria-label="Organiser ma journée">
-    <button type="button" className="th-albert-sheet-close" onClick={()=>setPanel('talk')} aria-label="Fermer le planning"><X size={20}/></button>
+    <Button variant="ghost" type="button" className="th-albert-sheet-close" onClick={()=>setPanel('talk')} aria-label="Fermer le planning"><X size={20}/></Button>
     <AlbertDailyTimeline goTo={goTo}/>
    </section>
   </div>
