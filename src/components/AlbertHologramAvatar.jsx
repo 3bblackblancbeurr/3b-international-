@@ -1,8 +1,11 @@
-// A bespoke sculpted 2.5D Albert portrait — no remotely hosted asset or
-// additional WebGL context. Optimised for the compact mobile concierge stage.
+import {useState} from 'react';
+// Self-hosted cinematic portrait cropped from 3B's own Albert command-center art.
+// Original SVG remains a live fallback; no external image request or extra WebGL.
 export default function AlbertHologramAvatar(){
- return <div className="albert3b-avatar albert3b-sculpted-avatar" aria-hidden="true">
+ const [portraitReady,setPortraitReady]=useState(false);
+ return <div className="albert3b-avatar albert3b-sculpted-avatar" data-portrait-ready={portraitReady} aria-hidden="true">
   <div className="albert3b-avatar-halo"/>
+  <img className="albert3b-apex-portrait" src="/albert/apex-hologram-portrait.png" alt="" decoding="async" loading="eager" onLoad={()=>setPortraitReady(true)} onError={()=>setPortraitReady(false)}/>
   <svg viewBox="0 0 280 320" role="presentation" focusable="false" className="albert3b-portrait-svg">
    <defs>
     <linearGradient id="albert3b-hair" x1=".1" y1=".15" x2=".85" y2=".9">

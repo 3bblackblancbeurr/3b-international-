@@ -63,9 +63,9 @@ export default function AlbertDailyTimeline({goTo}){
  function write(next){
   const clean=normalizeAlbertPlan(next);
   setEntries(clean);
-  setNotice(persistAlbertPlan(localStorageOrNull(),clean,day)
-   ?'Enregistré uniquement sur cet appareil.'
-   :'Activité modifiée pour cette session, mais le stockage du navigateur est indisponible.');
+  const saved=persistAlbertPlan(localStorageOrNull(),clean,day);
+  setNotice(saved?'Enregistré uniquement sur cet appareil.':'Activité modifiée pour cette session, mais le stockage du navigateur est indisponible.');
+  if(saved)window.dispatchEvent(new CustomEvent('threeb:albert-plan-updated'));
  }
  function addActivity(label,targetRoute=null,targetTime=''){
   const value=String(label||'').trim().slice(0,ALBERT_PLAN_MAX_TEXT);

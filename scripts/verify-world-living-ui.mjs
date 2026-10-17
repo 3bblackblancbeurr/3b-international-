@@ -80,7 +80,7 @@ try{
   await page.waitForURL(u=>u.hash==='#albert-3b');
   const albert=page.locator('.th-albert-screen');await albert.waitFor({state:'visible'});
   check('Albert remains an honest local guide '+width,await albert.locator('.albert3b-status').innerText().then(s=>s.includes('non connecté')));
-  check('Albert cinematic portrait '+width,await albert.locator('.albert3b-portrait-svg').isVisible());
+  check('Albert cinematic portrait '+width,await albert.locator('.albert3b-apex-portrait').evaluate(img=>img.complete&&img.naturalWidth>0)||await albert.locator('.albert3b-portrait-svg').isVisible());
   check('Albert also fits in one viewport '+width,await albert.evaluate(el=>{
    const r=el.getBoundingClientRect();return r.height<=innerHeight+2&&document.documentElement.scrollHeight<=innerHeight+3;
   }));

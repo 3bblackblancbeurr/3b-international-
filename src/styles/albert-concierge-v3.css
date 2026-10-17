@@ -1,0 +1,417 @@
+/* 3B APEX CONCIERGE · CINEMATIC THIRD PASS
+   A native, real interactive app screen: portrait made from the existing
+   locally owned 3B Albert art; zero external requests or extra WebGL.
+   All light, shade and radius decisions reuse 3B's Gold Master tokens. */
+
+.th-albert-screen .albert3b-stage{
+ isolation:isolate;
+ background:radial-gradient(ellipse at 73% 43%,
+ color-mix(in srgb,var(--3b-world-cinema-cyan) 15%,transparent),transparent 57%),
+ radial-gradient(ellipse at 66% 40%,
+ color-mix(in srgb,var(--3b-world-cinema-gold) 9%,transparent),transparent 47%);
+}
+.th-albert-screen .albert3b-stage::before{
+ background:radial-gradient(ellipse at 69% 45%,
+ color-mix(in srgb,var(--3b-matrix) 30%,transparent),transparent 43%),
+ radial-gradient(ellipse at 58% 43%,
+ color-mix(in srgb,var(--3b-world-cinema-gold) 14%,transparent),transparent 35%);
+}
+.th-albert-screen .albert3b-avatar.albert3b-sculpted-avatar{
+ right:clamp(18px,10vw,170px);
+ top:13%;
+ width:min(48vw,650px);
+ height:75%;
+ transform:translateZ(0);
+ contain:layout style;
+}
+.th-albert-screen .albert3b-apex-portrait{
+ position:absolute;
+ inset:0;
+ width:100%;
+ height:100%;
+ object-fit:contain;
+ z-index:3;
+ opacity:0;
+ pointer-events:none;
+ transition:opacity var(--3b-motion-screen) var(--3b-ease-standard);
+ filter:drop-shadow(0 0 12px color-mix(in srgb,var(--3b-matrix) 39%,transparent));
+}
+.th-albert-screen .albert3b-sculpted-avatar[data-portrait-ready="true"] .albert3b-apex-portrait{opacity:1}
+.th-albert-screen .albert3b-sculpted-avatar[data-portrait-ready="true"] .albert3b-portrait-svg{
+ opacity:0;
+ visibility:hidden;
+ animation:none;
+}
+.th-albert-screen .albert3b-sculpted-avatar .albert3b-avatar-halo{opacity:.43}
+.th-albert-screen .albert3b-avatar::after{
+ inset:10%;
+ border-color:color-mix(in srgb,var(--3b-champagne) 44%,transparent);
+}
+.th-albert-screen .albert3b-stage-copy h1{
+ text-shadow:var(--3b-shadow-contact);
+}
+.th-albert-screen .albert3b-status{
+ border-bottom:1px solid color-mix(in srgb,var(--3b-champagne) 40%,transparent)!important;
+ padding-bottom:12px;
+}
+.th-albert-screen .albert3b-curated{
+ background:linear-gradient(145deg,
+ color-mix(in srgb,var(--3b-hub-surface) 96%,transparent),
+ color-mix(in srgb,var(--3b-obsidian) 97%,transparent))!important;
+}
+.th-albert-screen .albert3b-curated .albert3b-section-head{
+ padding-bottom:6px;
+ border-bottom:1px solid color-mix(in srgb,var(--3b-champagne) 25%,transparent);
+}
+.th-albert-screen .albert3b-curated .albert3b-section-head h2 em{
+ color:var(--3b-champagne-highlight);
+ font-style:italic;
+ font-weight:400;
+}
+.th-albert-reco-clarity{
+ font-size:12px;
+ color:var(--3b-world-cinema-muted);
+ line-height:1.55;
+ margin:8px 0 6px;
+}
+.th-albert-screen .albert3b-suggestions{
+ display:grid!important;
+ grid-template-columns:repeat(4,minmax(0,1fr))!important;
+ gap:clamp(8px,1vw,15px)!important;
+ margin:18px 0 22px;
+}
+.th-albert-screen .albert3b-suggestions>.gm-button.th-albert-reco{
+ display:flex!important;
+ flex-direction:column;
+ align-items:stretch!important;
+ justify-content:space-between;
+ position:relative;
+ isolation:isolate;
+ overflow:hidden;
+ min-height:190px;
+ gap:0;
+ padding:0!important;
+ border:1px solid color-mix(in srgb,var(--3b-champagne) 20%,transparent)!important;
+ border-radius:var(--3b-radius-sm)!important;
+ background:var(--3b-obsidian)!important;
+ box-shadow:var(--3b-shadow-flat)!important;
+ text-align:left;
+ color:var(--3b-world-cinema-ivory);
+}
+.th-albert-screen .th-albert-reco .th-albert-reco-visual{
+ position:absolute;
+ inset:0;
+ display:block;
+ width:100%;
+ height:100%;
+ overflow:hidden;
+ z-index:-1;
+ background:var(--3b-hub-preview);
+}
+.th-albert-screen .th-albert-reco .th-albert-reco-visual img{
+ width:100%;
+ height:100%;
+ display:block;
+ object-fit:cover;
+ opacity:.89;
+ transform:scale(1);
+ transition:transform var(--3b-motion-card) var(--3b-ease-standard);
+}
+.th-albert-screen .th-albert-reco::before{
+ content:'';
+ position:absolute;
+ inset:0;
+ z-index:0;
+ background:linear-gradient(to top,var(--3b-scrim-dense),var(--3b-scrim-medium) 41%,transparent 78%);
+ pointer-events:none;
+}
+.th-albert-screen .th-albert-reco .th-albert-reco-copy{
+ display:grid;
+ align-content:end;
+ gap:6px;
+ position:relative;
+ z-index:2;
+ margin-top:auto;
+ padding:15px 10px 13px;
+}
+.th-albert-screen .th-albert-reco small{
+ font-size:8px;
+ letter-spacing:.09em;
+ line-height:1.4;
+ color:var(--3b-champagne-highlight);
+ font-weight:750;
+}
+.th-albert-screen .th-albert-reco strong{
+ font-size:clamp(12px,1.1vw,15px);
+ font-weight:800;
+ line-height:1.32;
+ color:var(--3b-world-cinema-ivory);
+ overflow-wrap:anywhere;
+}
+.th-albert-screen .th-albert-reco>svg:last-child{
+ position:absolute;
+ top:9px;
+ right:8px;
+ z-index:2;
+ width:20px;
+ color:var(--3b-champagne-highlight);
+}
+.th-albert-screen .th-albert-reco:hover .th-albert-reco-visual img{transform:scale(1.035)}
+.th-albert-screen .th-albert-reco:hover{
+ border-color:var(--3b-champagne)!important;
+ box-shadow:var(--3b-shadow-world-cinema-soft)!important;
+}
+.th-albert-day-preview{
+ position:relative;
+ margin:10px 0 16px;
+ padding:16px 1px 12px;
+ border-top:1px solid color-mix(in srgb,var(--3b-champagne) 33%,transparent);
+ border-bottom:1px solid color-mix(in srgb,var(--3b-matrix) 25%,transparent);
+ color:var(--3b-world-cinema-ivory);
+}
+.th-albert-day-preview-head{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ gap:10px;
+}
+.th-albert-day-preview-head span{
+ display:inline-flex;
+ align-items:center;
+ gap:8px;
+ font-size:10px;
+ font-weight:800;
+ letter-spacing:.1em;
+ color:var(--3b-world-cinema-gold);
+}
+.th-albert-day-preview-head strong{
+ font-size:10px;
+ font-weight:700;
+ color:var(--3b-world-cinema-muted);
+}
+.th-albert-day-preview h3{
+ font:500 clamp(21px,2.25vw,28px)/1.2 Georgia,'Times New Roman',serif;
+ margin:10px 0 15px;
+}
+.th-albert-day-preview h3 em{color:var(--3b-champagne-highlight);font-weight:400}
+.th-albert-day-preview-list{
+ margin:0 0 15px;
+ padding:0;
+ list-style:none;
+ display:grid;
+ gap:0;
+}
+.th-albert-day-preview-list li{
+ display:grid;
+ grid-template-columns:48px 10px minmax(0,1fr) auto;
+ align-items:center;
+ gap:11px;
+ padding:9px 2px;
+ border-bottom:1px solid color-mix(in srgb,var(--3b-matrix) 17%,transparent);
+ font-size:12px;
+}
+.th-albert-day-preview-list li:last-child{border-bottom:0}
+.th-albert-day-preview-time{
+ color:var(--3b-world-cinema-muted);
+ font-size:11px;
+ font-variant-numeric:tabular-nums;
+}
+.th-albert-day-preview-dot{
+ width:8px;
+ height:8px;
+ background:var(--3b-world-cinema-gold);
+ border-radius:var(--3b-radius-circle);
+ box-shadow:var(--3b-shadow-world-cinema-soft);
+}
+.th-albert-day-preview-title{
+ overflow-wrap:anywhere;
+ color:var(--3b-world-cinema-ivory);
+}
+.th-albert-day-preview-list svg{color:var(--3b-world-cinema-gold)}
+.th-albert-day-preview-empty{
+ display:flex;
+ align-items:center;
+ gap:10px;
+ font-size:12px;
+ line-height:1.55;
+ color:var(--3b-world-cinema-muted);
+ max-width:490px;
+}
+.th-albert-day-preview-empty svg{color:var(--3b-world-cinema-gold);flex-shrink:0}
+.th-albert-screen .th-albert-day-preview-action.gm-button{
+ min-height:40px;
+ display:inline-flex;
+ align-items:center;
+ gap:11px;
+ padding:5px 0!important;
+ background:transparent!important;
+ border:0!important;
+ border-bottom:1px solid var(--3b-champagne)!important;
+ border-radius:var(--3b-radius-flat)!important;
+ color:var(--3b-champagne-highlight)!important;
+ font-size:12px;
+ font-weight:750;
+}
+.th-albert-screen .th-albert-day-preview-action.gm-button>svg{width:17px;height:17px;color:inherit}
+@media(max-width:720px){
+ .th-albert-screen .albert3b-avatar.albert3b-sculpted-avatar{
+  right:-4%;
+  top:30%;
+  width:68%;
+  height:53%;
+ }
+ .th-albert-screen .albert3b-apex-portrait{filter:none}
+ .th-albert-screen .albert3b-avatar::after{opacity:.35}
+ .th-albert-screen .albert3b-suggestions{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:9px!important;
+ }
+ .th-albert-screen .albert3b-suggestions>.gm-button.th-albert-reco{min-height:156px}
+ .th-albert-screen .th-albert-reco .th-albert-reco-copy{padding:11px 9px}
+ .th-albert-screen .th-albert-reco small{font-size:8px;letter-spacing:.045em}
+ .th-albert-screen .th-albert-reco strong{font-size:12px}
+ .th-albert-day-preview{margin-top:12px;padding-top:16px}
+ .th-albert-day-preview h3{font-size:24px}
+ .th-albert-screen .albert3b-curated .albert3b-section-head h2{font-size:27px}
+}
+@media(max-width:360px){
+ .th-albert-screen .albert3b-avatar.albert3b-sculpted-avatar{
+  top:31%;
+  right:-7%;
+  width:68%;
+  height:49%;
+ }
+ .th-albert-screen .albert3b-suggestions>.gm-button.th-albert-reco{min-height:138px}
+}
+@media(prefers-reduced-motion:reduce){
+ .th-albert-screen .albert3b-apex-portrait,
+ .th-albert-screen .th-albert-reco .th-albert-reco-visual img{
+  transition:none!important;
+ }
+}
+
+/* Flyout sheets move BELOW the visible toolbar, never behind it. The lower
+   edge clears the persistent 3B dock even on a short 320px phone. */
+.th-albert-screen[data-panel="discover"] .th-albert-toolbar,
+.th-albert-screen[data-panel="day"] .th-albert-toolbar{
+ position:absolute;
+ top:91px;
+ left:clamp(22px,7vw,110px);
+ right:auto;
+ bottom:auto!important;
+ z-index:36;
+}
+.th-albert-screen[data-panel="discover"] .albert3b-curated,
+.th-albert-screen[data-panel="day"] .th-albert-agenda{
+ top:151px;
+ bottom:91px;
+ max-height:none;
+}
+.th-albert-screen .albert3b-stage{
+ overflow:clip!important;
+}
+@media(max-width:720px){
+ .th-albert-screen .albert3b-avatar.albert3b-sculpted-avatar{
+  right:0;
+  width:64%;
+ }
+ .th-albert-screen[data-panel="discover"] .th-albert-toolbar,
+ .th-albert-screen[data-panel="day"] .th-albert-toolbar{
+  top:calc(env(safe-area-inset-top) + 70px);
+  left:14px;
+  right:14px;
+  width:auto;
+  justify-content:space-around;
+ }
+ .th-albert-screen[data-panel="discover"] .albert3b-curated,
+ .th-albert-screen[data-panel="day"] .th-albert-agenda{
+  top:calc(env(safe-area-inset-top) + 124px);
+  bottom:calc(env(safe-area-inset-bottom) + 84px);
+ }
+}
+@media(max-width:360px){
+ .th-albert-screen .albert3b-avatar.albert3b-sculpted-avatar{
+  right:0;
+  width:62%;
+ }
+}
+
+/* Reading a real recommendation sheet must never reveal giant text behind it:
+   the cinema scene retreats while an interactive foreground panel is open. */
+.th-albert-screen[data-panel="discover"] .albert3b-stage-copy,
+.th-albert-screen[data-panel="day"] .albert3b-stage-copy,
+.th-albert-screen[data-panel="discover"] .th-albert-stage-constellation,
+.th-albert-screen[data-panel="day"] .th-albert-stage-constellation{
+ opacity:0;
+ visibility:hidden;
+ pointer-events:none;
+}
+.th-albert-screen[data-panel="discover"] .albert3b-avatar,
+.th-albert-screen[data-panel="day"] .albert3b-avatar{
+ opacity:.12;
+ pointer-events:none;
+}
+
+/* The secondary IA handoff reads as a single editorial footer, not yet
+   another framed dashboard card or oversized call-to-action. */
+.th-albert-screen .albert3b-curated .albert3b-actual-ai{
+ display:flex!important;
+ align-items:center;
+ gap:11px;
+ flex-wrap:wrap;
+ margin:18px 0 0;
+ padding:14px 0!important;
+ border:0!important;
+ border-top:1px solid color-mix(in srgb,var(--3b-champagne) 27%,transparent)!important;
+ border-radius:var(--3b-radius-flat)!important;
+ background:transparent!important;
+ box-shadow:var(--3b-shadow-flat)!important;
+}
+.th-albert-screen .albert3b-actual-ai>svg{
+ width:23px;
+ color:var(--3b-world-cinema-gold);
+ flex-shrink:0;
+}
+.th-albert-screen .albert3b-actual-ai>div{
+ flex:1 1 210px;
+ min-width:0;
+}
+.th-albert-screen .albert3b-actual-ai>div strong{
+ color:var(--3b-world-cinema-ivory);
+ font-size:12px;
+}
+.th-albert-screen .albert3b-actual-ai>div p{
+ color:var(--3b-world-cinema-muted);
+ font-size:10px;
+ line-height:1.45;
+ margin:4px 0;
+}
+.th-albert-screen .albert3b-actual-ai>a{
+ display:inline-flex;
+ align-items:center;
+ gap:7px;
+ width:auto;
+ min-height:38px;
+ padding:7px 0!important;
+ margin:0!important;
+ color:var(--3b-champagne-highlight)!important;
+ border:0!important;
+ border-bottom:1px solid var(--3b-champagne)!important;
+ border-radius:var(--3b-radius-flat)!important;
+ background:transparent!important;
+ box-shadow:var(--3b-shadow-flat)!important;
+ font-size:11px;
+ font-weight:800;
+ white-space:nowrap;
+}
+@media(max-width:720px){
+ .th-albert-screen .albert3b-curated .albert3b-actual-ai{
+  display:grid!important;
+  grid-template-columns:24px minmax(0,1fr)!important;
+  gap:7px 10px;
+ }
+ .th-albert-screen .albert3b-actual-ai>a{
+  grid-column:2;
+  justify-self:start;
+ }
+}
