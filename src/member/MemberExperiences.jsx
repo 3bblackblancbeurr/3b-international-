@@ -5,7 +5,10 @@ import {MEMBER_SPACES, COUNTRY_INDEX, CONTACT_EMAIL, contactHref, countryFor, co
 import './member-experiences.css';
 const OfficialDirectory = React.lazy(() => import('./OfficialDirectory.jsx'));
 const FrenchEvents = React.lazy(() => import('./FrenchEvents.jsx'));
-const CinemaFinder = React.lazy(() => import('./CinemaFinder.jsx'));
+const MediaStudio = React.lazy(() => import('./media/MediaStudio.jsx'));
+const TravelNotebook = React.lazy(() => import('./travel/TravelNotebook.jsx'));
+const AdminJourney = React.lazy(() => import('./admin/AdminJourney.jsx'));
+const CollaborationStudio = React.lazy(() => import('./collaboration/CollaborationStudio.jsx'));
 const FinanceStudio = React.lazy(() => import('../finance/FinanceStudio.jsx'));
 
 
@@ -79,7 +82,7 @@ function WorldBrief({country, onCountryChange, mode, setMode}) {
   </>;
 }
 
-export default function MemberExperiences({goTo,profile,initialSpace='loyalty'}) {
+export default function MemberExperiences({goTo,profile,initialSpace='loyalty',standalone=false}) {
   const [active,setActive]=useState(()=>MEMBER_SPACES.some(item=>item.id===initialSpace)?initialSpace:'loyalty');
   useEffect(()=>{setActive(MEMBER_SPACES.some(item=>item.id===initialSpace)?initialSpace:'loyalty');},[initialSpace]);
   const [favorites,setFavorites]=useState(readFavorites);
@@ -95,10 +98,11 @@ export default function MemberExperiences({goTo,profile,initialSpace='loyalty'})
     setFavorites(old=>old.includes(active)?old.filter(x=>x!==active):[...old,active]);
   }
   function changeSpace(id) {
+    if(standalone){goTo(id);return;}
     setActive(id);
     document.getElementById('mx-content-title')?.scrollIntoView({block:'nearest',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
   }
-  return <section className="mx-shell" aria-label="Univers et services de l’espace membre">
+  return <section className="mx-shell" data-standalone={standalone||undefined} aria-label="Univers et services de l’espace membre">
     <div className="mx-hero">
       <div className="mx-hero-copy">
         <span className="mx-eyebrow">LE GRAND ESPACE MEMBRE · 3B INTERNATIONAL</span>
@@ -130,17 +134,23 @@ export default function MemberExperiences({goTo,profile,initialSpace='loyalty'})
         {active==='news'&&<WorldBrief country={country} onCountryChange={setCountry} mode={mode} setMode={setMode}/>}
 
         {active==='association'&&<>
+          <React.Suspense fallback={<p className="mx-status" role="status">Ouverture des initiatives 3B…</p>}><CollaborationStudio space={active} ownerId={profile?.user_id}/></React.Suspense>
+          <details className="mx-admin-guides"><summary>Projet associatif et sources officielles <ArrowRight size={17}/></summary>
           <SectionIntro eyebrow="L’ASSOCIATION 3B" title="Unir les cultures, agir localement.">Rencontres, entraide, transmission des histoires, projets culturels et sportifs, initiatives des membres. Une vision à faire vivre avec des actions concrètes.</SectionIntro>
           <p className="mx-highlight"><ShieldCheck size={23}/><span><strong>Statut administratif à vérifier</strong><small>L’enregistrement d’une association, son numéro RNA, ses statuts et sa capacité à recevoir des dons ne sont pas vérifiés par 3B à ce stade.</small></span></p>
           <SourceRows rows={[{title:'Créer ou gérer une association',description:'Formalités et obligations · Service-Public',href:'https://www.service-public.gouv.fr/associations'},{title:'Consulter une annonce au JOAFE',description:'Publication officielle des associations déclarées',href:'https://www.journal-officiel.gouv.fr/pages/associations-recherche-annonce/' }]}/>
           <SourceLink primary href={contactHref('Participer au projet associatif 3B')}>Participer à l’association 3B</SourceLink>
+          </details>
         </>}
 
         {active==='partners'&&<>
+          <React.Suspense fallback={<p className="mx-status" role="status">Ouverture de l’atelier collaborations…</p>}><CollaborationStudio space={active} ownerId={profile?.user_id}/></React.Suspense>
+          <details className="mx-admin-guides"><summary>Présentation et contact 3B <ArrowRight size={17}/></summary>
           <SectionIntro eyebrow="CRÉER DES LIENS RÉELS" title="Les collaborations sont ouvertes.">Mode, création, jeux, sport, culture et diffusion : explore les formats possibles. Aucune marque externe n’est annoncée comme partenaire avant accord écrit.</SectionIntro>
           <div className="mx-keywords"><span>Mode & licences</span><span>Événements</span><span>Création vidéo</span><span>Jeu & e-sport</span><span>Territoires</span></div>
           <SourceLink primary href="/partenariats-3b.html">Voir la présentation officielle 3B</SourceLink>
           <SourceLink href={contactHref('Proposition de collaboration 3B International')}>Proposer un partenariat à 3B</SourceLink>
+          </details>
         </>}
 
         {active==='finance'&&<>
@@ -153,41 +163,35 @@ export default function MemberExperiences({goTo,profile,initialSpace='loyalty'})
         </>}
 
         {active==='travel'&&<>
-          <SectionIntro eyebrow="TON PASSEPORT POUR EXPLORER" title="Choisis une destination.">Les huit pays fondateurs du monde 3B et des destinations internationales. Avant de partir, vérifie les conditions d’entrée, les visas et les conseils aux voyageurs.</SectionIntro>
-          <label className="mx-country mx-travel-select"><span>Destination</span><select value={country} onChange={e=>setCountry(e.target.value)}>{COUNTRY_INDEX.map(c=><option key={c[0]} value={c[0]}>{c[3]} {c[1]}</option>)}</select></label>
-          <div className="mx-destination"><span>{countryFor(country)[3]}</span><div><strong>{countryFor(country)[1]}</strong><small>Découverte et informations pratiques</small></div><MapPin size={24}/></div>
-          <SourceLink primary href={countryFor(country)[4]}>Découvrir la destination</SourceLink>
-          <SourceLink href="https://www.diplomatie.gouv.fr/fr/conseils-aux-voyageurs/conseils-par-pays-destination/">Conseils aux voyageurs · France Diplomatie</SourceLink>
-          <p className="mx-honesty">3B ne vend pas encore de billets ou de séjours et n’est pas une agence de voyage agréée.</p>
+          <React.Suspense fallback={<p className="mx-status" role="status">Ouverture de ton carnet de voyage…</p>}><TravelNotebook initialCountry={country}/></React.Suspense>
         </>}
 
         {active==='join'&&<>
+          <React.Suspense fallback={<p className="mx-status" role="status">Ouverture de tes propositions…</p>}><CollaborationStudio space={active} ownerId={profile?.user_id}/></React.Suspense>
+          <details className="mx-admin-guides"><summary>Domaines de participation et contact <ArrowRight size={17}/></summary>
           <SectionIntro eyebrow="DES PERSONNES AVANT DES CV" title="Tu peux construire 3B avec nous.">Voici les domaines où proposer tes idées et tes compétences. Il s’agit de prises de contact, pas d’offres d’emploi salariées confirmées.</SectionIntro>
           <div className="mx-source-rows">{OPPORTUNITIES.map(o=><SourceLink key={o.title} href={contactHref('3B · '+o.title)}><span><strong>{o.title}</strong><small>{o.text}</small></span></SourceLink>)}</div>
           <p className="mx-honesty"><Mail size={16}/> Les candidatures utilisent ton application de messagerie et sont envoyées à {CONTACT_EMAIL}. Aucun CV n’est collecté dans l’espace membre.</p>
+          </details>
         </>}
 
         {active==='tv'&&<>
-          <div className="mx-tv-screen"><span className="mx-tv-light"><Radio size={17}/> 3B ORIGINS TV</span><strong>Les histoires<br/>nous réunissent.</strong><span>MONDE · CRÉATION · CULTURE</span></div>
-          <SectionIntro eyebrow="LE MÉDIA ORIGINAL 3B" title="De l’univers au grand écran.">Documentaires culturels, coulisses de la marque, événements 3B et récits du Monde du 3B : une grille éditoriale, pas un flux TV inventé.</SectionIntro>
-          <PrimaryAction onClick={()=>goTo('world3b')}>Explorer le Monde du 3B</PrimaryAction>
-          <GoldButton variant="health" className="mx-link" type="button" onClick={()=>goTo('manga')}>Découvrir le manga 3B <ArrowRight size={17}/></GoldButton>
-          <p className="mx-honesty">Pour diffuser un programme vidéo réel ici, il faudra des médias produits et autorisés, leur hébergement et les droits de diffusion correspondants.</p>
+          <React.Suspense fallback={<p className="mx-status" role="status">Ouverture des récits ORIGINS…</p>}><MediaStudio mode="tv" goTo={goTo}/></React.Suspense>
         </>}
 
         {active==='admin'&&<>
-          <SectionIntro eyebrow="DES SERVICES QUI EXISTENT" title="Le bon chemin pour chaque démarche.">Logement, emploi, santé, identité, impôts, entreprise, justice et Europe. 3B te conduit vers les organismes officiels : ne communique jamais tes identifiants administratifs à une imitation de site.</SectionIntro>
+          <React.Suspense fallback={<p className="mx-status" role="status">Ouverture de ton suivi administratif…</p>}><AdminJourney/></React.Suspense>
+          <h3 className="mx-directory-title">Trouver le bon organisme</h3>
           <React.Suspense fallback={<p className="mx-status" role="status">Ouverture de l’annuaire public…</p>}><OfficialDirectory/></React.Suspense>
           <details className="mx-admin-guides"><summary>Explorer les autres démarches officielles <ArrowRight size={17} aria-hidden="true"/></summary>
             <p>Identité, emploi, logement, santé, impôts, justice, entreprise et Europe : ouvre le site de l’organisme compétent.</p>
             <SourceRows rows={ADMIN_GUIDES}/>
           </details>
-          <p className="mx-honesty"><ShieldCheck size={16}/> Aucun dossier personnel n’est copié ou conservé dans cette rubrique. Les démarches s’effectuent sur les sites officiels.</p>
+          <p className="mx-honesty"><ShieldCheck size={16}/> Ton suivi reste sur cet appareil. Les justificatifs, identifiants et dossiers officiels se transmettent auprès des organismes compétents.</p>
         </>}
 
         {active==='cinema'&&<>
-          <SectionIntro eyebrow="LA CULTURE EN TOUTE LÉGALITÉ" title="Trouve un film à regarder.">Accède aux catalogues officiels et aux offres légales. Les titres, coûts, abonnements et pays disponibles sont ceux de chaque diffuseur au moment de l’ouverture.</SectionIntro>
-          <React.Suspense fallback={<p role="status" className="mx-status">Ouverture du cinéma légal…</p>}><CinemaFinder/></React.Suspense>
+          <React.Suspense fallback={<p role="status" className="mx-status">Ouverture de ta médiathèque…</p>}><MediaStudio mode="cinema" goTo={goTo}/></React.Suspense>
           <details className="mx-admin-guides"><summary>Autres catalogues légaux et droits de diffusion <ArrowRight size={17} aria-hidden="true"/></summary>
             <SourceRows rows={CINEMA_GUIDES}/>
           </details>

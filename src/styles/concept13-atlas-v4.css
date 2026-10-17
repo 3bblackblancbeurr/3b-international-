@@ -68,7 +68,7 @@
 .atlas3b-stage-head span:last-child{color:rgba(190,219,238,.79)}
 .atlas3b-live-dot{height:5px;width:5px;border-radius:var(--3b-radius-circle);background:var(--atlas-blue);box-shadow:var(--3b-shadow-member-stars)}
 .atlas3b-worldmap{width:100%;height:100%;position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}
-.atlas3b-worldmap picture,.atlas3b-flight-paths,.atlas3b-map-pin,.atlas3b-world-pin,.atlas3b-night-signature{position:absolute}
+.atlas3b-worldmap picture,.atlas3b-flight-paths,.atlas3b-map-pin,.atlas3b-night-signature{position:absolute}
 .atlas3b-worldmap picture{width:min(100%,calc(2 * (100svh - 220px)));aspect-ratio:2/1;max-height:100%;
  left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none}
 .atlas3b-earth-photo{display:block;width:100%;height:100%;object-fit:contain;opacity:.97;
@@ -91,11 +91,6 @@
 .atlas3b-map-pin.gm-button:hover,.atlas3b-map-pin.gm-button:focus-visible,.atlas3b-map-pin.gm-button.is-selected{
  background:var(--3b-champagne-highlight);color:var(--3b-gold-ink)}
 .atlas3b-map-pin.gm-button:not(.atlas3b-map-pin--gold){color:var(--atlas-blue);border-color:rgba(70,176,245,.73)}
-.atlas3b-world-pin{left:55%;top:42%;z-index:3;transform:translate(-50%,-50%);pointer-events:none;
- display:grid;place-items:center;width:58px;height:58px;border-radius:var(--3b-radius-circle);
- border:1px solid var(--3b-champagne-highlight);background:radial-gradient(circle,rgba(10,55,87,.96),rgba(1,9,20,.96));
- box-shadow:var(--3b-shadow-deep)}
-.atlas3b-world-pin span{font:650 28px Georgia,serif;letter-spacing:-.09em;padding-right:3px;color:var(--3b-champagne-highlight)}
 .atlas3b-night-signature{top:16%;right:4%;font-size:9px;letter-spacing:.21em;color:rgba(218,230,242,.79);font-weight:700;pointer-events:none;text-shadow:0 2px 8px black}
 .atlas3b-stage-veil{pointer-events:none;position:absolute;z-index:2;inset:0;
  background:linear-gradient(0deg,rgba(1,8,17,.91),transparent 35%),
@@ -200,8 +195,6 @@
  .atlas3b-stage-head{font-size:7px;letter-spacing:.07em}
  .atlas3b-night-signature{display:none}
  .atlas3b-map-pin.gm-button{width:31px;height:31px;min-height:31px}
- .atlas3b-world-pin{width:45px;height:45px}
- .atlas3b-world-pin span{font-size:22px}
  .atlas3b-map-caption{left:12px;bottom:21px}
  .atlas3b-map-numbers{font-size:9px}
  .atlas3b-map-numbers strong{font-size:16px}
@@ -233,8 +226,6 @@
  .atlas3b-tabs>.gm-button{font-size:9px}
  .atlas3b-realm.gm-button{flex-basis:95px}
  .atlas3b-map-pin.gm-button{width:27px;height:27px;min-height:27px}
- .atlas3b-world-pin{width:36px;height:36px}
- .atlas3b-world-pin span{font-size:18px}
  .atlas3b-directory-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 @media(max-height:690px){

@@ -1,24 +1,49 @@
-import {ArrowUpRight, BookOpen, Globe2} from 'lucide-react';
-import '../styles/open-spaces-3b.css';
+import {useEffect,useMemo,useRef,useState} from 'react';
+import {ArrowLeft,ArrowRight,ArrowUpRight,Bookmark,BookOpen,Check,Download,Globe2,Search,Star} from 'lucide-react';
+import {Button} from '../design-system/index.jsx';
+import narrationManifest from '../world/narration-manifest.json';
+import {MANGA_LIBRARY_KEY,MANGA_READINGS,exportMangaLibrary,loadMangaLibrary,mergeMangaLibrary,saveMangaLibrary,searchMangaReadings,setReadingLocation,toggleReadingState} from './manga-library.js';
+import './manga-library.css';
 
-const VALUES=['Justice','Loyauté','Passion','Noblesse','Espoir','Courage','Foi','Sagesse'];
+const PROLOGUE=narrationManifest.clips.find(clip=>clip.id==='prologue');
 
 export default function MangaPage({goTo}){
- return <section className="manga3b-open" aria-labelledby="manga3b-title">
-  <div className="manga3b-hero">
-   <div className="manga3b-art"><img src="/games/origins-cover.jpg" alt="Illustration de l'univers narratif 3B Origins" loading="eager"/></div>
-   <div className="manga3b-copy">
-    <p className="manga3b-kicker"><BookOpen size={16} aria-hidden="true"/> 3B ORIGINS · MANGA</p>
-    <h1 id="manga3b-title">Le Cercle <em>Brisé.</em></h1>
-    <p className="manga3b-lead">L'histoire de Kaïs commence ici. Huit portes, huit gardiens et huit valeurs à réunir face au Monstre de l'Oubli.</p>
-    <p className="manga3b-meta">TOME 0 · L'OUBLI DES VALEURS</p>
-    <div className="manga3b-actions">
-     <a href="/manga-3b-le-cercle-brise.html" className="manga3b-primary">Découvrir le récit <ArrowUpRight size={18} aria-hidden="true"/></a>
-     <button type="button" className="manga3b-secondary" onClick={()=>goTo('world3b')}><Globe2 size={17} aria-hidden="true"/> Explorer le Monde 3B</button>
-    </div>
-   </div>
-  </div>
-  <div className="manga3b-values" aria-label="Les huit valeurs du récit">{VALUES.map(value=><span key={value}>{value}</span>)}</div>
-  <p className="manga3b-note">L'univers narratif est accessible. Les chapitres illustrés complets seront publiés lorsqu'ils seront disponibles.</p>
+ const [loaded]=useState(()=>loadMangaLibrary());
+ const [library,setLibrary]=useState(loaded.state),[notice,setNotice]=useState(loaded.warning),[query,setQuery]=useState(''),[kind,setKind]=useState('all'),[favoritesOnly,setFavoritesOnly]=useState(false),[revealed,setRevealed]=useState(false),[audioError,setAudioError]=useState(false),[importDraft,setImportDraft]=useState(null);
+ const expectedRaw=useRef(loaded.raw),audio=useRef(null),reader=useRef(null),fileInput=useRef(null);
+ const current=MANGA_READINGS.find(item=>item.id===library.lastId)||MANGA_READINGS[0];
+ const results=useMemo(()=>searchMangaReadings(query,kind,favoritesOnly?library.favoriteIds:null),[query,kind,favoritesOnly,library.favoriteIds]);
+ const index=MANGA_READINGS.indexOf(current);
+ function commit(next,message='Suivi enregistré sur cet appareil.'){
+  const result=saveMangaLibrary(next,expectedRaw.current);setLibrary(result.state);expectedRaw.current=result.raw;
+  setNotice(result.conflict?'Ton suivi a changé dans un autre onglet. Il a été rechargé ; tu peux refaire ton action.':result.warning||message);
+ }
+ useEffect(()=>{function sync(event){if(event.key!==MANGA_LIBRARY_KEY&&event.key!==null)return;const next=loadMangaLibrary();setLibrary(next.state);expectedRaw.current=next.raw;setRevealed(false);setNotice(next.warning||'Suivi actualisé depuis un autre onglet.');}window.addEventListener('storage',sync);return()=>{window.removeEventListener('storage',sync);audio.current?.pause();};},[]);
+ function select(id){audio.current?.pause();setRevealed(false);commit(setReadingLocation(library,id),'Repère repris ici.');requestAnimationFrame(()=>reader.current?.focus({preventScroll:true}));}
+ function download(){const url=URL.createObjectURL(new Blob([exportMangaLibrary(library)],{type:'application/json'}));const link=document.createElement('a');link.href=url;link.download='3B-Manga-mon-suivi.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);setNotice('Ton fichier de suivi a été préparé.');}
+ async function prepareImport(event){const file=event.target.files?.[0];event.target.value='';if(!file)return;try{if(file.size>20000)throw new Error('Ce fichier de suivi est trop volumineux.');const text=await file.text();const next=mergeMangaLibrary(library,text);setImportDraft({text,readCount:next.readIds.length-library.readIds.length,favoriteCount:next.favoriteIds.length-library.favoriteIds.length});setNotice('Vérifie le suivi à ajouter avant de confirmer.');}catch(error){setNotice(error.message);}}
+ return <section className="manga-library" aria-labelledby="manga3b-title">
+  <header className="manga-library-hero">
+   <div className="manga-library-art"><img src="/games/origins-cover.jpg" alt="Illustration de l’univers narratif 3B Origins" loading="eager"/><span>LE CERCLE BRISÉ · TOME 0</span></div>
+   <div className="manga-library-intro"><p className="manga-library-kicker"><BookOpen size={17} aria-hidden="true"/> 3B ORIGINS · MANGA</p><h1 id="manga3b-title">Chaque héritage<br/>a son <em>histoire.</em></h1><p>Entre dans l’univers de Kaïs, Porteur du Lien. Retrouve les huit Gardiens, les valeurs qui les animent et ce que la Rupture a séparé.</p><div className="manga-library-actions"><a href="/manga-3b-le-cercle-brise.html">Le Cercle Brisé <ArrowUpRight size={17} aria-hidden="true"/></a><Button variant="ghost" onClick={()=>goTo?.('world3b')}><Globe2 size={17} aria-hidden="true"/> Explorer le Monde 3B</Button></div><p className="manga-library-availability">Repères du récit et prologue audio disponibles. Les chapitres illustrés complets seront annoncés lors de leur publication.</p></div>
+  </header>
+  <div className="manga-library-status" role="status" aria-live="polite">{notice||'Ton carnet de lecture reste sur cet appareil.'}</div>
+  <section className="manga-library-workspace" aria-label="Carnet de lecture">
+   <aside className="manga-library-shelf"><div className="manga-library-shelf-title"><span><Bookmark size={18} aria-hidden="true"/> Mon carnet</span><strong>{library.readIds.length}/{MANGA_READINGS.length} lus</strong></div><progress max={MANGA_READINGS.length} value={library.readIds.length} aria-label="Repères marqués comme lus"/>
+    <label className="manga-library-search"><Search size={17} aria-hidden="true"/><span className="manga-library-sr-only">Rechercher un personnage, une valeur ou un héritage</span><input type="search" placeholder="Personnage, valeur, héritage…" value={query} onChange={event=>setQuery(event.target.value)}/></label>
+    <div className="manga-library-filters" aria-label="Filtrer les repères">{[['all','Tout'],['repere','Le récit'],['gardien','Gardiens']].map(([id,label])=><Button variant="ghost" size="sm" key={id} aria-pressed={kind===id} onClick={()=>setKind(id)}>{label}</Button>)}</div>
+    <Button variant="ghost" className="manga-library-favorite-filter" aria-pressed={favoritesOnly} onClick={()=>setFavoritesOnly(value=>!value)}><Star size={16} aria-hidden="true"/> Mes favoris · {library.favoriteIds.length}</Button>
+    <p className="manga-library-result-count">{results.length} repère{results.length>1?'s':''}</p><nav className="manga-library-list" aria-label="Repères du récit">{results.map(item=><Button variant="ghost" key={item.id} aria-current={current.id===item.id?'page':undefined} onClick={()=>select(item.id)}><span><strong>{item.title}</strong><small>{item.subtitle}</small></span><span className="manga-library-list-icons">{library.favoriteIds.includes(item.id)&&<Star size={14} aria-label="Favori"/>}{library.readIds.includes(item.id)&&<Check size={16} aria-label="Lu"/>}</span></Button>)}</nav>
+    {results.length===0&&<div className="manga-library-empty"><p>Aucun repère ne correspond à cette sélection.</p><Button variant="ghost" onClick={()=>{setQuery('');setKind('all');setFavoritesOnly(false);}}>Afficher tous les repères</Button></div>}
+   </aside>
+   <article ref={reader} className="manga-library-reader" tabIndex={-1} aria-labelledby="manga-reading-title">
+    <div className="manga-library-reader-top"><p className="manga-library-kicker">{current.kind==='gardien'?'LES HUIT GARDIENS':'LES ORIGINES DU RÉCIT'} · {String(index+1).padStart(2,'0')}</p><Button variant="ghost" aria-label={`${library.favoriteIds.includes(current.id)?'Retirer':'Ajouter'} ${current.title} ${library.favoriteIds.includes(current.id)?'des':'aux'} favoris`} aria-pressed={library.favoriteIds.includes(current.id)} onClick={()=>commit(toggleReadingState(library,current.id,'favoriteIds'))}><Star size={18} aria-hidden="true"/></Button></div>
+    <h2 id="manga-reading-title">{current.title}</h2><p className="manga-library-subtitle">{current.subtitle}</p>
+    {current.spoiler&&!revealed?<div className="manga-library-spoiler"><BookOpen size={27} aria-hidden="true"/><h3>Les révélations du Cercle</h3><p>Ce repère révèle le rôle de l’anneau et l’issue du récit. Ouvre-le lorsque tu souhaites découvrir ces éléments.</p><Button onClick={()=>setRevealed(true)}>Afficher les révélations</Button></div>:<div className="manga-library-paragraphs">{current.paragraphs.map(([title,text])=><section key={title}><h3>{title}</h3><p>{text}</p></section>)}</div>}
+    {current.id==='kais'&&<details className="manga-library-audio"><summary>Écouter le prologue · 28 secondes</summary><audio ref={audio} controls preload="none" src={PROLOGUE.src} onError={()=>setAudioError(true)} aria-label="Prologue de 3B Origins"/>{audioError&&<p role="status">Le prologue audio est indisponible. Sa transcription reste accessible.</p>}<details><summary>Lire la transcription</summary><p>{PROLOGUE.text}</p></details><a href={narrationManifest.attributionUrl} target="_blank" rel="noopener noreferrer">{narrationManifest.attribution}</a></details>}
+    <footer className="manga-library-reading-actions"><Button variant={library.readIds.includes(current.id)?'ghost':undefined} disabled={current.spoiler&&!revealed&&!library.readIds.includes(current.id)} onClick={()=>commit(toggleReadingState(library,current.id,'readIds'))}><Check size={17} aria-hidden="true"/>{library.readIds.includes(current.id)?'Marquer comme à lire':'Marquer comme lu'}</Button><div><Button variant="ghost" disabled={index===0} aria-label="Repère précédent" onClick={()=>select(MANGA_READINGS[index-1].id)}><ArrowLeft size={18} aria-hidden="true"/></Button><Button variant="ghost" disabled={index===MANGA_READINGS.length-1} aria-label="Repère suivant" onClick={()=>select(MANGA_READINGS[index+1].id)}><ArrowRight size={18} aria-hidden="true"/></Button></div></footer>
+   </article>
+  </section>
+  <section className="manga-library-backup" aria-label="Sauvegarder le carnet"><div><h2>Garde le fil de ton histoire.</h2><p>Favoris, repères lus et dernière lecture restent dans ce navigateur. Exporte ton carnet pour le retrouver sur un autre appareil.</p></div><div className="manga-library-actions"><Button variant="ghost" onClick={download}><Download size={16} aria-hidden="true"/> Exporter mon carnet</Button><Button variant="ghost" onClick={()=>fileInput.current?.click()}>Importer un carnet</Button><input ref={fileInput} type="file" accept="application/json,.json" hidden onChange={prepareImport}/></div>{importDraft&&<div className="manga-library-import"><p>Ajouter {importDraft.readCount} repère{importDraft.readCount>1?'s':''} lu{importDraft.readCount>1?'s':''} et {importDraft.favoriteCount} favori{importDraft.favoriteCount>1?'s':''}. Tes choix actuels sont conservés.</p><Button onClick={()=>{try{commit(mergeMangaLibrary(library,importDraft.text),'Carnet importé et fusionné.');setImportDraft(null);}catch(error){setNotice(error.message);}}}>Confirmer l’import</Button><Button variant="ghost" onClick={()=>setImportDraft(null)}>Annuler</Button></div>}</section>
  </section>;
 }

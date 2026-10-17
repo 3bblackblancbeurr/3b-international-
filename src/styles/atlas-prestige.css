@@ -22,8 +22,6 @@
 .atlas3b-flight-paths{opacity:.5;filter:none}
 .atlas3b .atlas3b-worldmap .atlas3b-map-pin.gm-button{min-width:40px!important;min-height:40px!important;width:40px!important;height:40px!important;background:var(--3b-carbon);border-color:var(--3b-border-strong);box-shadow:var(--3b-shadow-contact)}
 .atlas3b .atlas3b-worldmap .atlas3b-map-pin.gm-button.is-selected{background:var(--3b-gold-metal)}
-.atlas3b-world-pin{width:65px;height:65px;left:57%;top:54%;border:2px solid var(--3b-champagne);background:var(--3b-carbon);box-shadow:var(--3b-shadow-member-ring)}
-.atlas3b-world-pin span{font-size:33px}
 .atlas3b-night-signature{display:none}
 .atlas3b-intro{position:relative;z-index:4;max-width:54%;padding:97px 0 86px 48px;pointer-events:none}
 .atlas3b-eyebrow{font-size:9px;font-weight:650;letter-spacing:.27em;color:var(--3b-member-champagne)}
@@ -132,8 +130,6 @@
  .atlas3b-map-caption a{min-height:34px;font-size:10px}
  .atlas3b-attribution{bottom:8px;right:14px;font-size:6px;max-width:85%}
  .atlas3b .atlas3b-worldmap .atlas3b-map-pin.gm-button{min-width:32px!important;min-height:32px!important;width:32px!important;height:32px!important}
- .atlas3b-world-pin{width:48px;height:48px}
- .atlas3b-world-pin span{font-size:26px}
  .atlas3b-panel{inset:57px 14px 28px;padding:27px 20px}
  .atlas3b-panel h1{font-size:37px;margin-block:20px}
  .atlas3b-panel>p{font-size:13px;line-height:1.9}
