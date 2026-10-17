@@ -1,0 +1,113 @@
+/* 3B VISUAL DIRECTOR — editorial tool, not a dashboard of prompt cards */
+.app3b[data-page="ia"] .vd3b{color:#f8f3e9}
+.vd3b{position:relative;isolation:isolate;overflow:hidden;min-height:100svh;margin:-10px calc(-1 * clamp(20px,3vw,32px));padding:25px clamp(21px,5vw,75px) 62px;
+ font-family:Inter,system-ui,-apple-system,sans-serif;color:#f4f1e9;
+ background:radial-gradient(ellipse at 75% 15%,#14446b55,transparent 52%),#050c17}
+.vd3b *{box-sizing:border-box}
+.vd3b-atmosphere{pointer-events:none;position:absolute;z-index:-1;inset:0 0 auto;height:640px;opacity:.30;
+ background:linear-gradient(180deg,#010a16a1,#020a12ad 60%,#050c17),
+ url('/art/luxury-v2/hub-cite-origine.webp') center 36%/cover no-repeat}
+.vd3b-atmosphere[data-family=cuisine]{background-image:linear-gradient(180deg,#010a16a1,#020a12d1 60%,#050c17),url('/health/photos/hero.webp')}
+.vd3b-atmosphere[data-family=games]{background-image:linear-gradient(180deg,#010a16a1,#020a12d1 60%,#050c17),url('/games/night-plaza.webp')}
+.vd3b-atmosphere[data-family=world]{background-image:linear-gradient(180deg,#010a16a1,#020a12d1 60%,#050c17),url('/art/monde-3b/reference-cite-huit-heritages.webp')}
+.vd3b-header{display:flex;align-items:center;justify-content:space-between;gap:20px;margin:0 auto 28px;max-width:1120px}
+.vd3b-header span{font-size:9px;color:#d4b881;letter-spacing:.2em;font-weight:850;text-align:right}
+.vd3b-back{display:flex;align-items:center;gap:10px;padding:12px 2px;min-height:44px;border:0;background:transparent;
+ color:#e3c795;font-weight:650;font-size:12px}
+.vd3b-hero{max-width:1120px;margin:0 auto;padding:clamp(28px,5vw,55px) 0 clamp(34px,5vw,72px)}
+.vd3b-kicker,.vd3b-workspace-head>div>span,.vd3b-brief>div:first-child>span,.vd3b-scene-selection>span{display:flex;align-items:center;gap:8px;
+ font-size:10px;letter-spacing:.18em;font-weight:800;color:#e3c58f}
+.vd3b-hero h1{font:500 clamp(50px,7vw,100px)/.98 Georgia,'Times New Roman',serif;letter-spacing:-.06em;margin:16px 0 18px}
+.vd3b-hero h1 em{font-weight:400;color:#acdfff}
+.vd3b-hero>p{font-size:clamp(13px,1.3vw,17px);line-height:1.7;max-width:650px;color:#d6e1ed}
+.vd3b-count{display:inline-flex;gap:10px;align-items:center;margin-top:15px;padding:8px 0;
+ color:#f2dda9;font-size:11px;letter-spacing:.09em;font-weight:700}
+.vd3b-workspace{max-width:1120px;margin:auto}
+.vd3b-workspace-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin:20px 0 19px}
+.vd3b-workspace-head h2,.vd3b-workspace-head h3{font:500 clamp(25px,3vw,41px) Georgia,serif;margin:9px 0 0;color:#f7e8ca}
+.vd3b-workspace-head>svg{color:#89dbff}
+.vd3b-workspace-head--sub{margin-top:35px}
+.vd3b-workspace-count{font-size:11px;color:#bdccda}
+.vd3b-families{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding:7px 1px 14px;border-bottom:1px solid #afc6da42}
+.vd3b-families::-webkit-scrollbar{display:none}
+.vd3b-families button{flex:0 0 auto;min-height:46px;padding:12px 12px;white-space:nowrap;
+ border:0;border-radius:0;border-bottom:2px solid transparent;background:transparent;color:#bed3e0;font-size:12px;font-weight:750}
+.vd3b-families button[aria-pressed=true]{border-bottom-color:#e1bb7d;color:#ffddb3}
+.vd3b-families button:hover{color:#fff}
+.vd3b-scenes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px 27px;margin:0 0 26px}
+.vd3b-scenes button{display:flex;align-items:center;gap:10px;min-height:68px;padding:10px 3px;border:0;border-bottom:1px solid #aec6d53b;
+ background:transparent;color:#f0f1ef;text-align:left;line-height:1.4;min-width:0}
+.vd3b-scenes button>span{color:#abc4d3;font-size:10px;letter-spacing:.06em}
+.vd3b-scenes button strong{flex:1;min-width:0;font-size:14px;font-weight:650}
+.vd3b-scenes button>svg{color:#d4b985}
+.vd3b-scenes button[aria-pressed=true]{border-bottom-color:#dfba7b}
+.vd3b-scenes button[aria-pressed=true] strong{color:#ffe1ae}
+.vd3b-scene-selection{padding:22px 0 28px;border-top:1px solid #b5d1dc3f}
+.vd3b-scene-selection strong{display:block;font:500 clamp(25px,3vw,40px) Georgia,serif;color:#f2e5cd;margin:12px 0 5px}
+.vd3b-scene-selection p{font-size:13px;color:#c9d5dc;line-height:1.7;margin:6px 0;max-width:850px}
+.vd3b-fields{display:grid;grid-template-columns:1fr 1fr;gap:18px 24px}
+.vd3b-fields>label{display:flex;flex-direction:column;gap:10px;min-width:0}
+.vd3b-fields>label>span,.vd3b-fields legend{font-size:10px;letter-spacing:.07em;color:#d5c5a7;font-weight:750}
+.vd3b-fields input,.vd3b-fields textarea{width:100%;min-width:0;max-width:100%;padding:12px 9px;
+ border:0;border-bottom:1px solid #8ebdd079;border-radius:0!important;background:#081a2d6b;color:#f8f4eb;
+ font:14px/1.55 inherit;font-family:inherit;font-size:14px;outline-offset:3px}
+.vd3b-fields input::placeholder,.vd3b-fields textarea::placeholder{color:#9fb1bd}
+.vd3b-fields input:focus-visible,.vd3b-fields textarea:focus-visible{outline:2px solid #e6c991}
+.vd3b-fields fieldset{border:0;padding:0;margin:0;min-width:0}
+.vd3b-formats{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.vd3b-formats button{min-height:43px;padding:10px 12px;background:transparent;color:#beced9;border:1px solid #accbdd55;
+ border-radius:999px;font-size:11px;font-weight:700}
+.vd3b-formats button[aria-pressed=true]{color:#0c1a28;background:#e9d3a6;border-color:#e9d3a6}
+.vd3b-fields>label:last-child{grid-column:1/-1}
+.vd3b-brief{padding:26px 0 10px;margin-top:34px;border-top:1px solid #d7c29866}
+.vd3b-brief>div:first-child{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.vd3b-brief>div:first-child strong{font:500 23px Georgia,serif;color:#fff0cd}
+.vd3b-brief textarea{display:block;resize:vertical;margin:19px 0 16px;padding:19px 20px;width:100%;min-height:210px;max-width:100%;
+ border:1px solid #a3cad055;border-radius:8px;color:#d6e8f1;background:linear-gradient(140deg,#081d2cca,#0a2d3ecc);
+ font:12px/1.7 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap}
+.vd3b-actions{display:flex;gap:12px;flex-wrap:wrap}
+.vd3b-actions button{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:49px;
+ padding:10px 19px;font-size:12px;font-weight:800;border-radius:999px}
+.vd3b-primary{color:#122333;background:linear-gradient(115deg,#f6e3bd,#c8a363);border:1px solid #ffdf9b}
+.vd3b-secondary{color:#dfebf3;background:#0d30436c;border:1px solid #b8d7e18c}
+.vd3b-notice{display:flex;align-items:center;gap:8px;margin:13px 0;color:#e8d6ae;font-size:12px}
+.vd3b-footer{max-width:1120px;margin:50px auto 0;padding-top:19px;border-top:1px solid #e9d6b23a;display:flex;align-items:flex-start;gap:11px}
+.vd3b-footer svg{color:#bce1c7;flex:none}
+.vd3b-footer p{margin:0;font-size:11px;color:#acbfcc;line-height:1.7}
+@media(max-width:700px){
+ .vd3b{margin-inline:-14px;padding:15px 16px 44px}
+ .vd3b-header{margin-bottom:9px}
+ .vd3b-header span{font-size:7px;letter-spacing:.12em}
+ .vd3b-hero{padding:28px 0 24px}
+ .vd3b-hero h1{font-size:51px}
+ .vd3b-kicker{font-size:8px;letter-spacing:.08em}
+ .vd3b-workspace-head h2{font-size:29px}
+ .vd3b-workspace-head h3{font-size:24px}
+ .vd3b-scenes{grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 12px}
+ .vd3b-scenes button{min-height:62px;gap:5px}
+ .vd3b-scenes button strong{font-size:12px}
+ .vd3b-scenes button>svg{width:14px}
+ .vd3b-fields{grid-template-columns:1fr;gap:19px}
+ .vd3b-fields>label:last-child{grid-column:auto}
+ .vd3b-families button{font-size:11px}
+ .vd3b-brief textarea{font-size:11px}
+ .vd3b-hero>p{font-size:13px}
+}
+
+/* Editorial entry point on the existing IA page, no new dashboard card. */
+.studio-page .vd3b-entry{display:flex;justify-content:space-between;align-items:center;gap:24px;
+ margin:28px 0;padding:25px 0 22px;border-top:1px solid #bea67d74;border-bottom:1px solid #9abacf3d;
+ background:radial-gradient(ellipse at 82% 54%,#123a5851,transparent 58%)}
+.studio-page .vd3b-entry>div{flex:1;min-width:0}
+.studio-page .vd3b-entry span{display:block;color:#d9be88;letter-spacing:.18em;font-weight:750;font-size:10px}
+.studio-page .vd3b-entry strong{display:block;font:500 clamp(25px,3.1vw,38px) Georgia,serif;
+ margin:8px 0;color:#f6e8c9}
+.studio-page .vd3b-entry p{font-size:13px;color:#b7cad7;max-width:620px}
+.studio-page .vd3b-entry button{display:inline-flex;align-items:center;gap:14px;
+ min-height:48px;padding:10px 20px;border:1px solid #dfc899;color:#071827;
+ background:linear-gradient(110deg,#f5e3bd,#be995c);border-radius:999px;white-space:nowrap;
+ font-size:12px;font-weight:800}
+@media(max-width:700px){
+ .studio-page .vd3b-entry{display:flex;align-items:flex-start;flex-direction:column}
+ .studio-page .vd3b-entry button{min-width:0}
+}

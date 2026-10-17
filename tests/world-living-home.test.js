@@ -79,8 +79,18 @@ test('3B World and Albert are real routed React components, not pasted promotion
  const map=read('src/components/LivingWorldHome.jsx'),globe=read('src/components/LivingWorldGlobe.jsx');
  const styles=read('src/styles/world-living-home.css');
  assert.match(app,/page === "albert" && <AlbertPublicPreview/);
- assert.match(home,/<LivingWorldHome goTo=\{goTo\} menuItems=\{menuItems\}/);
- assert.match(home,/<WorldPortalCard goTo=\{goTo\}/);
+ assert.match(home,/<ImmersiveWorldHome goTo=\{goTo\}/);
+ const scene=read('src/components/ImmersiveWorldHome.jsx');
+ const globe3d=read('src/components/HeritageGlobe3D.jsx');
+ assert.match(scene,/<AdaptiveHeritageGlobe selectedId=\{realm.id\}/);
+ assert.match(read('src/components/AdaptiveHeritageGlobe.jsx'),/lazy\(\(\)=>import\('\.\/HeritageGlobe3D\.jsx'\)\)/);
+ assert.match(read('src/components/HeritageGlobeLite.jsx'),/HeritageSignalNetwork/);
+ assert.match(scene,/th-world-realms-line/);
+ assert.match(scene,/threeb:open-app-menu/);
+ assert.match(globe3d,/WebGLRenderer/);
+ assert.match(globe3d,/IntersectionObserver/);
+ assert.match(globe3d,/NASA|nasa-bluemarble/);
+ assert.doesNotMatch(scene,/world3b-universe-link|home-app-hub/);
  assert.match(map,/onSelect=\{setActiveRealm\}/);
  assert.match(map,/world3b-universes/);
  assert.match(map,/localStorage/);
@@ -115,17 +125,19 @@ test('deep-linked world / Albert loads without four-second splash and conflictin
  assert.match(qa,/\[360,800\]/);
  assert.match(qa,/\[393,873\]/);
  assert.match(qa,/\[1440,1000\]/);
- assert.match(qa,/Phone globe caps raster density/);
- assert.match(qa,/Mobile dock avoids fixed backdrop blur/);
+ assert.match(qa,/22-card homepage replaced by a living scene/);
+ assert.match(qa,/Eight categories in a single swipe rail/);
+ assert.match(qa,/Albert also fits in one viewport/);
 });
 
 test('World Living Gold Master sources tokens and shared controls',()=>{
- const components=['src/components/AlbertPublicPreview.jsx','src/components/LivingWorldHome.jsx'];
- for(const path of components){
-  const source=read(path);
-  assert.equal(source.includes('<button'),false,'native button in '+path);
-  assert.ok(source.includes('<Button variant="ghost"'),path);
- }
+ const legacy=read('src/components/LivingWorldHome.jsx');
+ assert.equal(legacy.includes('<button'),false,'Legacy home retains shared Gold Master button');
+ assert.match(legacy,/<Button variant="ghost"/);
+ const concierge=read('src/components/AlbertPublicPreview.jsx');
+ assert.match(concierge,/th-albert-toolbar/);
+ assert.match(concierge,/aria-pressed=\{panel==='talk'\}/);
+ assert.match(concierge,/Mode guide local/);
  const css=read('src/styles/world-living-home.css');
  const hex=new RegExp('#[0-9a-fA-F]{3,8}'+String.fromCharCode(92)+'b');
  assert.equal(hex.test(css),false,'scenic CSS colors belong in Gold Master tokens');

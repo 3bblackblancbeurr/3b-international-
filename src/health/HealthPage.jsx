@@ -6,6 +6,7 @@ import { boundedNumber, displayNumber, localDay, previousDays, searchText, shopp
 import { useHealth, useToday } from './useHealth.js';
 import './health.css';
 import './health-mobile-master.css';
+import './health-visual-master-v2.css';
 import FOOD_PHOTOS from './foodPhotos.js';
 import { EnergyCheckIn, HealthHistory, HealthReminders, NativeStepsPanel } from './HealthInsights.jsx';
 import { NutritionAtlas, NutritionDetail } from './NutritionAtlas.jsx';

@@ -1,0 +1,105 @@
+/* SANTÉ 3B · Immersive Visual Master II.
+   No sensor/data code touched. Keep private screens readable, functional
+   and color-contrast safe; remove ornamental dashboard boxes. */
+.app3b[data-page="health"]{background:#061016!important;--health-immersive-green:#8ed7b5;--health-immersive-gold:#f1d39c}
+.app3b[data-page="health"]::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+ background:radial-gradient(ellipse at 50% 14%,rgba(26,85,78,.24),transparent 56%),
+ radial-gradient(ellipse at 100% 82%,rgba(19,54,85,.16),transparent 45%)}
+.health3b{--h-bg:#07171a;--h-ink:#f8f4eb;--h-muted:#b2cec3;--h-accent:#f1d39c;--h-mint:#8ed7b5;
+ --h-line:#adc8c12c;max-width:1200px!important;margin:0 auto;padding:clamp(12px,2.2vw,32px) clamp(14px,4vw,55px) 80px;
+ position:relative;color:var(--h-ink);background:transparent}
+.health3b .h-top{margin-bottom:13px;padding:11px 0 18px!important;align-items:center}
+.health3b .h-top .h-eyebrow{font-weight:750!important;letter-spacing:.23em;color:var(--h-accent)}
+.health3b .h-top h1{font:500 clamp(51px,7vw,86px)/.95 Georgia,'Times New Roman',serif!important;
+ letter-spacing:-.06em!important;margin:9px 0 2px!important;color:#f7e5c5}
+.health3b .h-top h1 span{color:#b6e0c5}
+.health3b .h-top>.h-help,.health3b .h-help{color:#d1e0da!important}
+.health3b .h-top .h-icon-button{border-color:#d2e6d159;color:#ead7ad;box-shadow:0 0 20px #7bdbc41e}
+.health3b .h-nav{top:0!important;z-index:10;margin:0 0 19px!important;border:0!important;
+ border-block-end:1px solid rgba(199,224,202,.23)!important;
+ background:#071518ed!important;backdrop-filter:none!important;border-radius:0!important}
+.health3b .h-nav button{background:transparent!important;box-shadow:none!important;border:0!important;border-radius:0!important;
+ color:#b6ccc4!important;min-height:54px!important;font-weight:650!important}
+.health3b .h-nav button[aria-current="page"]{color:#f4e0b6!important}
+.health3b .h-nav button[aria-current="page"] svg{color:#c6f5d6!important}
+.health3b .h-nav button[aria-current="page"]::after{left:12%!important;right:12%!important;background:#e5c888}
+.health3b .h-utility-menu{background:transparent!important;border:0!important;border-radius:0!important;
+ padding:0!important;margin:0 0 17px!important;box-shadow:none!important;color:#aec9c4}
+.health3b .h-utility-menu>summary{background:transparent!important;border:0!important;padding:10px 0!important;font-size:11px!important;letter-spacing:.02em}
+.health3b .h-utility-row{border-top:1px solid #accabd24!important;background:transparent!important;box-shadow:none!important}
+.health3b .h-hero{min-height:clamp(275px,35vw,440px)!important;margin:4px calc(-1 * clamp(14px,4vw,55px)) 28px!important;
+ border:0!important;border-radius:0!important;background:#061710!important;box-shadow:none!important}
+.health3b .h-hero>img{object-position:center 50%;filter:saturate(1.06)}
+.health3b .h-hero::after{background:linear-gradient(90deg,#071516ef 0%,#081815ad 39%,#06151528 81%),
+ linear-gradient(0deg,#071319 0%,transparent 41%)}
+.health3b .h-hero>div{padding:clamp(30px,4vw,62px) clamp(22px,6vw,95px)!important;width:min(730px,87%)}
+.health3b .h-hero h2{font:500 clamp(36px,4.6vw,65px)/1.05 Georgia,'Times New Roman',serif!important;
+ letter-spacing:-.045em;color:#fff5df;margin:15px 0!important;max-width:650px}
+.health3b .h-hero h2::first-line{color:#f6deb2}
+.health3b .h-hero p{color:#e4eee3!important;font-size:clamp(12px,1.3vw,16px);line-height:1.6}
+.health3b .h-hero-button{border:1px solid #dfc89696!important;border-radius:50px!important;
+ background:linear-gradient(112deg,#fae6bb,#ba9565)!important;color:#102a24!important;
+ min-height:48px!important;font-weight:750!important;box-shadow:0 10px 32px #0006}
+.health3b .h-hero-seal{color:#e9d29e;text-shadow:0 3px 10px #000;letter-spacing:.04em}
+.health3b .h-daily-head{margin:19px 0 9px!important}
+.health3b .h-daily-head h2{font:500 clamp(24px,3.2vw,37px)/1.15 Georgia,serif;color:#f4e4bf}
+.health3b .h-rhythm{border:0!important;border-radius:0!important;box-shadow:none!important;
+ margin:11px 0 18px!important;padding:25px clamp(10px,4vw,45px) 13px!important;
+ background:radial-gradient(ellipse at 38% 49%,#1a594a42,transparent 61%),
+ linear-gradient(90deg,transparent 5%,#0c2a2536 52%,transparent 98%)!important}
+.health3b .h-rhythm::before{opacity:.53;box-shadow:0 0 0 35px #b8d1c40a,0 0 0 75px #bad5ba02}
+.health3b .h-rhythm-reading strong{font-family:Georgia,serif;font-weight:550}
+.health3b .h-rhythm-track{stroke:#d7e5db20}
+.health3b .h-rhythm-progress{filter:none;stroke-width:11}
+.health3b .h-rhythm-choices button{border:0!important;border-bottom:1px solid #a7c6ae3c!important;
+ border-radius:0!important;background:transparent!important;font-weight:700}
+.health3b .h-rhythm-choices button[aria-pressed="true"]{background:#d9efc6!important;color:#17362b!important;border-radius:8px!important}
+.health3b .h-metrics{border-block:1px solid #e4d7ac2b!important}
+.health3b .h-metrics button{background:transparent!important;border-color:#e9d8ab22!important}
+.health3b .h-quick-log{padding-top:12px}
+.health3b .h-counter button{border-radius:50%!important;min-width:41px;min-height:41px;color:#f4e1b9;border-color:#d4d9c66b}
+.health3b .h-explore{gap:10px!important}
+.health3b .h-photo-tile{border:0!important;border-radius:2px!important;background:#11261f;min-height:235px!important;
+ box-shadow:0 8px 33px #0005}
+.health3b .h-photo-tile::after{background:linear-gradient(0deg,#06141eea,transparent 84%)}
+.health3b .h-photo-tile strong{font:500 25px/1.13 Georgia,serif!important}
+.health3b .h-food-photo{border-radius:5px}
+.health3b .h-food-item h3{font-family:Georgia,serif;font-size:20px}
+.health3b .h-section-heading h2{font-family:Georgia,serif;font-weight:500;font-size:clamp(23px,3.2vw,34px)}
+.health3b .h-kitchen-hero,.health3b .h-food-hero{border:0!important;box-shadow:none!important}
+.health3b .h-sleep-tool,.health3b .h-breath,.health3b .h-today-discover{box-shadow:none!important}
+.health3b .h-primary{border-radius:999px!important;background:linear-gradient(120deg,#f1dfb9,#cfb178)!important;
+ color:#112820!important;font-weight:750!important}
+.health3b .h-secondary{border-radius:999px!important;border-color:#e4c99e75!important;background:transparent!important}
+@media(max-width:760px){
+ .health3b{padding-inline:13px!important}
+ .health3b .h-top{padding-top:10px!important;padding-bottom:12px!important}
+ .health3b .h-top h1{font-size:52px!important}
+ .health3b .h-help{font-size:11px!important}
+ .health3b .h-nav{margin:0 -13px 15px!important;padding:0 11px!important}
+ .health3b .h-nav button{flex:0 0 67px!important;min-width:67px!important;min-height:51px!important;
+ font-size:10px!important;gap:4px!important;display:flex!important;flex-direction:column!important}
+ .health3b .h-nav button svg{width:19px;height:19px}
+ .health3b .h-hero{margin:0 -13px 22px!important;min-height:270px!important}
+ .health3b .h-hero>div{padding:28px 23px!important;width:95%}
+ .health3b .h-hero h2{font-size:39px!important}
+ .health3b .h-hero p{font-size:12px!important}
+ .health3b .h-hero-seal{display:none}
+ .health3b .h-daily-head h2{font-size:26px}
+ .health3b .h-rhythm{margin:8px -4px 16px!important;padding:12px 5px!important}
+ .health3b .h-rhythm-dial{width:min(67vw,235px)}
+ .health3b .h-rhythm-main{gap:2px}
+ .health3b .h-quick-log{gap:6px}
+ .health3b .h-metrics button{padding:9px!important}
+ .health3b .h-photo-tile{min-height:175px!important;padding:16px!important}
+ .health3b .h-photo-tile strong{font-size:20px!important}
+ .health3b .h-food-item h3{font-size:18px}
+}
+@media(max-width:355px){
+ .health3b .h-top h1{font-size:45px!important}
+ .health3b .h-hero h2{font-size:34px!important}
+ .health3b .h-nav button{flex-basis:61px!important;min-width:61px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .health3b .h-photo-tile>img,.health3b .h-rhythm-bar,.health3b .h-rhythm-progress{transition:none!important}
+}

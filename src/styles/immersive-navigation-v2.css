@@ -1,0 +1,108 @@
+/* 3B MASTER II — actual native navigation dialog, visually borderless.
+   Selected categories fit a viewport; vertical overflow remains possible at
+   high zoom or accessible text sizing rather than clipping routes. */
+.app3b .app-menu-dialog{
+ inset:0!important;top:0!important;left:0!important;right:0!important;bottom:0!important;
+ width:100%!important;max-width:none!important;height:100dvh!important;max-height:100dvh!important;
+ padding:0!important;margin:0!important;border:0!important;border-radius:0!important;
+ background:radial-gradient(ellipse at 50% 45%,rgba(9,61,101,.56),transparent 49%),
+ linear-gradient(160deg,#020812 6%,#061b2d 50%,#020710 92%)!important;
+ color:#f8efde;box-shadow:none!important;isolation:isolate;
+}
+.app3b .app-menu-dialog::before{content:'';position:absolute;z-index:-1;pointer-events:none;
+ width:min(72vw,730px);aspect-ratio:1;left:50%;top:48%;transform:translate(-50%,-50%);
+ border:1px solid #ac8d4b1f;border-radius:50%;
+ box-shadow:0 0 0 66px #0b253111,0 0 0 132px #1b5a6e0b;
+ background:radial-gradient(circle,rgba(23,110,157,.2),rgba(3,16,31,0) 65%)}
+.app3b .app-menu-dialog[open]{display:grid!important;grid-template-rows:auto auto auto minmax(0,1fr) auto!important}
+.app3b .app-menu-dialog::backdrop{background:#010509ed!important;backdrop-filter:none}
+.app-menu-heading{padding:clamp(18px,3vh,32px) clamp(22px,5vw,92px) 12px!important;align-items:flex-start}
+.app-menu-heading>div{min-width:0}
+.app-menu-eyebrow{color:#e9cb94!important;font-size:10px;font-weight:900;letter-spacing:.24em}
+.app-menu-heading h2{font:500 clamp(30px,4.9vw,63px)/1.04 Georgia,serif!important;letter-spacing:-.045em!important;
+ color:#fff0d0;margin:9px 0 0!important}
+.app-menu-heading p{font-size:12px!important;color:#a8c6d8!important;margin:8px 0 0!important}
+.app-menu-heading p strong{color:#d7bd8e!important}
+.app3b .app-menu-dialog .app-menu-close{width:53px;min-width:53px;height:53px;border-radius:50%!important;
+ border:1px solid #e1c28783!important;background:#0e273acc!important;color:#fce4af!important}
+.app-menu-close:hover{background:#24516a!important}
+.app-menu-search{align-self:start;width:min(600px,calc(100% - 50px));margin:0 auto 14px!important;
+ min-height:49px;padding-inline:16px!important;border:0!important;border-bottom:1px solid #bbbcad65!important;
+ border-radius:0!important;background:transparent!important;color:#80cfff!important}
+.app-menu-search input{font-size:15px!important;outline:none!important;color:#f6f4ed!important}
+.app-menu-search input::placeholder{color:#9bb7c8}
+.app-menu-categories{justify-content:center;gap:clamp(10px,2.5vw,28px)!important;margin:0 auto;padding:0 15px!important;
+ border-bottom:1px solid #a5bbcb1d!important;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;flex-wrap:nowrap!important}
+.app-menu-categories::-webkit-scrollbar{display:none}
+.app-menu-categories button{font-size:12px!important;letter-spacing:.03em;min-height:45px!important;padding:10px 2px!important;
+ color:#b0c4d0!important;font-weight:750!important;white-space:nowrap}
+.app-menu-categories button[aria-selected="true"]{color:#ffe1a5!important;border-bottom-color:#d9b16d!important}
+.app-menu-content{width:min(1170px,100%);margin:0 auto!important;padding:clamp(15px,3vh,29px) clamp(14px,4vw,65px)!important;
+ min-height:0;overflow-y:auto;scrollbar-width:thin;overscroll-behavior-y:contain}
+.app-menu-list{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr));gap:clamp(9px,2vw,32px) clamp(5px,1vw,14px)!important;
+ align-items:start!important;justify-content:center}
+.app3b .app-menu-list .app-menu-route{display:flex;align-items:center;justify-content:flex-start;flex-direction:column;
+ gap:9px!important;min-height:112px!important;padding:15px 5px 7px!important;text-align:center;
+ border:0!important;border-radius:18px!important;background:transparent!important;box-shadow:none!important;
+ color:#e9eff5!important;position:relative}
+.app-menu-list .app-menu-route:hover,.app-menu-list .app-menu-route:focus-visible{background:#1137506e!important}
+.app-menu-list .app-menu-route::after{content:'';position:absolute;bottom:1px;left:38%;right:38%;height:1px;
+ background:#d4b47500;transition:background .2s}
+.app-menu-list .app-menu-route:hover::after,.app-menu-list .app-menu-route[aria-current=page]::after{background:#d4b475a0}
+.app-menu-list .app-menu-route>svg:first-child{width:35px;height:35px;flex:none;color:#e5c88f!important;
+ filter:drop-shadow(0 0 14px #d7a86650)}
+.app-menu-list .app-menu-route:nth-child(3n+2)>svg:first-child{color:#83d7ff!important;filter:drop-shadow(0 0 16px #24aef979)}
+.app-menu-route-copy{display:block!important;min-width:0;flex:0 0 auto!important;max-width:100%}
+.app-menu-route-copy strong{display:block!important;font-size:13px!important;line-height:1.3!important;
+ color:#f8f5f1;font-weight:750!important;overflow-wrap:anywhere}
+.app-menu-route-copy small,.app-menu-route-status,.app-menu-list .app-menu-route>svg:last-child{display:none!important}
+.app-menu-secret{grid-column:1/-1;border:0!important}
+.app-menu-footer{padding:10px clamp(22px,5vw,92px)!important;border-top:1px solid #b6c7d22a!important;
+ color:#9dbbd0!important;background:#020914af!important}
+.app-menu-footer a{color:#d9c296!important}
+.app-menu-results{grid-column:1/-1}
+.app-menu-settings{max-width:760px;margin-inline:auto}
+.app3b:not([data-page="home"]):not([data-page="albert"]) .site-header{border-bottom-color:#aebfcd22;
+ background:linear-gradient(100deg,#040d17c7,#061522a8 65%,#030b15c7)}
+.app3b:not([data-page="home"]):not([data-page="albert"]) .page-breadcrumb{color:#b9c3cd}
+@media(max-width:900px){
+ .app-menu-list{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+@media(max-width:720px){
+ .app3b .app-menu-dialog{height:100dvh!important;max-height:100dvh!important;width:100%!important;
+ border-radius:0!important}
+ .app-menu-heading{padding:calc(env(safe-area-inset-top) + 14px) 18px 6px!important}
+ .app-menu-heading h2{font-size:36px!important;margin-top:7px!important}
+ .app-menu-heading p{font-size:10px!important;margin-top:4px!important}
+ .app3b .app-menu-dialog .app-menu-close{width:44px;min-width:44px;height:44px}
+ .app-menu-search{width:calc(100% - 36px);margin:0 18px 6px!important}
+ .app-menu-categories{justify-content:flex-start!important;width:100%;gap:17px!important;padding:0 18px!important}
+ .app-menu-categories button{font-size:11px!important;min-height:42px!important}
+ .app-menu-content{padding:12px 9px!important}
+ .app-menu-list{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px!important}
+ .app3b .app-menu-list .app-menu-route{min-height:95px!important;padding:13px 5px 5px!important;gap:7px!important}
+ .app-menu-list .app-menu-route>svg:first-child{width:29px;height:29px}
+ .app-menu-route-copy strong{font-size:11px!important;line-height:1.27!important}
+ .app-menu-footer{padding:5px 19px calc(env(safe-area-inset-bottom) + 5px)!important;font-size:10px!important}
+}
+@media(max-width:350px),(max-height:600px){
+ .app-menu-heading h2{font-size:29px!important}
+ .app-menu-content{padding-block:6px!important}
+ .app3b .app-menu-list .app-menu-route{min-height:77px!important;padding-top:7px!important;gap:5px!important}
+ .app-menu-list .app-menu-route>svg:first-child{width:25px;height:25px}
+ .app-menu-route-copy strong{font-size:10px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .app-menu-dialog *,.app-menu-dialog *::before,.app-menu-dialog *::after{animation:none!important;transition:none!important}
+}
+
+/* The legacy application stylesheet uses a stronger grid selector.
+   Force a SINGLE horizontally swipeable category rail, never three rows. */
+.app3b .app-menu-dialog .app-menu-categories{
+ display:flex!important;flex-flow:row nowrap!important;
+ justify-content:flex-start!important;align-items:center!important;
+ width:100%!important;max-width:100%!important;
+ overflow-x:auto!important;overflow-y:hidden!important;
+ -webkit-overflow-scrolling:touch;scrollbar-width:none
+}
+.app3b .app-menu-dialog .app-menu-categories button{flex:0 0 auto!important;width:auto!important;min-width:max-content!important;grid-column:auto!important;padding-inline:2px!important}

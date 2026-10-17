@@ -1,12 +1,13 @@
 import {Button} from '../design-system/index.jsx';
 import {useEffect,useRef,useState} from 'react';
-import {ArrowLeft,ArrowRight,AudioLines,BookOpen,Compass,Gamepad2,Globe2,HeartPulse,Home,Mic,MicOff,Plane,Send,ShieldCheck,ShoppingBag,Sparkles,UserRound,Volume2,VolumeX} from 'lucide-react';
+import {ArrowLeft,ArrowRight,AudioLines,BookOpen,CalendarDays,Compass,Gamepad2,Globe2,HeartPulse,Home,Mic,MicOff,Plane,Send,ShieldCheck,ShoppingBag,Sparkles,UserRound,Volume2,VolumeX,MessageCircle,X} from 'lucide-react';
 import {RouteLink} from './AppNavigation.jsx';
 import AlbertDailyTimeline from './AlbertDailyTimeline.jsx';
 import AlbertHologramAvatar from './AlbertHologramAvatar.jsx';
 import {albertLocalGuideAnswer} from './world-living-data.js';
 import {readAlbertFavoriteModules,WORLD_FAVORITES_KEY} from './albert-favorite-routes.js';
 import '../styles/world-living-home.css';
+import '../styles/immersive-albert-v2.css';
 
 const SUGGESTIONS=[
  {label:'Trouver un voyage',query:'voyage',Icon:Plane},
@@ -22,6 +23,7 @@ export default function AlbertPublicPreview({goTo}){
  const [listening,setListening]=useState(false);
  const [notice,setNotice]=useState('');
  const [speakingIndex,setSpeakingIndex]=useState(-1);
+ const [panel,setPanel]=useState('talk');
  const [favoriteRoutes,setFavoriteRoutes]=useState(()=>readAlbertFavoriteModules(typeof window!=='undefined'?window.localStorage:null));
  const recognition=useRef(null),conversationRef=useRef(null),activeSpeech=useRef(null);
  useEffect(()=>()=>{try{recognition.current?.abort();activeSpeech.current=null;window.speechSynthesis?.cancel();}catch{/* cleanup */}},[]);
@@ -45,7 +47,7 @@ export default function AlbertPublicPreview({goTo}){
   activeSpeech.current=null;window.speechSynthesis?.cancel();setSpeakingIndex(-1);
   const answer=albertLocalGuideAnswer(text);
   setMessages(history=>[...history,{question:text,...answer}].slice(-12));
-  setDraft('');setNotice('');
+  setDraft('');setNotice('');setPanel('talk');
  }
  function startDictation(){
   if(listening){recognition.current?.stop();return;}
@@ -76,7 +78,7 @@ export default function AlbertPublicPreview({goTo}){
    engine.speak(utterance);setSpeakingIndex(index);setNotice('');
   }catch{activeSpeech.current=null;setSpeakingIndex(-1);setNotice('La lecture vocale ne peut pas démarrer.');}
  }
- return <section className="albert3b-experience" aria-label="Albert APEX 3B — assistant d'orientation">
+ return <section className="albert3b-experience th-albert-screen" data-panel={panel} data-has-messages={messages.length?'true':'false'} aria-label="Albert APEX 3B — assistant d'orientation">
   <div className="albert3b-topbar"><RouteLink goTo={goTo} page="home" className="albert3b-back"><ArrowLeft size={18}/> Retour au Monde 3B</RouteLink><span className="albert3b-topmark">3B <em>INTERNATIONAL</em></span></div>
   <header className="albert3b-stage">
    <div className="albert3b-stage-copy">
@@ -86,9 +88,15 @@ export default function AlbertPublicPreview({goTo}){
     <div className="albert3b-status"><ShieldCheck size={17}/> Mode guide local · Albert personnel non connecté</div>
    </div>
    <AlbertHologramAvatar/>
+   <span className="th-albert-stage-constellation" aria-hidden="true">3B · APEX / VISUAL PRESENCE</span>
   </header>
+  <nav className="th-albert-toolbar" aria-label="Outils Albert APEX">
+   <button type="button" aria-pressed={panel==='talk'} onClick={()=>setPanel('talk')}><MessageCircle size={18}/> Dialoguer</button>
+   <button type="button" aria-pressed={panel==='discover'} onClick={()=>setPanel('discover')}><Compass size={18}/> Explorer</button>
+   <button type="button" aria-pressed={panel==='day'} onClick={()=>setPanel('day')}><CalendarDays size={18}/> Ma journée</button>
+  </nav>
   <div className="albert3b-content">
-   <section className="albert3b-chat" aria-label="Dialogue avec le guide 3B">
+   <section className="albert3b-chat" hidden={panel!=='talk'} aria-label="Dialogue avec le guide 3B">
     <div className="albert3b-section-head"><div><span className="world3b-eyebrow">VOTRE ASSISTANT</span><h2>Comment puis-je t’aider ?</h2></div><Sparkles size={23} aria-hidden="true"/></div>
     <div className="albert3b-conversation" ref={conversationRef} aria-live="polite">
      <div className="albert3b-reply"><strong>Bienvenue dans 3B.</strong><p>Dis-moi ce que tu recherches. Je te conduirai vers le bon univers 3B.</p></div>
@@ -108,9 +116,9 @@ export default function AlbertPublicPreview({goTo}){
      <Button variant="ghost" type="submit" className="albert3b-submit" aria-label="Envoyer ma question" disabled={!draft.trim()}><Send size={20}/></Button>
     </form>
     {notice&&<p className="albert3b-notice" role="status">{notice}</p>}
-    <p className="albert3b-disclaimer">Ce guide oriente dans les rubriques existantes. Il n’envoie aucune demande à Albert sur ton ordinateur et ne conserve pas tes messages sur un serveur 3B. La reconnaissance vocale peut utiliser un service du navigateur : le clavier reste toujours disponible.</p>
+    <details className="th-albert-privacy"><summary><ShieldCheck size={13}/> Confidentialité</summary><p className="albert3b-disclaimer">Ce guide oriente dans les rubriques existantes. Il n’envoie aucune demande à Albert sur ton ordinateur et ne conserve pas tes messages sur un serveur 3B. La reconnaissance vocale peut utiliser un service du navigateur : le clavier reste toujours disponible.</p></details>
    </section>
-   <section className="albert3b-curated" aria-labelledby="albert3b-suggest-title">
+   <section className="albert3b-curated" hidden={panel!=='discover'} aria-labelledby="albert3b-suggest-title">
     <div className="albert3b-section-head"><div><span className="world3b-eyebrow">DÉCOUVRIR</span><h2 id="albert3b-suggest-title">Recommandé pour explorer</h2></div></div>
     <div className="albert3b-suggestions">
      {SUGGESTIONS.map(({label,query,Icon})=><Button variant="ghost" type="button" key={query} onClick={()=>ask(query)}><Icon size={25}/><span>{label}</span><ArrowRight size={16}/></Button>)}
@@ -122,9 +130,11 @@ export default function AlbertPublicPreview({goTo}){
       </div>
       <p>Ces accès viennent uniquement de tes favoris dans la Carte du Monde 3B. Albert ne lit pas ton Passeport ou tes données Santé.</p>
      </section>}
-     <AlbertDailyTimeline goTo={goTo}/>
-
     <div className="albert3b-actual-ai"><AudioLines size={25}/><div><strong>Besoin d’une conversation IA ?</strong><p>Le Mode 3 IA est un espace existant, distinct d’Albert APEX.</p></div><RouteLink goTo={goTo} page="ia-trio">Mode 3 IA <ArrowRight size={16}/></RouteLink></div>
+   </section>
+   <section className="th-albert-agenda" hidden={panel!=='day'} aria-label="Organiser ma journée">
+    <button type="button" className="th-albert-sheet-close" onClick={()=>setPanel('talk')} aria-label="Fermer le planning"><X size={20}/></button>
+    <AlbertDailyTimeline goTo={goTo}/>
    </section>
   </div>
   <nav className="albert3b-local-dock" aria-label="Navigation de l'espace Albert">

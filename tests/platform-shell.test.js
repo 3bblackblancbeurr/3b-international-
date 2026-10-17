@@ -24,17 +24,17 @@ test('interactive app hides the static SEO fallback without removing no-JS disco
  assert.match(html,/3B International — Black • Blanc • Beur/);
 });
 
-test('home opens on the single Nexus story without the duplicated legacy hero',()=>{
+test('home opens on one full-screen immersive scene, with services still in navigation',()=>{
  const home=read('src/components/HomePage.jsx');
- const portal=read('src/components/WorldPortalCard.jsx');
- assert.doesNotMatch(home,/home-journey-status|home-status-item/);
- assert.doesNotMatch(home,/Ouvert · 8 héritages|Web · installable/);
- assert.doesNotMatch(home,/Un héritage|Nos différences|Notre force|welcome-hero|luxury-manifesto-line/);
- assert.match(portal,/Huit portes\.[\s\S]*Une légende\./);
- assert.doesNotMatch(portal,/Ton monde[\s\S]*commence/);
- assert.ok(home.indexOf('<WorldPortalCard') < home.indexOf('Les espaces 3B'));
- assert.match(home,/home-guide-zone/);
- assert.ok(home.indexOf('home-guide-zone')>home.indexOf('secondaryGroups.map'));
+ const scene=read('src/components/ImmersiveWorldHome.jsx');
+ const menu=read('src/components/AppNavigation.jsx');
+ assert.match(home,/ImmersiveWorldHome/);
+ assert.doesNotMatch(home,/WorldPortalCard|secondaryGroups\.map|home-journey-status/);
+ assert.match(scene,/th-world-screen/);
+ assert.match(scene,/threeb:open-app-menu/);
+ assert.match(scene,/RouteLink page="world3b"/);
+ assert.match(menu,/universe-menu/);
+ assert.match(read('src/components/navigation-menu.js'),/Comprendre 3B/);
 });
 
 test('historical entry waits for the unique COMMENCER action',()=>{

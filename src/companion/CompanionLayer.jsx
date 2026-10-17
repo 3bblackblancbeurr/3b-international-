@@ -46,7 +46,10 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
     return()=>{document.removeEventListener('focusin',update);document.removeEventListener('focusout',update);window.removeEventListener('threeb:app-menu-state',menu);};
   },[]);
   // Form comfort is temporary: keep the user's presence preference untouched.
-  const formComfort=page==='member'||inputFocused||applicationMenuOpen||page==='invisible';
+  // Focus-intensive experiences should not be covered by a roaming avatar.
+  // The companion remains configurable and available in the other spaces.
+  const focusPages=['games','shop','manga','esports'];
+  const formComfort=page==='member'||inputFocused||applicationMenuOpen||page==='invisible'||focusPages.includes(page);
   const worldFocusMode=page==='world3b'&&!worldPresence;
   const { capabilities, busy, status: nativeStatus } = useCompanionNativePresence();
   const [living, setLiving] = useState(readLivingPrefs);

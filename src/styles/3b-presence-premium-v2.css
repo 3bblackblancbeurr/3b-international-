@@ -1,0 +1,43 @@
+/* 3B MASTER II — visual continuity across the existing experiences.
+   The living companion remains accessible but never covers a page headline. */
+.app3b[data-page="games"],.app3b[data-page="shop"],.app3b[data-page="manga"],.app3b[data-page="esports"]{
+ background-image:radial-gradient(ellipse at 54% 12%,rgba(24,69,106,.16),transparent 55%)!important;
+}
+.app3b[data-page="games"] .arcade-heading h1{
+ font:500 clamp(32px,5vw,55px)/1.05 Georgia,'Times New Roman',serif!important;
+ color:#fff0d0!important;letter-spacing:-.045em!important
+}
+.app3b[data-page="games"] .arcade-heading .arcade-eyebrow,
+.app3b[data-page="shop"] .shop-eyebrow,
+.app3b[data-page="esports"] .esports3b-kicker{
+ color:#e6c68b!important;letter-spacing:.14em!important
+}
+/* Autonomous visual travel competes with game HUD and retail content.
+   Discreet anchored companion preserves its click-and-expand interaction. */
+@media(max-width:720px){
+ .app3b:is([data-page="games"],[data-page="shop"],[data-page="manga"],[data-page="esports"]) .companion3b-shell{
+  position:fixed!important;left:auto!important;right:8px!important;top:auto!important;
+  bottom:calc(env(safe-area-inset-bottom) + 82px)!important;
+  width:60px!important;height:74px!important;min-width:60px!important;min-height:74px!important;
+  max-width:60px!important;max-height:74px!important;
+  transform:none!important;translate:none!important;transition:none!important;
+  filter:none!important;opacity:.85!important;overflow:visible!important
+ }
+ .app3b:is([data-page="games"],[data-page="shop"],[data-page="manga"],[data-page="esports"]) .companion3b-shell .companion3b-avatar-street{
+  width:100%!important;height:100%!important;transform:none!important
+ }
+ .app3b:is([data-page="games"],[data-page="shop"],[data-page="manga"],[data-page="esports"]) .companion3b-shell .companion3b-street-art{
+  width:100%!important;height:100%!important;object-fit:contain!important;transform:none!important;filter:none!important
+ }
+ .app3b:is([data-page="games"],[data-page="shop"],[data-page="manga"],[data-page="esports"]) .companion3b-shell .companion3b-bubble{
+  display:none!important
+ }
+ .app3b:is([data-page="games"],[data-page="shop"],[data-page="manga"],[data-page="esports"]) .companion3b-shell:focus-visible{
+  outline:3px solid #ffe9b1!important;outline-offset:2px
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ .app3b:is([data-page="games"],[data-page="shop"],[data-page="manga"],[data-page="esports"]) .companion3b-shell *{
+  animation:none!important;transition:none!important
+ }
+}
