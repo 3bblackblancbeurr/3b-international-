@@ -41,6 +41,7 @@ try{
    await page.evaluate(()=>{qa.scene.setQuality('fluid');qa.scene.skipCinematic();});
    const storySkip=page.getByRole('button',{name:'Passer',exact:true});if(await storySkip.count())await hud(page,()=>storySkip.first().click());
    const card=page.getByRole('complementary',{name:'Enquête sur place',exact:true});
+   let firstInteraction=true;
    async function openCurrent(){
     await page.evaluate(async()=>{
      const {campaignSnapshot}=await import('/src/world/campaign-runtime.js'),current=campaignSnapshot(qa.state());
@@ -49,7 +50,10 @@ try{
     await page.waitForFunction(()=>{const c=qa.snapshot?.campaign,p=qa.snapshot?.position;return c&&p&&Math.hypot(c.target.x-p.x,c.target.z-p.z)<1;},undefined,{timeout:60000});
     const skip=page.getByRole('button',{name:'Passer',exact:true});if(await skip.count())await hud(page,()=>skip.first().click());
     await page.locator('.world-cinematic-director').waitFor({state:'hidden',timeout:60000});
-    await page.locator('.world-canvas').focus();await page.keyboard.press('e');
+    // First interaction exercises the keyboard. Later contacts use the actual
+    // HUD button: Playwright waits for queued story overlays to release it.
+    if(firstInteraction){await page.locator('.world-canvas').focus();await page.keyboard.press('e');firstInteraction=false;}
+    else await page.locator('.play-interaction').click();
     await card.waitFor({state:'visible'});console.log(profile.id+': opened '+await card.locator('h3').innerText());
     assert.equal(await page.getByRole('dialog').count(),0,'inspection stays in the running world');
     assert.equal(await page.evaluate(()=>qa.scene.qaGuidanceState().paused),false,'walking and camera remain available');
