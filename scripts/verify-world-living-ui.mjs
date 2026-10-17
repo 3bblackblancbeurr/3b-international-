@@ -45,6 +45,7 @@ try{
   }
   check('Actual World home '+width,await home.locator('.world3b-hero h1').isVisible());
   check('22 real primary modules '+width,await home.locator('.world3b-universe-link').count()===22);
+  check('Three contextual real service links '+width,await home.locator('.world3b-editorial-card').count()===3);
   const canvas=home.locator('canvas.world-living-globe-canvas');
   check('Interactive geographic globe '+width,await canvas.isVisible()&&await canvas.evaluate(el=>el.getBoundingClientRect().width>180&&el.getBoundingClientRect().height>180));
   if(width===390){
@@ -72,6 +73,8 @@ try{
    check('Realm value and guardian stay inside card '+width,realmLayout.noteRight<=realmLayout.cardRight+1&&realmLayout.noteBottom<=realmLayout.cardBottom+1);
    const cinema=home.locator('.world3b-cinema-spotlight');
    check('Cinematic kingdom spotlight visible '+width,await cinema.isVisible());
+   const backdrop=await cinema.locator('.world3b-cinema-image').evaluate(el=>({layer:Number(getComputedStyle(el).zIndex),loaded:el.querySelector('img')?.naturalWidth>0}));
+   check('Cinematic realm illustration loads on top of background '+width,backdrop.loaded&&backdrop.layer>=0);
    check('Eight cinematic realm selectors '+width,await cinema.getByRole('button',{name:/Choisir /}).count()===8);
   }
   if(width<720){
@@ -124,6 +127,8 @@ try{
     check('Mobile Albert avatar renders without blur filter '+width,avatarHaloFilter==='none');
    }
   check('Albert route is reachable '+width,true);
+  const portrait=page.locator('.albert3b-portrait-svg');
+  check('Sculpted AI portrait is visible '+width,await portrait.isVisible()&&await portrait.evaluate(el=>{const r=el.getBoundingClientRect();return r.width>85&&r.height>95}));
   await page.screenshot({path:path.join(out,'albert-'+width+'.png'),fullPage:true,animations:'disabled',scale:'css',timeout:60000});
   if(width===390){
    await page.locator('#albert3b-input').fill('Je veux voir les jeux');
