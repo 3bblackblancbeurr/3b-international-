@@ -1,7 +1,7 @@
 // Presentation derives from the current canonical objective. Opening a clue
 // never collects it; the engine still validates position, order and choices.
-export function franceFieldInteraction(current,position,objective){
- if(!current?.staging||current.region!=='france'||current.finished||current.objective!==objective)return null;
+export function localCampaignInteraction(current,position,objective){
+ if(!current?.staging||!['france','algerie','maroc','tunisie','espagne','italie','turquie','estonie'].includes(current.region)||current.finished||current.objective!==objective)return null;
  const point=current.target;
  if(![position?.x,position?.z,point?.x,point?.z].every(Number.isFinite))return null;
  // A running relay has two real contact points. Keep the first plateau's
@@ -15,6 +15,10 @@ export function franceFieldInteraction(current,position,objective){
   clue:current.staging.clue,actionLabel:current.staging.actionLabel,
   operation:current.mode==='rebuild'?'repair':'interact',ready:current.actionReady!==false,
   message:current.instruction!==current.dialogue?current.instruction:null};
+}
+
+export function franceFieldInteraction(current,position,objective){
+ return current?.region==='france'?localCampaignInteraction(current,position,objective):null;
 }
 
 export const FRANCE_EVIDENCE_LABELS=Object.freeze({
