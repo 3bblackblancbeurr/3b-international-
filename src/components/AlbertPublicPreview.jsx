@@ -3,17 +3,19 @@ import {useEffect,useRef,useState} from 'react';
 import {ArrowLeft,ArrowRight,AudioLines,BookOpen,CalendarDays,Compass,Gamepad2,Globe2,HeartPulse,Home,Mic,MicOff,Plane,Send,ShieldCheck,ShoppingBag,Sparkles,UserRound,Volume2,VolumeX,MessageCircle,X} from 'lucide-react';
 import {RouteLink} from './AppNavigation.jsx';
 import AlbertDailyTimeline from './AlbertDailyTimeline.jsx';
+import AlbertDayPreview from './AlbertDayPreview.jsx';
 import AlbertHologramAvatar from './AlbertHologramAvatar.jsx';
 import {albertLocalGuideAnswer} from './world-living-data.js';
 import {readAlbertFavoriteModules,WORLD_FAVORITES_KEY} from './albert-favorite-routes.js';
 import '../styles/world-living-home.css';
 import '../styles/immersive-albert-v2.css';
+import '../styles/albert-concierge-v3.css';
 
 const SUGGESTIONS=[
- {label:'Trouver un voyage',query:'voyage',Icon:Plane},
- {label:'Bien-être et recettes',query:'sante',Icon:HeartPulse},
- {label:'Gaming 16-18',query:'gaming',Icon:Gamepad2},
- {label:'Explorer les royaumes',query:'monde du 3b',Icon:Compass},
+ {label:'Voyage 3B',query:'voyage',Icon:Plane,eyebrow:'DÉCOUVRIR LE MONDE',image:'/albert/reco-voyage.webp'},
+ {label:'Santé & cuisine',query:'sante',Icon:HeartPulse,eyebrow:'PRENDRE SOIN DE SOI',image:'/albert/reco-sante.webp'},
+ {label:'Gaming & 16-18',query:'gaming',Icon:Gamepad2,eyebrow:'JOUER ENSEMBLE',image:'/albert/reco-gaming.webp'},
+ {label:'Huit royaumes 3B',query:'monde du 3b',Icon:Compass,eyebrow:'EXPLORER LES HÉRITAGES',image:'/albert/reco-royaumes.webp'},
 ];
 
 
@@ -119,9 +121,9 @@ export default function AlbertPublicPreview({goTo}){
     <details className="th-albert-privacy"><summary><ShieldCheck size={13}/> Confidentialité</summary><p className="albert3b-disclaimer">Ce guide oriente dans les rubriques existantes. Il n’envoie aucune demande à Albert sur ton ordinateur et ne conserve pas tes messages sur un serveur 3B. La reconnaissance vocale peut utiliser un service du navigateur : le clavier reste toujours disponible.</p></details>
    </section>
    <section className="albert3b-curated" hidden={panel!=='discover'} aria-labelledby="albert3b-suggest-title">
-    <div className="albert3b-section-head"><div><span className="world3b-eyebrow">DÉCOUVRIR</span><h2 id="albert3b-suggest-title">Recommandé pour explorer</h2></div></div>
+    <div className="albert3b-section-head"><div><span className="world3b-eyebrow">DÉCOUVRIR · UNIVERS 3B</span><h2 id="albert3b-suggest-title">De nouvelles <em>possibilités.</em></h2><p className="th-albert-reco-clarity">Des idées d’exploration, pas des recommandations basées sur ton dossier personnel.</p></div></div>
     <div className="albert3b-suggestions">
-     {SUGGESTIONS.map(({label,query,Icon})=><Button variant="ghost" type="button" key={query} onClick={()=>ask(query)}><Icon size={25}/><span>{label}</span><ArrowRight size={16}/></Button>)}
+     {SUGGESTIONS.map(({label,query,Icon,eyebrow,image})=><Button variant="ghost" type="button" className="th-albert-reco" key={query} aria-label={'Découvrir : '+label} onClick={()=>ask(query)}><span className="th-albert-reco-visual"><img src={image} alt="" loading="eager" decoding="async"/></span><span className="th-albert-reco-copy"><small>{eyebrow}</small><strong>{label}</strong></span><ArrowRight size={18} aria-hidden="true"/></Button>)}
     </div>
      {favoriteRoutes.length>0&&<section className="albert3b-local-favorites" aria-labelledby="albert3b-favorites-title">
       <div><span className="world3b-eyebrow">VOS CHOIX SUR CET APPAREIL</span><h3 id="albert3b-favorites-title">Mes raccourcis préférés</h3></div>
@@ -130,6 +132,7 @@ export default function AlbertPublicPreview({goTo}){
       </div>
       <p>Ces accès viennent uniquement de tes favoris dans la Carte du Monde 3B. Albert ne lit pas ton Passeport ou tes données Santé.</p>
      </section>}
+    <AlbertDayPreview active={panel==='discover'} onOpen={()=>setPanel('day')}/>
     <div className="albert3b-actual-ai"><AudioLines size={25}/><div><strong>Besoin d’une conversation IA ?</strong><p>Le Mode 3 IA est un espace existant, distinct d’Albert APEX.</p></div><RouteLink goTo={goTo} page="ia-trio">Mode 3 IA <ArrowRight size={16}/></RouteLink></div>
    </section>
    <section className="th-albert-agenda" hidden={panel!=='day'} aria-label="Organiser ma journée">
