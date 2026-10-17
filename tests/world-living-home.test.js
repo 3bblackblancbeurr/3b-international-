@@ -55,6 +55,8 @@ test('Albert public concierge guides to existing routes without pretending local
  assert.match(src,/Mode guide local/);
  assert.match(src,/Albert personnel non connecté/);
  assert.match(src,/SpeechRecognition/);
+ assert.match(src,/ta voix peut être traitée par son fournisseur/,'microphone provider disclosure is explicit');
+ assert.match(src,/reconnaissance vocale peut utiliser un service du navigateur/,'keyboard privacy alternative is stated');
  assert.doesNotMatch(src,/fetch\(['"]http:\/\/127\.0\.0\.1/);
 });
 
