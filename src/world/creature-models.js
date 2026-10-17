@@ -16,7 +16,7 @@ export function creatureRecipe(cardId){
  if(!card||design?.kind!=='spirit'||guardianIdentity(cardId)||!realmAnimals[card.country])return null;
  const named=[[/fennec/i,'fennec'],[/lion/i,'lion'],[/loup|louve/i,'wolf'],[/ours/i,'bear'],[/aigle/i,'eagle'],[/lynx/i,'lynx'],[/taureau/i,'bull']].find(([pattern])=>pattern.test(card.name));
  const animal=named?.[1]||realmAnimals[card.country],palette=worldRealmArt[card.country],silver=/argent|acier/i.test(card.name);
- return Object.freeze({card:card.id,name:card.name,region:card.country,animal,label:animalNames[animal],coat:silver?worldRealmArt.estonie.stone:['bear','bull'].includes(animal)?design.cloth:palette.stone,mane:design.cloth,muzzle:worldArtMaterials.dust,metal:design.trim,eyes:worldArtMaterials.monumentDark,size:animal==='fennec'?.82:animal==='eagle'?.90:animal==='bear'?1.05:1});
+ return Object.freeze({card:card.id,name:card.name,region:card.country,animal,label:animalNames[animal],coat:silver?worldRealmArt.estonie.stone:['bear','bull'].includes(animal)?design.cloth:palette.stone,mane:design.cloth,muzzle:worldArtMaterials.dust,metal:worldArtMaterials.monumentGold,eyes:worldArtMaterials.monumentDark,size:animal==='fennec'?.82:animal==='eagle'?.90:animal==='bear'?1.05:1});
 }
 
 /** One instanced batch per material/primitive. The articulated source nodes
@@ -46,7 +46,7 @@ export function createCreatureActor({card,scale=2,reducedMotion=false}={}){
    part('épaule de l’aile',wing,'coat',side*.27,0,-.03,.42,.14,.36);
    for(let i=0;i<7;i++)part('rémige '+i,wing,i%3?'coat':'mane',side*(.48+i*.13),-.015,-.12-i*.09,.18,.055,.55-i*.025,{ry:-side*(.25+i*.045)});
    const hip=joint('leg:'+side,torso,side*.17,.68,.04),knee=joint('knee:'+side,hip,0,-.28,0);legs.push({hip,knee,side,front:true});
-   part('tarse',hip,'metal',0,-.16,0,.055,.22,.055);part('pied',knee,'metal',0,-.24,.10,.07,.10,.17);
+   part('tarse',hip,'metal',0,-.16,0,.055,.22,.055);part('métatarse',knee,'metal',0,-.13,.035,.04,.18,.04);part('pied',knee,'metal',0,-.24,.10,.07,.10,.17);
    for(let toe=0;toe<3;toe++)part('griffe',knee,'eyes',(toe-1)*.075,-.28,.24,.025,.16,.025,{shape:'cone',rx:Math.PI/2,detail:true});
   }
   const tailJoint=joint('tail',torso,0,.96,-.35);tail.push(tailJoint);
@@ -54,8 +54,8 @@ export function createCreatureActor({card,scale=2,reducedMotion=false}={}){
  }else{
   const bodyWidth=broad?.61:feline?.47:.40,bodyHeight=animal==='bear'?.70:animal==='bull'?.62:.44;
   part('corps',torso,'coat',0,.95,0,bodyWidth,bodyHeight,.88);part('poitrail',torso,'coat',0,1.03,.43,bodyWidth*(animal==='bull'?1.13:1),bodyHeight*1.12,.49);
-  if(animal==='bear')part('garrot',torso,'mane',0,1.35,.22,.53,.43,.57);
-  if(animal==='bull')part('bosse des épaules',torso,'mane',0,1.30,.42,.55,.41,.49);
+  if(animal==='bear')part('garrot',torso,'coat',0,1.35,.22,.53,.43,.57);
+  if(animal==='bull')part('bosse des épaules',torso,'coat',0,1.30,.42,.55,.41,.49);
   part('ventre',torso,'muzzle',0,.78,.08,bodyWidth*.79,bodyHeight*.64,.67);
   const headWidth=animal==='bear'?.43:animal==='bull'?.41:feline?.34:.29,headHeight=animal==='bear'?.39:animal==='bull'?.46:.32;
   if(animal==='lion'){
@@ -64,7 +64,7 @@ export function createCreatureActor({card,scale=2,reducedMotion=false}={}){
   }
   part('crâne',head,'coat',0,0,.01,headWidth,headHeight,animal==='bull'?.42:.37);
   if(animal==='lynx')for(const side of [-1,1])part('favori',head,'muzzle',side*.28,-.06,.10,.21,.18,.26,{rz:side*.35});
-  const muzzleWidth=animal==='bull'?.36:animal==='bear'?.24:feline?.22:.18,muzzleDepth=animal==='bull'?.30:feline?.17:animal==='fennec'?.31:.29;
+  const muzzleWidth=animal==='bull'?.36:animal==='bear'?.24:feline?.22:.18,muzzleDepth=animal==='bull'?.30:animal==='bear'?.20:feline?.17:animal==='fennec'?.31:.29;
   part('museau',head,'muzzle',0,-.09,.31,muzzleWidth,.17,muzzleDepth);part('truffe',head,'eyes',0,-.055,.31+muzzleDepth*.85,muzzleWidth*.53,.075,.065);
   part('mâchoire inférieure',jaw,'muzzle',0,-.045,.16,muzzleWidth*.88,.09,muzzleDepth*.83);
   for(const side of [-1,1]){
@@ -90,7 +90,7 @@ export function createCreatureActor({card,scale=2,reducedMotion=false}={}){
    else{part('patte au sol',knee,'muzzle',0,-.37,.14,thick*1.16,.11,.21);for(const toe of [-1,0,1])part('doigt',knee,'eyes',toe*thick*.58,-.365,.285,.024,.045,.053,{detail:true});}
   }
   const tailJoint=joint('tail',torso,0,1.10,-.78),tailEnd=joint('tail:tip',tailJoint,0,.08,-.47);tail.push(tailJoint,tailEnd);
-  const short=animal==='lynx',slender=['lion','bull'].includes(animal),tailLength=short?.26:slender?.49:.50;
+  const short=['lynx','bear'].includes(animal),slender=['lion','bull'].includes(animal),tailLength=short?.26:slender?.49:.50;
   part('queue',tailJoint,'coat',0,.035,-tailLength*.52,slender?.055:.14,slender?.065:.15,tailLength*.70,{rx:-.12});
   if(!short){part('bout de queue',tailEnd,slender?'mane':'coat',0,.01,-.17,slender?.11:.18,slender?.13:.18,.31,{rx:.16});}
  }
@@ -105,7 +105,7 @@ export function createCreatureActor({card,scale=2,reducedMotion=false}={}){
   object.updateMatrixWorld(true);inverse.copy(form.matrixWorld).invert();
   for(const {mesh,pieces} of batches){let index=0;for(const piece of pieces){if(distance>85&&piece.detail)continue;instanceMatrix.multiplyMatrices(inverse,piece.node.matrixWorld);mesh.setMatrixAt(index++,instanceMatrix);}mesh.count=index;mesh.instanceMatrix.needsUpdate=true;}
  }
- function resetPose(){form.position.set(0,0,0);form.rotation.set(0,0,0);form.scale.set(1,1,1);torso.rotation.set(0,0,0);head.rotation.set(0,lookYaw,0);jaw.rotation.x=0;for(const {hip,knee} of legs){hip.rotation.x=0;knee.rotation.x=0;}for(const {joint,side} of wings)joint.rotation.z=-side*.98;for(const joint of tail)joint.rotation.y=joint.rotation.x=0;}
+ function resetPose(){form.position.set(0,0,0);form.rotation.set(0,0,0);form.scale.set(1,1,1);torso.rotation.set(0,0,0);head.rotation.set(0,lookYaw,0);jaw.rotation.x=0;for(const {hip,knee} of legs){hip.rotation.x=0;knee.rotation.x=0;}for(const {joint,side} of wings)joint.rotation.z=-side*.98;for(let i=0;i<tail.length;i++){tail[i].rotation.y=0;tail[i].rotation.x=animal==='bull'&&i===0?-.70:0;}}
  function update(dt,dx=0,dz=0,travelled=0){
   if(dead)return;dt=THREE.MathUtils.clamp(Number.isFinite(dt)?dt:0,0,.25);clock+=dt;const movement=Number.isFinite(travelled)?Math.max(0,travelled):0,speed=dt>0?movement/dt:0,weight=Math.min(1,speed/Math.max(1,scale*1.3));gait+=(weight-gait)*(1-Math.exp(-dt*10));phase+=movement/Math.max(.01,scale*recipe.size)*4.7;
   if(action!=='Death'&&actionDuration&&clock>=actionAt+actionDuration){action='Idle';actionDuration=0;}
