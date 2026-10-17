@@ -48,6 +48,12 @@ try{
   check('Three contextual real service links '+width,await home.locator('.world3b-editorial-card').count()===3);
   const canvas=home.locator('canvas.world-living-globe-canvas');
   check('Interactive geographic globe '+width,await canvas.isVisible()&&await canvas.evaluate(el=>el.getBoundingClientRect().width>180&&el.getBoundingClientRect().height>180));
+  if(width<720){
+   const pauseButton=home.getByRole('button',{name:'Mettre la rotation de la planète en pause'});
+   await pauseButton.click();
+   check('Globe pause button is physically reachable '+width,await home.getByRole('button',{name:'Relancer la rotation de la planète'}).isVisible());
+   await home.getByRole('button',{name:'Relancer la rotation de la planète'}).click();
+  }
 
   if(width===390){
    // Manual animation preference must stop the canvas completely while it

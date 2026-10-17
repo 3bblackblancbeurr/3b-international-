@@ -322,7 +322,7 @@ html[data-motion="reduced"] .world3b-home *,html[data-motion="reduced"] .albert3
  .world3b-intro-name{display:none}
  .world3b-intro{justify-content:flex-end;min-height:42px;padding:0 2px 9px}
  .world3b-hero{padding-top:22px}
- .world3b-globe-frame{margin:0 auto -27px}
+ .world3b-globe-frame{margin:0 auto 6px}
  .world3b-realm-selector{margin-bottom:12px}
  .albert3b-topmark{display:none}
 }
@@ -414,7 +414,13 @@ html[data-experience-quality="economical"] .albert3b-sculpted-avatar .albert3b-p
   background:transparent;border:0;border-left:2px solid rgba(231,198,142,.52);
   border-radius:var(--3b-world-radius-01);padding:16px 13px 18px 19px
  }
- .world3b-home .world3b-hero{border-color:rgba(227,193,132,.29);box-shadow:var(--3b-world-shadow-07)}
- .world3b-home .world3b-globe-controls{top:28%;gap:5px}
+ .world3b-home .world3b-hero{border-color:rgba(227,193,132,.29);box-shadow:var(--3b-world-shadow-07);padding-top:12px}
+ /* Compact only redundant phone spacing, retaining generous touch controls. */
+ .world3b-home .world3b-hero-head h1{margin-top:6px}
+ .world3b-home .world3b-hero-head p{margin-top:4px;line-height:1.5}
+ .world3b-home .world3b-realm-selector{margin-bottom:4px}
+ .world3b-home .world3b-hero-bottom{row-gap:3px}
+ /* Keep all four actions above the kingdom selector, including at 320/360px. */
+ .world3b-home .world3b-globe-controls{top:6%;gap:5px}
  .world3b-home .world3b-globe-controls .gm-button{width:40px;height:40px;min-width:40px;min-height:40px}
 }
