@@ -45,3 +45,19 @@ Chaque royaume obtient sa propre séquence de démonstration approuvée, avec sc
 
 ## Fait/à faire : règle de communication
 Tout nouveau bilan distingue **codé**, **testé en navigateur**, **mesuré sur téléphone physique**, **publié sous un SHA vérifié** et **final art validé**. Le mot « terminé » ne doit apparaître qu'à l'étape professionnelle effectivement reçue.
+
+## Passe arènes des huit royaumes — 17 octobre 2026
+
+**Défaut reproduit sur captures réelles :** les huit arènes étaient presque identiques, avec sept petites colonnes, des pavés uniformes, un grand vide et peu de détail lisible. Les Gardiens avaient des phases de combat codées mais leur environnement était trop générique.
+
+**Transformation dans le moteur réel :**
+- Chaque royaume reçoit un blason géométrique unique basé sur sa valeur (Justice / liens / noblesse / courage / rythme / reconstruction / repères / branches), gravé dans ses sept piliers et visible sous les pieds du joueur.
+- Sept piliers d'environ 19 mètres, six liaisons monumentales laissant un accès libre, et huit secteurs de pierre ouvragés autour du boss. Aucune nouvelle texture téléchargée, ni éclairage 3D supplémentaire.
+- Les incrustations utilisent la matière partagée et la légère émission déjà existante du moteur en soirée ; aucun nouveau shader, aucune nouvelle collision au sol ni nouvelle boucle de rendu.
+- Les huit territoires ont des palettes cohérentes et les trois phases de boss pilotent désormais directement la réaction de l'aura.
+- Toutes les géométries continuent d'utiliser **un seul tirage de matériau de maçonnerie**, restent dans le budget de sommets mobile, préservent le cercle de combat de 40 mètres et le passage principal.
+- Captures QA à partir de vraies positions des cours, et tests de géométrie / navigation / entrée des pays. Ces captures ne sont **pas** de l'art cinématique final.
+
+**À ne surtout pas déclarer terminé :** les véritables modèles distinctifs du Monstre de l'Oubli et des créatures, l'animation expressive des huit Gardiens, le doublage final, les environnements denses et les scènes jouées de chaque campagne. Ce sont les prochains lots de production artistique.
+
+**CI :** un test d'interface GitHub a présenté une attente anormalement longue sur le clic *Pause et options* après une reprise de sauvegarde, sur Chromium avec GPU logiciel. Le test maintient désormais le rendu privé avant de cliquer réellement (pas de clic forcé), afin de conserver la même vérification de restauration des données sans surcharger le compositeur.

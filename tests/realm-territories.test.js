@@ -35,7 +35,7 @@ test('outer terrain preserves every central interaction and deterministic sector
 test('permanent guardian courts sit on level ground and leave entrances and combat space clear',()=>{
  for(const region of IDS){
   const field=createTerrainField(region,blankSave()),court=realmLayout(region).sites.find(s=>s.kind==='guardianCourt'),obstacles=realmStaticObstacles(region),y=field.height(court.x,court.z),architecture=createRealmArchitecture(region),geometry=architecture.guardianCourt();
-  assert.equal(geometry.userData.clearRadius,40);assert.ok(geometry.attributes.position.count<8000,'Court stays one modest shared draw');assert.ok(geometry.boundingBox.min.y<0&&geometry.boundingBox.max.y<9);
+  assert.equal(geometry.userData.clearRadius,40);assert.ok(geometry.attributes.position.count<8000,'Court stays one modest shared draw');assert.ok(geometry.boundingBox.min.y<0&&geometry.boundingBox.max.y>18&&geometry.boundingBox.max.y<20);
   for(let i=0;i<32;i++){const a=i*Math.PI/16;for(const radius of [0,20,40,51]){const p={x:court.x+Math.sin(a)*radius,z:court.z+Math.cos(a)*radius};assert.ok(Math.abs(field.height(p.x,p.z)-y)<.000001,region+' level court floor');if(radius<=40)assert.ok(!obstacles.some(o=>obstacleDistance(p,o)<.9),region+' open combat floor');}}
   assert.ok(REALM_COURT_COLUMNS.every(p=>obstacles.some(o=>o.id.startsWith(court.id+':column:')&&Math.hypot(o.x-court.x-p.x,o.z-court.z-p.z)<.000001)),'Rendered columns have collision footprints');
   const path=findPath({x:court.x,z:court.z+72},{x:court.x,z:court.z+8},obstacles,field.radius);assert.ok(path.length,region+' usable southern entry');

@@ -157,8 +157,9 @@ try{
   await page.addInitScript(()=>localStorage.setItem('3b-world-quality','fluid'));await page.goto('http://127.0.0.1:5199/__hub-master-qa?account&mode=offline');
   await page.locator('.world-loading').waitFor({state:'hidden',timeout:120000});await page.locator('.hub-save-card-compact').waitFor({timeout:120000});assert.match(await page.locator('.hub-save-card-compact').innerText(),/copie locale reste/);
   await page.evaluate(()=>{qa.mode='ready';window.dispatchEvent(new Event('online'));});await page.locator('.hub-save-card-compact').waitFor({state:'hidden',timeout:30000});
-  // Private render hold keeps the real Pause button stable on software GPU.
-  // The click remains a genuine browser action: no force, no direct DOM dispatch.
+  // SwiftShader can make a real Pause button unstable during a heavy frame.
+  // Suspend only the private QA renderer; keep the genuine Playwright click and
+  // the existing account recovery/security assertions unchanged.
   await page.waitForFunction(()=>!!qa.scene,undefined,{timeout:120000,polling:250});
   await page.evaluate(()=>qa.scene.qaHoldRender());
   try{await page.getByRole('button',{name:'Pause et options',exact:true}).click({timeout:60000});}
