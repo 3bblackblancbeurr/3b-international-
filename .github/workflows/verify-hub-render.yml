@@ -11,6 +11,11 @@ on:
       - 'scripts/verify-world-adaptive-quality-browser.mjs'
       - 'scripts/verify-realm-journey-browser.mjs'
       - 'scripts/verify-france-investigation-browser.mjs'
+      - 'scripts/verify-final-circle-browser.mjs'
+      - 'scripts/verify-realm-field-browser.mjs'
+      - 'scripts/verify-realm-story-art-browser.mjs'
+      - 'scripts/verify-creature-art-browser.mjs'
+      - 'scripts/verify-guardian-mechanic-art-browser.mjs'
       - 'scripts/verify-eight-realms-browser.mjs'
       - 'scripts/verify-route-planner-browser.mjs'
       - '.github/workflows/verify-hub-render.yml'
@@ -75,7 +80,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [gestures, journey, routes, audio, quality, investigation]
+        suite: [gestures, journey, routes, audio, quality, investigation, realm-field, finale, realm-art]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
@@ -105,6 +110,26 @@ jobs:
         run: node scripts/verify-france-investigation-browser.mjs
         env:
           FRANCE_INVESTIGATION_OUT: artifacts/realm-gameplay/investigation
+      - name: Play seven local realm interactions and physical repair choices
+        if: matrix.suite == 'realm-field'
+        run: node scripts/verify-realm-field-browser.mjs
+        env:
+          REALM_FIELD_OUT: artifacts/realm-gameplay/realm-field
+      - name: Play all eight final phases and resume the restored Circle
+        if: matrix.suite == 'finale'
+        run: node scripts/verify-final-circle-browser.mjs
+        env:
+          FINAL_CIRCLE_OUT: artifacts/realm-gameplay/finale
+      - name: Render actual mission props creatures and guardian mechanisms
+        if: matrix.suite == 'realm-art'
+        run: |
+          node scripts/verify-realm-story-art-browser.mjs
+          node scripts/verify-creature-art-browser.mjs
+          node scripts/verify-guardian-mechanic-art-browser.mjs
+        env:
+          REALM_STORY_ART_OUT: artifacts/realm-gameplay/realm-art/missions
+          CREATURE_ART_OUT: artifacts/realm-gameplay/realm-art/creatures
+          GUARDIAN_MECHANIC_ART_OUT: artifacts/realm-gameplay/realm-art/bosses
       - name: Check real WebAudio touch unlock, silence and resume
         if: matrix.suite == 'audio'
         run: node scripts/verify-world-audio-browser.mjs
