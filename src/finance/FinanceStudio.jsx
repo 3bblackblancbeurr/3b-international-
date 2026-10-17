@@ -1,8 +1,10 @@
 import {Button as GoldButton} from '../design-system/index.jsx';
-import React,{useEffect,useMemo,useRef,useState} from 'react';
+import React,{lazy,Suspense,useEffect,useMemo,useRef,useState} from 'react';
 import {ArrowDownLeft,ArrowRight,ArrowRightLeft,ArrowUpRight,Check,ChevronRight,Coins,CreditCard,Download,Eye,EyeOff,FlaskConical,Globe2,History,Landmark,LockKeyhole,Plus,RotateCcw,ShieldCheck,Sparkles,WalletCards,X} from 'lucide-react';
 import {appendDemoOperation,DEMO_ASSETS,DEMO_RATE,DEMO_RECIPIENTS,demoSnapshot,describeDemoEvent,exportDemoCsv,FINANCE_STORAGE_KEY,formatDemoAmount,newDemoLedger,parseDemoAmount,quoteDemoExchange,readDemoLedger,decodeDemoLedger} from './demo-ledger.js';
 import './finance.css';
+import FinanceProjectStudio from './FinanceProjectStudio.jsx';
+const CryptoProjectStudio=lazy(()=>import('./crypto/CryptoProjectStudio.jsx'));
 
 function loadSession(){
   try{return readDemoLedger(window.localStorage);}
@@ -12,6 +14,11 @@ const operationId=()=>globalThis.crypto?.randomUUID?.()||'demo-'+Date.now()+'-'+
 const dates=value=>new Intl.DateTimeFormat('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(value));
 
 export default function FinanceStudio(){
+  const [workspace,setWorkspace]=useState('project');
+  return <div className="finance-workbench"><nav className="finance-workbench-nav" aria-label="Espaces banque et crypto"><GoldButton variant="health" aria-pressed={workspace==='project'} onClick={()=>setWorkspace('project')}><Landmark size={17}/>Atelier projet</GoldButton><GoldButton variant="health" aria-pressed={workspace==='token'} onClick={()=>setWorkspace('token')}><Coins size={17}/>Prototype du token</GoldButton><GoldButton variant="health" aria-pressed={workspace==='demo'} onClick={()=>setWorkspace('demo')}><FlaskConical size={17}/>Tester la démo</GoldButton></nav>{workspace==='project'?<FinanceProjectStudio/>:workspace==='token'?<Suspense fallback={<p className="finance-feedback" role="status">Ouverture de l’atelier du token…</p>}><CryptoProjectStudio/></Suspense>:<FinanceDemo/>}</div>;
+}
+
+function FinanceDemo(){
   const [session,setSession]=useState(loadSession);
   const latest=useRef(session);
   const [tab,setTab]=useState('bank');

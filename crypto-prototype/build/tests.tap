@@ -1,0 +1,118 @@
+TAP version 13
+# Subtest: offline plan encodes exact constructor base units without rounding
+ok 1 - offline plan encodes exact constructor base units without rounding
+  ---
+  duration_ms: 8.5836
+  type: 'test'
+  ...
+# Subtest: supply arithmetic bounds are uint256 and have no decimal multiplication overflow
+ok 2 - supply arithmetic bounds are uint256 and have no decimal multiplication overflow
+  ---
+  duration_ms: 0.4145
+  type: 'test'
+  ...
+# Subtest: invalid deployment parameters are refused before any EVM execution
+ok 3 - invalid deployment parameters are refused before any EVM execution
+  ---
+  duration_ms: 0.4981
+  type: 'test'
+  ...
+# Subtest: constructor plan actually executes in memory and assigns exact supply
+ok 4 - constructor plan actually executes in memory and assigns exact supply
+  ---
+  duration_ms: 65.1365
+  type: 'test'
+  ...
+# Subtest: a production target is a declaration and never enables broadcast
+ok 5 - a production target is a declaration and never enables broadcast
+  ---
+  duration_ms: 13.872
+  type: 'test'
+  ...
+# Subtest: changed constructor, source, network, review or execution fields are rejected before execution
+ok 6 - changed constructor, source, network, review or execution fields are rejected before execution
+  ---
+  duration_ms: 34.7311
+  type: 'test'
+  ...
+# Subtest: constructor assigns exact base units to its recipient, not its caller
+ok 7 - constructor assigns exact base units to its recipient, not its caller
+  ---
+  duration_ms: 102.0258
+  type: 'test'
+  ...
+# Subtest: constructor emits the standard supply Transfer event
+ok 8 - constructor emits the standard supply Transfer event
+  ---
+  duration_ms: 14.3189
+  type: 'test'
+  ...
+# Subtest: normal and zero-value transfers preserve supply and exact balances without a tax
+ok 9 - normal and zero-value transfers preserve supply and exact balances without a tax
+  ---
+  duration_ms: 46.9649
+  type: 'test'
+  ...
+# Subtest: approve and transferFrom consume the exact allowance
+ok 10 - approve and transferFrom consume the exact allowance
+  ---
+  duration_ms: 39.0609
+  type: 'test'
+  ...
+# Subtest: insufficient balance reverts without changing balances or supply
+ok 11 - insufficient balance reverts without changing balances or supply
+  ---
+  duration_ms: 26.1825
+  type: 'test'
+  ...
+# Subtest: insufficient allowance reverts without transferring
+ok 12 - insufficient allowance reverts without transferring
+  ---
+  duration_ms: 20.7879
+  type: 'test'
+  ...
+# Subtest: zero recipient is rejected during construction and transfers
+ok 13 - zero recipient is rejected during construction and transfers
+  ---
+  duration_ms: 11.6895
+  type: 'test'
+  ...
+# Subtest: supply is a parameter: zero is accepted, and no commercial default is embedded
+ok 14 - supply is a parameter: zero is accepted, and no commercial default is embedded
+  ---
+  duration_ms: 15.6585
+  type: 'test'
+  ...
+# Subtest: maximum uint256 supply is accepted exactly with no implicit decimal scaling
+ok 15 - maximum uint256 supply is accepted exactly with no implicit decimal scaling
+  ---
+  duration_ms: 13.8312
+  type: 'test'
+  ...
+# Subtest: only the nine standard ERC-20 metadata and transfer functions are exposed
+ok 16 - only the nine standard ERC-20 metadata and transfer functions are exposed
+  ---
+  duration_ms: 3.9052
+  type: 'test'
+  ...
+# Subtest: mint, burn, admin, upgrade, pause and tax selectors are not callable
+ok 17 - mint, burn, admin, upgrade, pause and tax selectors are not callable
+  ---
+  duration_ms: 21.01
+  type: 'test'
+  ...
+# Subtest: a sequence of transfers conserves total supply and the sum of holder balances
+ok 18 - a sequence of transfers conserves total supply and the sum of holder balances
+  ---
+  duration_ms: 196.711
+  type: 'test'
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1314.0054

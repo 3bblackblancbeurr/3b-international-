@@ -1,4 +1,5 @@
-import {availableProviders,normalizeConversation,automaticReply} from './ai-router.js';
+import {aiCapabilities} from './ai-capabilities.js';
+import {chatReply,ChatFailure} from './ai-chat.js';
 import {createClient} from 'npm:@supabase/supabase-js@2.116.0';
 import {fetchSports} from './sports.js';
 import {validateDesign,textilePrompt} from './studio.js';
@@ -11,7 +12,7 @@ const rooms=['general','atelier','sport'];
 const RULES_VERSION='2026-09-v1';
 class Failure extends Error{constructor(public status:number,message:string){super(message);}}
 const env=(key:string)=>Deno.env.get(key)||'';
-const capability=()=>{const enabled=env('AI_ENABLED')==='true';return{image:enabled&&!!env('OPENAI_API_KEY')&&!!env('OPENAI_IMAGE_MODEL'),gpt:enabled&&!!env('OPENAI_API_KEY')&&!!env('OPENAI_CHAT_MODEL'),claude:enabled&&!!env('ANTHROPIC_API_KEY')&&!!env('ANTHROPIC_CHAT_MODEL'),gemini:enabled&&!!env('GEMINI_API_KEY')&&!!env('GEMINI_CHAT_MODEL')};};
+const capability=()=>aiCapabilities(env);
 const text=(value:unknown,min:number,max:number)=>{if(typeof value!=='string')throw new Failure(400,'Texte invalide.');const s=value.trim();if(s.length<min||s.length>max||/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(s))throw new Failure(400,'Vérifie la longueur et le contenu du texte.');return s;};
 const uuid=(value:unknown)=>{if(typeof value!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value))throw new Failure(400,'Référence invalide.');return value;};
 const challengeCode=(value:unknown)=>{const s=text(value,3,50);if(!/^[a-z0-9-]+$/.test(s))throw new Failure(400,'Défi invalide.');return s;};
@@ -74,13 +75,6 @@ async function signAssets(posts:any[]){return await Promise.all(posts.map(async 
 async function participating(uid:string){const p=check(await admin.from('community_profiles').select('*').eq('user_id',uid).maybeSingle());if(!p?.listed||p.rules_version!==RULES_VERSION||!p.rules_accepted_at)throw new Failure(403,'Active ton profil et accepte les règles du collectif pour participer.');return p;}
 async function visiblePost(client:any,id:string){const p=check(await client.from('community_posts').select('id,author_id').eq('id',id).maybeSingle());if(!p)throw new Failure(404,'Cette publication n’est plus disponible.');return p;}
 async function providerFetch(url:string,headers:Record<string,string>,body:unknown,timeout=35000){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json',...headers},body:JSON.stringify(body),signal:AbortSignal.timeout(timeout)});if(!r.ok)throw new Failure(503,'Le fournisseur IA est momentanément indisponible.');return await r.json();}
-async function aiReply(provider:string,messages:any[]){
- const instruction='Tu es l’assistant créatif de 3B International. Réponds en français, de façon claire et utile. Ne prétends jamais avoir exécuté une action externe ni consulté des données en direct sans outil.';
- if(provider==='gpt'){const r=await providerFetch('https://api.openai.com/v1/responses',{Authorization:'Bearer '+env('OPENAI_API_KEY')},{model:env('OPENAI_CHAT_MODEL'),instructions:instruction,input:messages,max_output_tokens:1600,store:false});return r.output?.flatMap((o:any)=>o.content||[]).filter((c:any)=>c.type==='output_text').map((c:any)=>c.text).join('\n')||'Aucune réponse textuelle reçue.';}
- if(provider==='claude'){const r=await providerFetch('https://api.anthropic.com/v1/messages',{'x-api-key':env('ANTHROPIC_API_KEY'),'anthropic-version':'2023-06-01'},{model:env('ANTHROPIC_CHAT_MODEL'),system:instruction,messages,max_tokens:1600});return r.content?.filter((c:any)=>c.type==='text').map((c:any)=>c.text).join('\n')||'Aucune réponse textuelle reçue.';}
- const model=env('GEMINI_CHAT_MODEL');if(!/^[a-zA-Z0-9._-]+$/.test(model))throw new Failure(503,'Modèle Gemini non configuré.');
- const r=await providerFetch('https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent',{'x-goog-api-key':env('GEMINI_API_KEY')},{systemInstruction:{parts:[{text:instruction}]},contents:messages.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]})),generationConfig:{maxOutputTokens:1600}});return r.candidates?.[0]?.content?.parts?.map((p:any)=>p.text||'').join('\n')||'Aucune réponse textuelle reçue.';
-}
 Deno.serve(async req=>{
  const origin=req.headers.get('origin')||'';
  const headers={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Vary':'Origin','Access-Control-Allow-Headers':'authorization,apikey,content-type,x-client-info','Access-Control-Allow-Methods':'GET,POST,OPTIONS',...(ORIGINS.has(origin)?{'Access-Control-Allow-Origin':origin}:{})};
@@ -174,10 +168,8 @@ Deno.serve(async req=>{
    const report=check(await admin.from('community_reports').select('*').eq('id',uuid(body.id)).single());if(body.hide===true)check(await admin.from(report.kind==='chat'?'community_chat':'community_posts').update({status:'hidden'}).eq('id',report.target_id));check(await admin.from('community_reports').update({status:'resolved'}).eq('id',report.id));return reply({ok:true});
   }
   if(action==='chat-ai'){
-   const caps=capability();if(!availableProviders(caps).length)throw new Failure(503,'Les services IA ne sont pas encore activés.');
-   let messages;try{messages=normalizeConversation(body.messages);}catch(e){throw new Failure(400,e.message);}
-   await rate(uid,'ai-chat',20,86400);await rate('global','ai-chat',100,86400);
-   try{return reply(await automaticReply(caps,messages,aiReply));}catch(e){throw new Failure(503,e.message);}
+   try{return reply(await chatReply({uid,body,env,rate,signal:req.signal}));}
+   catch(error){if(error instanceof ChatFailure)throw new Failure(error.status,error.message);if(error instanceof Failure)throw error;throw new Failure(503,'Les services IA sont momentanément indisponibles. Réessaie plus tard.');}
   }
   if(action==='generate'){
    if(!capability().image)throw new Failure(503,'La génération IA n’est pas encore activée. Ton configurateur reste disponible.');

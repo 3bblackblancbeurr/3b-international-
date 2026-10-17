@@ -10,7 +10,7 @@ export const MEMBER_SPACES = Object.freeze([
   { id:'news', name:'Le monde en direct', eyebrow:'ACTUALITÉS & ÉVÉNEMENTS', tagline:'Ouvre une fenêtre sur le monde.', icon:'globe', hint:'Sources identifiées, actualité externe.' },
   { id:'association', name:'Association 3B', eyebrow:'CONSTRUIRE ENSEMBLE', tagline:'Une cause. Des rencontres. Des actions.', icon:'heart', hint:'Prépare et suis ton initiative sur cet appareil.' },
   { id:'partners', name:'Partenaires', eyebrow:'COLLABORATIONS', tagline:'Faire grandir les idées ensemble.', icon:'handshake', hint:'Construis ta proposition et garde le fil des échanges.' },
-  { id:'finance', name:'Banque & crypto', eyebrow:'LE LABORATOIRE FINANCIER', tagline:'Garder le contrôle de ses choix.', icon:'landmark', hint:'Portefeuille et opérations en simulation, avec unités fictives.' },
+  { id:'finance', name:'Banque & crypto', eyebrow:'CONSTRUIRE LE PROJET FINANCIER', tagline:'De l’ambition à un projet documenté.', icon:'landmark', hint:'Atelier projet, trésorerie, financements et prototype du token. Démo séparée.' },
   { id:'travel', name:'Voyage 3B', eyebrow:'EXPLORER LE MONDE', tagline:'Le monde est plus grand qu’un écran.', icon:'plane', hint:'Tes destinations, tes étapes et ton budget prévisionnel.' },
   { id:'join', name:'Nous recherchons', eyebrow:'REJOINDRE L’AVENTURE', tagline:'Chaque talent change quelque chose.', icon:'users', hint:'Prépare une proposition de participation à ton rythme.' },
   { id:'tv', name:'3B Origins TV', eyebrow:'CRÉATION ORIGINALE', tagline:'Des histoires qui prennent vie.', icon:'tv', hint:'Neuf récits audio, textes et progression locale.' },
