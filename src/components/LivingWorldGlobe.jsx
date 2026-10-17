@@ -45,11 +45,12 @@ export default function LivingWorldGlobe({selectedId='france',onSelect,zoom=1,on
   let width=320,raf=0,last=0,visible=true,menuOpen=false,active=true;
   const media=window.matchMedia?.('(prefers-reduced-motion: reduce)');
   const coarsePointer=window.matchMedia?.('(pointer: coarse)');
-  const reduced=()=>media?.matches||document.documentElement.dataset.motion==='reduced';
-  const frameInterval=()=>coarsePointer?.matches||width<=720?48:34;
+  const reduced=()=>media?.matches||document.documentElement.dataset.motion==='reduced'||document.documentElement.dataset.experienceMotion==='reduced';
+  const economical=()=>document.documentElement.dataset.experienceQuality==='economical';
+  const frameInterval=()=>economical()?80:(coarsePointer?.matches||width<=720?48:34);
   function resize(){
    width=Math.max(190,Math.min(660,Math.round(canvas.parentElement?.getBoundingClientRect().width||canvas.getBoundingClientRect().width||320)));
-   const dpr=Math.min(window.devicePixelRatio||1,(coarsePointer?.matches||width<=720)?1.25:1.5);
+   const dpr=Math.min(window.devicePixelRatio||1,economical()?1:(coarsePointer?.matches||width<=720)?1.25:1.5);
    const target=Math.round(width*dpr);
    if(canvas.width!==target||canvas.height!==target){canvas.width=target;canvas.height=target;}
    canvas.style.width=width+'px';canvas.style.height=width+'px';
@@ -117,7 +118,7 @@ export default function LivingWorldGlobe({selectedId='france',onSelect,zoom=1,on
    }
    for(const dot of dots){
     const selected=dot.id===state.selectedId;
-    ctx.beginPath();ctx.arc(dot.x,dot.y,selected?7:4.4,0,TAU);ctx.fillStyle=selected?worldLivingCanvasPalette.tffe5a8:worldLivingCanvasPalette.t66c7ff;ctx.shadowColor=selected?worldLivingCanvasPalette.tf2b94b:worldLivingCanvasPalette.t0a9afa;ctx.shadowBlur=selected?17:9;ctx.fill();ctx.shadowBlur=0;
+    ctx.beginPath();ctx.arc(dot.x,dot.y,selected?7:4.4,0,TAU);ctx.fillStyle=selected?worldLivingCanvasPalette.tffe5a8:worldLivingCanvasPalette.t66c7ff;ctx.shadowColor=selected?worldLivingCanvasPalette.tf2b94b:worldLivingCanvasPalette.t0a9afa;ctx.shadowBlur=economical()?0:(selected?17:9);ctx.fill();ctx.shadowBlur=0;
     if(selected){ctx.beginPath();ctx.arc(dot.x,dot.y,13,0,TAU);ctx.strokeStyle=worldLivingCanvasPalette.tf8d393;ctx.lineWidth=1.8;ctx.stroke();}
    }
    ctx.restore();
@@ -143,11 +144,11 @@ export default function LivingWorldGlobe({selectedId='france',onSelect,zoom=1,on
   state.refresh=refresh;
   const onVisibility=()=>{if(!document.hidden)draw();refresh();};
   const onMenu=event=>{menuOpen=!!event.detail?.open;if(!menuOpen)draw();refresh();};
-  const onMedia=()=>{draw();refresh();};
+  const onMedia=()=>{resize();refresh();};
   const observer=typeof IntersectionObserver!=='undefined'?new IntersectionObserver(entries=>{visible=!!entries[0]?.isIntersecting;if(visible)draw();refresh();},{threshold:.05}):null;
   observer?.observe(canvas);
   const motionObserver=typeof MutationObserver!=='undefined'?new MutationObserver(onMedia):null;
-  motionObserver?.observe(document.documentElement,{attributes:true,attributeFilter:['data-motion']});
+  motionObserver?.observe(document.documentElement,{attributes:true,attributeFilter:['data-motion','data-experience-motion','data-experience-quality']});
   media?.addEventListener?.('change',onMedia);
   const resizeObserver=typeof ResizeObserver!=='undefined'?new ResizeObserver(resize):null;
   resizeObserver?.observe(canvas.parentElement||canvas);
