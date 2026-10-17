@@ -759,7 +759,7 @@ function hubNpcAvatar(item){
    const acceptedPhase=combatActive&&!encounter?.result&&!encounter?.pact?encounter?.field?.phase:null;
    if(object.userData.guardianIdentity)a.controller.setGuardianAnticipation?.(acceptedPhase==='windup');
    a.combatPhase=acceptedPhase;
-   a.aura?.tick(elapsed,{liberated:save.seals.includes(a.country),phase:combatActive?bossPresentation?.index||1:1,cinematic:shotActive});
+   a.aura?.tick(elapsed,{liberated:save.seals.includes(a.country),phase:combatActive?bossPresentation?.index||1:1,cinematic:shotActive,threat:combatActive&&acceptedPhase==='windup'});
    const movement=object.position.distanceTo(previous);a.controller.update(dt,object.position.x-previous.x,object.position.z-previous.z,movement);
    if(active){if(combatActive){const d=Math.hypot(position.x-ax,position.z-az)||1,response=lastCombat?.counter?retaliation:0;object.position.x+=(position.x-ax)/d*response*.9;object.position.z+=(position.z-az)/d*response*.9;object.rotation.y=Math.atan2(position.x-ax,position.z-az);object.rotation.z=lastCombat?.outgoing?impact*.06:0;}else{object.rotation.y=Math.atan2(camera.position.x-ax,camera.position.z-az);object.rotation.z=0;}}else object.rotation.z=0;
   }
