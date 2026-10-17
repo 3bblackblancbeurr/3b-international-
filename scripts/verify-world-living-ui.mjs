@@ -70,6 +70,9 @@ try{
    });
    check('Realm cards keep grid layout on phone '+width,realmLayout.display==='grid');
    check('Realm value and guardian stay inside card '+width,realmLayout.noteRight<=realmLayout.cardRight+1&&realmLayout.noteBottom<=realmLayout.cardBottom+1);
+   const cinema=home.locator('.world3b-cinema-spotlight');
+   check('Cinematic kingdom spotlight visible '+width,await cinema.isVisible());
+   check('Eight cinematic realm selectors '+width,await cinema.getByRole('button',{name:/Choisir /}).count()===8);
   }
   if(width<720){
    const globeBudget=await canvas.evaluate(el=>{const box=el.getBoundingClientRect(),style=getComputedStyle(el);return {bitmapWidth:el.width,cssWidth:box.width,touchAction:style.touchAction,display:style.display,filter:style.filter};});
@@ -94,6 +97,11 @@ try{
   if(width===390){
    await home.getByRole('button',{name:'Maroc Noblesse · Naël'}).click();
    check('Selecting a realm changes visible globe context',await home.locator('.world3b-realm-current').innerText().then(t=>t.includes('Maroc')));
+   check('Realm spotlight synchronizes with the globe',await home.locator('.world3b-cinema-spotlight').getAttribute('data-realm').then(r=>r==='maroc'));
+   await home.getByRole('button',{name:'Opportunités',exact:true}).first().click();
+   check('Selected tab has three actionable editorial routes',await home.locator('.world3b-editorial-card').count()===3);
+   check('Recruitment opportunity points to the real page',await home.locator('.world3b-editorial-card').filter({hasText:'Nous recherchons'}).count()===1);
+   await home.getByRole('button',{name:'Monde',exact:true}).first().click();
    await home.locator('#world3b-search').fill('sante');
    check('Search removes accents',await home.locator('.world3b-universe-link').count()===1);
    await home.locator('#world3b-search').fill('scanner');
@@ -122,6 +130,23 @@ try{
    await page.getByRole('button',{name:'Envoyer ma question'}).click();
    check('Local assistant links to real games route',await page.locator('.albert3b-reply-link').last().getAttribute('href').then(h=>h.includes('#jeux')));
    check('Albert clearly describes disconnected PC mode',await page.locator('.albert3b-status').innerText().then(t=>t.includes('non connecté')));
+   const planner=page.locator('.albert3b-daily');
+   check('Albert daily planner is visible',await planner.isVisible());
+   await planner.getByRole('button',{name:/Ajouter à ma journée : Prendre soin de moi/}).click();
+   check('Suggested private activity is added',await planner.locator('.albert3b-daily-item').count()===1);
+   await planner.getByRole('button',{name:/Terminer : Prendre soin de moi/}).click();
+   check('Timeline updates completion progress',await planner.getByRole('progressbar').getAttribute('aria-valuenow')==='1');
+   await planner.getByRole('button',{name:'Créer mon activité'}).click();
+   await planner.locator('#albert3b-daily-title-input').fill('Explorer la communauté');
+   await planner.locator('#albert3b-daily-time').fill('17:20');
+   await planner.locator('#albert3b-daily-route').selectOption('community');
+   await planner.getByRole('button',{name:'Ajouter à ma journée',exact:true}).click();
+   check('Custom activity added with chosen time',await planner.locator('.albert3b-daily-item').count()===2);
+   check('Planner deep-links into the real community route',await planner.locator('.albert3b-daily-open[href*="communaute"]').count()===1);
+   await page.reload();await page.locator('.albert3b-daily').waitFor({state:'visible'});
+   check('Local daily plan survives page reload',await page.locator('.albert3b-daily-item').count()===2);
+   await page.getByRole('button',{name:/Supprimer : Explorer la communauté/}).click();
+   check('User can remove personal activity',await page.locator('.albert3b-daily-item').count()===1);
   }
   await ctx.close();
  }
