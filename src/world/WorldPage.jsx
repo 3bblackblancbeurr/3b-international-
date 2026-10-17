@@ -132,7 +132,7 @@ function WorldSession({uid,goTo}){
  saveRef.current=save;
  const fieldInvestigation=fieldCampaignSnapshot(save);
  useEffect(()=>{
-  if(investigationId&&!localCampaignInteraction(fieldInvestigation,snapshot.position,investigationId)){
+  if(investigationId&&!localCampaignInteraction(fieldInvestigation,scene.current?.snapshotPosition?.()||snapshot.position,investigationId)){
    setInvestigationId(null);
    if(!panel&&!cityOpen&&!storyCinematic)canvas.current?.focus({preventScroll:true});
   }
@@ -473,7 +473,7 @@ function WorldSession({uid,goTo}){
   {soundCaptions&&soundCaption&&<div className="world-sound-caption" role="status" aria-live="polite">{soundCaption}</div>}
   {(!loaded||assetsLoading)&&!error&&<div className="world-loading" role="status">Préparation de ton voyage…</div>}
   {error&&<Modal title="Reprendre l’exploration" kind="failure" onClose={()=>goTo('home')}><div className="hub-recovery" role="alert"><p>{error}</p><div className="world-actions"><Button className="world-primary" onClick={()=>location.reload()}>Réessayer</Button>{uid&&<Button variant="neutral" onClick={()=>goTo('member')}>Me reconnecter</Button>}<Button variant="neutral" onClick={()=>goTo('home')}>Retour à l’application</Button></div></div></Modal>}
-  {!panel&&!storyCinematic&&!cityOpen&&!error&&!touchEdit&&loaded&&!assetsLoading&&investigationId&&<FranceFieldInteraction current={fieldInvestigation} position={snapshot.position} objective={investigationId} onAction={runCampaign} onClose={()=>{setInvestigationId(null);canvas.current?.focus({preventScroll:true});}} onNavigate={navigate} onCompanionGuard={guardCompanion}/>}
+  {!panel&&!storyCinematic&&!cityOpen&&!error&&!touchEdit&&loaded&&!assetsLoading&&investigationId&&<FranceFieldInteraction current={fieldInvestigation} position={scene.current?.snapshotPosition?.()||snapshot.position} objective={investigationId} onAction={runCampaign} onClose={()=>{setInvestigationId(null);canvas.current?.focus({preventScroll:true});}} onNavigate={navigate} onCompanionGuard={guardCompanion}/>}
   {fieldCombat&&<FieldEncounter save={save} act={act} onRetreat={finishEncounter} onPause={()=>setPanel('encounterPause')} snapshot={snapshot} controls={controls} onJump={()=>playAction('jump')} onFieldAction={kind=>scene.current?.combatAction(kind)}/>}
   {!panel&&snapshot.lifeInteraction&&<div className="hub-life-reading" role="status"><strong>{snapshot.lifeInteraction.title}</strong><p>{snapshot.lifeInteraction.detail}</p><span>{snapshot.lifeInteraction.caption}</span><button onClick={()=>scene.current?.endLifeInteraction?.()}>Reprendre la marche</button></div>}
   {!panel&&snapshot.region==='hub'&&snapshot.interior&&<div className="hub-place">{snapshot.towerFloor?.name||regionItems.find(i=>i.buildingId===snapshot.interior)?.name||'Lieu de la cité'}</div>}

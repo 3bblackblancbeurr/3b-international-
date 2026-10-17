@@ -16,16 +16,31 @@ if(process.env.FRANCE_INVESTIGATION_DEBUG)fixture=fixture.replace('function inje
 const cases=String.raw`
 const report=[];
 async function hud(page,callback){await page.evaluate(()=>qa.scene.qaHoldRender());try{return await callback();}finally{await page.evaluate(()=>qa.scene.qaResumeCapture());}}
-async function dismissStory(page){
- const story=page.locator('.world-cinematic-director'),deadline=Date.now()+60000;
+async function dismissStory(page,deadline=Date.now()+60000){
+ const story=page.locator('.world-cinematic-director');
  while(await story.isVisible()){
   if(Date.now()>=deadline)throw Error('The story overlay did not release the world within 60 seconds.');
-  try{await hud(page,()=>story.getByRole('button',{name:'Passer',exact:true}).click({timeout:2000}));}
+  try{await hud(page,()=>story.getByRole('button',{name:'Passer',exact:true}).click({timeout:Math.max(1,Math.min(2000,deadline-Date.now()))}));}
   catch(error){
    // A timed story may finish while Playwright checks the button's stability.
    // Its natural disappearance already satisfies the requested dismissal.
    if(error.name!=='TimeoutError')throw error;
    if(!await story.isVisible())return;
+  }
+ }
+}
+async function clickFranceContact(page){
+ const story=page.locator('.world-cinematic-director'),deadline=Date.now()+60000;
+ while(true){
+  await dismissStory(page,deadline);
+  if(Date.now()>=deadline)throw Error('The story queue did not release the contact within 60 seconds.');
+  try{return await hud(page,()=>page.locator('.play-interaction').click({timeout:Math.max(1,Math.min(15000,deadline-Date.now()))}));}
+  catch(error){
+   // A queued power shot may mount after the hidden check. Keep its real
+   // pointer interception, release the render hold, then dismiss/finish it.
+   const intercepted=error.name==='TimeoutError'&&String(error.message).includes('world-cinematic-director')&&String(error.message).includes('intercepts pointer events');
+   if(!intercepted||Date.now()>=deadline)throw error;
+   if(await story.isVisible())await dismissStory(page,deadline);
   }
  }
 }
@@ -56,17 +71,19 @@ try{
    const card=page.getByRole('complementary',{name:'Enquête sur place',exact:true});
    let firstInteraction=true;
    async function openCurrent(){
-    await page.evaluate(async()=>{
+    const expected=await page.evaluate(async()=>{
      const {campaignSnapshot}=await import('/src/world/campaign-runtime.js'),current=campaignSnapshot(qa.state());
      qa.scene.relocateRealm({region:'france',...current.target});qa.scene.skipCinematic();
+     return{objective:current.objective,target:current.target};
     });
-    await page.waitForFunction(()=>{const c=qa.snapshot?.campaign,p=qa.snapshot?.position;return c&&p&&Math.hypot(c.target.x-p.x,c.target.z-p.z)<1;},undefined,{timeout:60000});
+    await page.waitForFunction(expected=>{const c=qa.snapshot?.campaign,p=qa.snapshot?.position;return qa.snapshot?.region==='france'&&c?.objective===expected.objective&&p&&Math.hypot(expected.target.x-p.x,expected.target.z-p.z)<1;},expected,{timeout:60000,polling:100});
     await dismissStory(page);
     await page.locator('.world-cinematic-director').waitFor({state:'hidden',timeout:60000});
     // First interaction exercises the keyboard. Later contacts use the actual
-    // HUD button: Playwright waits for queued story overlays to release it.
+    // HUD button after queued stories release it. Suspend new WebGL submissions
+    // while the native button receives Playwright's real stability/hit checks.
     if(firstInteraction){await page.locator('.world-canvas').focus();await page.keyboard.press('e');firstInteraction=false;}
-    else await page.locator('.play-interaction').click();
+    else await clickFranceContact(page);
     await card.waitFor({state:'visible'});console.log(profile.id+': opened '+await card.locator('h3').innerText());
     assert.equal(await page.getByRole('dialog').count(),0,'inspection stays in the running world');
     assert.equal(await page.evaluate(()=>qa.scene.qaGuidanceState().paused),false,'walking and camera remain available');
