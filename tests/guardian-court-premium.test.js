@@ -32,7 +32,7 @@ test('each arena has eight inscriptions but still shares a single mobile masonry
   try{
    assert.equal(geometry.userData.art.name,GUARDIAN_COURT_ART[region].name);
    assert.equal(geometry.userData.art.symbol,GUARDIAN_COURT_ART[region].symbol);
-   assert.equal(geometry.userData.art.inscriptionParts,120,'7 carved pillars, 6 overhead portal spans and 8 ring inscriptions in one draw');
+   assert.equal(geometry.userData.art.inscriptionParts,147,'Seven fluted pillars and carved bridge spandrels join the original inlays in one draw');
    assert.equal(geometry.userData.clearRadius,40,'mechanics stay in the identical 40m combat court');
    assert.equal(geometry.userData.columnRadius,47);
    assert.ok(geometry.attributes.position.count<8000,'new work stays below prior strict 8000 vertex budget');

@@ -61,3 +61,11 @@ Tout nouveau bilan distingue **codé**, **testé en navigateur**, **mesuré sur 
 **À ne surtout pas déclarer terminé :** les véritables modèles distinctifs du Monstre de l'Oubli et des créatures, l'animation expressive des huit Gardiens, le doublage final, les environnements denses et les scènes jouées de chaque campagne. Ce sont les prochains lots de production artistique.
 
 **CI :** un test d'interface GitHub a présenté une attente anormalement longue sur le clic *Pause et options* après une reprise de sauvegarde, sur Chromium avec GPU logiciel. Le test maintient désormais le rendu privé avant de cliquer réellement (pas de clic forcé), afin de conserver la même vérification de restauration des données sans surcharger le compositeur.
+
+## Nouvelle passe scènes de France — objets physiques de l'enquête
+- Les quatre étapes `rumor`, `evidence`, `coordination` et `post` affichent maintenant quatre pièces 3D distinctes : registre à témoignages, folio d'archives et sceaux, balance des deux plateaux, dossier signé.
+- Leur forme change lorsque le **moteur de campagne** avance sur un marqueur déjà affiché ; les ressources anciennes sont libérées, sans modifier la preuve, l'inventaire ou la sauvegarde.
+- Trois lots de matériaux par objet, sans nouvelle texture réseau, avec un test des quatre modèles en vrai navigateur WebGL et captures locales.
+- Les colonnes des Gardiens reçoivent des flûtages verticaux et détails d'arches, **27 éléments intégrés dans le seul maillage existant**, soit 7 893 sommets et 4 356 triangles par cour : en dessous des limites testées (8 000/5 000).
+- Validation locale : 13/13 tests ciblés (y compris non-régression du livre d'origine), contrôle de cohérence artistique réussi, rendu navigateur France et Maroc après enrichissement géométrique réussi.
+- **Limite explicite** : ces props ne remplacent pas la mission entièrement jouée en 3D. Leur qualité est encore stylisée, pas finale, et le Samsung S21 doit encore subir un test de sprint prolongé.

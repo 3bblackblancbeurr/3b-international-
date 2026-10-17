@@ -56,6 +56,9 @@ export function addGuardianCourtArt(region,{columns,box}){
    paint(color,p.x+cos*x-sin*front,y,p.z-sin*x-cos*front,w,h,.068,angle);
   };
   place(0,4.25,1.18,.19,highlight);
+  // Two tall fluted inlays replace a blank pillar with a monumental rhythm.
+  // These are raised masonry colour accents, merged into the existing draw.
+  for(const side of [-1,1])place(side*.66,8.75,.115,8.8,highlight,1.405);
   for(const [x,dy,w,h] of art.strokes)place(x,10.55+dy,w,h,cloth,1.40);
   // Crown inscription follows the raised 19-metre colonnade.
   place(0,15.57,.89,.11,highlight,1.40);
@@ -71,6 +74,10 @@ export function addGuardianCourtArt(region,{columns,box}){
   paint(stone,middleX,16.68,middleZ,length,1.35,1.9,angle);
   paint(highlight,middleX,17.30,middleZ,length-.7,.16,1.55,angle,.19);
   paint(cloth,middleX,15.48,middleZ,1.85,1.0,.5,angle,.14);
+  // Recessed spandrels give the six real bridges sculptural weight, while
+  // preserving the entire 40 m floor and the southern player entrance.
+  for(const side of [-1,1])paint(highlight,middleX+dx*side*.39,15.7,middleZ+dz*side*.39,.55,1.2,.22,angle,.07);
+  if(i===2)paint(cloth,middleX,17.72,middleZ,2.45,.65,.21,angle,.09);
  }
  // Eight sector markers are physically thin inlaid stone on the already level
  // slab, not gameplay collision, a glowing attack decal, or new dynamic lights.

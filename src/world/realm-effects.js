@@ -80,9 +80,21 @@ export function createRealmMarker(item,{groundY=()=>0,library,reducedMotion=fals
   }
   figure.position.x=-1.4;
  }
- const relic=createStoryRelic(item);if(relic){root.add(relic.root);figure.visible=false;}
+ // The authored artefact changes when the authoritative campaign progresses.
+ // A marker reused across missions must not display yesterday's evidence.
+ let relic=createStoryRelic(item),relicKey=[item.region,item.type,item.campaign?.phaseId].join(':');
+ if(relic){root.add(relic.root);figure.visible=false;}
  let previousTime=0,oldPoint={x:item.x,z:item.z};
- return {root,update(next){Object.assign(item,next);root.position.set(item.x,groundY(item.x,item.z),item.z);},tick(time,position,{reducedMotion=false}={}){
+ return {root,update(next){
+  Object.assign(item,next);
+  const nextKey=[item.region,item.type,item.campaign?.phaseId].join(':');
+  if(nextKey!==relicKey){
+   relic?.dispose();relic=createStoryRelic(item);relicKey=nextKey;
+   if(relic)root.add(relic.root);
+   figure.visible=!relic;
+  }
+  root.position.set(item.x,groundY(item.x,item.z),item.z);
+ },tick(time,position,{reducedMotion=false}={}){
   const dt=Math.min(.1,Math.max(0,time-previousTime));previousTime=time;root.visible=Math.hypot(position.x-item.x,position.z-item.z)<260;if(!root.visible)return;
   figure.rotation.y=reducedMotion?0:time*.2;figure.position.y=1.45+(reducedMotion?0:Math.sin(time*1.1)*.08);
   if(trialBands.length){const challenge=item.campaign;trialMaterial.color.set(challenge?.safe?'#83c6bb':'#c9a569');trialMaterial.opacity=challenge?.started ? .32 : .16;trialBands.forEach(band=>band.visible=challenge?.integrity>0);}
