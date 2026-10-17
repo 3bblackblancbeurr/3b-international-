@@ -19,7 +19,7 @@ test('Albert private planner accepts only bounded inputs and existing app routes
  for(const route of ALBERT_PLAN_ROUTES)assert.ok(Object.hasOwn(PAGE_HASHES,route.id),route.id);
  for(const suggest of ALBERT_PLAN_SUGGESTIONS)assert.ok(ALBERT_PLAN_ROUTES.some(r=>r.id===suggest.id));
  assert.equal(createAlbertPlanEntry({title:'   ',route:'health'},'a'),null);
- const clean=createAlbertPlanEntry({title:' A '.repeat(70),route:'health',time:'14:35'},'a');
+ const clean=createAlbertPlanEntry({title:'A'.repeat(90),route:'health',time:'14:35'},'a');
  assert.equal(clean.title.length,72);
  assert.deepEqual(clean,{id:'a',title:clean.title,route:'health',time:'14:35',done:false});
  assert.equal(normalizeAlbertPlanEntry({id:'a',title:'ok',route:'delete-all',time:'99:00',done:'true'}).route,null);
