@@ -62,7 +62,7 @@ try{
    check('Phone catalog starts as horizontal rail '+width,await catalog.evaluate(el=>getComputedStyle(el).overflowX==='auto'&&el.scrollWidth>el.clientWidth));
    await home.getByRole('button',{name:'Tout afficher'}).click();
    check('One tap reveals all universe tiles '+width,await catalog.evaluate(el=>getComputedStyle(el).display==='grid'));
-   await home.getByRole('button',{name:'Réduire'}).click();
+   await home.locator('.world3b-expand-modules').click();
    check('Compact World catalog can be restored '+width,await catalog.evaluate(el=>getComputedStyle(el).overflowX==='auto'));
   }
   const canvas=home.locator('canvas.world-living-globe-canvas');
