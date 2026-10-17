@@ -124,9 +124,12 @@ test('local APEX JavaScript and Python sources are syntactically valid',()=>{
   fileURLToPath(new URL('../runtime/albert_apex_v2/readiness.py',import.meta.url)),
   fileURLToPath(new URL('../runtime/albert_apex_v2/server.py',import.meta.url))
  ];
+ // Syntax checking does not need a bytecode cache. In-memory compilation also
+ // avoids Windows file locks when other local checks read the same package.
+ const syntaxCheck='import pathlib, sys\nfor name in sys.argv[1:]:\n    compile(pathlib.Path(name).read_bytes(), name, "exec")\n';
  let checked=false,last='';
  for(const executable of (process.platform==='win32'?['python','python3']:['python3','python'])){
-  const result=spawnSync(executable,['-m','py_compile',...pythonFiles],{encoding:'utf8',shell:false});
+  const result=spawnSync(executable,['-c',syntaxCheck,...pythonFiles],{encoding:'utf8',shell:false});
   if(result.error?.code==='ENOENT'){last=String(result.error);continue;}
   checked=true;
   assert.equal(result.status,0,result.stderr||result.stdout);

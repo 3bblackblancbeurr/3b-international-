@@ -1,10 +1,11 @@
-import React,{useMemo,useState} from 'react';
+import React,{useEffect,useMemo,useState} from 'react';
 import {ArrowUpRight,Clapperboard,Film,Search,ShieldCheck} from 'lucide-react';
 import {cinemaSearchLinks} from './cinema-search.js';
 import './cinema-finder.css';
 
-export default function CinemaFinder(){
-  const [query,setQuery]=useState('');
+export default function CinemaFinder({initialQuery=''}){
+  const [query,setQuery]=useState(initialQuery);
+  useEffect(()=>{setQuery(initialQuery);},[initialQuery]);
   const links=useMemo(()=>cinemaSearchLinks(query),[query]);
   return <section className="mx-cinema" aria-labelledby="mx-cinema-heading">
     <header className="mx-cinema-hero">
