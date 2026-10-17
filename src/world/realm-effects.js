@@ -5,6 +5,7 @@ import {campaignPerson} from './journey-presence.js';
 import {createStoryRelic} from './story-relic.js';
 import {createRealmStoryRelic} from './realm-story-relic.js';
 import {realmStoryStaging} from './realm-story-staging.js';
+import {createGuardianMechanicArt} from './guardian-mechanic-art.js';
 
 /** Visualise the authoritative boss state. This object never awards damage,
  * invulnerability, a seal or a new elemental/totem ability. */
@@ -28,6 +29,7 @@ export function createRealmEffects(region,{reducedMotion=false,groundY=()=>0}={}
  const beamMaterial=keep(new THREE.LineBasicMaterial({color:profile.accent,transparent:true,opacity:.65,depthWrite:false}));
  const beams=new THREE.LineSegments(beamGeometry,beamMaterial);beams.frustumCulled=false;root.add(beams);
  const echoes=[];
+ const mechanicArt=createGuardianMechanicArt(region,{reducedMotion});if(mechanicArt)root.add(mechanicArt.root);
  const echoGeometry=keep(new THREE.CapsuleGeometry(.55,2.3,3,7));
  for(let i=0;i<3;i++){const echo=new THREE.Mesh(echoGeometry,spectral);root.add(echo);echoes.push(echo);}
  root.visible=false;
@@ -36,6 +38,7 @@ export function createRealmEffects(region,{reducedMotion=false,groundY=()=>0}={}
   const field=encounter?.field,active=!!encounter?.boss&&!encounter.result;
   root.visible=active||cinematic;if(!root.visible||!player||!focus)return;
   const home=field?.home||focus,base=groundY(home.x,home.z);root.position.set(home.x,base,home.z);
+  mechanicArt?.update(presentation,home);
   const phase=Math.max(1,Math.min(3,presentation?.index||encounter?.phase||1)),pulse=reducedMotion?.5:.5+.5*Math.sin(time*.9);
   glow.opacity=.17+pulse*.12;spectral.opacity=.09+pulse*.07;
   rings[1].rotation.z=reducedMotion?0:time*.07;
@@ -57,7 +60,8 @@ export function createRealmEffects(region,{reducedMotion=false,groundY=()=>0}={}
   }
   root.userData.state={region,phase,signature:region,integrity,shield:encounter?.guardianShield||0,intensity:region==='espagne'?encounter?.guardianMeter||0:0,verified:!!encounter?.guardianFlag,windup:field?.windup||0};
  }
- return {root,tick,dispose(){root.removeFromParent();owned.forEach(resource=>resource.dispose());}};
+ let disposed=false;
+ return {root,tick,dispose(){if(disposed)return;disposed=true;mechanicArt?.dispose();root.removeFromParent();owned.forEach(resource=>resource.dispose());}};
 }
 
 export function createRealmMarker(item,{groundY=()=>0,library,reducedMotion=false,onError}={}){
