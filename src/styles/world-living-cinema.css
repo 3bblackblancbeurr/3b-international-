@@ -1,0 +1,142 @@
+/* 3B World cinematic continuation — uses existing in-repository art and reviewed
+   Gold Master tokens. Pure CSS paint, no extra WebGL contexts or remote images. */
+.world3b-cinema-spotlight{
+ isolation:isolate;position:relative;display:grid;grid-template-columns:minmax(0,1fr) 126px;
+ min-height:380px;margin:24px 0 38px;padding:clamp(23px,4vw,42px);
+ border:1px solid rgba(235,186,115,.52);border-radius:var(--3b-world-radius-02);
+ background:linear-gradient(105deg,rgba(5,14,25,.99),rgba(5,20,35,.86) 65%,rgba(4,23,43,.45));
+ box-shadow:var(--3b-world-shadow-01);overflow:hidden;color:var(--wl-ink)
+}
+.world3b-cinema-spotlight::before{
+ content:'';z-index:0;position:absolute;inset:0;pointer-events:none;
+ background:radial-gradient(ellipse at 79% 52%,rgba(30,132,197,.26),transparent 49%),
+  linear-gradient(110deg,rgba(2,10,20,.93) 5%,rgba(3,12,24,.79) 50%,rgba(2,10,20,.18) 95%)
+}
+.world3b-cinema-spotlight::after{
+ content:'';z-index:0;position:absolute;inset:0;pointer-events:none;
+ background:linear-gradient(0deg,rgba(1,10,18,.88),transparent 32%),
+ radial-gradient(ellipse at 20% 5%,rgba(243,189,101,.14),transparent 52%)
+}
+.world3b-cinema-image{position:absolute;z-index:-1;inset:0;overflow:hidden}
+.world3b-cinema-image img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 43%;opacity:.55;transform:scale(1.04)}
+.world3b-cinema-horizon{position:absolute;inset:36% 0 0;background:linear-gradient(0deg,rgba(5,12,19,.76),transparent 60%),
+ radial-gradient(ellipse at 70% 90%,rgba(247,192,101,.34),transparent 65%)}
+.world3b-cinema-copy{position:relative;z-index:2;min-width:0;max-width:760px}
+.world3b-cinema-overline{display:flex;align-items:center;flex-wrap:wrap;gap:9px;
+ font-size:10px;font-weight:900;letter-spacing:.16em;color:var(--wl-gold-bright)}
+.world3b-cinema-overline>svg{color:var(--wl-gold)}
+.world3b-cinema-count{display:inline-flex;margin-left:10px;align-items:center;
+ padding:5px 10px;border:1px solid rgba(240,194,129,.5);border-radius:var(--3b-world-radius-01);
+ background:rgba(3,17,31,.7);color:var(--wl-gold-bright);font-variant-numeric:tabular-nums;letter-spacing:.08em}
+.world3b-cinema-flag{display:block;font-size:27px;margin-top:12px}
+.world3b-cinema-copy h2{font:600 clamp(38px,5.5vw,68px)/1.04 Georgia,'Times New Roman',serif;
+ letter-spacing:-.045em;color:var(--wl-gold-bright);margin:4px 0 14px;
+ text-shadow:0 3px 18px rgba(0,0,0,.72)}
+.world3b-cinema-copy h2 span{display:block;margin-top:6px;font:500 clamp(18px,2.5vw,29px)/1.18 Georgia,'Times New Roman',serif;
+ color:rgba(239,245,251,.96);letter-spacing:-.015em}
+.world3b-cinema-lead{max-width:560px;font-size:14px;line-height:1.73;color:rgba(229,238,246,.9);margin:0 0 17px;
+ text-wrap:pretty;text-shadow:0 2px 10px rgba(0,0,0,.6)}
+.world3b-cinema-signature{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 22px}
+.world3b-cinema-signature span{display:inline-flex;align-items:center;gap:7px;padding:7px 11px;
+ background:rgba(6,29,49,.82);border:1px solid rgba(181,215,232,.34);
+ border-radius:var(--3b-world-radius-01);font-size:11px;font-weight:800;color:rgba(255,239,204,.97)}
+.world3b-cinema-signature svg{color:var(--wl-gold-bright)}
+.world3b-cinema-actions{display:flex;align-items:center;flex-wrap:wrap;gap:10px}
+.world3b-cinema-actions a{display:inline-flex;min-height:43px;align-items:center;justify-content:center;
+ gap:9px;border-radius:var(--3b-world-radius-01);font-size:12px;font-weight:850;
+ padding:10px 15px;transition:transform .2s,background .2s}
+.world3b-cinema-actions a:hover{transform:translateY(-2px)}
+.world3b-cinema-primary{background:linear-gradient(110deg,rgba(253,229,185,.98),rgba(199,147,72,.94));
+ color:rgba(29,21,12,1)!important;border:1px solid rgba(252,232,189,.86)}
+.world3b-cinema-secondary{color:var(--wl-gold-bright)!important;background:rgba(8,34,55,.73);
+ border:1px solid rgba(239,198,133,.6)}
+.world3b-cinema-truth{display:flex;align-items:flex-start;gap:7px;max-width:500px;color:rgba(195,213,230,.82);
+ font-size:10px;line-height:1.5;margin:15px 0 0}
+.world3b-cinema-truth svg{flex:none;color:var(--wl-gold)}
+.world3b-cinema-pips{position:relative;z-index:2;display:flex;flex-direction:column;
+ align-items:end;justify-content:center;gap:7px;min-width:0}
+.world3b-cinema-pips .gm-button{min-width:40px;min-height:33px;width:45px;padding:4px 8px;
+ background:rgba(3,24,40,.7);border:1px solid rgba(123,194,237,.28);
+ border-radius:var(--3b-world-radius-01);color:rgba(184,209,230,.85);font-size:11px;font-weight:900;
+ font-variant-numeric:tabular-nums}
+.world3b-cinema-pips .gm-button[aria-pressed=true]{color:rgba(21,24,22,.95);
+ background:linear-gradient(135deg,rgba(253,232,187,.96),rgba(207,159,89,.92));
+ border-color:rgba(255,229,183,.96)}
+.world3b-cinema-pips .gm-button:hover:not([aria-pressed=true]){background:rgba(20,77,118,.78)}
+/* The spotlight's scenery is shared artwork depicting the fictional world;
+   realm-specific color is a material wash, not a claimed real country photo. */
+.world3b-cinema-spotlight[data-accent=emerald]::before{background:linear-gradient(110deg,rgba(3,14,21,.94),rgba(2,29,29,.71) 66%,rgba(15,58,56,.12))}
+.world3b-cinema-spotlight[data-accent=amber]::before{background:linear-gradient(110deg,rgba(15,12,20,.92),rgba(64,39,29,.64) 71%,rgba(111,61,24,.12))}
+.world3b-cinema-spotlight[data-accent=azure]::before{background:linear-gradient(110deg,rgba(3,15,25,.93),rgba(4,40,61,.69) 72%,rgba(12,75,104,.13))}
+.world3b-cinema-spotlight[data-accent=coral]::before{background:linear-gradient(110deg,rgba(18,13,22,.93),rgba(75,35,42,.66) 74%,rgba(127,58,45,.12))}
+.world3b-cinema-spotlight[data-accent=olive]::before{background:linear-gradient(110deg,rgba(11,18,19,.91),rgba(29,62,52,.67) 69%,rgba(94,90,47,.13))}
+.world3b-cinema-spotlight[data-accent=violet]::before{background:linear-gradient(110deg,rgba(15,10,27,.91),rgba(40,30,68,.72) 71%,rgba(78,56,111,.13))}
+.world3b-cinema-spotlight[data-accent=frost]::before{background:linear-gradient(110deg,rgba(3,19,31,.92),rgba(18,49,64,.72) 68%,rgba(77,135,144,.15))}
+/* Four functional routes are not an inert text-only tab switch. */
+.world3b-editorial{margin:19px 0 28px;min-width:0}
+.world3b-editorial-heading{display:flex;justify-content:space-between;gap:12px;align-items:end;margin-bottom:14px}
+.world3b-editorial-heading .world3b-eyebrow{display:inline-flex;align-items:center;gap:6px}
+.world3b-editorial-heading h2{font:500 clamp(20px,2.8vw,29px)/1.12 Georgia,serif;
+ color:var(--wl-gold-bright);margin:7px 0 0}
+.world3b-editorial-rail{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.world3b-editorial-card{position:relative;min-width:0;min-height:101px;display:flex;align-items:center;
+ gap:13px;border:1px solid rgba(125,173,207,.35);border-radius:var(--3b-world-radius-08);
+ background:radial-gradient(ellipse at 25% 5%,rgba(22,90,142,.26),transparent 64%),
+ linear-gradient(126deg,rgba(9,36,55,.96),rgba(7,17,30,.96));
+ color:rgba(247,246,239,.97)!important;padding:17px 14px;
+ transition:transform .2s,border-color .2s,background .2s}
+.world3b-editorial-card:nth-child(2){background:radial-gradient(ellipse at 25% 5%,rgba(166,106,49,.21),transparent 64%),linear-gradient(126deg,rgba(23,31,47,.98),rgba(7,17,30,.96))}
+.world3b-editorial-card:hover{border-color:rgba(236,199,139,.75);transform:translateY(-3px)}
+.world3b-editorial-icon{flex:0 0 auto;display:grid;place-items:center;width:46px;height:46px;
+ border:1px solid rgba(226,185,115,.48);border-radius:var(--3b-world-radius-03);
+ color:var(--wl-gold-bright);background:radial-gradient(circle,rgba(17,84,132,.57),rgba(6,27,45,.9))}
+.world3b-editorial-card-copy{flex:1;min-width:0;display:grid;gap:6px}
+.world3b-editorial-card-copy strong{font-size:14px;font-weight:800;line-height:1.28}
+.world3b-editorial-card-copy small{font-size:11px;color:rgba(193,215,232,.91);line-height:1.45}
+.world3b-editorial-link-icon{color:var(--wl-gold-bright);flex:0 0 auto;align-self:flex-start}
+.world3b-editorial-footnote{font-size:10px;color:rgba(179,197,211,.84);margin:12px 0 0;line-height:1.5}
+/* A little more life in the existing realm rail without turning it into a
+   large wall of permanent boxes. */
+.world3b-country-card::before{content:'';pointer-events:none;position:absolute;inset:1px;
+ background:radial-gradient(circle at 72% 21%,rgba(254,214,144,.17),transparent 40%),
+  linear-gradient(130deg,transparent 40%,rgba(57,155,220,.09) 72%,transparent 91%);opacity:.95}
+.world3b-country-card.is-selected::after{content:'';pointer-events:none;position:absolute;left:18px;right:18px;bottom:0;height:2px;
+ background:linear-gradient(90deg,transparent,rgba(255,215,144,.95),transparent)}
+.world3b-country-card>*{position:relative;z-index:1}
+.world3b-universe-icon{background:radial-gradient(circle,rgba(189,150,94,.16),transparent 76%);
+ border-radius:var(--3b-world-radius-03)}
+.world3b-universe:nth-child(5n + 2) .world3b-universe-icon{background:radial-gradient(circle,rgba(69,151,214,.22),transparent 76%)}
+@media(max-width:720px){
+ .world3b-cinema-spotlight{grid-template-columns:1fr;min-height:430px;margin:18px 0 28px;
+   padding:24px 19px 61px;border-radius:var(--3b-world-radius-02)}
+ .world3b-cinema-image img{object-position:58% center;opacity:.42}
+ .world3b-cinema-spotlight::before{background:linear-gradient(115deg,rgba(2,10,20,.95),rgba(3,17,30,.78) 72%,rgba(3,14,25,.55))}
+ .world3b-cinema-overline{font-size:9px;letter-spacing:.1em}
+ .world3b-cinema-count{margin-left:0}
+ .world3b-cinema-copy h2{font-size:clamp(36px,8.5vw,51px);line-height:1.02}
+ .world3b-cinema-copy h2 span{font-size:22px;line-height:1.15}
+ .world3b-cinema-lead{font-size:13px;line-height:1.66;margin-bottom:13px}
+ .world3b-cinema-signature{gap:6px;margin-bottom:15px}
+ .world3b-cinema-signature span{font-size:10px;padding:7px 9px}
+ .world3b-cinema-pips{position:absolute;inset:auto 14px 11px;flex-direction:row;align-items:center;justify-content:center;gap:5px}
+ .world3b-cinema-pips .gm-button{width:34px;min-width:34px;min-height:32px;padding:3px;font-size:10px}
+ .world3b-cinema-actions a{min-height:42px;font-size:11px;padding:9px 12px}
+ .world3b-editorial-rail{display:flex;overflow-x:auto;scroll-snap-type:x proximity;
+  scrollbar-width:thin;scrollbar-color:rgba(226,182,105,.35) transparent;gap:9px;padding:3px 0 11px;overscroll-behavior-inline:contain}
+ .world3b-editorial-card{min-height:94px;flex:0 0 clamp(204px,70vw,282px);scroll-snap-align:start;padding:14px 12px}
+ .world3b-editorial-icon{width:41px;height:41px}
+ .world3b-editorial-card-copy strong{font-size:13px}
+}
+@media(max-width:370px){
+ .world3b-cinema-spotlight{padding:21px 15px 61px;min-height:445px}
+ .world3b-cinema-flag{font-size:24px;margin-top:8px}
+ .world3b-cinema-copy h2{font-size:36px}
+ .world3b-cinema-actions{gap:7px}
+ .world3b-cinema-actions a{font-size:10px}
+ .world3b-cinema-pips{gap:3px}
+ .world3b-cinema-pips .gm-button{width:32px;min-width:32px}
+ .world3b-editorial-card{flex-basis:208px}
+}
+@media(prefers-reduced-motion:reduce){
+ .world3b-cinema-spotlight *, .world3b-editorial *{transition:none!important;animation:none!important}
+}
