@@ -50,7 +50,7 @@ function globalMenu(){
 export default function Concept13AtlasHome({goTo}){
  const preferenceSession=useRef(null);if(!preferenceSession.current)preferenceSession.current=createAtlasPreferencesSession();
  const [preferences,setPreferences]=useState(()=>preferenceSession.current.loaded.preferences);
- const preferencesRef=useRef(preferences),preferenceSequence=useRef(0),preferencePending=useRef(0),preferenceFailed=useRef(!preferenceSession.current.loaded.saved);
+ const preferencesRef=useRef(preferences),preferenceSequence=useRef(0),preferencePending=useRef(0),preferenceFailed=useRef(!preferenceSession.current.loaded.saved),preferenceExternal=useRef(false);
  const [storageError,setStorageError]=useState(()=>!preferenceSession.current.loaded.saved);
  const [tab,setTab]=useState('world');
  const [realmIndex,setRealmIndex]=useState(()=>Math.max(0,WORLD_REALMS.findIndex(x=>x.id===preferences.realm)));
@@ -70,12 +70,13 @@ export default function Concept13AtlasHome({goTo}){
  const selectedPanel=PANELS[tab];
  const grouped=findWorldModules({query:moduleQuery,category,favorites:preferences.favorites});
  function applyPreferences(next){preferencesRef.current=next;setPreferences(next);setRealmIndex(Math.max(0,WORLD_REALMS.findIndex(item=>item.id===next.realm)));}
+ function refreshPreferences(){if(preferencePending.current){preferenceExternal.current=true;return;}if(preferenceFailed.current)return;const next=createAtlasPreferencesSession();if(!next.loaded.saved){preferenceFailed.current=true;setStorageError(true);return;}preferenceSession.current=next;applyPreferences(next.loaded.preferences);}
  async function persistPreference(action){const ticket=++preferenceSequence.current;preferencePending.current++;
-  try{const result=await preferenceSession.current.commit(action);if(ticket!==preferenceSequence.current)return;preferenceFailed.current=!result.saved;setStorageError(!result.saved);applyPreferences(result.preferences);}
+  try{const result=await preferenceSession.current.commit(action);if(ticket!==preferenceSequence.current)return;preferenceFailed.current=!result.saved;setStorageError(!result.saved);if(result.saved)applyPreferences(result.preferences);}
   catch{if(ticket===preferenceSequence.current){preferenceFailed.current=true;setStorageError(true);}}
-  finally{preferencePending.current--;}
+  finally{preferencePending.current--;if(!preferencePending.current&&preferenceExternal.current){preferenceExternal.current=false;refreshPreferences();}}
  }
- useEffect(()=>{const sync=event=>{if((event.key!==ATLAS_PREFERENCES_KEY&&event.key!==null)||preferencePending.current||preferenceFailed.current)return;if(event.storageArea&&event.storageArea!==window.localStorage)return;applyPreferences(readAtlasPreferences());};window.addEventListener('storage',sync);return()=>window.removeEventListener('storage',sync);},[]);
+ useEffect(()=>{const sync=event=>{if(event.key!==ATLAS_PREFERENCES_KEY&&event.key!==null)return;if(event.storageArea&&event.storageArea!==window.localStorage)return;refreshPreferences();};window.addEventListener('storage',sync);return()=>window.removeEventListener('storage',sync);},[]);
  useEffect(()=>{if(!feedback)return;const timer=setTimeout(()=>setFeedback(''),3200);return()=>clearTimeout(timer);},[feedback]);
  useEffect(()=>{
   const rail=realmRailRef.current,card=rail?.querySelector('[data-realm-id="'+realm.id+'"]');if(!rail||!card)return;
