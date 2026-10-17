@@ -82,7 +82,10 @@ export default function AppNavigation({ page, title, menuItems, goTo, secret, op
     setCategory(requestedCategory || categoryForPage(page, menuItems));
     if (!dialog.current?.open) dialog.current?.showModal();
     setIsOpen(true);
-    if (search || !window.matchMedia("(max-width: 720px)").matches) {
+    // Search must receive focus synchronously inside the user's touch/click.
+    // Deferred focus can leave the phone keyboard closed (notably on iOS).
+    if (search) searchInput.current?.focus({ preventScroll: true });
+    else if (!window.matchMedia("(max-width: 720px)").matches) {
       requestAnimationFrame(() => searchInput.current?.focus({ preventScroll: true }));
     }
   }
