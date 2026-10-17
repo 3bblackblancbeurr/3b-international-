@@ -72,13 +72,23 @@ export function HubObjectiveCard({model,onNavigate,onGuide,onGuideTo,onCancelGui
  return <section className={'hub-objective-card'+(model.guiding?' is-guiding':'')} aria-label="Ton objectif dans la cité">
   <div className="hub-objective-heading"><Compass size={17} aria-hidden="true"/><small>{model.status}</small>{model.target&&<span className="hub-objective-distance" title={model.distanceDescription}>{model.distanceLabel}</span>}</div>
   <h2>{model.label}</h2>
-  {model.target&&model.destination!==model.label&&<p className="hub-objective-destination">Destination : {model.destination}</p>}
-  {model.missionLabel&&<p className="hub-objective-mission">Mission : {model.missionLabel}</p>}
-  <p className="hub-objective-detail">{model.detail}</p>
+  <div className="hub-objective-details">
+   {model.target&&model.destination!==model.label&&<p className="hub-objective-destination">Destination : {model.destination}</p>}
+   {model.missionLabel&&<p className="hub-objective-mission">Mission : {model.missionLabel}</p>}
+   <p className="hub-objective-detail">{model.detail}</p>
+  </div>
   <div className="hub-objective-actions">
    {model.canNavigate&&!model.arrived&&!model.guiding&&(guide?<Button variant="champagne" className="hub-guide-primary" disabled={!loaded} onClick={guide}><Navigation size={15} aria-hidden="true"/>Me guider</Button>:navigate?<Button variant="champagne" className="hub-guide-primary" disabled={!loaded} onClick={navigate}><Compass size={15} aria-hidden="true"/>Placer un repère</Button>:null)}
    {model.guiding&&<span className="hub-guidance-running" role="status"><ArrowUp size={16} style={{transform:`rotate(${bearing}deg)`}} aria-hidden="true"/>En route · {model.distanceLabel}</span>}
    <Button variant="ghost" className="hub-guide-map" disabled={!loaded||!onOpenMap} onClick={onOpenMap} aria-label="Ouvrir la carte de la cité"><Map size={15} aria-hidden="true"/>Carte</Button>
+  <details className="hub-objective-disclosure">
+   <summary className="hub-objective-toggle" aria-label="Afficher les détails de l’étape">Détails</summary>
+   <div className="hub-objective-disclosure-copy">
+    {model.target&&model.destination!==model.label&&<p className="hub-objective-destination">Destination : {model.destination}</p>}
+    {model.missionLabel&&<p className="hub-objective-mission">Mission : {model.missionLabel}</p>}
+    <p className="hub-objective-detail">{model.detail}</p>
+   </div>
+  </details>
    {model.hasWaypoint&&onCancelGuide&&<Button variant="ghost" className="hub-guide-cancel" disabled={!loaded} onClick={onCancelGuide} aria-label={model.guiding?'Arrêter le guidage et retirer le repère':'Retirer le repère'}><X size={15} aria-hidden="true"/>{model.guiding?'Arrêter':'Retirer'}</Button>}
   </div>
  </section>;

@@ -1,4 +1,5 @@
-export const DEFAULT_ORBIT={yaw:0,pitch:.055,distance:24};
+export const DEFAULT_ORBIT={yaw:0,pitch:.055,distance:24}; // Wider arrival framing keeps all eight monuments visible.
+export const IMMERSIVE_ORBIT=Object.freeze({...DEFAULT_ORBIT,pitch:.12,distance:19}); // Closer Hub gameplay, only when no camera choice is saved.
 export function normalizeOrbit(value){return {yaw:Number.isFinite(value?.yaw)?value.yaw%(Math.PI*2):0,pitch:Number.isFinite(value?.pitch)?Math.max(-.34,Math.min(1.15,value.pitch)):DEFAULT_ORBIT.pitch,distance:Number.isFinite(value?.distance)?Math.max(10,Math.min(52,value.distance)):DEFAULT_ORBIT.distance};}
 export function restoreOrbit(value){const orbit=normalizeOrbit(value);if(value?.version===2&&value?.pitch===.24)orbit.pitch=DEFAULT_ORBIT.pitch;if(value?.version!==2){if(value?.pitch===.5)orbit.pitch=DEFAULT_ORBIT.pitch;if(value?.pitch===.76)orbit.pitch=.5;}return orbit;}
 export function orbitView(orbit,position,height,portrait=false,heightAt){

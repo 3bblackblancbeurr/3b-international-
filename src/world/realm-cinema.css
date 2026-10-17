@@ -1,0 +1,81 @@
+/* Shared cinematic language for all eight playable realms; no runtime effects.
+   The region accent is data-driven and never changes combat or campaign state. */
+.world-shell .play-hud:not(.hub-hud) .play-top{z-index:12}
+.world-shell .play-hud:not(.hub-hud) .play-button{
+ width:44px;height:44px;min-width:44px;min-height:44px;
+ color:var(--3b-world-cinema-ivory);
+ background:linear-gradient(145deg,rgba(4,16,27,.89),rgba(11,33,43,.72));
+ border:1px solid rgba(232,202,142,.25);
+ box-shadow:var(--3b-shadow-world-cinema-control);
+ backdrop-filter:none;
+}
+.world-shell .play-hud:not(.hub-hud) .world-district{
+ color:var(--3b-world-cinema-ivory);background:linear-gradient(90deg,rgba(4,17,30,.83),rgba(6,24,37,.65));
+ border:1px solid rgba(227,199,138,.19);border-radius:var(--3b-radius-pill);box-shadow:var(--3b-shadow-world-cinema-soft);
+ backdrop-filter:none;font-size:10px;font-weight:650;letter-spacing:.03em;
+}
+.world-shell .play-hud:not(.hub-hud) .world-district small{color:var(--3b-world-cinema-muted)}
+.world-shell .play-hud:not(.hub-hud) .world-minimap{
+ border:1px solid rgba(224,199,144,.24);background:rgba(3,19,30,.81);
+ box-shadow:var(--3b-shadow-world-cinema-contact);opacity:.85;
+ border-radius:var(--3b-radius-field);backdrop-filter:none;
+}
+.world-shell .play-hud:not(.hub-hud) .play-arrival{
+ top:21%;left:50%;width:min(660px,84vw);text-shadow:0 6px 32px rgba(1,10,20,.85);
+}
+.world-shell .play-hud:not(.hub-hud) .play-arrival h1{
+ font:500 clamp(28px,3.2vw,45px)/1.13 Georgia,serif;color:var(--3b-world-cinema-ivory);
+ text-wrap:balance;letter-spacing:.015em;
+}
+.world-shell .play-hud:not(.hub-hud) .play-arrival span{color:var(--3b-realm-ink);letter-spacing:.28em}
+.world-shell .play-hud:not(.hub-hud) .play-arrival i{background:linear-gradient(90deg,transparent,var(--3b-realm-ink),transparent)}
+.world-shell .play-hud:not(.hub-hud) .play-interaction{
+ border:1px solid rgba(222,196,137,.50);
+ background:linear-gradient(100deg,rgba(4,19,32,.96),rgba(9,38,47,.9));
+ box-shadow:var(--3b-shadow-world-cinema-contact);
+ backdrop-filter:none;border-radius:var(--3b-radius-field);
+}
+.world-shell .play-hud:not(.hub-hud) .play-bearing{
+ border:1px solid rgba(232,197,138,.28);background:rgba(2,20,32,.91);backdrop-filter:none;
+}
+.world-shell .play-hud:not(.hub-hud) .play-profile{
+ border-color:rgba(229,196,126,.44);background:linear-gradient(120deg,rgba(3,21,35,.94),rgba(18,43,48,.88));
+ backdrop-filter:none;
+}
+.world-shell .play-hud:not(.hub-hud).is-roaming .play-first-hint{opacity:0}
+.world-shell .realm-challenge{
+ border:0;border-left:2px solid var(--3b-realm-ink,var(--3b-world-cinema-gold));
+ border-radius:var(--3b-radius-world-cinema-side);
+ background:linear-gradient(105deg,rgba(2,15,28,.96),rgba(6,27,36,.79));
+ box-shadow:var(--3b-shadow-world-cinema-contact);backdrop-filter:none;
+ color:var(--3b-world-cinema-ivory);
+}
+.world-shell .realm-challenge header button:first-child{font-weight:680;color:var(--3b-world-cinema-ivory)}
+.world-shell .realm-challenge header button:last-child{color:var(--3b-world-cinema-gold);font-size:16px;min-width:44px;min-height:44px}
+.world-shell .realm-challenge progress{accent-color:var(--3b-realm-ink,var(--3b-world-cinema-gold))}
+.world-shell .realm-challenge-actions button{min-height:44px!important;border-radius:var(--3b-radius-sm)}
+.world-shell .realm-boss-phase{
+ border:0;border-left:2px solid var(--3b-realm-ink,var(--3b-world-cinema-gold));
+ border-radius:var(--3b-feature-radius-side);
+ background:linear-gradient(90deg,rgba(2,15,27,.96),rgba(7,29,42,.78));
+ box-shadow:var(--3b-shadow-world-cinema-contact);
+}
+@media(max-height:560px) and (orientation:landscape){
+ .world-shell .play-hud:not(.hub-hud) .world-district{top:51px;padding:3px 9px;max-width:calc(100% - 350px);font-size:9px}
+ .world-shell .play-hud:not(.hub-hud) .world-minimap{opacity:.78;backdrop-filter:none}
+ .world-shell .play-hud:not(.hub-hud) .play-arrival{top:31%;width:calc(100% - 320px)}
+ .world-shell .play-hud:not(.hub-hud) .play-arrival h1{font-size:23px}
+ .world-shell .realm-challenge{top:75px;left:12px;max-width:min(232px,36vw);padding:8px 10px}
+ .world-shell .realm-challenge.is-collapsed{width:auto;max-width:220px;min-height:44px;padding:0 7px}
+ .world-shell .realm-challenge.is-collapsed header{min-height:44px;align-items:center}
+ .world-shell .realm-challenge-body{max-height:calc(100svh - 165px)}
+ .world-shell .realm-boss-phase{top:77px;right:12px;max-width:170px;padding:7px 10px}
+}
+@media(pointer:coarse){
+ .world-shell .play-hud:not(.hub-hud) .play-button,
+ .world-shell .play-hud:not(.hub-hud) .world-minimap,
+ .world-shell .realm-challenge{backdrop-filter:none}
+}
+@media(prefers-reduced-motion:reduce){
+ .world-shell .play-hud:not(.hub-hud) .play-first-hint{transition:none}
+}

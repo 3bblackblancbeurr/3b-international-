@@ -65,6 +65,17 @@
   --3b-hub-preview:#0b1420;--3b-hub-preview-fallback:#102133;
   --3b-hub-reading:linear-gradient(140deg,#192b39,#0d1926);
   --3b-hub-urbanism:radial-gradient(ellipse at 100% 100%,#16426955,transparent 70%),linear-gradient(120deg,#182732,#0a1420);
+  /* Game HUD art direction: scene-first accents, used by Hub and all eight realms. */
+  --3b-world-cinema-ivory:#f6ecd9;--3b-world-cinema-highlight:#fff2d0;
+  --3b-world-cinema-gold:#ebd097;--3b-world-cinema-bronze:#c8a15e;
+  --3b-world-cinema-muted:#c1d4d5;--3b-world-cinema-muted-soft:#95b6bf;
+  --3b-world-cinema-cyan:#79dced;--3b-world-cinema-ink:#17242a;
+  --3b-shadow-world-cinema-soft:0 5px 16px rgba(0,8,17,.20);
+  --3b-shadow-world-cinema-contact:0 10px 25px rgba(0,8,18,.30);
+  --3b-shadow-world-cinema-deep:0 15px 35px rgba(0,5,15,.48);
+  --3b-shadow-world-cinema-control:0 6px 17px rgba(0,7,16,.29),inset 0 1px 0 rgba(255,239,194,.10);
+  --3b-shadow-world-cinema-highlight:inset 0 1px 0 var(--3b-world-cinema-highlight);
+  --3b-radius-world-cinema-side:0 16px 16px 0;
   --3b-shadow-preview-inset:inset 0 0 60px #0006;--3b-shadow-swatch:inset 0 0 0 1px #fff3;
   --3b-map-landmark:#a79b76;--3b-map-landmark-label:#ffdf9e;--3b-map-landmark-border:#ffdda3;--3b-map-landmark-ring:#ffe0a3;--3b-map-ink:#092737;
   --3b-map-surface:#0d2b38a6;--3b-map-text:#d6e0d8;--3b-map-muted:#a8c5c7;--3b-map-line:#b2c1ad30;--3b-map-divider:#b2c1ad25;

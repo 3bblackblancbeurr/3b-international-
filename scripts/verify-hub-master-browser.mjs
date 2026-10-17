@@ -90,6 +90,9 @@ try{
    await page.locator('.play-cinematic').waitFor({state:'hidden',timeout:120000});
    await page.waitForTimeout(4200);
    assert.equal(await page.locator('.hub-recovery').count(),0);
+   assert.equal(await page.locator('.hub-orientation-guide').count(),0,'first entry does not obscure the world');
+   await page.getByRole('button',{name:'Premiers pas dans la cité',exact:true}).click();
+   await page.locator('.hub-orientation-guide').waitFor({state:'visible',timeout:30000});
    await page.getByRole('button',{name:'Explorer librement',exact:true}).click();
    await page.locator('.hub-guide-primary').click();
    const stopGuidance=page.getByRole('button',{name:'Arrêter le guidage et retirer le repère',exact:true});await stopGuidance.waitFor({timeout:30000});
