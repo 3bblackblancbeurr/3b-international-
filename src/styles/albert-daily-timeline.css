@@ -109,3 +109,11 @@
 @media(prefers-reduced-motion:reduce){
  .albert3b-daily *, .albert3b-stage *{animation:none!important;transition:none!important}
 }
+
+/* On narrow phone screens the avatar retains blue/gold radial light without
+   full-surface blur or SVG drop-shadow. This also covers Windows Edge mobile
+   emulation, where (pointer:coarse) may not match despite touch emulation. */
+@media(max-width:720px){
+ .albert3b-experience .albert3b-avatar-halo{filter:none!important;opacity:.72}
+ .albert3b-experience .albert3b-avatar svg{filter:none!important}
+}
