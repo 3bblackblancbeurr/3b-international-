@@ -22,7 +22,7 @@ test('global Boussole search shares World aliases for nutrition, recipes and foo
   {id:'foodscan',label:'Scanner alimentaire',description:'Scanner des produits.'},
   {id:'world3b',label:'Monde du 3B',description:'Huit portes.'}
  ];
- assert.deepEqual(searchNavigation(live,'nutrition').map(item=>item.id),['health']);
+ assert.deepEqual(searchNavigation(live,'nutrition').map(item=>item.id),['health','foodscan']);
  assert.deepEqual(searchNavigation(live,'recettes').map(item=>item.id),['health']);
  assert.deepEqual(searchNavigation(live,'code barre').map(item=>item.id),['foodscan']);
  assert.deepEqual(searchNavigation(live,'kaïs').map(item=>item.id),['world3b']);
