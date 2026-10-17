@@ -53,6 +53,7 @@ try{
     await card.waitFor({state:'visible'});console.log(profile.id+': opened '+await card.locator('h3').innerText());
     assert.equal(await page.getByRole('dialog').count(),0,'inspection stays in the running world');
     assert.equal(await page.evaluate(()=>qa.scene.qaGuidanceState().paused),false,'walking and camera remain available');
+    assert.equal(await page.locator('.realm-challenge').count(),0,'the same objective is not repeated over the scene while reading it');
    }
    await openCurrent();await capture(page,out+'/'+profile.id+'-lea.png');
    await hud(page,()=>card.getByRole('button',{name:'Écouter Léa et relever son témoignage',exact:true}).click());
