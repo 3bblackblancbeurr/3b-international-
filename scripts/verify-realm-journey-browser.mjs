@@ -10,7 +10,7 @@ fixture=fixture.replace('strictPort:true','strictPort:true,watch:{ignored:[\'**/
 fixture=fixture.replace("return code.replace(marker,`let qaCaptureFrozen=false;", "code=code.replace('onSnapshot({','onSnapshot(window.qa.snapshot={');return code.replace(marker,`let qaCaptureFrozen=false;");
 const cases=String.raw`
 const report=[];
-async function hud(page,callback){await page.evaluate(()=>qa.scene.qaFreezeCapture());try{return await callback();}finally{await page.evaluate(()=>qa.scene.qaResumeCapture());}}
+async function hud(page,callback){await page.evaluate(()=>qa.scene.qaHoldRender());try{return await callback();}finally{await page.evaluate(()=>qa.scene.qaResumeCapture());}}
 async function skip(page){await page.locator('.world-loading').waitFor({state:'hidden',timeout:120000});await page.evaluate(()=>qa.scene.skipCinematic());const button=page.getByRole('button',{name:'Passer',exact:true});if(await button.count())await hud(page,async()=>{if(await button.isVisible())await button.click();});}
 async function openLocalObjective(page,item){
  await page.evaluate(point=>qa.scene.relocateRealm({region:'france',...point}),item);

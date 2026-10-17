@@ -16,7 +16,7 @@ const report=[];
 // SwiftShader can otherwise starve Playwright's two DOM stability frames.
 // Native clicks still verify visibility, enabled state and hit targets.
 async function staticHud(page,check){
- await page.evaluate(()=>qa.scene.qaFreezeCapture());
+ await page.evaluate(()=>qa.scene.qaHoldRender());
  try{return await check();}finally{await page.evaluate(()=>qa.scene.qaResumeCapture());}
 }
 try{
@@ -38,7 +38,7 @@ try{
   });
   assert.equal(await page.locator('.world-minimap').count(),0);assert.equal(await page.locator('.hub-mission-rail').count(),0);
   for(const name of ['Sauter','Frapper','Défendre','Esquiver','Pouvoir'])assert.equal(await page.getByRole('button',{name,exact:true}).count(),1);
-  await page.getByRole('button',{name:'Sauter',exact:true}).click();
+  await staticHud(page,()=>page.getByRole('button',{name:'Sauter',exact:true}).click());
   await page.waitForFunction(()=>qa.jumpSeen);assert.ok(await page.evaluate(()=>qa.jumpPeak>0));
   await page.waitForFunction(()=>qa.snapshot?.gameplay&&!qa.snapshot.gameplay.airborne);assert.equal(await page.evaluate(()=>qa.snapshot.gameplay.lift),0);
   const landAt=await page.evaluate(()=>qa.scene.qaPlayState().elapsed);await page.waitForFunction(at=>qa.scene.qaPlayState().elapsed>at+.3,landAt);
