@@ -54,23 +54,23 @@ export default function ImmersiveWorldHome({goTo}){
    <p>{realm.value} <span aria-hidden="true">—</span> {realm.guardian}</p>
    <RouteLink page="world3b" goTo={goTo} className="th-world-realm-entry">Entrer dans le Monde du 3B <ArrowRight size={18}/></RouteLink>
    <div className="th-world-realm-mover" aria-label="Parcourir les royaumes">
-    <button type="button" aria-label="Royaume précédent" onClick={()=>setRealmIndex(i=>(i+7)%8)}>←</button>
+    <Button variant="ghost" type="button" aria-label="Royaume précédent" onClick={()=>setRealmIndex(i=>(i+7)%8)}>←</Button>
     <span>CHANGER DE ROYAUME</span>
-    <button type="button" aria-label="Royaume suivant" onClick={()=>setRealmIndex(i=>(i+1)%8)}>→</button>
+    <Button variant="ghost" type="button" aria-label="Royaume suivant" onClick={()=>setRealmIndex(i=>(i+1)%8)}>→</Button>
    </div>
   </aside>
 
   <div className="th-world-earth-controls" role="group" aria-label="Contrôles de la planète">
-   <button type="button" aria-label="Agrandir la planète" onClick={()=>setZoom(n=>Math.min(1.34,Math.round((n+.12)*100)/100))} disabled={zoom>=1.34}><Plus size={19}/></button>
-   <button type="button" aria-label="Réduire la planète" onClick={()=>setZoom(n=>Math.max(.8,Math.round((n-.12)*100)/100))} disabled={zoom<=.8}><Minus size={19}/></button>
-   <button type="button" aria-label="Réinitialiser le zoom" onClick={()=>setZoom(1)} disabled={zoom===1}><RotateCcw size={18}/></button>
-   <button type="button" aria-label={paused?'Relancer la rotation':'Mettre la rotation en pause'} aria-pressed={paused} onClick={()=>setPaused(p=>!p)}>{paused?<Play size={19}/>:<Pause size={19}/>}</button>
+   <Button variant="ghost" type="button" aria-label="Agrandir la planète" onClick={()=>setZoom(n=>Math.min(1.34,Math.round((n+.12)*100)/100))} disabled={zoom>=1.34}><Plus size={19}/></Button>
+   <Button variant="ghost" type="button" aria-label="Réduire la planète" onClick={()=>setZoom(n=>Math.max(.8,Math.round((n-.12)*100)/100))} disabled={zoom<=.8}><Minus size={19}/></Button>
+   <Button variant="ghost" type="button" aria-label="Réinitialiser le zoom" onClick={()=>setZoom(1)} disabled={zoom===1}><RotateCcw size={18}/></Button>
+   <Button variant="ghost" type="button" aria-label={paused?'Relancer la rotation':'Mettre la rotation en pause'} aria-pressed={paused} onClick={()=>setPaused(p=>!p)}>{paused?<Play size={19}/>:<Pause size={19}/>}</Button>
   </div>
 
   <nav className="th-world-realms-line" aria-label="Choisir un royaume">
-   {WORLD_REALMS.map((item,i)=><button key={item.id} type="button" aria-label={'Choisir le royaume '+item.name} aria-pressed={i===realmIndex} onClick={()=>selectRealm(item.id)}>
+   {WORLD_REALMS.map((item,i)=><Button variant="ghost" key={item.id} type="button" aria-label={'Choisir le royaume '+item.name} aria-pressed={i===realmIndex} onClick={()=>selectRealm(item.id)}>
     <span className="th-world-realm-dot" aria-hidden="true">{item.flag}</span><span className="th-world-realm-label">{item.name}</span>
-   </button>)}
+   </Button>)}
   </nav>
 
   <footer className="th-world-foot">
@@ -80,7 +80,7 @@ export default function ImmersiveWorldHome({goTo}){
 
   <nav className="th-world-quicknav" aria-label="Accès direct 3B">
    {shortcuts.map(({id,name,Icon})=><RouteLink page={id} goTo={goTo} key={id} aria-label={name}><Icon size={21} strokeWidth={1.7}/><span>{name}</span></RouteLink>)}
-   <button type="button" onClick={()=>openAppMenu('principal')} aria-label="Afficher toutes les rubriques 3B"><Compass size={23} strokeWidth={1.6}/><span>Tous les univers</span></button>
+   <Button variant="ghost" type="button" onClick={()=>openAppMenu('principal')} aria-label="Afficher toutes les rubriques 3B"><Compass size={23} strokeWidth={1.6}/><span>Tous les univers</span></Button>
   </nav>
  </section>;
 }
