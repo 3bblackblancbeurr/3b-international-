@@ -33,5 +33,5 @@ test('Albert uses bespoke sculpted portrait with economical mobile styling',()=>
  assert.match(css,/albert3b-portrait-breathe/);
  assert.match(css,/prefers-reduced-motion:reduce/);
  assert.match(css,/\.albert3b-sculpted-avatar \.albert3b-portrait-svg\{filter:none\}/);
- assert.doesNotMatch(avatar,/\bWebGL\b|https:\/\//);
+ assert.doesNotMatch(avatar,/\bgetContext\s*\(|\bnew\s+WebGLRenderer\b|https:\/\//);
 });
