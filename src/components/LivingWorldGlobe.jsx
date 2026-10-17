@@ -2,6 +2,7 @@ import {worldLivingCanvasPalette} from '../design-system/tokens.js';
 import {useEffect,useRef} from 'react';
 import {WORLD_REALMS} from './world-living-data.js';
 import {clampGlobeZoom} from './world-globe-zoom.js';
+import {CINEMATIC_CITY_LIGHTS} from './world-city-lights.js';
 
 // 21 simplified Natural Earth/GSHHS land rings, quantized to one tenth of a degree.
 // Unlike a screenshot, this globe is projected and repainted from actual geographic outlines.
@@ -90,6 +91,24 @@ export default function LivingWorldGlobe({selectedId='france',onSelect,zoom=1,on
    const light=ctx.createLinearGradient(cx-r,cy-r,cx+r,cy+r);
    light.addColorStop(0,'rgba(105,198,255,.20)');light.addColorStop(.37,'transparent');light.addColorStop(1,'rgba(2,4,9,.72)');
    ctx.fillStyle=light;ctx.fillRect(cx-r,cy-r,r*2,r*2);
+   // Decorative Earth-at-night lights. Never live 3B user, hub or traffic data.
+   // Two batched fills prevent costly 200-shadow GPU compositing on phones.
+   const lightStride=width<360?3:width<520?2:1;
+   for(const bright of [false,true]){
+    ctx.beginPath();
+    for(let i=0;i<CINEMATIC_CITY_LIGHTS.length;i++){
+     const lamp=CINEMATIC_CITY_LIGHTS[i];
+     if(lamp.core!==bright)continue;
+     if(!bright&&i%lightStride!==0)continue;
+     const p=project(lamp.lon,lamp.lat,state.angle,state.lat,cx,cy,r);
+     if(p.z<.08)continue;
+     const radius=(lamp.core?1.25:.64)*Math.min(1.5,state.zoom);
+     ctx.moveTo(p.x+radius,p.y);
+     ctx.arc(p.x,p.y,radius,0,TAU);
+    }
+    ctx.fillStyle=bright?'rgba(255,213,139,.89)':'rgba(255,183,93,.44)';
+    ctx.fill();
+   }
    const dots=WORLD_REALMS.map(item=>({...item,...project(item.lon,item.lat,state.angle,state.lat,cx,cy,r)})).filter(item=>item.z>.03);
    // Connections are links between fictional 3B realms, not claimed live network traffic.
    ctx.lineWidth=1;ctx.strokeStyle='rgba(92,184,255,.57)';

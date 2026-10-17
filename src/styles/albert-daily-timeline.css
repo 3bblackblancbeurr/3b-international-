@@ -1,0 +1,159 @@
+/* Albert APEX's LOCAL day planner — never contacts a server. The large
+   cinematic screenshot is inspiration; every row is real, editable UI. */
+.albert3b-daily{min-width:0;margin:26px 0 7px;padding:18px 0 0;border-top:1px solid rgba(192,173,139,.27);color:var(--wl-ink)}
+.albert3b-daily-header{display:flex;align-items:start;justify-content:space-between;gap:12px;margin-bottom:14px}
+.albert3b-daily-header .world3b-eyebrow{display:inline-flex;align-items:center;gap:7px;letter-spacing:.12em}
+.albert3b-daily-header h2{margin:8px 0 6px;color:var(--wl-gold-bright);
+ font:500 clamp(22px,2.9vw,31px)/1.17 Georgia,'Times New Roman',serif}
+.albert3b-daily-header h2 em{font-style:normal;color:rgba(226,239,250,.95)}
+.albert3b-daily-header p{font-size:12px;color:rgba(190,215,231,.85);line-height:1.48;margin:0}
+.albert3b-daily-count{flex:0 0 56px;display:flex;align-items:baseline;justify-content:center;padding:14px 6px;
+ border:1px solid rgba(229,184,116,.38);background:radial-gradient(circle at 50% 0%,rgba(218,157,72,.16),rgba(13,29,45,.66));
+ border-radius:var(--3b-world-radius-08);color:var(--wl-gold-bright);font:600 24px Georgia,serif}
+.albert3b-daily-count small{font:700 12px ui-sans-serif,system-ui,sans-serif;color:rgba(197,211,227,.82)}
+.albert3b-daily-progress{height:4px;overflow:hidden;background:rgba(166,195,214,.18);
+ border-radius:var(--3b-world-radius-03);margin:0 0 14px}
+.albert3b-daily-progress span{display:block;height:100%;min-width:0;background:linear-gradient(90deg,rgba(48,151,232,.96),rgba(252,210,143,.98));
+ transition:width .24s ease}
+.albert3b-daily-empty{display:flex;align-items:flex-start;gap:10px;margin:0 0 16px;
+ padding:15px;border:1px solid rgba(148,192,224,.25);
+ border-radius:var(--3b-world-radius-08);background:linear-gradient(120deg,rgba(18,56,82,.43),rgba(9,20,33,.7));
+ color:rgba(203,222,235,.97);font-size:12px;line-height:1.55}
+.albert3b-daily-empty svg{color:var(--wl-gold-bright);flex:0 0 auto}
+.albert3b-daily-list{list-style:none;padding:0;margin:0 0 18px}
+.albert3b-daily-item{display:flex;align-items:center;gap:7px;min-width:0;padding:10px 1px;
+ border-bottom:1px solid rgba(154,192,211,.18)}
+.albert3b-daily-item:first-child{border-top:1px solid rgba(154,192,211,.18)}
+.albert3b-daily-complete.gm-button{min-height:38px;min-width:38px;width:38px;padding:0;
+ display:grid;place-items:center;border:0;color:rgba(128,177,201,.8);background:transparent}
+.albert3b-daily-item.is-done .albert3b-daily-complete.gm-button{color:rgba(236,201,137,.96)}
+.albert3b-daily-empty-check{width:21px;height:21px;border:1px solid rgba(183,216,232,.75);
+ border-radius:var(--3b-world-radius-03);background:rgba(11,30,47,.4)}
+.albert3b-daily-item-copy{min-width:0;flex:1;display:grid;gap:5px}
+.albert3b-daily-item-copy strong{font-size:13px;font-weight:800;color:rgba(247,247,243,.98);
+ overflow-wrap:anywhere;line-height:1.4}
+.albert3b-daily-item.is-done .albert3b-daily-item-copy strong{color:rgba(166,187,199,.78);text-decoration:line-through}
+.albert3b-daily-item-copy>span{display:inline-flex;flex-wrap:wrap;align-items:center;gap:5px;font-size:11px;color:rgba(173,200,222,.88)}
+.albert3b-daily-open,.albert3b-daily-delete.gm-button{flex:0 0 36px;display:grid;place-items:center;
+ width:36px;height:36px;min-height:36px;min-width:36px;padding:0;
+ color:var(--wl-gold-bright)!important;border:0;border-radius:var(--3b-world-radius-03);
+ background:rgba(19,67,100,.27)}
+.albert3b-daily-delete.gm-button{color:rgba(173,192,211,.72)!important;background:transparent}
+.albert3b-daily-delete.gm-button:hover{color:rgba(240,146,152,.95)!important;background:rgba(99,28,37,.26)}
+.albert3b-daily-quick{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:15px 0 12px}
+.albert3b-daily-quick>.gm-button{display:flex;align-items:center;justify-content:flex-start;text-align:left;gap:7px;
+ min-height:64px;padding:10px 9px;color:rgba(245,235,210,.97);
+ border:1px solid rgba(175,192,203,.3);border-radius:var(--3b-world-radius-08);
+ background:linear-gradient(135deg,rgba(21,66,92,.57),rgba(12,31,47,.83));
+ font-size:11px;font-weight:750;line-height:1.35;overflow-wrap:anywhere}
+.albert3b-daily-quick svg{flex:0 0 auto;color:var(--wl-gold-bright)}
+.albert3b-daily-quick>.gm-button:disabled{opacity:.52}
+.albert3b-daily-add-toggle.gm-button{display:flex;gap:9px;align-items:center;justify-content:center;
+ width:100%;min-height:43px;color:var(--wl-gold-bright);font-weight:800;font-size:12px;
+ border:1px dashed rgba(218,184,133,.57);border-radius:var(--3b-world-radius-08);
+ background:rgba(12,35,55,.54)}
+.albert3b-daily-add-toggle.gm-button:hover{background:rgba(26,67,96,.79)}
+.albert3b-daily-editor{margin:10px 0 0;display:grid;gap:10px;padding:15px;
+ border:1px solid rgba(105,162,201,.4);border-radius:var(--3b-world-radius-08);
+ background:linear-gradient(135deg,rgba(10,39,61,.91),rgba(9,22,38,.95))}
+.albert3b-daily-editor label{display:block;font-size:11px;font-weight:800;color:rgba(248,218,163,.96);line-height:1.4}
+.albert3b-daily-editor input,.albert3b-daily-editor select{
+ display:block;width:100%;min-width:0;min-height:45px;border-radius:var(--3b-world-radius-04);
+ border:1px solid rgba(143,192,226,.52);background:rgba(3,21,37,.95);color:rgba(251,251,248,.98);
+ padding:10px 12px;font:500 13px ui-sans-serif,system-ui,sans-serif;outline-offset:2px}
+.albert3b-daily-editor input:focus-visible,.albert3b-daily-editor select:focus-visible{outline:2px solid rgba(154,218,255,.95)}
+.albert3b-daily-input-row{display:grid;grid-template-columns:1fr 1.35fr;gap:10px}
+.albert3b-daily-input-row>div{display:grid;gap:6px;min-width:0}
+.albert3b-daily-save.gm-button{display:flex;align-items:center;justify-content:center;gap:9px;
+ min-height:44px;border:1px solid rgba(234,197,143,.75);border-radius:var(--3b-world-radius-01);
+ background:linear-gradient(115deg,rgba(244,214,164,.97),rgba(191,139,74,.96));color:rgba(29,23,15,.95);
+ font-size:12px;font-weight:850}
+.albert3b-daily-save.gm-button:disabled{opacity:.46}
+.albert3b-daily-notice{margin:12px 0 0;color:var(--wl-gold-bright);font-size:11px;line-height:1.5}
+.albert3b-daily-privacy{display:flex;gap:7px;align-items:flex-start;
+ color:rgba(171,200,221,.76);font-size:10px;line-height:1.58;margin:14px 0 0}
+.albert3b-daily-privacy svg{flex:0 0 auto;margin-top:1px;color:var(--wl-gold)}
+/* Improve cinematic AI presence without allocating another WebGL context. */
+.albert3b-stage{background:
+ radial-gradient(ellipse at 81% 39%,rgba(73,164,229,.32),transparent 46%),
+ radial-gradient(ellipse at 24% 95%,rgba(210,158,83,.11),transparent 55%),
+ linear-gradient(108deg,rgba(5,12,26,.98),rgba(7,33,57,.96))}
+.albert3b-stage::after{content:'';pointer-events:none;position:absolute;inset:auto 0 0;height:42%;
+ background:linear-gradient(0deg,rgba(3,13,24,.75),transparent),
+ url('/art/luxury-v2/hub-cite-origine.webp') center 60% / cover no-repeat;opacity:.17}
+.albert3b-avatar{z-index:2;filter:drop-shadow(0 8px 25px rgba(23,158,253,.3))}
+.albert3b-avatar-halo{background:radial-gradient(circle,rgba(84,194,247,.46),rgba(19,91,163,.28) 45%,transparent 70%)}
+.albert3b-avatar svg{filter:drop-shadow(0 0 14px rgba(59,152,255,.66))}
+.albert3b-reply{background:linear-gradient(120deg,rgba(19,71,105,.91),rgba(8,26,45,.86));
+ border-color:rgba(107,194,239,.42)}
+.albert3b-conversation{scrollbar-color:rgba(210,172,105,.45) transparent}
+.albert3b-suggestions .gm-button{position:relative;overflow:hidden;
+ border:1px solid rgba(188,175,140,.28);background:
+ radial-gradient(ellipse at 12% 5%,rgba(41,118,159,.31),transparent 72%),
+ linear-gradient(115deg,rgba(11,42,68,.96),rgba(11,22,38,.94))}
+.albert3b-suggestions .gm-button:nth-child(3n){background:
+ radial-gradient(ellipse at 30% 10%,rgba(178,115,47,.21),transparent 70%),
+ linear-gradient(115deg,rgba(28,37,49,.94),rgba(9,23,40,.96))}
+.albert3b-suggestions .gm-button:hover{border-color:rgba(246,206,142,.8)}
+@media(max-width:720px){
+ .albert3b-daily-quick{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .albert3b-daily-quick>.gm-button{min-height:57px}
+ .albert3b-stage::after{height:30%;opacity:.12}
+ .albert3b-avatar{filter:none}
+}
+@media(max-width:370px){
+ .albert3b-daily-input-row{grid-template-columns:1fr}
+ .albert3b-daily-quick{grid-template-columns:1fr 1fr}
+ .albert3b-daily-quick>.gm-button{font-size:10px;padding:9px 8px}
+}
+@media(prefers-reduced-motion:reduce){
+ .albert3b-daily *, .albert3b-stage *{animation:none!important;transition:none!important}
+}
+
+/* On narrow phone screens the avatar retains blue/gold radial light without
+   full-surface blur or SVG drop-shadow. This also covers Windows Edge mobile
+   emulation, where (pointer:coarse) may not match despite touch emulation. */
+@media(max-width:720px){
+ .albert3b-experience .albert3b-avatar-halo{filter:none!important;opacity:.72}
+ .albert3b-experience .albert3b-avatar svg{filter:none!important}
+}
+
+/* Sculpted 2.5D Albert: curved contours and iris highlights replace the thin
+   outline avatar, with one composited transform and zero extra WebGL context. */
+.albert3b-sculpted-avatar{isolation:isolate;overflow:visible}
+.albert3b-sculpted-avatar .albert3b-portrait-svg{
+ position:relative;z-index:2;height:100%;width:100%;max-height:100%;
+ object-fit:contain;transform-origin:center 65%;
+ filter:drop-shadow(0 0 11px rgba(52,165,249,.38));
+ animation:albert3b-portrait-breathe 5.8s ease-in-out infinite
+}
+.albert3b-sculpted-avatar .albert3b-avatar-halo{
+ inset:8% -7% 10%;z-index:-1;filter:none;
+ background:radial-gradient(ellipse at 48% 44%,rgba(66,173,233,.46),rgba(14,67,129,.3) 46%,transparent 73%);
+ opacity:.82
+}
+.albert3b-sculpted-avatar .albert3b-orbit-one{
+ width:116%;height:25%;bottom:15%;left:-8%;z-index:3;
+ border-color:rgba(116,210,250,.35);
+ box-shadow:0 0 12px rgba(43,161,231,.13);
+ animation:albert3b-portrait-orbit-one 10s ease-in-out infinite alternate
+}
+.albert3b-sculpted-avatar .albert3b-orbit-two{
+ width:110%;height:23%;bottom:19%;left:-5%;z-index:1;
+ border-color:rgba(245,193,112,.33);
+ animation:albert3b-portrait-orbit-two 11s ease-in-out infinite alternate
+}
+.albert3b-eye-glimmer{animation:albert3b-eye-luma 6.1s ease-in-out infinite}
+@keyframes albert3b-portrait-breathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+@keyframes albert3b-portrait-orbit-one{from{transform:rotate(-16deg)}to{transform:rotate(10deg)}}
+@keyframes albert3b-portrait-orbit-two{from{transform:rotate(18deg)}to{transform:rotate(-6deg)}}
+@keyframes albert3b-eye-luma{0%,89%,100%{opacity:1}90%,91%{opacity:.17}92%,99%{opacity:1}}
+@media(max-width:720px){
+ .albert3b-sculpted-avatar .albert3b-portrait-svg{filter:none}
+ .albert3b-sculpted-avatar .albert3b-avatar-halo{filter:none!important}
+ .albert3b-sculpted-avatar .albert3b-orbit-one,
+ .albert3b-sculpted-avatar .albert3b-orbit-two{box-shadow:none}
+}
+@media(prefers-reduced-motion:reduce){
+ .albert3b-sculpted-avatar *{animation:none!important;transition:none!important}
+}
