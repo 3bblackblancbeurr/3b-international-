@@ -58,6 +58,20 @@ test('Albert public concierge guides to existing routes without pretending local
  assert.doesNotMatch(src,/fetch\(['"]http:\/\/127\.0\.0\.1/);
 });
 
+test('Albert understands French requests and avoids false destinations from incidental substrings',()=>{
+ assert.equal(findAlbertDestination('je ne sais pas'),null,'negation must not open step counter');
+ assert.equal(findAlbertDestination('une discussion sociale'),null,'IA letters inside a longer word are not an AI intent');
+ assert.equal(findAlbertDestination('Je veux une conversation IA')?.id,'ia-trio','generative chat remains distinct from tactile design IA');
+ assert.equal(findAlbertDestination('Je veux cuisiner une recette')?.id,'health','cooking belongs to Santé');
+ assert.equal(findAlbertDestination('Je cherche un partenaire')?.id,'partners');
+ assert.equal(findAlbertDestination('Je veux voyager')?.id,'travel','French infinitive resolves to Voyage');
+ assert.equal(findAlbertDestination('suivre mes pas')?.id,'health','explicit steps context is still recognized');
+ assert.equal(findAlbertDestination('Je veux regarder un film')?.id,'cinema');
+ assert.equal(findAlbertDestination('comment faire')?.id,'guide');
+ assert.equal(findAlbertDestination('Je cherche des jeux vidéo')?.id,'games');
+ assert.equal(albertLocalGuideAnswer('Où est le chatbot ?').destination?.id,'ia-trio');
+});
+
 test('3B World and Albert are real routed React components, not pasted promotional screenshots',()=>{
  const app=read('src/App.jsx'),home=read('src/components/HomePage.jsx');
  const map=read('src/components/LivingWorldHome.jsx'),globe=read('src/components/LivingWorldGlobe.jsx');
