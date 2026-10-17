@@ -18,7 +18,8 @@ try{
   await page.goto('http://127.0.0.1:5208/__hub-master-qa',{waitUntil:'domcontentloaded',timeout:120000});
   await page.locator('.world-loading').waitFor({state:'hidden',timeout:120000});
   await page.waitForFunction(()=>qa?.scene,{timeout:120000});
-  await page.evaluate(()=>{qa.scene.skipCinematic();qa.scene.qaHoldRender();qa.scene.setQuality('auto');});
+  await page.evaluate(()=>{qa.scene.skipCinematic();qa.scene.qaHoldRender();});
+  assert.equal(await page.evaluate(()=>localStorage.getItem('3b-world-quality')),null,'legacy manual selection is discarded when the world opens');
   const before=await page.evaluate(()=>qa.scene.qaQualityState());
   assert.equal(before.mode,'auto');assert.equal(before.shadows,true);assert.equal(before.targetFps,30);
   const stable=await page.evaluate(()=>qa.scene.qaQualitySamples(30,1,600));assert.equal(stable.mode,'auto');assert.equal(stable.ratio,before.ratio,'30 FPS steady preserves phone image quality');
@@ -35,10 +36,11 @@ try{
   assert.equal(recovered.mode,'auto');assert.equal(recovered.shadows,true);
   await page.evaluate(()=>qa.scene.setQuality('detail'));
   const detail=await page.evaluate(()=>qa.scene.qaQualitySamples(10,2,10));
-  assert.equal(detail.mode,'detail','Explicit user choice is preserved');
+  assert.equal(detail.mode,'detail','Internal diagnostic override remains testable, despite the removed user selector');
   if(device.id==='phone-landscape'){
   await page.getByRole('button',{name:'Pause et options',exact:true}).click();
   const dialog=page.getByRole('dialog',{name:'Une pause dans le voyage',exact:true});await dialog.waitFor();
+  assert.equal(await dialog.locator('#world-quality').count(),0,'no graphic quality selector is shown to players');
   await dialog.getByText('État du rendu',{exact:true}).click();
   const pendingDownload=page.waitForEvent('download');await dialog.getByRole('button',{name:'Télécharger le relevé de fluidité',exact:true}).click();
   const download=await pendingDownload;assert.equal(download.suggestedFilename(),'3B-diagnostic-fluidite.json');
@@ -52,7 +54,7 @@ try{
   await page.evaluate(()=>qa.scene.qaResumeCapture());
   await page.waitForFunction(()=>qa.scene.qaQualityState().mode==='fluid');
   assert.deepEqual(errors,[]);report.push({device:device.id,before,fallback,partial,recovered,errors});
-  console.log(device.id+': auto overload, recovery and manual modes passed');await context.close();
+  console.log(device.id+': automatic overload, recovery and diagnostic modes passed');await context.close();
  }
  await writeFile(out+'/report.json',JSON.stringify(report,null,2));
 }finally{await browser.close();await server.close();}

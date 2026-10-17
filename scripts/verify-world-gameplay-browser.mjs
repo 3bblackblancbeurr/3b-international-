@@ -26,7 +26,11 @@ try{
   await page.addInitScript(()=>{localStorage.setItem('3b-world-quality','fluid');localStorage.setItem('3b-world-hub-orientation',JSON.stringify({seen:true,progress:{}}));});
   console.log(device.id+': load gameplay');await page.goto('http://127.0.0.1:5201/__hub-master-qa',{waitUntil:'domcontentloaded',timeout:120000});
   await page.locator('.world-loading').waitFor({state:'hidden',timeout:120000});
-  await page.waitForFunction(()=>window.qa?.scene,{timeout:120000});await page.evaluate(()=>qa.scene.skipCinematic());await page.waitForTimeout(900);
+  // CI uses software WebGL. Keep this private gesture fixture lightweight;
+  // the separate adaptive-quality fixture exercises automatic mode itself.
+  // Playwright takes waitForFunction options as its THIRD argument, not its second.
+  // On a slower CI software-GPU runner the first WorldPage can require over 20 seconds to mount.
+  await page.waitForFunction(()=>window.qa?.scene,undefined,{timeout:120000,polling:250});await page.evaluate(()=>{qa.scene.setQuality('fluid');qa.scene.skipCinematic();});await page.waitForTimeout(900);
   await staticHud(page,async()=>{
    await page.getByRole('button',{name:'Affichage du jeu',exact:true}).click();
    await page.waitForFunction(()=>qa.audioStatus()?.context==='running');assert.equal(await page.evaluate(()=>qa.audioStatus().closed),false);

@@ -58,7 +58,7 @@ function injectCaptureHooks(code){
   qaResumeCapture(){if(!qaCaptureFrozen)return;qaCaptureFrozen=false;last=performance.now();raf=requestAnimationFrame(tick);},
   refreshHubSchedule:`);
 }
-const server=await createServer({server:{host:'127.0.0.1',port:5199,strictPort:true},plugins:[{name:'private-hub-master-fixture',enforce:'pre',resolveId:id=>id==='/__hub-master-entry.jsx'?id:null,load:id=>id==='/__hub-master-entry.jsx'?entry:null,transform(code,id){const path=id.split('?')[0];if(path.endsWith('/src/loyalty/LoyaltyContext.jsx'))return code+'\nexport const QAAccountProvider=Context.Provider;';if(path.endsWith('/src/design-system/LuxuryExperience.jsx'))return code+'\nexport const QALuxuryProvider=ExperienceContext.Provider;';if(path.endsWith('/src/world/scene.js'))return injectCaptureHooks(code);if(path.endsWith('/src/world/WorldPage.jsx')){const marker='scene.current.setQuality(quality);';assert.ok(code.includes(marker),'WorldPage capture fixture matches the scene ref');return code.replace(marker,'window.qa.scene=scene.current;'+marker);}},configureServer(s){s.middlewares.use('/__hub-master-qa',handler);}}]});
+const server=await createServer({server:{host:'127.0.0.1',port:5199,strictPort:true},plugins:[{name:'private-hub-master-fixture',enforce:'pre',resolveId:id=>id==='/__hub-master-entry.jsx'?id:null,load:id=>id==='/__hub-master-entry.jsx'?entry:null,transform(code,id){const path=id.split('?')[0];if(path.endsWith('/src/loyalty/LoyaltyContext.jsx'))return code+'\nexport const QAAccountProvider=Context.Provider;';if(path.endsWith('/src/design-system/LuxuryExperience.jsx'))return code+'\nexport const QALuxuryProvider=ExperienceContext.Provider;';if(path.endsWith('/src/world/scene.js'))return injectCaptureHooks(code);if(path.endsWith('/src/world/WorldPage.jsx')){const marker='scene.current.setControls?.(controls);';assert.ok(code.includes(marker),'WorldPage capture fixture matches the scene ref');return code.replace(marker,'window.qa.scene=scene.current;'+marker);}},configureServer(s){s.middlewares.use('/__hub-master-qa',handler);}}]});
 await server.listen();const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH||undefined,args:['--no-sandbox','--disable-dev-shm-usage','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
 async function capture(page,path){
  try{
@@ -105,11 +105,12 @@ try{
     assert.equal(await page.locator('.hub-guide-cancel').count(),0,'The cancelled waypoint has no stale cancel action');
    }finally{await page.evaluate(()=>qa.scene.qaResumeCapture());}
    console.log(device.id+': guidance cancels with rendering suspended');
+   assert.equal(await page.evaluate(()=>localStorage.getItem('3b-world-quality')),null,'old graphics overrides are discarded automatically');
    await page.getByRole('button',{name:'Pause et options',exact:true}).click();const dialog=page.getByRole('dialog',{name:'Une pause dans le voyage',exact:true});await dialog.waitFor();
    await dialog.getByText('Commandes clavier et tactile',{exact:true}).click();await dialog.getByRole('button',{name:'QWERTY',exact:true}).click();
    await dialog.getByLabel('Touche pour interagir',{exact:true}).selectOption('w');assert.equal(await dialog.getByLabel('Touche pour interagir',{exact:true}).inputValue(),'e');
    await dialog.getByLabel('Touche pour interagir',{exact:true}).selectOption('f');assert.equal(await dialog.getByLabel('Touche pour interagir',{exact:true}).inputValue(),'f');
-   await dialog.getByText('Graphismes et audio',{exact:true}).click();await dialog.getByLabel('Qualité graphique',{exact:true}).selectOption('auto');await dialog.getByLabel('Qualité graphique',{exact:true}).selectOption('fluid');
+   await dialog.getByText('Audio',{exact:true}).click();assert.equal(await dialog.getByLabel('Qualité graphique',{exact:true}).count(),0,'manual quality selector was removed');assert.ok(await dialog.getByLabel('Volume Général').count(),'audio mixer remains available');
    const bounds=await dialog.evaluate(el=>({width:el.clientWidth,scroll:el.scrollWidth,left:el.getBoundingClientRect().left,right:el.getBoundingClientRect().right,viewport:innerWidth}));assert.ok(bounds.scroll<=bounds.width+2,'Settings have no horizontal overflow');assert.ok(bounds.left>=0&&bounds.right<=bounds.viewport,'Dialog remains in viewport');
    await capture(page,out+'/'+device.id+'-settings.png');
    if(device.hasTouch){
@@ -144,7 +145,7 @@ try{
    }
    if(!device.hasTouch){await page.setViewportSize({width:550,height:735});await page.locator('.world-rotate-device').waitFor({state:'hidden'});await page.locator('.hub-objective-card').waitFor({state:'visible'});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),true,'Compact desktop stays playable without horizontal page overflow');await capture(page,out+'/desktop-compact.png');}
    else{await page.setViewportSize({width:390,height:844});await page.locator('.world-rotate-device').waitFor({state:'visible'});await page.setViewportSize(device.viewport);await page.locator('.world-rotate-device').waitFor({state:'hidden'});}
-   assert.deepEqual(errors,[],'No runtime exception');report.push({device:device.id,ok:true,checks:['real-scene','guidance-cancel-with-render-held','guidance-scene-state-cleared','settings','key-conflict','graphics-switch','atlas-labels','journal-labels','reload','orientation-persistence','no-horizontal-overflow']});
+   assert.deepEqual(errors,[],'No runtime exception');report.push({device:device.id,ok:true,checks:['real-scene','guidance-cancel-with-render-held','guidance-scene-state-cleared','settings','key-conflict','automatic-graphics','atlas-labels','journal-labels','reload','orientation-persistence','no-horizontal-overflow']});
    console.log(device.id+': PASS');
   }catch(error){console.error(device.id+': FAILED',error.message);await capture(page,out+'/'+device.id+'-failure.png').catch(()=>{});await writeFile(out+'/'+device.id+'-failure.txt',await page.locator('body').innerText().catch(()=>''));report.push({device:device.id,ok:false,error:error.message,errors});}
   await context.close();

@@ -13,8 +13,10 @@ test('queued opening waits for real world assets instead of playing over a loadi
  assert.match(world,/if\(storyCinematic\|\|!cinematicQueue\.length\|\|assetsLoading\|\|!scene\.current\)return/);
  assert.match(world,/\[cinematicQueue,storyCinematic,assetsLoading,worldRequested\]/);
 });
-test('avatar preview obeys fluid mode and suspends its GPU work when offscreen',()=>{
- assert.match(stage,/localStorage\.getItem\('3b-world-quality'\)==='fluid'/);
+test('avatar preview automatically limits low-memory mobile devices and pauses offscreen',()=>{
+ assert.match(stage,/const lowPower=coarsePointer&&/);
+ assert.match(stage,/deviceMemory<=4/);
+ assert.doesNotMatch(stage,/localStorage\.getItem\('3b-world-quality'\)/);
  assert.match(stage,/renderer\.shadowMap\.enabled=!lowPower/);
  assert.match(stage,/if\(lowPower&&now-at<1000\/30\)return/);
  assert.match(stage,/document\.hidden\|\|!inView/);
