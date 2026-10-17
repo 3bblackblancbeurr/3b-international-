@@ -68,10 +68,11 @@ export function createOblivionActor({reducedMotion=false}={}){
   const material=own(new THREE.MeshStandardMaterial({color:tint,emissive:tint,emissiveIntensity:.1,roughness:.48,metalness:.55}));
   const mesh=new THREE.Mesh(shardGeometry,material);mesh.name='Mémoire · '+country.name;mesh.castShadow=true;rig.add(mesh);shards.push(mesh);
  }
- let dead=false,time=0,actionName='Idle',actionAt=0,actionDuration=.8,phase=1,mastery=0,windup=0,victory=false,heading=0;
+ let dead=false,time=0,actionName='Idle',actionAt=0,actionDuration=.8,phase=1,mastery=0,windup=0,victory=false,heading=0,lastStateKey='';
  function setFinalState(encounter){
   if(dead||!encounter?.final)return;
   phase=finalCirclePhase(encounter)?.index||1;mastery=finalCircleMasteryMask(encounter);windup=encounter.field?.phase==='windup'?1:0;victory=encounter.result==='victory';
+  const key=phase+':'+mastery+':'+windup+':'+victory;if(key===lastStateKey)return;lastStateKey=key;
   const tint=worldRealmArt[COUNTRIES[phase-1].id].cloth;
   materials.core.color.set(tint).lerp(new THREE.Color(worldArtMaterials.monumentEmission),.58);
   materials.core.emissive.copy(materials.core.color);materials.core.emissiveIntensity=victory?.12:.38+windup*.24;

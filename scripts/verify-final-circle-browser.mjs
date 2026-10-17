@@ -17,7 +17,7 @@ let fixture=original.slice(0,original.indexOf('const report=[];'))
  .replace("const out=process.env.HUB_MASTER_OUT||'artifacts/hub-master-ui';","const out=process.env.FINAL_CIRCLE_OUT||'artifacts/final-circle';")
  .replace('const save=blankSave();','const save='+JSON.stringify(seed)+';')
  .replace('const server=await createServer({',"const server=await createServer({cacheDir:'node_modules/.vite-final-circle-qa',")
- .replace("return code.replace(marker,'window.qa.scene=scene.current;'+marker);","code=code.replace(/callbacks\\.current\\s*=\\s*\\{\\s*interact\\s*,/,'window.qa.act=act;window.qa.state=()=>saveRef.current;callbacks.current={interact,');return code.replace(marker,'window.qa.scene=scene.current;'+marker);")
+ .replace("return code.replace(marker,'window.qa.scene=scene.current;'+marker);","code=code.replace(/callbacks\\.current\\s*=\\s*\\{\\s*interact\\s*,/,'window.qa.act=act;window.qa.interact=interact;window.qa.state=()=>saveRef.current;callbacks.current={interact,');return code.replace(marker,'window.qa.scene=scene.current;'+marker);")
  .replace("return code.replace(marker,`let qaCaptureFrozen=false;return{",`const clock='function tick(now){\\n  now=performance.now();';assert.ok(code.includes(clock));code=code.replace(clock,'let qaVisualDt=null;function tick(now){\\n  now=qaVisualDt===null?performance.now():last+qaVisualDt*1000;');
  return code.replace(marker,\`let qaCaptureFrozen=false;return{
   qaFrame(count=1){cancelAnimationFrame(raf);qaCaptureFrozen=true;try{for(let i=0;i<Math.min(8,count);i++){qaVisualDt=.016;tick(last+16);cancelAnimationFrame(raf);}}finally{qaVisualDt=null;}},
@@ -54,7 +54,7 @@ try{
    await page.locator('.world-loading').waitFor({state:'hidden',timeout:150000});await hold(page,()=>skipStories(page));
    assert.equal(await page.evaluate(()=>qa.state().seals.length),8);assert.equal(await page.evaluate(()=>qa.state().adventure.finished),false);
    // Accepted final command creates the canonical field at the true Hub apron.
-   assert.ok(await page.evaluate(()=>!!qa.act({type:'final'})));await page.getByRole('region',{name:'Combat en déplacement libre'}).waitFor();
+   await page.evaluate(()=>qa.interact(qa.scene.qaFinalState().region==='hub'?{id:'final',type:'final'}:null));await page.getByRole('region',{name:'Combat en déplacement libre'}).waitFor();
    await skipStories(page);await page.evaluate(()=>{qa.scene.setQuality('fluid');qa.scene.qaFinalLook();});
    let s=await draw(page);for(let i=0;i<8;i++)s=await draw(page);cameraCheck(s);
    assert.equal(s.body.art,'authored-fragment-body');assert.equal(s.environment.fighting,true);assert.equal(s.region,'hub');
@@ -83,14 +83,14 @@ try{
     console.log(profile.id+': '+JSON.stringify(checkpoint));assert.ok(checkpoint.ticks>0);
     if(checkpoint.result){assert.equal(checkpoint.result,'victory');break;}
     s=await draw(page);for(let i=0;i<4;i++)s=await draw(page);cameraCheck(s);assert.equal(s.body.phase,checkpoint.phase);assert.equal(s.environment.mastery,checkpoint.mastery);phases.push(checkpoint.phase);
-    assert.match(await page.locator('.guardian-mechanic').innerText(),new RegExp('Phase '+checkpoint.phase+'/8'));
+    assert.match(await page.locator('.guardian-mechanic').innerText(),new RegExp('Phase '+checkpoint.phase+'/8','i'));
     await capture(page,out+'/'+profile.id+'-phase-'+checkpoint.phase+'.png');await page.evaluate(()=>qa.scene.qaHoldRender());
    }
    assert.deepEqual(phases,[2,3,4,5,6,7,8]);
    const won=await page.evaluate(()=>({finished:qa.state().adventure.finished,e:qa.state().adventure.encounter,xp:qa.state().xp,shards:qa.state().shards}));
    assert.equal(won.finished,true);assert.equal(won.e.finalCircleMastery,255);assert.equal(won.e.result,'victory');
-   await page.waitForFunction(()=>document.querySelector('.world-cinematic-director'),undefined,{timeout:10000});assert.match(await page.locator('.world-cinematic-director').innerText(),/L’Oubli perd son emprise/);
-   await skipStories(page);await page.evaluate(()=>qa.act({type:'leave'}));await skipStories(page);await draw(page);
+   await page.waitForFunction(()=>document.querySelector('.world-cinematic-director'),undefined,{timeout:10000});assert.match(await page.locator('.world-cinematic-director').innerText(),/L’Oubli perd son emprise/i);assert.equal(await page.locator('dialog[open]').count(),0,'A native result dialog cannot cover the final cinematic controls');
+   await skipStories(page);await page.getByRole('button',{name:'Revenir au monde',exact:true}).click();await skipStories(page);await draw(page);
    s=await draw(page);assert.equal(s.environment.restored,true);assert.equal(s.environment.mastery,255);assert.equal(s.environmentVisible,true);
    await capture(page,out+'/'+profile.id+'-circle-restored.png');
    await page.waitForFunction(()=>JSON.parse(localStorage.getItem('3b_world_v1_guest')||'{}').data?.adventure?.finished,undefined,{timeout:20000});

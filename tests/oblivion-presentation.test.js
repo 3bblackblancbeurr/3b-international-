@@ -3,6 +3,10 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {createOblivionActor} from '../src/world/oblivion-manifestation.js';
 import {createFinaleEnvironment} from '../src/world/finale-environment.js';
+import {hubPublicPlaces} from '../src/world/hub/platform-life.js';
+import {finalArenaPosition,combatObstacles} from '../src/world/field-world.js';
+import {obstacleDistance} from '../src/world/collision.js';
+import {blankSave} from '../src/world/rules.js';
 const encounter=(phase=1,mastery=0)=>({final:true,enemyMax:360,enemy:360-(phase-1)*45,finalCircleMastery:mastery,field:{phase:'windup'}});
 test('the final manifestation has its own bounded body and eight inherited fragments',()=>{
  const actor=createOblivionActor();assert.equal(actor.ready,true);assert.equal(actor.object.userData.guardianIdentity,undefined);
@@ -38,4 +42,9 @@ test('final anchors reflect only final battle/mastery or accepted victory and pr
  scene.tick(9,{save:{adventure:{finished:true}},player:{x:0,z:8}});assert.equal(scene.root.userData.presentation.mastery,255);assert.equal(scene.root.userData.presentation.restored,true);
  scene.tick(10,{save:{adventure:{finished:true}},player:{x:300,z:8}});assert.equal(scene.root.visible,false);
  assert.deepEqual(scene.diagnostics,{anchors:8,meshes:4,lineSegments:8,collisions:0});scene.dispose();scene.dispose();assert.equal(scene.root.parent,null);
+});
+test('the public Circle console stays usable beside the final battle apron',()=>{
+ const console=hubPublicPlaces().find(p=>p.district==='broken_circle_tower'&&p.kind==='district'),arena=finalArenaPosition();
+ assert.ok(Math.hypot(console.x-arena.x,console.z-arena.z)>21,'Console and its sign clear the combat centre and southern approach');
+ assert.ok(combatObstacles(blankSave()).every(o=>obstacleDistance(console,o)>.9),'The console remains on a walkable part of the promenade');
 });
