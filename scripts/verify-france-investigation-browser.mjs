@@ -16,6 +16,19 @@ if(process.env.FRANCE_INVESTIGATION_DEBUG)fixture=fixture.replace('function inje
 const cases=String.raw`
 const report=[];
 async function hud(page,callback){await page.evaluate(()=>qa.scene.qaHoldRender());try{return await callback();}finally{await page.evaluate(()=>qa.scene.qaResumeCapture());}}
+async function dismissStory(page){
+ const story=page.locator('.world-cinematic-director'),deadline=Date.now()+60000;
+ while(await story.isVisible()){
+  if(Date.now()>=deadline)throw Error('The story overlay did not release the world within 60 seconds.');
+  try{await hud(page,()=>story.getByRole('button',{name:'Passer',exact:true}).click({timeout:2000}));}
+  catch(error){
+   // A timed story may finish while Playwright checks the button's stability.
+   // Its natural disappearance already satisfies the requested dismissal.
+   if(error.name!=='TimeoutError')throw error;
+   if(!await story.isVisible())return;
+  }
+ }
+}
 const profiles=[{id:'desktop',viewport:{width:1280,height:800}},{id:'touch',viewport:{width:844,height:390},isMobile:true,hasTouch:true,reducedMotion:'reduce'}].filter(p=>!process.env.FRANCE_INVESTIGATION_PROFILES||process.env.FRANCE_INVESTIGATION_PROFILES.split(',').includes(p.id));
 try{
  for(const profile of profiles){
@@ -39,7 +52,7 @@ try{
    await page.waitForFunction(()=>qa.snapshot?.region==='france',undefined,{timeout:120000});console.log(profile.id+': first France frame');
    await page.locator('.world-loading').waitFor({state:'hidden',timeout:150000});console.log(profile.id+': models ready');
    await page.evaluate(()=>{qa.scene.setQuality('fluid');qa.scene.skipCinematic();});
-   const storySkip=page.getByRole('button',{name:'Passer',exact:true});if(await storySkip.count())await hud(page,()=>storySkip.first().click());
+   await dismissStory(page);
    const card=page.getByRole('complementary',{name:'Enquête sur place',exact:true});
    let firstInteraction=true;
    async function openCurrent(){
@@ -48,7 +61,7 @@ try{
      qa.scene.relocateRealm({region:'france',...current.target});qa.scene.skipCinematic();
     });
     await page.waitForFunction(()=>{const c=qa.snapshot?.campaign,p=qa.snapshot?.position;return c&&p&&Math.hypot(c.target.x-p.x,c.target.z-p.z)<1;},undefined,{timeout:60000});
-    const skip=page.getByRole('button',{name:'Passer',exact:true});if(await skip.count())await hud(page,()=>skip.first().click());
+    await dismissStory(page);
     await page.locator('.world-cinematic-director').waitFor({state:'hidden',timeout:60000});
     // First interaction exercises the keyboard. Later contacts use the actual
     // HUD button: Playwright waits for queued story overlays to release it.
