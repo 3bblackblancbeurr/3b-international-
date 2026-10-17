@@ -63,6 +63,9 @@ try{
   }));
   check('Eight canonical realms in image rail '+width,await home.locator('.atlas3b-realm').count()===8);
   check('All 22 real modules linked '+width,await home.locator('.atlas3b-module-link').count()===22);
+  check('Map and favorite controls have 44 pixel touch targets '+width,await home.locator('.atlas3b-map-pin,.atlas3b-favorite').evaluateAll(elements=>elements.every(el=>{const r=el.getBoundingClientRect();return r.width>=44&&r.height>=44;})));
+  check('Atlas search avoids automatic iPhone zoom '+width,await home.locator('input[type=search]').evaluateAll(elements=>elements.every(el=>parseFloat(getComputedStyle(el).fontSize)>=16)));
+  check('Only the selected exploration arc animates '+width,await home.locator('.atlas3b-flight-line').count()===1&&await home.locator('.atlas3b-flight-line.is-active').count()===1);
   const expectedHashes=WORLD_MODULES.map(item=>'#'+PAGE_HASHES[item.id]).sort();
   const moduleHrefs=await home.locator('.atlas3b-module-link').evaluateAll(links=>links.map(link=>link.href));
   check('All 22 module links use unique canonical local routes '+width,
@@ -100,24 +103,28 @@ try{
    await home.getByRole('button',{name:'Maroc Noblesse'}).click();
    check('Country rail selects a canonical realm '+width,await home.locator('.atlas3b-map-caption').innerText().then(t=>t.includes('Maroc')));
   }else{
-   await home.getByRole('searchbox',{name:'Rechercher un pays ou un univers 3B'}).fill('maroc');
+   await home.getByRole('searchbox',{name:'Rechercher un pays ou un espace 3B'}).fill('maroc');
    await home.locator('.atlas3b-search-results').getByRole('button',{name:/Maroc/}).click();
    check('Country search selects canonical realm '+width,await home.locator('.atlas3b-map-caption').innerText().then(t=>t.includes('Maroc')));
   }
   await home.getByRole('tab',{name:'Communauté',exact:true}).click();
   check('Community experience tab opens with real route '+width,await home.getByRole('link',{name:/Espace communauté/}).isVisible());
   await home.getByRole('tab',{name:'Monde',exact:true}).click();
-  const search=home.getByRole('searchbox',{name:'Rechercher un pays ou un univers 3B'});
+  const search=home.getByRole('searchbox',{name:'Rechercher un pays ou un espace 3B'});
   await search.fill('introuvable-qa-3b');
   check('Unknown search has an explicit empty state '+width,await home.locator('.atlas3b-search-results').innerText().then(s=>/aucun résultat/i.test(s)));
   await search.press('Escape');
   check('Escape clears search without navigating '+width,await search.inputValue()===''&&new URL(page.url()).hash==='#accueil');
   await search.fill('scanner alimentaire');
   check('Home search still includes real services beyond 22 modules '+width,await home.locator('.atlas3b-search-results').getByRole('button',{name:'Scanner alimentaire',exact:true}).isVisible());
+  await search.fill('scanner code barre');
+  check('Compound search matches terms across service aliases '+width,await home.locator('.atlas3b-search-results').getByRole('button',{name:'Scanner alimentaire',exact:true}).isVisible());
   await search.press('Escape');
   const modules=home.locator('.atlas3b-modules');
-  const filters=modules.getByRole('group',{name:'Catégories des univers'});
-  const moduleSearch=modules.getByRole('searchbox',{name:'Filtrer les univers',exact:true});
+  const realmsRect=await home.locator('.atlas3b-realms').boundingBox(),modulesRect=await modules.boundingBox();
+  check('Heritage images follow the service spaces '+width,realmsRect.y>=modulesRect.y+modulesRect.height);
+  const filters=modules.getByRole('group',{name:'Catégories des espaces'});
+  const moduleSearch=modules.getByRole('searchbox',{name:'Filtrer les espaces',exact:true});
   await moduleSearch.fill('sante');
   check('Module search ignores accents and filters the grid '+width,await modules.locator('.atlas3b-module-link').count()===1&&await modules.locator('.atlas3b-module-link').getAttribute('href').then(h=>h.endsWith('#sante')));
   await moduleSearch.fill('introuvable-qa-3b');
@@ -128,8 +135,10 @@ try{
   check('Favorite controls are not covered by the dock '+width,await reachableControls(modules.getByRole('button',{name:/^Ajouter aux favoris : .+$/})));
   await favorite.click();
   check('Favorite exposes its pressed state '+width,await modules.getByRole('button',{name:'Retirer des favoris : 3B Bons Plans',exact:true}).getAttribute('aria-pressed')==='true');
+  check('Favorite action receives explicit feedback '+width,await home.locator('.atlas3b-action-feedback').innerText()==='3B Bons Plans ajouté à tes favoris.');
   await filters.getByRole('button',{name:'Mes favoris',exact:true}).click();
   check('Favorite filter shows the saved module only '+width,await modules.locator('.atlas3b-module-link').count()===1&&await modules.locator('.atlas3b-module-link').innerText().then(s=>s.includes('3B Bons Plans')));
+  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('3b_atlas_preferences_v1')||'null')?.favorites?.includes('deals'));
   await page.reload({waitUntil:'domcontentloaded'});await homeReady(page);
   await filters.getByRole('button',{name:'Mes favoris',exact:true}).click();
   check('Favorites persist after a full reload '+width,await modules.locator('.atlas3b-module-link').count()===1&&await modules.getByRole('button',{name:'Retirer des favoris : 3B Bons Plans',exact:true}).getAttribute('aria-pressed')==='true');
@@ -137,6 +146,7 @@ try{
   check('Empty favorites provide feedback '+width,await modules.locator('.atlas3b-module-link').count()===0&&await modules.locator('.atlas3b-empty').isVisible()&&await modules.locator('.atlas3b-empty p').innerText().then(s=>s.trim().length>0));
   await filters.getByRole('button',{name:/^Tous?$|^Tout$/}).click();
   check('All modules return after clearing the favorite filter '+width,await modules.locator('.atlas3b-module-link').count()===22);
+  await page.waitForFunction(()=>!JSON.parse(localStorage.getItem('3b_atlas_preferences_v1')||'null')?.favorites?.includes('deals'));
   const passion=filters.getByRole('button',{name:/Passions|Jeux & passions/});
   await passion.click();
   const passionHashes=await modules.locator('.atlas3b-module-link').evaluateAll(links=>links.map(link=>new URL(link.href).hash).sort());
@@ -144,16 +154,27 @@ try{
   await filters.getByRole('button',{name:/^Tous?$|^Tout$/}).click();
   await page.reload({waitUntil:'domcontentloaded'});await homeReady(page);
   check('Removing a favorite also persists '+width,await modules.getByRole('button',{name:'Ajouter aux favoris : 3B Bons Plans',exact:true}).getAttribute('aria-pressed')==='false');
+  if(width===390){
+   const peer=await context.newPage();await peer.goto(origin+'/#accueil',{waitUntil:'domcontentloaded'});const peerHome=await homeReady(peer);
+   await Promise.all([modules.getByRole('button',{name:'Ajouter aux favoris : Santé',exact:true}).click(),peerHome.getByRole('button',{name:'Ajouter aux favoris : Manga 3B',exact:true}).click()]);
+   await page.waitForFunction(()=>{const favorites=JSON.parse(localStorage.getItem('3b_atlas_preferences_v1')||'null')?.favorites||[];return favorites.includes('health')&&favorites.includes('manga');});
+   await page.waitForFunction(()=>document.querySelector('[aria-label="Retirer des favoris : Manga 3B"]')?.getAttribute('aria-pressed')==='true');
+   await peer.waitForFunction(()=>document.querySelector('[aria-label="Retirer des favoris : Santé"]')?.getAttribute('aria-pressed')==='true');
+   check('Independent favorites merge and appear across two tabs',await modules.getByRole('button',{name:'Retirer des favoris : Santé',exact:true}).getAttribute('aria-pressed')==='true'&&await peerHome.getByRole('button',{name:'Retirer des favoris : Manga 3B',exact:true}).getAttribute('aria-pressed')==='true');
+   await modules.getByRole('button',{name:'Retirer des favoris : Santé',exact:true}).click();await peerHome.getByRole('button',{name:'Retirer des favoris : Manga 3B',exact:true}).click();
+   await page.waitForFunction(()=>{const favorites=JSON.parse(localStorage.getItem('3b_atlas_preferences_v1')||'null')?.favorites||[];return !favorites.includes('health')&&!favorites.includes('manga');});await peer.close();
+   check('Removing favorites preserves both explicit tab choices',await modules.locator('.atlas3b-favorite[aria-pressed=true]').count()===0);
+  }
   await filters.getByRole('button',{name:'Passions',exact:true}).click();
   await moduleSearch.fill('jeux');
   check('Text search combines with the module category '+width,await modules.locator('.atlas3b-module-link').count()===1&&await modules.locator('.atlas3b-module-link').getAttribute('href').then(h=>h.endsWith('#jeux')));
-  await home.getByRole('button',{name:'Afficher les 22 univers 3B'}).click();
+  await home.getByRole('button',{name:'Afficher tous les espaces 3B'}).click();
   const directory=home.locator('.atlas3b-directory');await directory.waitFor({state:'visible'});
   check('All modules appear in accessible directory '+width,await directory.locator('.atlas3b-directory-grid a').count()===22);
   check('Opening all universes resets previous grid filters '+width,await moduleSearch.inputValue()===''&&await filters.getByRole('button',{name:'Tous',exact:true}).getAttribute('aria-pressed')==='true');
-  await directory.getByRole('button',{name:'Fermer les univers'}).click();
+  await directory.getByRole('button',{name:'Fermer les espaces'}).click();
   await directory.waitFor({state:'hidden'});
-  check('Closing universes restores its opener focus '+width,await home.getByRole('button',{name:'Afficher les 22 univers 3B'}).evaluate(el=>document.activeElement===el));
+  check('Closing universes restores its opener focus '+width,await home.getByRole('button',{name:'Afficher tous les espaces 3B'}).evaluate(el=>document.activeElement===el));
   check('Filtering and dialogs do not cause horizontal overflow '+width,await noHorizontalOverflow(page));
   await home.getByRole('button',{name:'Ouvrir le menu général 3B'}).click();
   const menu=page.locator('#universe-menu');await menu.waitFor({state:'visible'});
@@ -172,9 +193,15 @@ try{
   await home.getByRole('link',{name:'Albert'}).first().click();
   await page.waitForURL(u=>u.hash==='#albert-3b');
   const albert=page.locator('.th-albert-screen');await albert.waitFor({state:'visible'});
-  check('Albert is still honest about local guide '+width,await albert.locator('.albert3b-status').innerText().then(s=>s.includes('non connecté')));
+  check('Albert opens its generalist conversation '+width,await albert.getByRole('region',{name:'Conversation IA avec Albert'}).isVisible());
+  check('Albert guest account action is explicit '+width,await albert.getByRole('button',{name:'Me connecter'}).isVisible());
+  check('Albert conversation can scroll without horizontal overflow '+width,await noHorizontalOverflow(page));
+  check('Albert composer belongs to a scrollable page '+width,await albert.evaluate(el=>el.scrollHeight<=el.getBoundingClientRect().height+2&&document.documentElement.scrollHeight>innerHeight));
   check('Albert hologram visible '+width,await albert.locator('.albert3b-apex-portrait').isVisible());
-  check('Albert also fits in one viewport '+width,await albert.evaluate(el=>{const r=el.getBoundingClientRect();return r.height<=innerHeight+2&&document.documentElement.scrollHeight<=innerHeight+3;}));
+  await page.screenshot({path:path.join(out,'3b-albert-ia-'+captureKey+'.png'),animations:'disabled',scale:'css',fullPage:true});
+  await albert.getByRole('button',{name:'Guide 3B',exact:true}).click();
+  check('Albert guide keeps its local mode explicit '+width,await albert.locator('.albert3b-status').innerText().then(s=>s.includes('non connecté')));
+  check('Albert local guide fits in one viewport '+width,await albert.evaluate(el=>{const r=el.getBoundingClientRect();return r.height<=innerHeight+2&&document.documentElement.scrollHeight<=innerHeight+3;}));
   check('Floating companion does not cover Albert conversation '+width,await page.locator('.companion3b-shell').count()===0);
   await albert.locator('#albert3b-input').fill('jeux');
   await albert.getByRole('button',{name:'Envoyer ma question'}).click();
@@ -183,7 +210,7 @@ try{
   check('Curated experiences open on request '+width,await albert.locator('.albert3b-curated').isVisible());
   await albert.getByRole('button',{name:'Ma journée'}).click();
   check('Real private timeline opens on request '+width,await albert.locator('.th-albert-agenda').isVisible());
-  await albert.getByRole('button',{name:'Dialoguer'}).click();
+  await albert.getByRole('button',{name:'Guide 3B',exact:true}).click();
   check('Albert dialogue resumes '+width,await albert.locator('.albert3b-form').isVisible());
   await page.screenshot({path:path.join(out,'3b-albert-'+captureKey+'.png'),animations:'disabled',scale:'css'});
   await context.close();currentPage=null;

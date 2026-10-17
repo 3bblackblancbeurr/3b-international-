@@ -70,7 +70,7 @@ const BASE_MENU_ITEMS = [
   { id: "news", label: "Informations actuelles", description: "Actualités et événements datés, avec leurs sources." },
   { id: "association", label: "Association 3B", description: "Projet associatif 3B, entraide et actions culturelles." },
   { id: "partners", label: "Partenariats & collaborations", description: "Préparer un brief, suivre une proposition et construire un projet." },
-  { id: "finance", label: "Banque & crypto", description: "Laboratoire de simulation bancaire et crypto en unités fictives." },
+  { id: "finance", label: "Banque & crypto", description: "Atelier projet, trésorerie, financements et prototype du token. Démo séparée." },
   { id: "travel", label: "Voyage 3B", description: "Carnets de voyage, itinéraires, préparatifs et budget prévisionnel." },
   { id: "join", label: "Nous recherchons", description: "Talents, artistes, développeurs, associations et testeurs." },
   { id: "tv", label: "3B Origins TV", description: "Neuf récits audio du Monde 3B, textes et progression de lecture." },

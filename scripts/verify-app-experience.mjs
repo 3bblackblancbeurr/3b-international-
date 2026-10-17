@@ -68,7 +68,7 @@ try{
  await home.getByRole('tab',{name:'Hubs 3B'}).click();
  check('Hubs tab is honest about future projects',await home.getByText(/Aucun lieu physique 3B/).isVisible());
  await home.getByRole('tab',{name:'Monde',exact:true}).click();
- await home.getByRole('button',{name:'Explorer les 22 univers'}).click();
+ await home.getByRole('button',{name:'Explorer les espaces 3B'}).click();
  const sheet=home.locator('.atlas3b-directory');await sheet.waitFor({state:'visible'});
  check('Directory is a real native keyboard modal',await sheet.evaluate(e=>e.matches(':modal')));
  check('All 22 modules are independently navigable',await sheet.locator('.atlas3b-directory-grid a').count()===22);

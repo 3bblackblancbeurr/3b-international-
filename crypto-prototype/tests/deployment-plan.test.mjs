@@ -1,0 +1,16 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {AbiCoder,concat} from 'ethers';
+import {newCryptoProject,parseTokenSupply,UINT256_MAX} from '../lib/project-config.js';
+import {prepareDeploymentPlan,verifyDeploymentLocally} from '../lib/deployment-plan.js';
+// Fixture labels only, never a launch destination or wallet.
+const project=()=>({...newCryptoProject(),purpose:'Local EVM verification fixture',supplyTokens:'1000.000000000000000001',recipient:'0x2000000000000000000000000000000000000002'});
+test('offline plan encodes exact constructor base units without rounding',()=>{const plan=prepareDeploymentPlan(project());assert.equal(plan.constructorArguments.supplyBaseUnits,'1000000000000000000001');assert.equal(plan.constructorArgumentsEncoded,AbiCoder.defaultAbiCoder().encode(['address','uint256'],[project().recipient,1000000000000000000001n]));assert.equal(plan.execution.rpcConfigured,false);assert.equal(plan.publicContractAddress,null);});
+test('supply arithmetic bounds are uint256 and have no decimal multiplication overflow',()=>{assert.equal(parseTokenSupply('0.000000000000000001'),1n);const max=UINT256_MAX.toString();const maxTokens=max.slice(0,-18)+'.'+max.slice(-18);assert.equal(parseTokenSupply(maxTokens),UINT256_MAX);assert.throws(()=>parseTokenSupply(maxTokens.slice(0,-1)+'6'));});
+test('invalid deployment parameters are refused before any EVM execution',()=>{assert.throws(()=>prepareDeploymentPlan({...project(),recipient:'0x'+'0'.repeat(40)}));assert.throws(()=>prepareDeploymentPlan({...project(),supplyTokens:'1e18'}));assert.throws(()=>prepareDeploymentPlan({...project(),network:'unknown'}));});
+test('constructor plan actually executes in memory and assigns exact supply',async()=>{const report=await verifyDeploymentLocally(prepareDeploymentPlan(project()));assert.equal(report.status,'passed');assert.equal(report.checks.totalSupply,'1000000000000000000001');assert.equal(report.checks.recipientBalance,report.checks.totalSupply);assert.equal(report.checks.decimals,18);assert.equal(report.broadcast,false);assert.equal(report.publicContractAddress,null);});
+test('a production target is a declaration and never enables broadcast',()=>{const plan=prepareDeploymentPlan({...project(),network:'mainnet'});assert.equal(plan.network.chainId,1);assert.equal(plan.execution.signed,false);assert.equal(plan.execution.broadcast,false);assert.equal(plan.reviewComplete,false);assert.equal(plan.network.deployed,false);});
+test('changed constructor, source, network, review or execution fields are rejected before execution',async()=>{
+ const original=prepareDeploymentPlan(project());
+ const edits=[plan=>{plan.creationData=concat([plan.creationData,'0x00']);},plan=>{plan.constructorArguments.supplyBaseUnits='1';},plan=>{plan.constructorArgumentsEncoded='0x';},plan=>{plan.sourceSha256='incorrect';},plan=>{plan.network.chainId=1;},plan=>{plan.execution.signed=true;},plan=>{plan.publicContractAddress='0x2000000000000000000000000000000000000002';},plan=>{plan.reviewComplete=true;},plan=>{plan.project.parameters.supplyBaseUnits='2';}];
+ for(const edit of edits){const plan=JSON.parse(JSON.stringify(original));edit(plan);await assert.rejects(()=>verifyDeploymentLocally(plan),/ne correspond pas/);}
+});

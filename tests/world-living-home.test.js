@@ -117,7 +117,8 @@ test('deep-linked world / Albert loads without four-second splash and conflictin
  assert.match(qa,/\[1440,1000\]/);
  assert.match(qa,/Atlas can scroll to every universe/);
  assert.match(qa,/Eight categories in a single swipe rail/);
- assert.match(qa,/Albert also fits in one viewport/);
+ assert.match(qa,/Albert local guide fits in one viewport/);
+ assert.match(qa,/Albert conversation can scroll without horizontal overflow/);
 });
 
 test('World Living Gold Master sources tokens and shared controls',()=>{

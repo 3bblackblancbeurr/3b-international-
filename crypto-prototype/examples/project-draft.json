@@ -1,0 +1,86 @@
+{
+  "format": "3b-crypto-project",
+  "version": 1,
+  "project": {
+    "version": 1,
+    "title": "Projet T3B",
+    "purpose": "",
+    "supplyTokens": "",
+    "recipient": "",
+    "network": "local",
+    "organisation": "",
+    "lead": "",
+    "reviewer": "",
+    "evidence": {
+      "design": {
+        "reference": "",
+        "reviewer": "",
+        "date": ""
+      },
+      "custody": {
+        "reference": "",
+        "reviewer": "",
+        "date": ""
+      },
+      "security": {
+        "reference": "",
+        "reviewer": "",
+        "date": ""
+      },
+      "testnet": {
+        "reference": "",
+        "reviewer": "",
+        "date": ""
+      },
+      "legal": {
+        "reference": "",
+        "reviewer": "",
+        "date": ""
+      },
+      "operations": {
+        "reference": "",
+        "reviewer": "",
+        "date": ""
+      }
+    }
+  },
+  "contract": {
+    "name": "ThreeBTokenPrototype",
+    "tokenName": "3B Token Prototype",
+    "symbol": "T3B",
+    "decimals": 18,
+    "supplyMode": "fixed-constructor-only",
+    "mintAdmin": false,
+    "upgradeable": false
+  },
+  "parameters": {
+    "initialRecipient": null,
+    "supplyBaseUnits": null
+  },
+  "network": {
+    "name": "EVM locale",
+    "chainId": null,
+    "tier": "local",
+    "deployed": false,
+    "contractAddress": null
+  },
+  "review": {
+    "status": "draft",
+    "parametersValid": false,
+    "governanceComplete": false,
+    "missingEvidence": [
+      "design"
+    ],
+    "evidenceNature": "user-declared references; not independently verified"
+  },
+  "execution": {
+    "mode": "preparation-only",
+    "signed": false,
+    "broadcast": false
+  },
+  "simulation": {
+    "symbol": "3BT démo",
+    "decimals": 2,
+    "linkedToPrototype": false
+  }
+}
