@@ -117,3 +117,43 @@
  .albert3b-experience .albert3b-avatar-halo{filter:none!important;opacity:.72}
  .albert3b-experience .albert3b-avatar svg{filter:none!important}
 }
+
+/* Sculpted 2.5D Albert: curved contours and iris highlights replace the thin
+   outline avatar, with one composited transform and zero extra WebGL context. */
+.albert3b-sculpted-avatar{isolation:isolate;overflow:visible}
+.albert3b-sculpted-avatar .albert3b-portrait-svg{
+ position:relative;z-index:2;height:100%;width:100%;max-height:100%;
+ object-fit:contain;transform-origin:center 65%;
+ filter:drop-shadow(0 0 11px rgba(52,165,249,.38));
+ animation:albert3b-portrait-breathe 5.8s ease-in-out infinite
+}
+.albert3b-sculpted-avatar .albert3b-avatar-halo{
+ inset:8% -7% 10%;z-index:-1;filter:none;
+ background:radial-gradient(ellipse at 48% 44%,rgba(66,173,233,.46),rgba(14,67,129,.3) 46%,transparent 73%);
+ opacity:.82
+}
+.albert3b-sculpted-avatar .albert3b-orbit-one{
+ width:116%;height:25%;bottom:15%;left:-8%;z-index:3;
+ border-color:rgba(116,210,250,.35);
+ box-shadow:0 0 12px rgba(43,161,231,.13);
+ animation:albert3b-portrait-orbit-one 10s ease-in-out infinite alternate
+}
+.albert3b-sculpted-avatar .albert3b-orbit-two{
+ width:110%;height:23%;bottom:19%;left:-5%;z-index:1;
+ border-color:rgba(245,193,112,.33);
+ animation:albert3b-portrait-orbit-two 11s ease-in-out infinite alternate
+}
+.albert3b-eye-glimmer{animation:albert3b-eye-luma 6.1s ease-in-out infinite}
+@keyframes albert3b-portrait-breathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+@keyframes albert3b-portrait-orbit-one{from{transform:rotate(-16deg)}to{transform:rotate(10deg)}}
+@keyframes albert3b-portrait-orbit-two{from{transform:rotate(18deg)}to{transform:rotate(-6deg)}}
+@keyframes albert3b-eye-luma{0%,89%,100%{opacity:1}90%,91%{opacity:.17}92%,99%{opacity:1}}
+@media(max-width:720px){
+ .albert3b-sculpted-avatar .albert3b-portrait-svg{filter:none}
+ .albert3b-sculpted-avatar .albert3b-avatar-halo{filter:none!important}
+ .albert3b-sculpted-avatar .albert3b-orbit-one,
+ .albert3b-sculpted-avatar .albert3b-orbit-two{box-shadow:none}
+}
+@media(prefers-reduced-motion:reduce){
+ .albert3b-sculpted-avatar *{animation:none!important;transition:none!important}
+}
