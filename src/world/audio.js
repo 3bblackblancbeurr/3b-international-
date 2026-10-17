@@ -1,10 +1,11 @@
 import {createRecordedNarration} from './recorded-narration.js';
 import {spatialAudio} from './audio-spatial.js';
-import {AUDIO_STATES,audioStateProfile,scoreLayerProfile,brokenCircleMusicGain} from './audio-director.js';
+import {AUDIO_STATES,audioStateProfile,scoreLayerProfile,scoreAtmosphereMix,brokenCircleMusicGain} from './audio-director.js';
 import {realmScoreTheme,realmScoreStep,scoreFrequency,weaponMetalTimbre} from './realm-score.js';
 import {createScoreVoice} from './realm-score-synth.js';
 import {actionFeedback} from './interaction-system.js';
 import {hubAmbientFrame,hubFootstepSurface,HUB_AMBIENT_SOURCES} from './hub/civic-soundscape.js';
+import {REALM_ACOUSTIC_BEDS,realmAmbientFrame,realmFootstepSurface} from './realm-soundscape.js';
 import {pickWorldVoice,worldVoiceProsody} from './voice-casting.js';
 const NOTES=Object.fromEntries(['hub','france','italie','estonie','turquie','algerie','tunisie','maroc','espagne'].map(region=>[region,scoreFrequency(realmScoreTheme(region).root)]));
 const REGION_WEAPONS={france:'rapier',italie:'escrime',estonie:'baltiques',turquie:'kilij',algerie:'flyssa',tunisie:'lance',maroc:'dagues',espagne:'tolede'};
@@ -112,8 +113,12 @@ export function createWorldAudio(){
       later(()=>{if(currentRegion==='hub'&&!inside&&!voiceDucking)spatialTone(note*1.14,.09,.008*bird.gain,'sine',bird.pan,{fall:.92});},125);
      }
     }
-    else if(currentRegion==='france'){baseTone(1500+Math.random()*700,.16,.012,'sine',ambienceBus);later(()=>baseTone(2100,.1,.009,'sine',ambienceBus),150);}
-   else if(['algerie','maroc','tunisie'].includes(currentRegion)&&Math.random()>.45)noise(.5,.018,650,ambienceBus);
+    else if(currentRegion!=='hub'&&!inside&&!voiceDucking&&currentPhase!=='night'){
+     // Nearby physical gardens/forests get occasional delicate wildlife calls.
+     // Supersedes generic periodic country beeps, with no extra scheduler.
+     const nature=realmAmbientFrame(currentRegion,listenerPose,{phase:currentPhase,weather:currentWeather}).sources.find(s=>s.kind==='nature'&&s.gain>.008);
+     if(nature){const note=nature.frequency*(.84+(hash(nature.id+Math.floor(ctx.currentTime/4))%27)/100);spatialTone(note,.12,Math.min(.008,nature.gain*.21),'sine',nature.pan,{fall:.9});}
+    }
   },4200);
  }
  function region(id){const next=id||'hub';if(next!==currentRegion){resetScore({fade:true});currentRegion=next;}updateHubAmbience();if(!ctx||closed)return;const base=NOTES[currentRegion]||174.61;for(const {o,ratio} of pad)o.frequency.setTargetAtTime(base*ratio,ctx.currentTime,.8);updateScorePad();}
@@ -122,9 +127,9 @@ export function createWorldAudio(){
   if(!playable()||mix.music<=0)return;
   const now=ctx.currentTime;if(!scoreNextTime||scoreNextTime<now-.15)scoreNextTime=now+.035;
   let scheduled=0;while(scoreNextTime<now+.2&&scheduled++<3){
-   const frame=realmScoreStep(currentRegion,inside?'interior':audioState,scoreStep++),layers=scoreLayerProfile(inside?'interior':audioState);
-   for(const note of frame.notes){if(scoreSounds.size>=32)break;const weight=layers[note.role]??1;if(weight<=0)continue;const voice=createScoreVoice(ctx,musicBus,{...note,gain:note.gain*weight*(currentRegion==='hub'&&audioState==='exploration'?.68:1)},{start:scoreNextTime,duration:note.duration*frame.seconds});trackSound(voice.source,voice.nodes,{music:true,fadeGain:voice.volume});}
-   if(frame.percussion&&mix.music>0)noise(frame.percussion.duration,frame.percussion.gain,frame.percussion.frequency,musicBus);
+   const currentState=inside?'interior':audioState,frame=realmScoreStep(currentRegion,currentState,scoreStep++),layers=scoreLayerProfile(currentState),mood=scoreAtmosphereMix({region:currentRegion,state:currentState,phase:currentPhase,weather:currentWeather,inside});
+   for(const note of frame.notes){if(scoreSounds.size>=32)break;const weight=layers[note.role]??1,moodGain=mood[note.role]??1;if(weight<=0||moodGain<=0)continue;const voice=createScoreVoice(ctx,musicBus,{...note,gain:note.gain*weight*moodGain*(currentRegion==='hub'&&audioState==='exploration'?.68:1)},{start:scoreNextTime,duration:note.duration*frame.seconds});trackSound(voice.source,voice.nodes,{music:true,fadeGain:voice.volume});}
+   if(frame.percussion&&mix.music>0)noise(frame.percussion.duration,frame.percussion.gain*mood.percussion,frame.percussion.frequency,musicBus);
    scoreNextTime+=frame.seconds;
   }
  }
@@ -232,9 +237,9 @@ export function createWorldAudio(){
  }
  function clearAmbientLoops(){for(const id of [...ambientLoops.keys()])stopAmbientLoop(id);}
  function environment(){
-  const civic=currentRegion==='hub'?hubAmbientFrame(listenerPose,{interior:interiorInfo,phase:currentPhase,weather:currentWeather,limit:3}):{sources:[],caption:null};
-  const [frequency,volume]=ATMOSPHERES[currentRegion]||ATMOSPHERES.hub,rain=['rain','heavy_rain','storm'].includes(currentWeather),night=currentPhase==='night';
-  const atmosphere={id:'atmosphere:'+currentRegion,kind:'atmosphere',name:inside?'Ambiance intérieure':rain?'Pluie et vent':currentRegion==='hub'?'Brise de la cité':'Ambiance du pays',frequency:inside?360:rain?1400:frequency,gain:inside?.012:rain?(currentWeather==='storm'?.075:currentWeather==='heavy_rain'?.060:.045):volume*(night?.72:1),pan:0};
+  const civic=currentRegion==='hub'?hubAmbientFrame(listenerPose,{interior:interiorInfo,phase:currentPhase,weather:currentWeather,limit:3}):realmAmbientFrame(currentRegion,listenerPose,{interior:interiorInfo,phase:currentPhase,weather:currentWeather,limit:3});
+  const [frequency,volume]=currentRegion==='hub'?ATMOSPHERES.hub:REALM_ACOUSTIC_BEDS[currentRegion]?[REALM_ACOUSTIC_BEDS[currentRegion].frequency,REALM_ACOUSTIC_BEDS[currentRegion].volume]:ATMOSPHERES.hub,rain=['rain','heavy_rain','storm'].includes(currentWeather),night=currentPhase==='night';
+  const atmosphere={id:'atmosphere:'+currentRegion,kind:'atmosphere',name:inside?'Ambiance intérieure':rain?'Pluie et vent':currentRegion==='hub'?'Brise de la cité':REALM_ACOUSTIC_BEDS[currentRegion]?.name||'Ambiance du pays',frequency:inside?360:rain?1400:frequency,gain:inside?.012:rain?(currentWeather==='storm'?.075:currentWeather==='heavy_rain'?.060:.045):volume*(night?.72:1),pan:0};
   // A soft continuous bed keeps quiet streets alive, even beyond the local source radii.
   // Reserve one of the four loops for it so the audio graph stays bounded on phones.
   return {sources:[atmosphere,...civic.sources],caption:civic.caption||atmosphere.name};
@@ -281,7 +286,7 @@ export function createWorldAudio(){
   environment,
   spatialEvent,
   setMix(next={}){for(const key of Object.keys(mix))if(Number.isFinite(next[key]))mix[key]=clamp(next[key]);if(mix.music<=0)resetScore();applyMix();},
-  step(id,position=listenerPose){stepFlip=!stepFlip;const surface=id==='hub'?hubFootstepSurface(position,interiorInfo):{duration:.06,volume:inside?.033:.027,frequency:inside?520:1450,pitch:inside?100:id==='estonie'?175:132};const variation=stepFlip?.93:1.06;noise(surface.duration*.72,Math.min(.012,surface.volume*.19),surface.frequency*variation*.82);if(inside&&surface.id!=='woven-runner')baseTone(surface.pitch*.55,.045,.0014,'sine',sfxBus);},
+  step(id,position=listenerPose){stepFlip=!stepFlip;const surface=id==='hub'?hubFootstepSurface(position,interiorInfo):realmFootstepSurface(id,position,{interior:inside});const variation=stepFlip?.93:1.06;noise(surface.duration*.72,Math.min(.012,surface.volume*.19),surface.frequency*variation*.82);if(inside&&surface.id!=='woven-runner')baseTone(surface.pitch*.55,.045,.0014,'sine',sfxBus);},
   event,gameplay,interaction,speak,stopSpeech,pauseSpeech,prepareNarration,syncNarration,transport,weaponImpact,weapon(value){currentWeapon=typeof value==='string'?value:null;},
  cinematic(kind='micro'){
   if(!playable())return;

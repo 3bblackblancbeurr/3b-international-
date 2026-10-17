@@ -17,7 +17,7 @@ window.measure=async()=>{let peak=0,sum=0,count=0;const samples=new Float32Array
 </script>`;
 try{
  await writeFile(fixture,html);server=await createServer({server:{host:'127.0.0.1',port:5334,strictPort:true},logLevel:'error'});await server.listen();
- browser=await chromium.launch({headless:true,args:['--no-sandbox','--autoplay-policy=document-user-activation-required']});
+ browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{}),args:['--no-sandbox','--autoplay-policy=document-user-activation-required']});
  const context=await browser.newContext({viewport:{width:844,height:390},isMobile:true,hasTouch:true}),page=await context.newPage();page.on('pageerror',error=>errors.push(error.message));
  await page.goto('http://127.0.0.1:5334/scripts/.world-audio-fixture.html');await page.waitForFunction(()=>window.audioReady);
  const before=await page.evaluate(()=>audio.status());assert.equal(before.context,'suspended');assert.equal(before.needsGesture,true);
