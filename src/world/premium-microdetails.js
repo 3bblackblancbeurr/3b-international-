@@ -132,7 +132,7 @@ export function addPremiumMicroDetails({region,field,root,owned}){
  return{
   setWetness,
   setWeather(weather){setWetness(wetnessForWeather(weather));},
-  setDaylight(daylight){materials.paint.emissive?.set?.('#000000');const light=Math.max(0,Math.min(1,Number(daylight)||0));materials.puddle.clearcoat=Math.max(.58,.92-light*.08);materials.realmLantern.emissiveIntensity=.03+(1-light)*.52;},
+  setDaylight(daylight){materials.paint.emissive?.set?.(0x000000);const light=Math.max(0,Math.min(1,Number(daylight)||0));materials.puddle.clearcoat=Math.max(.58,.92-light*.08);materials.realmLantern.emissiveIntensity=.03+(1-light)*.52;},
   setQuality(mode){const factor=mode==='fluid'?.45:mode==='detail'?1:.76;meshes.forEach((mesh,i)=>mesh.count=Math.max(0,Math.round(counts[i]*factor)));if(cable)cable.visible=mode!=='fluid';},
  };
 }
