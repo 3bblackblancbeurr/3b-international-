@@ -66,7 +66,7 @@ export default function AlbertPublicPreview({goTo}){
   rec.onerror=()=>{setListening(false);setNotice('Microphone indisponible ou non autorisé.');};
   rec.onend=()=>setListening(false);
   recognition.current=rec;
-  try{rec.start();setListening(true);setNotice('La dictée reste sur ton initiative. Appuie sur Envoyer pour transmettre la question au guide local.');}
+  try{rec.start();setListening(true);setNotice('La dictée est facultative. Selon ton navigateur, ta voix peut être traitée par son fournisseur. Pour éviter cela, utilise le clavier. Appuie sur Envoyer pour interroger le guide 3B.');}
   catch{setListening(false);setNotice('Impossible de démarrer la dictée.');}
  }
  function speak(message){
@@ -110,7 +110,7 @@ export default function AlbertPublicPreview({goTo}){
      <Button variant="ghost" type="submit" className="albert3b-submit" aria-label="Envoyer ma question" disabled={!draft.trim()}><Send size={20}/></Button>
     </form>
     {notice&&<p className="albert3b-notice" role="status">{notice}</p>}
-    <p className="albert3b-disclaimer">Ce guide oriente dans les rubriques existantes. Il n’envoie aucune demande à Albert sur ton ordinateur et ne conserve pas tes messages sur un serveur.</p>
+    <p className="albert3b-disclaimer">Ce guide oriente dans les rubriques existantes. Il n’envoie aucune demande à Albert sur ton ordinateur et ne conserve pas tes messages sur un serveur 3B. La reconnaissance vocale peut utiliser un service du navigateur : le clavier reste toujours disponible.</p>
    </section>
    <section className="albert3b-curated" aria-labelledby="albert3b-suggest-title">
     <div className="albert3b-section-head"><div><span className="world3b-eyebrow">DÉCOUVRIR</span><h2 id="albert3b-suggest-title">Recommandé pour explorer</h2></div></div>
