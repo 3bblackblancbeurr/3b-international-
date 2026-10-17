@@ -156,7 +156,10 @@ try{
   check('Removing a favorite also persists '+width,await modules.getByRole('button',{name:'Ajouter aux favoris : 3B Bons Plans',exact:true}).getAttribute('aria-pressed')==='false');
   if(width===390){
    const peer=await context.newPage();await peer.goto(origin+'/#accueil',{waitUntil:'domcontentloaded'});const peerHome=await homeReady(peer);
-   await Promise.all([modules.getByRole('button',{name:'Ajouter aux favoris : Santé',exact:true}).click(),peerHome.getByRole('button',{name:'Ajouter aux favoris : Manga 3B',exact:true}).click()]);
+   await page.bringToFront();
+   await modules.getByRole('button',{name:'Ajouter aux favoris : Santé',exact:true}).click();
+   await page.waitForFunction(()=>JSON.parse(localStorage.getItem('3b_atlas_preferences_v1')||'null')?.favorites?.includes('health'));
+   await peer.bringToFront();await peerHome.getByRole('button',{name:'Ajouter aux favoris : Manga 3B',exact:true}).click();
    await page.waitForFunction(()=>{const favorites=JSON.parse(localStorage.getItem('3b_atlas_preferences_v1')||'null')?.favorites||[];return favorites.includes('health')&&favorites.includes('manga');});
    await page.waitForFunction(()=>document.querySelector('[aria-label="Retirer des favoris : Manga 3B"]')?.getAttribute('aria-pressed')==='true');
    await peer.waitForFunction(()=>document.querySelector('[aria-label="Retirer des favoris : Santé"]')?.getAttribute('aria-pressed')==='true');
