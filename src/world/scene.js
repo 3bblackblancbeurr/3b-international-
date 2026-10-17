@@ -25,6 +25,7 @@ import {LANDMARK_SITE} from './heritage.js';
 import * as THREE from 'three';
 import {loadWorldModels} from './models.js';
 import {createLivingActor} from './living.js';
+import {createCreatureActor} from './creature-models.js';
 import {DEFAULT_ORBIT,IMMERSIVE_ORBIT,restoreOrbit,rotateOrbit,zoomOrbit,orbitView} from './orbit.js';
 import {createIndexedMotion,pointerStick,joystickProfile,sprintIntent,createQualityController,createMotionSmoother} from './motion.js';
 import {createFrameHealth,createFrameTimeline} from './frame-health.js';
@@ -235,11 +236,12 @@ function hubNpcAvatar(item){
  }
  function makeActor(item){
   const card=cardById[item.card],creature=item.type==='guardian'||item.type==='hubGuardian'||item.type==='hubCreature';
-  const actor=createLivingActor(models.living,{reducedMotion,card:card.id,scale:creature?2.5:2,onError});
+  const nonhuman=!creature&&['echo','patrol'].includes(item.type)?createCreatureActor({card:card.id,scale:2,reducedMotion}):null;
+  const actor=nonhuman||createLivingActor(models.living,{reducedMotion,card:card.id,scale:creature?2.5:2,onError});
   actor.object.position.set(item.x,groundY(item.x,item.z),item.z);actor.object.rotation.y=(card?.number||0)*.7;root.add(actor.object);
   const aura=creature?createGuardianAura(card.country,{reducedMotion}):null;if(aura)actor.object.add(aura.group);
   actor.setGuardianState?.({liberated:save.seals.includes(card.country),phase:1,projection:item.type==='hubCreature'});
-  actors.push({controller:actor,itemId:item.id,card:card.id,country:card.country,projection:item.type==='hubCreature',creature,x:item.x,z:item.z,aura});return actor.object;
+  actors.push({controller:actor,itemId:item.id,card:card.id,country:card.country,projection:item.type==='hubCreature',creature,nonhuman:!!nonhuman,x:item.x,z:item.z,aura});return actor.object;
  }
  function syncRealmMarkers(){
   const wanted=new Map(items.filter(item=>['campaignObjective','realmTravel'].includes(item.type)).map(item=>[item.id,item]));
@@ -693,7 +695,7 @@ function hubNpcAvatar(item){
     }
     else campaignClock=0;
    }else campaignClock=0;
-  for(const actor of actors)if(actor.creature)actor.controller.setAttention?.(Math.hypot(actor.controller.object.position.x-position.x,actor.controller.object.position.z-position.z)<20?{x:position.x,y:y+2.9,z:position.z}:null);
+  for(const actor of actors)if(actor.creature||actor.nonhuman)actor.controller.setAttention?.(Math.hypot(actor.controller.object.position.x-position.x,actor.controller.object.position.z-position.z)<20?{x:position.x,y:y+2.9,z:position.z}:null);
   const encounter=save.adventure.encounter;
   let opponent=cinematic?(encounter?.final?items.find(i=>i.type==='final'):encounter?.patrol?items.find(i=>i.type==='patrol'):battleTarget?.card===encounter?.card?battleTarget:items.find(i=>i.card===encounter?.card)):null;
   if(fieldCombat&&opponent){
