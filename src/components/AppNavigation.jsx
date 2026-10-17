@@ -45,7 +45,7 @@ export default function AppNavigation({ page, title, menuItems, goTo, secret, op
   useEffect(() => { dialog.current?.close(); }, [page]);
   useEffect(() => { content.current?.scrollTo(0, 0); }, [category, query]);
   useEffect(() => {
-    const request = event => openMenu({ category: event.detail?.category });
+    const request = event => openMenu({ category: event.detail?.category, search: event.detail?.search === true });
     window.addEventListener('threeb:open-app-menu', request);
     return () => window.removeEventListener('threeb:open-app-menu', request);
   }, [page, menuItems]);
