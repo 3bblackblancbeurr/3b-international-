@@ -12,13 +12,15 @@ from urllib.parse import urlparse
 from .core import ApexRuntime, VERSION, default_runtime_root
 
 HOST = "127.0.0.1"
-PORT = int(os.getenv("ALBERT_APEX_PORT", "8766"))
+PORT = int(os.getenv("ALBERT_APEX_PORT", "8767"))
 MAX_BODY = 64 * 1024
 ALLOWED_ORIGINS = {
     "http://127.0.0.1:8765",
     "http://localhost:8765",
     "http://127.0.0.1:8766",
     "http://localhost:8766",
+    "http://127.0.0.1:8767",
+    "http://localhost:8767",
 }
 
 

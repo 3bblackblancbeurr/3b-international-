@@ -25,6 +25,15 @@ test('local APEX installer is signature-gated, reversible and does not overwrite
  assert.match(source,/cscript\.exe/);
  assert.match(source,/ALBERT_shortcut_before_apex_v2/);
  assert.match(source,/START_ALBERT_APEX_OS_V2\.vbs/);
+ assert.match(source,/data\?\.name==='ALBERT APEX OS V2'/,'health must authenticate the sidecar identity');
+ assert.match(source,/previous\.ui_backup\|\|/,'reinstall must preserve original UI rollback');
+ assert.match(source,/albert-apex-v2-style/,'style is embedded when local server has no static asset routing');
+ assert.match(source,/albert-apex-v2-script/,'local widget runs without public files or CDN');
+ assert.match(source,/HEAD_END_MARK/,'repeat installs must replace, never duplicate, the widget');
+ assert.match(source,/previous\.shortcut_backup\|\|/,'reinstall must preserve original desktop shortcut rollback');
+ assert.match(source,/if\(await sidecarOnline\(\)\)throw/,'running APEX service must block in-place replacement');
+ assert.match(source,/fs\.cpSync\(target,backup/,'backups must support a cross-drive junction');
+ assert.doesNotMatch(source,/fs\.renameSync\(target,backup\)/,'cross-volume rename is unsafe for ALBERT backups');
  assert.match(source,/wscript\.exe/);
  assert.match(source,/shell\.Run command, 0, False/);
  assert.match(source,/shortcut_created/);
@@ -63,7 +72,7 @@ test('local APEX package implements sequential evidence-gated orchestration',()=
 test('local APEX overlay stays inside the existing ALBERT UI and talks only to the localhost core',()=>{
  const widget=read('runtime/albert_apex_v2/web/apex-widget.js');
  const css=read('runtime/albert_apex_v2/web/apex-widget.css');
- assert.match(widget,/127\.0\.0\.1:8766/);
+ assert.match(widget,/127\.0\.0\.1:8767/);
  assert.match(widget,/ALBERT APEX \/ LOCAL CORE/);
  assert.match(widget,/\/settings\/mode/);
  assert.match(widget,/\/settings\/resource/);
@@ -82,7 +91,7 @@ test('local APEX overlay stays inside the existing ALBERT UI and talks only to t
 test('local APEX API is localhost-only and exposes no arbitrary command execution route',()=>{
  const server=read('runtime/albert_apex_v2/server.py');
  assert.match(server,/HOST = "127\.0\.0\.1"/);
- assert.match(server,/PORT = int\(os\.getenv\("ALBERT_APEX_PORT", "8766"\)\)/);
+ assert.match(server,/PORT = int\(os\.getenv\("ALBERT_APEX_PORT", "8767"\)\)/);
  assert.match(server,/MAX_BODY = 64 \* 1024/);
  assert.match(server,/\/task\/create/);
  assert.match(server,/\/action\/propose/);

@@ -217,16 +217,17 @@ async function probeAlbertApi(){
 }
 async function probeAlbertApexCore(){
  try{
-  const response=await fetch('http://127.0.0.1:8766/health',{signal:AbortSignal.timeout(1200),cache:'no-store'});
-  if(!response.ok)return{online:false,port:8766,version:null,kill_switch:null};
+  const response=await fetch('http://127.0.0.1:8767/health',{signal:AbortSignal.timeout(1200),cache:'no-store'});
+  if(!response.ok)return{online:false,port:8767,version:null,kill_switch:null};
   const data=await response.json().catch(()=>({}));
+  if(data?.ok!==true||data?.name!=='ALBERT APEX OS V2')return{online:false,port:8767,version:null,kill_switch:null};
   return{
    online:true,
-   port:8766,
+   port:8767,
    version:typeof data.version==='string'?data.version.slice(0,40):null,
    kill_switch:data.kill_switch===true
   };
- }catch{return{online:false,port:8766,version:null,kill_switch:null};}
+ }catch{return{online:false,port:8767,version:null,kill_switch:null};}
 }
 
 async function albertRuntimeTelemetry(){
@@ -257,7 +258,7 @@ async function albertRuntimeTelemetry(){
   const modules=moduleNames.filter(name=>moduleBases.some(base=>fs.existsSync(path.join(base,name))));
   const [api,apexCore]=installed
    ?await Promise.all([probeAlbertApi(),probeAlbertApexCore()])
-   :[{online:false,endpoint:null},{online:false,port:8766,version:null,kill_switch:null}];
+   :[{online:false,endpoint:null},{online:false,port:8767,version:null,kill_switch:null}];
   const processes=processFlags();
   const models=processes.ollama?ollamaModels():[];
   const value={
@@ -279,7 +280,7 @@ async function albertRuntimeTelemetry(){
   albertCache={at:Date.now(),value,pending:null};
   return value;
  })().catch(error=>{
-  const value={installed:false,runtime_name:null,api_online:false,api_port:8765,api_probe:null,apex_core:{online:false,port:8766,version:null,kill_switch:null},apex_package_present:false,launcher_present:false,desktop_present:false,modules:[],models:[],model_count:0,processes:{python:false,ollama:false,edge:false},checked_at:new Date().toISOString(),error:String(error?.message||error).slice(0,160)};
+  const value={installed:false,runtime_name:null,api_online:false,api_port:8765,api_probe:null,apex_core:{online:false,port:8767,version:null,kill_switch:null},apex_package_present:false,launcher_present:false,desktop_present:false,modules:[],models:[],model_count:0,processes:{python:false,ollama:false,edge:false},checked_at:new Date().toISOString(),error:String(error?.message||error).slice(0,160)};
   albertCache={at:Date.now(),value,pending:null};
   return value;
  });

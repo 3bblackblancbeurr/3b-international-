@@ -84,7 +84,7 @@ export default function AlbertApexPanel({online=false,runtime=null,privacyMode=f
     {localAlbert?<div className="apex-health">
      <div><span>Installation</span><b className={localAlbert.installed?'good':'warn'}>{localAlbert.runtime_name||'absente'}</b></div>
      <div><span>API ALBERT :8765</span><b className={localAlbert.api_online?'good':'warn'}>{localAlbert.api_online?'online':'offline'}</b></div>
-     <div><span>Core APEX :8766</span><b className={localAlbert.apex_core?.online?'good':'warn'}>{localAlbert.apex_core?.online?'online v'+(localAlbert.apex_core.version||'?'):'offline'}</b></div>
+     <div><span>Core APEX :8767</span><b className={localAlbert.apex_core?.online?'good':'warn'}>{localAlbert.apex_core?.online?'online v'+(localAlbert.apex_core.version||'?'):'offline'}</b></div>
      <div><span>Package APEX</span><b className={localAlbert.apex_package_present?'good':'warn'}>{localAlbert.apex_package_present?'présent':'non détecté'}</b></div>
      <div><span>Lanceur</span><b className={localAlbert.launcher_present?'good':'warn'}>{localAlbert.launcher_present?'présent':'non détecté'}</b></div>
      <div><span>Desktop runtime</span><b className={localAlbert.desktop_present?'good':'warn'}>{localAlbert.desktop_present?'présent':'non détecté'}</b></div>

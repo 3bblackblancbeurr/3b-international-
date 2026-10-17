@@ -10,6 +10,8 @@ const sourceDir=path.join(repoRoot,'runtime','albert_apex_v2');
 const PACKAGE_VERSION='2.2.0';
 const HEAD_MARK='<!-- ALBERT_APEX_V2_HEAD -->';
 const BODY_MARK='<!-- ALBERT_APEX_V2_BODY -->';
+const HEAD_END_MARK='<!-- ALBERT_APEX_V2_HEAD_END -->';
+const BODY_END_MARK='<!-- ALBERT_APEX_V2_BODY_END -->';
 
 function stamp(){
  return new Date().toISOString().replace(/[-:TZ.]/g,'').slice(0,14);
@@ -73,13 +75,40 @@ function patchUi(root){
  const staticTarget=path.join(root,'static','apex_v2');
  fs.rmSync(staticTarget,{recursive:true,force:true});
  fs.cpSync(path.join(sourceDir,'web'),staticTarget,{recursive:true,force:true});
- if(ui.html.includes(HEAD_MARK)&&ui.html.includes(BODY_MARK))return{patched:false,backup:null};
+ // Existing Albert servers can return index.html without serving new static
+ // routes. Inline only these vetted, local resources; no remote script or CDN.
+ const css=fs.readFileSync(path.join(sourceDir,'web','apex-widget.css'),'utf8');
+ const script=fs.readFileSync(path.join(sourceDir,'web','apex-widget.js'),'utf8');
+ if(/<\/style/i.test(css)||/<\/script/i.test(script)){
+  throw new Error('Injection UI refusée: contenu inline non sûr.');
+ }
+ const head=HEAD_MARK+'\n<style id="albert-apex-v2-style">\n'+css+'\n</style>\n'+HEAD_END_MARK;
+ const body=BODY_MARK+'\n<script id="albert-apex-v2-script">\n'+script+'\n</script>\n'+BODY_END_MARK;
+ const legacyHead=HEAD_MARK+'\n<link rel="stylesheet" href="/apex_v2/apex-widget.css">';
+ const legacyBody=BODY_MARK+'\n<script defer src="/apex_v2/apex-widget.js"></script>';
+ let html=ui.html;
+ const existed=html.includes(HEAD_MARK)||html.includes(BODY_MARK);
+ if(existed){
+  if(!html.includes(HEAD_MARK)||!html.includes(BODY_MARK)){
+   throw new Error('Injection UI refusée: marqueurs APEX incomplets.');
+  }
+  if(html.includes(HEAD_END_MARK)&&html.includes(BODY_END_MARK)){
+   for(const [start,end,replacement] of [[HEAD_MARK,HEAD_END_MARK,head],[BODY_MARK,BODY_END_MARK,body]]){
+    const from=html.indexOf(start),to=html.indexOf(end,from);
+    if(from<0||to<from)throw new Error('Injection UI refusée: bloc APEX invalide.');
+    html=html.slice(0,from)+replacement+html.slice(to+end.length);
+   }
+  }else if(html.includes(legacyHead)&&html.includes(legacyBody)){
+   html=html.replace(legacyHead,head).replace(legacyBody,body);
+  }else{
+   throw new Error('Injection UI refusée: format APEX existant non reconnu.');
+  }
+  fs.writeFileSync(ui.index,html,'utf8');
+  return{patched:true,backup:null};
+ }
  const backup=backupPath(root,'index_before_apex_v2')+'.html';
  fs.mkdirSync(path.dirname(backup),{recursive:true});
  fs.copyFileSync(ui.index,backup);
- let html=ui.html;
- const head=HEAD_MARK+'\n<link rel="stylesheet" href="/apex_v2/apex-widget.css">';
- const body=BODY_MARK+'\n<script defer src="/apex_v2/apex-widget.js"></script>';
  html=html.replace(/<\/head>/i,head+'\n</head>').replace(/<\/body>/i,body+'\n</body>');
  fs.writeFileSync(ui.index,html,'utf8');
  return{patched:true,backup};
@@ -97,8 +126,10 @@ function restoreUi(root,installMeta={}){
 }
 async function sidecarOnline(){
  try{
-  const response=await fetch('http://127.0.0.1:8766/health',{signal:AbortSignal.timeout(1000),cache:'no-store'});
-  return response.ok;
+  const response=await fetch('http://127.0.0.1:8767/health',{signal:AbortSignal.timeout(1000),cache:'no-store'});
+  if(!response.ok)return false;
+  const data=await response.json();
+  return data?.ok===true&&data?.name==='ALBERT APEX OS V2';
  }catch{return false;}
 }
 function vbsString(value){return String(value).replace(/"/g,'""');}
@@ -191,43 +222,57 @@ function hiddenLauncherContent(root){
   'shell.Run command, 0, False'
  ].join('\r\n')+'\r\n';
 }
-function install(){
+async function install(){
  assertSource();
+ // Never swap a running private core's files underneath active requests.
+ if(await sidecarOnline())throw new Error('Mise à jour APEX refusée : arrête d’abord le service APEX local.');
  const found=findRuntime();
  if(!found.signature.ok){
   throw new Error('Installation refusée: signature ALBERT non reconnue ('+found.signature.reasons.join(', ')+').');
  }
  const root=found.root;
+ const data=path.join(root,'data','apex_v2');
+ const installPath=path.join(data,'install.json');
+ let previous={};
+ if(fs.existsSync(installPath)){
+  try{
+   previous=JSON.parse(fs.readFileSync(installPath,'utf8'));
+   if(!previous||typeof previous!=='object'||Array.isArray(previous))throw new Error('bad metadata');
+  }catch{throw new Error('Installation refusée: métadonnées de sauvegarde précédentes illisibles.');}
+ }
  const uiCheck=uiSignature(root);
  if(!uiCheck.ok)throw new Error('Installation refusée: interface ALBERT non reconnue ('+uiCheck.reasons.join(', ')+').');
  const target=path.join(root,'apex_v2');
  if(fs.existsSync(target)){
   const backup=backupPath(root);
   fs.mkdirSync(path.dirname(backup),{recursive:true});
-  fs.renameSync(target,backup);
+  // The user's backup folder may be a junction to drive D:. Rename fails
+  // across volumes (EXDEV), so snapshot first and retain the original.
+  fs.cpSync(target,backup,{recursive:true,errorOnExist:true,force:false});
  }
  fs.cpSync(sourceDir,target,{recursive:true,errorOnExist:false,force:true});
  const ui=patchUi(root);
- const data=path.join(root,'data','apex_v2');
  fs.mkdirSync(data,{recursive:true});
- fs.writeFileSync(path.join(data,'install.json'),JSON.stringify({
-  installed_at:new Date().toISOString(),
+ fs.writeFileSync(installPath,JSON.stringify({
+  installed_at:previous.installed_at||new Date().toISOString(),
+  updated_at:new Date().toISOString(),
   version:PACKAGE_VERSION,
   runtime_name:path.basename(root),
   installer:'3b-international',
   ui_injected:true,
-  ui_backup:ui.backup?path.relative(root,ui.backup):null
+  // Retain the ORIGINAL pre-APEX UI backup across repeat installations.
+  ui_backup:previous.ui_backup||(ui.backup?path.relative(root,ui.backup):null)
  },null,2),'utf8');
  const launcher=path.join(root,'START_ALBERT_APEX_OS_V2.bat');
  const hiddenLauncher=path.join(root,'START_ALBERT_APEX_OS_V2.vbs');
  fs.writeFileSync(launcher,launcherContent(found.signature),'utf8');
  fs.writeFileSync(hiddenLauncher,hiddenLauncherContent(root),'utf8');
  const shortcut=patchDesktopShortcut(root);
- const installPath=path.join(data,'install.json');
  const installMeta=JSON.parse(fs.readFileSync(installPath,'utf8'));
- installMeta.shortcut_path=shortcut.path;
- installMeta.shortcut_backup=shortcut.backup?path.relative(root,shortcut.backup):null;
- installMeta.shortcut_created=shortcut.created===true;
+ installMeta.shortcut_path=previous.shortcut_path||shortcut.path;
+ // Never replace the first original-shortcut backup with a newer APEX shortcut.
+ installMeta.shortcut_backup=previous.shortcut_backup||(shortcut.backup?path.relative(root,shortcut.backup):null);
+ installMeta.shortcut_created=previous.shortcut_created===true||shortcut.created===true;
  fs.writeFileSync(installPath,JSON.stringify(installMeta,null,2),'utf8');
  return{
   installed:true,
@@ -268,11 +313,13 @@ async function remove(){
  if(!fs.existsSync(target))return{removed:false,reason:'not_installed'};
  const installPath=path.join(root,'data','apex_v2','install.json');
  const installMeta=fs.existsSync(installPath)?JSON.parse(fs.readFileSync(installPath,'utf8')):{};
- restoreUi(root,installMeta);
- restoreDesktopShortcut(root,installMeta);
  const backup=backupPath(root,'apex_v2_removed');
  fs.mkdirSync(path.dirname(backup),{recursive:true});
- fs.renameSync(target,backup);
+ fs.cpSync(target,backup,{recursive:true,errorOnExist:true,force:false});
+ // Only alter the local UI after the cross-volume backup has succeeded.
+ restoreUi(root,installMeta);
+ restoreDesktopShortcut(root,installMeta);
+ fs.rmSync(target,{recursive:true,force:true});
  fs.rmSync(path.join(root,'START_ALBERT_APEX_OS_V2.bat'),{force:true});
  fs.rmSync(path.join(root,'START_ALBERT_APEX_OS_V2.vbs'),{force:true});
  return{removed:true,backup:path.basename(backup)};
@@ -280,7 +327,7 @@ async function remove(){
 
 const command=process.argv[2]||'status';
 try{
- if(command==='install')console.log(JSON.stringify(install(),null,2));
+ if(command==='install')console.log(JSON.stringify(await install(),null,2));
  else if(command==='status')console.log(JSON.stringify(await status(),null,2));
  else if(command==='remove')console.log(JSON.stringify(await remove(),null,2));
  else throw new Error('Usage: node scripts/install-albert-apex-v2.mjs install|status|remove');
