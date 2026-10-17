@@ -5,6 +5,7 @@ import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import path from 'node:path';
 const {chromium}=await import(process.env.PLAYWRIGHT_MODULE||'@playwright/test');
 const port=Number(process.env.PREMIUM_MODULES_UI_PORT||5328);
+const mediaSaveDelayMs=Math.max(0,Math.min(3000,Number(process.env.PREMIUM_MODULES_MEDIA_SAVE_DELAY_MS)||0));
 const server=await createServer({server:{host:'127.0.0.1',port,strictPort:true}});
 await server.listen();
 const origin='http://127.0.0.1:'+port;
@@ -15,6 +16,15 @@ const checks=[],errors=[],externalRequests=[];
 const check=(label,value)=>{assert.ok(value,label);checks.push(label);console.log('PASS',label);};
 const navigate=async(page,name,selector)=>{await page.locator('.mx-rail').getByRole('button',{name,exact:true}).click();await page.locator(selector).waitFor();return page.locator(selector);};
 async function setup(context){
+ if(mediaSaveDelayMs)await context.addInitScript(delay=>{
+  if(!navigator.locks?.request)return;
+  const original=navigator.locks.request.bind(navigator.locks);
+  navigator.locks.request=(name,options,callback)=>{
+   const execute=typeof options==='function'?options:callback;
+   const delayed=async lock=>{if(name==='threeb_media_library_v1')await new Promise(resolve=>setTimeout(resolve,delay));return execute(lock);};
+   return typeof options==='function'?original(name,delayed):original(name,options,delayed);
+  };
+ },mediaSaveDelayMs);
  await context.route('**/*',route=>{
   const url=new URL(route.request().url());
   if(url.origin!==origin){externalRequests.push(url.origin);return route.abort();}
@@ -25,6 +35,18 @@ async function setup(context){
 async function openPage(context){const page=await context.newPage();page.setDefaultTimeout(15000);page.on('pageerror',error=>errors.push(error.message));await page.goto(origin+'/tests/member-preview.html',{waitUntil:'domcontentloaded',timeout:45000});await page.locator('.mx-shell').waitFor({timeout:30000});return page;}
 async function download(page,button,name){const pending=page.waitForEvent('download');await button.click();const file=await pending;await file.saveAs(path.join(out,name));return readFile(path.join(out,name),'utf8');}
 const fits=page=>page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1);
+async function waitForStoredMedia(page,expected,phase,successNotice=''){
+ try{
+  await page.waitForFunction(expected=>{
+   let state;try{state=JSON.parse(localStorage.getItem('threeb_media_library_v1')||'null');}catch{return false;}
+   return Array.isArray(state?.entries)&&state.entries.some(entry=>Object.entries(expected).every(([field,value])=>entry[field]===value));
+  },expected);
+  if(successNotice)await page.locator('.med3b-notice').getByText(successNotice,{exact:true}).waitFor();
+ }catch(error){
+  const observed=await page.evaluate(()=>({stored:localStorage.getItem('threeb_media_library_v1'),notice:document.querySelector('.med3b-notice')?.textContent||''})).catch(()=>({unavailable:true}));
+  throw new Error(`Media persistence failed (${phase}): expected ${JSON.stringify(expected)}; observed ${JSON.stringify(observed)}. ${error.message}`,{cause:error});
+ }
+}
 
 try{
  for(const width of [390,1440]){
@@ -84,11 +106,14 @@ try{
   await cinema.getByLabel('Titre du film ou de la série',{exact:true}).fill('Film personnel · recette QA');
   await cinema.getByLabel('Réalisateur ou créateur',{exact:true}).fill('Créateur de test');
   await cinema.getByRole('button',{name:'Enregistrer dans ma liste',exact:true}).click();
+  await waitForStoredMedia(page,{title:'Film personnel · recette QA',status:'planned'},prefix+'initial title','Titre ajouté à ta liste locale.');
   await cinema.getByLabel('État de Film personnel · recette QA',{exact:true}).selectOption('watched');
+  await waitForStoredMedia(page,{title:'Film personnel · recette QA',status:'watched'},prefix+'initial watched status');
   await cinema.getByRole('button',{name:'Modifier Film personnel · recette QA',exact:true}).click();
   await cinema.getByLabel('Titre du film ou de la série',{exact:true}).fill('Film personnel modifié · recette QA');
   await cinema.getByLabel(/^Pourquoi tu veux le découvrir/).fill('Une note personnelle modifiée pendant la recette.');
   await cinema.getByRole('button',{name:'Enregistrer les modifications',exact:true}).click();
+  await waitForStoredMedia(page,{title:'Film personnel modifié · recette QA',status:'watched',notes:'Une note personnelle modifiée pendant la recette.'},prefix+'edited title and notes','Titre et notes mis à jour.');
   check(prefix+'cinema title and notes can be edited without resetting status',await cinema.getByLabel('État de Film personnel modifié · recette QA',{exact:true}).inputValue()==='watched'&&await cinema.getByText('Une note personnelle modifiée pendant la recette.',{exact:true}).count()===1);
   await cinema.getByRole('button',{name:'Modifier Film personnel modifié · recette QA',exact:true}).click();
   await cinema.getByLabel('Titre du film ou de la série',{exact:true}).fill('Modification annulée');
@@ -101,11 +126,15 @@ try{
   const remoteNote='Note récente du second onglet · recette QA';
   await secondCinema.getByLabel(/^Pourquoi tu veux le découvrir/).fill(remoteNote);
   await secondCinema.getByRole('button',{name:'Enregistrer les modifications',exact:true}).click();
-  await secondCinemaPage.waitForFunction(note=>JSON.parse(localStorage.getItem('threeb_media_library_v1')).entries.some(entry=>entry.notes===note),remoteNote);
+  await waitForStoredMedia(secondCinemaPage,{title:'Film personnel modifié · recette QA',status:'watched',notes:remoteNote},prefix+'first second-tab note','Titre et notes mis à jour.');
   await cinema.getByLabel('État de Film personnel modifié · recette QA',{exact:true}).selectOption('watching');
+  await waitForStoredMedia(page,{title:'Film personnel modifié · recette QA',status:'watching',notes:remoteNote},prefix+'merge of second-tab note');
   await cinema.locator('.med3b-watchlist').getByText(remoteNote,{exact:true}).waitFor();
   await cinema.getByLabel('Titre du film ou de la série',{exact:true}).fill('Film personnel vérifié · recette QA');
   await cinema.getByRole('button',{name:'Enregistrer les modifications',exact:true}).click();
+  // Closing the editor and rendering the new title are optimistic. Reloading
+  // the second tab must wait for both the stored rename and its success state.
+  await waitForStoredMedia(page,{title:'Film personnel vérifié · recette QA',status:'watching',notes:remoteNote},prefix+'rename before second-tab reload','Titre et notes mis à jour.');
   check(prefix+'cinema stale editor preserves notes merged from another tab',await cinema.getByLabel('État de Film personnel vérifié · recette QA',{exact:true}).inputValue()==='watching'&&await cinema.locator('.med3b-watchlist').getByText(remoteNote,{exact:true}).count()===1);
   await cinema.getByRole('button',{name:'Modifier Film personnel vérifié · recette QA',exact:true}).click();
   await cinema.getByLabel(/^Pourquoi tu veux le découvrir/).fill('Ma modification non enregistrée dans le formulaire A');
@@ -114,8 +143,9 @@ try{
   const newestNote='Notes plus récentes de B · recette QA';
   await secondCinema.getByLabel(/^Pourquoi tu veux le découvrir/).fill(newestNote);
   await secondCinema.getByRole('button',{name:'Enregistrer les modifications',exact:true}).click();
-  await secondCinemaPage.waitForFunction(note=>JSON.parse(localStorage.getItem('threeb_media_library_v1')).entries.some(entry=>entry.notes===note),newestNote);
+  await waitForStoredMedia(secondCinemaPage,{title:'Film personnel vérifié · recette QA',status:'watching',notes:newestNote},prefix+'newest second-tab note','Titre et notes mis à jour.');
   await cinema.getByLabel('État de Film personnel vérifié · recette QA',{exact:true}).selectOption('watched');
+  await waitForStoredMedia(page,{title:'Film personnel vérifié · recette QA',status:'watched',notes:newestNote},prefix+'watched status before conflict assertion');
   await cinema.locator('.med3b-watchlist').getByText(newestNote,{exact:true}).waitFor();
   await cinema.getByRole('button',{name:'Enregistrer les modifications',exact:true}).click();
   check(prefix+'cinema refuses conflicting dirty fields and keeps the draft editable',await cinema.locator('.med3b-form').count()===1&&/depuis l’ouverture/.test(await cinema.locator('.med3b-notice').innerText())&&await cinema.getByLabel(/^Pourquoi tu veux le découvrir/).inputValue()==='Ma modification non enregistrée dans le formulaire A');
@@ -131,6 +161,7 @@ try{
   const origins=await navigate(page,'3B Origins TV','.med3b');
   check(prefix+'Origins presents nine existing audio narratives',await origins.locator('.med3b-episode').count()===9);
   await origins.getByRole('button',{name:'Garder ce récit',exact:true}).click();
+  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('threeb_media_library_v1')||'null')?.savedNarrations?.includes('prologue')===true);
   await origins.screenshot({path:path.join(out,'origins-'+width+'.png')});
   const narrative=await origins.locator('.med3b-feature-copy>p').innerText();
   await page.route('**/world/narration/**',route=>route.abort());
@@ -193,9 +224,9 @@ try{
  check('blocked storage: admin remains usable without claiming persistence',await admin.locator('.aj-detail').count()===1&&await admin.locator('.aj-notice').count()>=1);
  check('blocked storage: no horizontal overflow',await fits(page));await blocked.close();
  check('all modules render without uncaught browser errors',errors.length===0);
- await writeFile(path.join(out,'results.json'),JSON.stringify({passed:true,count:checks.length,checks,errors,externalNetworkBlocked:true,blockedOrigins:[...new Set(externalRequests)],syntheticDataOnly:true},null,2));
+ await writeFile(path.join(out,'results.json'),JSON.stringify({passed:true,count:checks.length,checks,errors,mediaSaveDelayMs,externalNetworkBlocked:true,blockedOrigins:[...new Set(externalRequests)],syntheticDataOnly:true},null,2));
  console.log('PREMIUM_MODULES_UI_OK',checks.length);
 }catch(error){
- await writeFile(path.join(out,'results.json'),JSON.stringify({passed:false,count:checks.length,checks,errors,failure:error.message,externalNetworkBlocked:true,syntheticDataOnly:true},null,2));
+ await writeFile(path.join(out,'results.json'),JSON.stringify({passed:false,count:checks.length,checks,errors,mediaSaveDelayMs,failure:error.message,externalNetworkBlocked:true,syntheticDataOnly:true},null,2));
  throw error;
 }finally{await browser.close();await server.close();}
