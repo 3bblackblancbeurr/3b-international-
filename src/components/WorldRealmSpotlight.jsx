@@ -7,9 +7,10 @@ import '../styles/world-living-cinema.css';
 
 export default function WorldRealmSpotlight({realmId='france',goTo,onSelect}){
  const {realm,story,index}=getRealmStory(realmId);
+ const sceneSrc=realm.id==='france'?'/art/luxury-v2/hub-cite-origine.webp':'/art/monde-3b/reference-cite-huit-heritages.webp';
  return <section className="world3b-cinema-spotlight" data-realm={realm.id} data-accent={story.accent} aria-labelledby="world3b-cinema-title">
    <div className="world3b-cinema-image" aria-hidden="true">
-    <img src="/art/monde-3b/reference-cite-huit-heritages.webp" width="940" height="530" loading="lazy" decoding="async" alt=""/>
+    <img src={sceneSrc} width="940" height="530" loading="lazy" decoding="async" alt=""/>
     <span className="world3b-cinema-horizon"/>
    </div>
    <div className="world3b-cinema-copy">
