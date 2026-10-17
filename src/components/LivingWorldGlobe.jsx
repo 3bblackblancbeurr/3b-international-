@@ -27,8 +27,8 @@ function project(lon,lat,centerLon,centerLat,cx,cy,r){
  return {x:cx+r*clat*Math.sin(lambda),y:cy-r*(slat*Math.cos(centerLat)-clat*Math.cos(lambda)*Math.sin(centerLat)),z};
 }
 
-export default function LivingWorldGlobe({selectedId='france',onSelect,zoom=1,onZoomChange}){
- const ref=useRef(null),control=useRef({angle:10*RAD,lat:23*RAD,draw:()=>{},refresh:()=>{},selectedId,onSelect,zoom:1,onZoomChange,drag:null,pointers:new Map(),pinch:null});
+export default function LivingWorldGlobe({selectedId='france',onSelect,zoom=1,onZoomChange,paused=false}){
+ const ref=useRef(null),control=useRef({angle:10*RAD,lat:23*RAD,draw:()=>{},refresh:()=>{},selectedId,onSelect,zoom:1,onZoomChange,paused:false,drag:null,pointers:new Map(),pinch:null});
  control.current.onSelect=onSelect;
  control.current.onZoomChange=onZoomChange;
  useEffect(()=>{
@@ -38,6 +38,7 @@ export default function LivingWorldGlobe({selectedId='france',onSelect,zoom=1,on
   control.current.draw();
  },[selectedId]);
  useEffect(()=>{control.current.zoom=clampGlobeZoom(zoom);control.current.draw();},[zoom]);
+ useEffect(()=>{control.current.paused=paused;control.current.refresh();},[paused]);
  useEffect(()=>{
   const canvas=ref.current,ctx=canvas?.getContext('2d',{alpha:true});
   if(!ctx)return;
@@ -130,7 +131,7 @@ export default function LivingWorldGlobe({selectedId='france',onSelect,zoom=1,on
    ctx.strokeStyle='rgba(255,204,118,.8)';ctx.lineWidth=2.4;ctx.stroke();
   }
   state.draw=draw;
-  const canAnimate=()=>active&&visible&&!menuOpen&&!document.hidden&&!reduced()&&!state.drag&&!state.pinch;
+  const canAnimate=()=>active&&visible&&!menuOpen&&!document.hidden&&!reduced()&&!state.paused&&!state.drag&&!state.pinch;
   function tick(time){
    raf=0;if(!canAnimate())return;
    if(time-last>frameInterval()){

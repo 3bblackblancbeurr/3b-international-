@@ -94,7 +94,8 @@ test('3B World and Albert are real routed React components, not pasted promotion
  assert.match(globe,/requestAnimationFrame/);
  assert.match(globe,/\(pointer: coarse\)/);
  assert.match(globe,/\?1\.25:1\.5/);
- assert.match(globe,/!reduced\(\)&&!state\.drag/);
+ assert.match(globe,/!reduced\(\)&&!state\.paused&&!state\.drag/);
+ assert.match(map,/Mettre la rotation de la planète en pause/,'mobile users can explicitly pause the 3B globe');
  assert.match(styles,/\.world-living-globe-canvas/);
  assert.match(styles,/@media\(max-width:370px\)/);
  assert.match(styles,/prefers-reduced-motion:reduce/);

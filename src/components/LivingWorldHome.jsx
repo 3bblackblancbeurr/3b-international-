@@ -1,6 +1,6 @@
 import {Button} from '../design-system/index.jsx';
 import {useEffect,useMemo,useState} from 'react';
-import {ArrowDown,ArrowRight,BadgePercent,BookImage,BookOpen,ChevronLeft,ChevronRight,Clapperboard,Compass,CreditCard,Eye,FileText,Gamepad2,Globe2,HandHeart,Handshake,Headphones,HeartPulse,IdCard,Landmark,MapPin,Newspaper,Plane,Search,ShieldCheck,ShoppingBag,Sparkles,Star,Trophy,UserRound,Users,X,ZoomIn,ZoomOut,RotateCcw} from 'lucide-react';
+import {ArrowDown,ArrowRight,BadgePercent,BookImage,BookOpen,ChevronLeft,ChevronRight,Clapperboard,Compass,CreditCard,Eye,FileText,Gamepad2,Globe2,HandHeart,Handshake,Headphones,HeartPulse,IdCard,Landmark,MapPin,Newspaper,Plane,Search,ShieldCheck,ShoppingBag,Sparkles,Star,Trophy,UserRound,Users,X,ZoomIn,ZoomOut,RotateCcw,Pause,Play} from 'lucide-react';
 import {RouteLink} from './AppNavigation.jsx';
 import LivingWorldGlobe from './LivingWorldGlobe.jsx';
 import WorldNowFeed from './WorldNowFeed.jsx';
@@ -38,6 +38,7 @@ export default function LivingWorldHome({goTo,menuItems=[]}){
  const [tab,setTab]=useState('world');
  const [activeRealm,setActiveRealm]=useState('france');
  const [globeZoom,setGlobeZoom]=useState(GLOBE_ZOOM_MIN);
+ const [globePaused,setGlobePaused]=useState(false);
  const [query,setQuery]=useState('');
  const [category,setCategory]=useState('all');
  const [favorites,setFavorites]=useState(readFavorites);
@@ -72,11 +73,12 @@ export default function LivingWorldHome({goTo,menuItems=[]}){
    </div>
    <div className="world3b-globe-frame">
     <div className="world3b-globe-aura" aria-hidden="true"/>
-    <LivingWorldGlobe selectedId={activeRealm} onSelect={setActiveRealm} zoom={globeZoom} onZoomChange={setGlobeZoom}/>
+    <LivingWorldGlobe selectedId={activeRealm} onSelect={setActiveRealm} zoom={globeZoom} onZoomChange={setGlobeZoom} paused={globePaused}/>
     <div className="world3b-globe-controls" role="group" aria-label="Zoom de la planète">
      <Button variant="ghost" type="button" aria-label="Agrandir la planète" disabled={globeZoom>=GLOBE_ZOOM_MAX} onClick={()=>setGlobeZoom(value=>clampGlobeZoom(value+.15))}><ZoomIn size={20}/></Button>
      <Button variant="ghost" type="button" aria-label="Réduire la planète" disabled={globeZoom<=GLOBE_ZOOM_MIN} onClick={()=>setGlobeZoom(value=>clampGlobeZoom(value-.15))}><ZoomOut size={20}/></Button>
      <Button variant="ghost" type="button" aria-label="Réinitialiser le zoom" disabled={globeZoom<=GLOBE_ZOOM_MIN} onClick={()=>setGlobeZoom(GLOBE_ZOOM_MIN)}><RotateCcw size={18}/></Button>
+     <Button variant="ghost" type="button" aria-label={globePaused?"Relancer la rotation de la planète":"Mettre la rotation de la planète en pause"} aria-pressed={globePaused} onClick={()=>setGlobePaused(value=>!value)}>{globePaused?<Play size={18}/>:<Pause size={18}/>}</Button>
      <span className="world3b-zoom-readout" aria-live="polite">{Math.round(globeZoom*100)}%</span>
     </div>
     <div className="world3b-globe-emblem" aria-hidden="true"><span>3B</span><small>INTERNATIONAL</small></div>

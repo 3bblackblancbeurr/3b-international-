@@ -21,11 +21,16 @@ export default function AlbertPublicPreview({goTo}){
  const [messages,setMessages]=useState([]);
  const [listening,setListening]=useState(false);
  const [notice,setNotice]=useState('');
- const [speaking,setSpeaking]=useState(false);
+ const [speakingIndex,setSpeakingIndex]=useState(-1);
  const [favoriteRoutes,setFavoriteRoutes]=useState(()=>readAlbertFavoriteModules(typeof window!=='undefined'?window.localStorage:null));
- const recognition=useRef(null),chatEnd=useRef(null);
- useEffect(()=>()=>{try{recognition.current?.abort();window.speechSynthesis?.cancel();}catch{/* cleanup */}},[]);
- useEffect(()=>{chatEnd.current?.scrollIntoView?.({block:'nearest',behavior:'smooth'});},[messages.length]);
+ const recognition=useRef(null),conversationRef=useRef(null),activeSpeech=useRef(null);
+ useEffect(()=>()=>{try{recognition.current?.abort();activeSpeech.current=null;window.speechSynthesis?.cancel();}catch{/* cleanup */}},[]);
+ useEffect(()=>{
+  const panel=conversationRef.current;
+  if(!panel||!messages.length)return;
+  const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches||document.documentElement.dataset.experienceMotion==='reduced';
+  panel.scrollTo({top:panel.scrollHeight,behavior:reduced?'auto':'smooth'});
+ },[messages]);
  useEffect(()=>{
   const refresh=()=>setFavoriteRoutes(readAlbertFavoriteModules(typeof window!=='undefined'?window.localStorage:null));
   const onStorage=event=>{if(event.key===WORLD_FAVORITES_KEY||event.key===null)refresh();};
@@ -36,6 +41,8 @@ export default function AlbertPublicPreview({goTo}){
  function ask(value){
   const text=String(value??draft).trim().slice(0,300);
   if(!text)return;
+  // A new answer invalidates the old audio, even after the 12-turn cap.
+  activeSpeech.current=null;window.speechSynthesis?.cancel();setSpeakingIndex(-1);
   const answer=albertLocalGuideAnswer(text);
   setMessages(history=>[...history,{question:text,...answer}].slice(-12));
   setDraft('');setNotice('');
@@ -53,14 +60,21 @@ export default function AlbertPublicPreview({goTo}){
   try{rec.start();setListening(true);setNotice('La dictée est facultative. Selon ton navigateur, ta voix peut être traitée par son fournisseur. Pour éviter cela, utilise le clavier. Appuie sur Envoyer pour interroger le guide 3B.');}
   catch{setListening(false);setNotice('Impossible de démarrer la dictée.');}
  }
- function speak(message){
-  if(!window.speechSynthesis)return;
-  if(speaking){window.speechSynthesis.cancel();setSpeaking(false);return;}
-  const utterance=new SpeechSynthesisUtterance(String(message).slice(0,400));
-  utterance.lang='fr-FR';utterance.rate=.94;
-  utterance.onend=()=>setSpeaking(false);utterance.onerror=()=>setSpeaking(false);
-  try{window.speechSynthesis.cancel();window.speechSynthesis.speak(utterance);setSpeaking(true);}
-  catch{setSpeaking(false);}
+ function speak(message,index){
+  const engine=window.speechSynthesis;
+  if(!engine){setNotice('La lecture vocale est indisponible sur ce navigateur.');return;}
+  if(activeSpeech.current?.index===index){
+   activeSpeech.current=null;engine.cancel();setSpeakingIndex(-1);return;
+  }
+  try{
+   engine.cancel();
+   const utterance=new SpeechSynthesisUtterance(String(message).slice(0,400));
+   utterance.lang='fr-FR';utterance.rate=.94;
+   activeSpeech.current={index,utterance};
+   const finish=()=>{if(activeSpeech.current?.utterance===utterance){activeSpeech.current=null;setSpeakingIndex(-1);}};
+   utterance.onend=finish;utterance.onerror=finish;
+   engine.speak(utterance);setSpeakingIndex(index);setNotice('');
+  }catch{activeSpeech.current=null;setSpeakingIndex(-1);setNotice('La lecture vocale ne peut pas démarrer.');}
  }
  return <section className="albert3b-experience" aria-label="Albert APEX 3B — assistant d'orientation">
   <div className="albert3b-topbar"><RouteLink goTo={goTo} page="home" className="albert3b-back"><ArrowLeft size={18}/> Retour au Monde 3B</RouteLink><span className="albert3b-topmark">3B <em>INTERNATIONAL</em></span></div>
@@ -76,16 +90,16 @@ export default function AlbertPublicPreview({goTo}){
   <div className="albert3b-content">
    <section className="albert3b-chat" aria-label="Dialogue avec le guide 3B">
     <div className="albert3b-section-head"><div><span className="world3b-eyebrow">VOTRE ASSISTANT</span><h2>Comment puis-je t’aider ?</h2></div><Sparkles size={23} aria-hidden="true"/></div>
-    <div className="albert3b-conversation" aria-live="polite">
+    <div className="albert3b-conversation" ref={conversationRef} aria-live="polite">
      <div className="albert3b-reply"><strong>Bienvenue dans 3B.</strong><p>Dis-moi ce que tu recherches. Je te conduirai vers le bon univers 3B.</p></div>
      {messages.map((item,i)=><div className="albert3b-turn" key={i}>
       <p className="albert3b-question">{item.question}</p>
       <div className="albert3b-reply"><p>{item.message}</p>
        {item.destination&&<RouteLink page={item.destination.id} goTo={goTo} className="albert3b-reply-link">Ouvrir {item.destination.label}<ArrowRight size={16}/></RouteLink>}
-       <Button variant="ghost" type="button" className="albert3b-speak" aria-label="Écouter cette réponse" onClick={()=>speak(item.message)}>{speaking?<VolumeX size={15}/>:<Volume2 size={15}/>} Écouter</Button>
+       <Button variant="ghost" type="button" className="albert3b-speak" aria-label={speakingIndex===i?"Arrêter la lecture de cette réponse":"Écouter cette réponse"} onClick={()=>speak(item.message,i)}>{speakingIndex===i?<VolumeX size={15}/>:<Volume2 size={15}/>} {speakingIndex===i?"Arrêter":"Écouter"}</Button>
       </div>
      </div>)}
-     <span ref={chatEnd}/>
+
     </div>
     <form className="albert3b-form" onSubmit={event=>{event.preventDefault();ask();}}>
      <label htmlFor="albert3b-input" className="visually-hidden">Ta question pour le guide 3B</label>

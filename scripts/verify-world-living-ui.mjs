@@ -79,6 +79,13 @@ try{
    check('Globe accepts repeated zoom', (await readout.innerText()).includes('130%'));
    await reset.click();
    check('Reset zoom restores full world',(await readout.innerText()).includes('100%'));
+   await home.getByRole('button',{name:'Mettre la rotation de la planète en pause'}).click();
+   await page.waitForTimeout(100);
+   const pausedFrame=await canvas.evaluate(el=>el.toDataURL('image/png'));
+   await page.waitForTimeout(180);
+   check('Manual pause stops costly globe animation',pausedFrame===await canvas.evaluate(el=>el.toDataURL('image/png')));
+   await home.getByRole('button',{name:'Relancer la rotation de la planète'}).click();
+   check('Manual resume restores the globe animation setting',await home.getByRole('button',{name:'Mettre la rotation de la planète en pause'}).getAttribute('aria-pressed')==='false');
   }
   if(width<720){
    const realmCard=page.locator('.world3b-country-card').first();
@@ -154,12 +161,14 @@ try{
   check('Sculpted AI portrait is visible '+width,await portrait.isVisible()&&await portrait.evaluate(el=>{const r=el.getBoundingClientRect();return r.width>85&&r.height>95}));
   await page.screenshot({path:path.join(out,'albert-'+width+'.png'),fullPage:true,animations:'disabled',scale:'css',timeout:60000});
   if(width===390){
+   check('Phone concierge removes empty conversation height',await page.locator('.albert3b-conversation').evaluate(el=>getComputedStyle(el).minHeight==='0px'));
    await page.locator('#albert3b-input').fill('Je veux voir les jeux');
    await page.getByRole('button',{name:'Envoyer ma question'}).click();
    check('Local assistant links to real games route',await page.locator('.albert3b-reply-link').last().getAttribute('href').then(h=>h.includes('#jeux')));
+   check('Albert exposes an accessible per-response voice control',await page.getByRole('button',{name:'Écouter cette réponse'}).count()===1);
    check('Albert clearly describes disconnected PC mode',await page.locator('.albert3b-status').innerText().then(t=>t.includes('non connecté')));
    check('Albert offers the saved World 3B favorite on-device',await page.locator('.albert3b-local-favorites a').count()===1);
-   check('Albert favorite shortcut navigates to an existing module',await page.locator('.albert3b-local-favorites a').first().getAttribute('href').then(h=>h?.startsWith('#')===true));
+   check('Albert favorite shortcut navigates to an existing module',await page.locator('.albert3b-local-favorites a').first().getAttribute('href').then(h=>new URL(h,origin).hash==='#3-bons-plans'));
    const planner=page.locator('.albert3b-daily');
    check('Albert daily planner is visible',await planner.isVisible());
    await planner.getByRole('button',{name:/Ajouter à ma journée : Prendre soin de moi/}).click();

@@ -397,3 +397,24 @@ html[data-experience-quality="economical"] .albert3b-sculpted-avatar .albert3b-p
  .albert3b-local-favorites{padding:13px}
  .albert3b-local-favorite-links{grid-template-columns:1fr}
 }
+
+/* 17 October 2026 premium polish: calmer, more useful phone composition.
+   No WebGL, download, full-screen filter or additional animation loop. */
+.world3b-globe-controls .gm-button[aria-pressed="true"]{
+ color:var(--3b-world-tone-231a0b);
+ border-color:rgba(255,228,177,.93);
+ background:linear-gradient(135deg,var(--3b-world-tone-ffebbc),var(--3b-world-tone-d3a04f));
+}
+@media(max-width:720px){
+ /* The empty chat should not occupy a large fake conversation window. */
+ .albert3b-experience .albert3b-conversation{min-height:0;max-height:350px}
+ /* Let useful actions sit in the page, not inside yet another heavy frame. */
+ .albert3b-experience .albert3b-curated{border:0;background:transparent;padding:20px 2px 0}
+ .world3b-home .world3b-active-view{
+  background:transparent;border:0;border-left:2px solid rgba(231,198,142,.52);
+  border-radius:var(--3b-world-radius-01);padding:16px 13px 18px 19px
+ }
+ .world3b-home .world3b-hero{border-color:rgba(227,193,132,.29);box-shadow:var(--3b-world-shadow-07)}
+ .world3b-home .world3b-globe-controls{top:28%;gap:5px}
+ .world3b-home .world3b-globe-controls .gm-button{width:40px;height:40px;min-width:40px;min-height:40px}
+}
