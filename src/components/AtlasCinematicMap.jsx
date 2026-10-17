@@ -5,12 +5,12 @@ import {Button} from '../design-system/index.jsx';
 // These are illustrated routes between geographic regions, not actual
 // operational 3B hubs, registered members or verified partner locations.
 const PORTALS=[
- {id:'americas',x:29,y:28,label:'Amériques',action:'travel',gold:false},
- {id:'south-america',x:36,y:64,label:'Amérique du Sud',action:'travel',gold:false},
- {id:'europe',x:51,y:26,label:'Europe et les huit héritages',action:'france',gold:true},
- {id:'africa',x:47,y:36,label:'Afrique du Nord',action:'maroc',gold:true},
- {id:'asia',x:88,y:32,label:'Asie',action:'travel',gold:false},
- {id:'oceania',x:91,y:68,label:'Océanie',action:'travel',gold:false},
+ {id:'americas',x:20,y:36,label:'Amériques',action:'travel',gold:false},
+ {id:'south-america',x:25,y:65,label:'Amérique du Sud',action:'travel',gold:false},
+ {id:'europe',x:52,y:26,label:'Europe et les huit héritages',action:'france',gold:true},
+ {id:'africa',x:48,y:44,label:'Afrique du Nord',action:'maroc',gold:true},
+ {id:'asia',x:78,y:32,label:'Asie',action:'travel',gold:false},
+ {id:'oceania',x:87,y:76,label:'Océanie',action:'travel',gold:false},
 ];
 const CONNECTIONS=[
  ['M510 130 Q410 55 290 140','warm'],
@@ -29,7 +29,7 @@ export default function AtlasCinematicMap({onRealm,onTravel,activeRealm}){
   if(!stage)return;
   const sync=()=>{
    const rect=stage.getBoundingClientRect();
-   const width=Math.max(120,Math.min(rect.width,rect.height*2));
+   const width=Math.max(120,Math.min(rect.width>=900?rect.width*.82:rect.width,rect.height*2));
    const height=width/2;
    setFrame(prev=>prev&&Math.abs(prev.width-width)<1?prev:{width,height});
   };
@@ -39,8 +39,8 @@ export default function AtlasCinematicMap({onRealm,onTravel,activeRealm}){
  },[]);
  return <div ref={frameRef} style={frame?{width:frame.width,height:frame.height}:undefined} className="atlas3b-worldmap" role="group" aria-label="Planisphère terrestre nocturne et routes d'exploration illustratives">
   <picture>
-   <source media="(max-width:720px)" srcSet="/art/earth/black-marble-mobile.webp"/>
-   <img className="atlas3b-earth-photo" src="/art/earth/black-marble-1800.webp" alt="La Terre de nuit, photographiée par satellite, avec les lumières des continents" decoding="async" fetchPriority="high"/>
+   {/* The photographic fallback remains available at /art/earth/black-marble-mobile.webp. */}
+   <img className="atlas3b-earth-photo" src="/art/atlas-v4/world-prestige.webp" alt="Illustration de la Terre nocturne, continents éclairés d’or et routes d’exploration" decoding="async" fetchPriority="high"/>
   </picture>
   <svg className="atlas3b-flight-paths" viewBox="0 0 1000 500" aria-hidden="true" focusable="false" preserveAspectRatio="none">
    <defs>
