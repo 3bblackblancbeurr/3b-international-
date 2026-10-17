@@ -121,6 +121,13 @@ export function updateWatchEntry(state,id,patch){
  return normalizeMediaLibrary({...state,entries:state.entries.map(entry=>entry.id===id?{...entry,...allowed,id}:entry)});
 }
 export function toggleSavedNarration(state,id){if(!NARRATION_IDS.includes(id))throw Error('Récit inconnu.');return {...state,savedNarrations:state.savedNarrations.includes(id)?state.savedNarrations.filter(value=>value!==id):[...state.savedNarrations,id]};}
+export function applyWatchEntryDraft(state,id,draft,baseline){
+ const current=state.entries.find(entry=>entry.id===id);if(!current)throw Error('Ce titre a été retiré. Copie tes modifications avant de fermer le formulaire.');
+ if(!draft||!baseline)throw Error('Le formulaire doit être rouvert avant modification.');
+ const fields=['title','creator','kind','notes'],changed=fields.filter(field=>draft[field]!==baseline[field]);
+ if(changed.some(field=>current[field]!==baseline[field]&&current[field]!==draft[field]))throw Error('Un champ modifié a changé depuis l’ouverture du formulaire. Copie tes modifications, puis rouvre le titre pour comparer.');
+ return updateWatchEntry(state,id,Object.fromEntries(changed.map(field=>[field,draft[field]])));
+}
 export function rememberNarration(state,id,seconds,duration,finished=false){
  if(!NARRATION_IDS.includes(id)||!Number.isFinite(seconds)||!Number.isFinite(duration)||duration<=0||duration>120)throw Error('Position audio invalide.');
  return normalizeMediaLibrary({...state,positions:{...state.positions,[id]:{seconds:Math.max(0,Math.min(seconds,duration)),duration,finished:finished===true||state.positions[id]?.finished===true}}});

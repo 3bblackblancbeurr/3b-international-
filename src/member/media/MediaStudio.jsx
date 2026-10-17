@@ -4,7 +4,7 @@ import {Button} from '../../design-system/index.jsx';
 import {WORLD_REALMS} from '../../components/world-living-data.js';
 import narration from '../../world/narration-manifest.json';
 import CinemaFinder from '../CinemaFinder.jsx';
-import {MEDIA_BACKUP_MAX_BYTES,MEDIA_STATUSES,addWatchEntry,createMediaLibrarySession,exportMediaLibrary,findWatchEntries,mergeMediaLibrary,rememberNarration,toggleSavedNarration,updateWatchEntry} from './media-library.js';
+import {MEDIA_BACKUP_MAX_BYTES,MEDIA_STATUSES,addWatchEntry,applyWatchEntryDraft,createMediaLibrarySession,exportMediaLibrary,findWatchEntries,mergeMediaLibrary,rememberNarration,toggleSavedNarration,updateWatchEntry} from './media-library.js';
 import './media-studio.css';
 
 const CLIPS=[narration.clips.find(item=>item.id==='prologue'),...WORLD_REALMS.map(realm=>narration.clips.find(item=>item.id==='entry-'+realm.id))].filter(Boolean);
@@ -17,7 +17,7 @@ export default function MediaStudio({mode='tv',goTo}){
  const [session]=useState(()=>createMediaLibrarySession());const [state,setState]=useState(session.loaded.state),[notice,setNotice]=useState(session.loaded.warning),[tab,setTab]=useState(mode==='cinema'?'list':'origins');
  const [selected,setSelected]=useState(CLIPS[0].id),[query,setQuery]=useState(''),[filter,setFilter]=useState('all'),[onlySaved,setOnlySaved]=useState(false),[draft,setDraft]=useState({title:'',creator:'',kind:'film',notes:''}),[formOpen,setFormOpen]=useState(false),[audioError,setAudioError]=useState(false),[importDraft,setImportDraft]=useState(null),[deleted,setDeleted]=useState(null);
  const input=useRef(null),audio=useRef(null),lastSecond=useRef(-1);
- const [editingId,setEditingId]=useState(null);
+ const [editingId,setEditingId]=useState(null),[editingBase,setEditingBase]=useState(null);
  useEffect(()=>{setTab(mode==='cinema'?'list':'origins');setQuery('');},[mode]);
  const clip=CLIPS.find(item=>item.id===selected)||CLIPS[0];
  const entries=useMemo(()=>findWatchEntries(state,{query,status:filter}),[state,query,filter]);
@@ -29,8 +29,8 @@ export default function MediaStudio({mode='tv',goTo}){
  }
  function changeTab(next){audio.current?.pause();setTab(next);setQuery('');setFilter('all');}
  function selectClip(id){audio.current?.pause();setSelected(id);setAudioError(false);lastSecond.current=-1;}
- function editEntry(entry){setEditingId(entry.id);setDraft({title:entry.title,creator:entry.creator,kind:entry.kind,notes:entry.notes});setFormOpen(true);requestAnimationFrame(()=>document.getElementById('med3b-title-input')?.focus());}
- function closeForm(){setFormOpen(false);setEditingId(null);setDraft({title:'',creator:'',kind:'film',notes:''});}
+ function editEntry(entry){const initial={title:entry.title,creator:entry.creator,kind:entry.kind,notes:entry.notes};setEditingId(entry.id);setEditingBase(initial);setDraft(initial);setFormOpen(true);requestAnimationFrame(()=>document.getElementById('med3b-title-input')?.focus());}
+ function closeForm(){setFormOpen(false);setEditingId(null);setEditingBase(null);setDraft({title:'',creator:'',kind:'film',notes:''});}
  function progress(event,ended=false){const element=event.currentTarget,current=Math.floor(element.currentTime);if(!ended&&lastSecond.current===current)return;lastSecond.current=current;const duration=Number.isFinite(element.duration)?element.duration:seconds(clip),position=element.currentTime;commit(previous=>rememberNarration(previous,clip.id,position,duration,ended));}
  async function prepareImport(event){const file=event.target.files?.[0];event.target.value='';if(!file)return;try{if(file.size>MEDIA_BACKUP_MAX_BYTES)throw Error('Le fichier dépasse 1 Mo.');const source=await file.text(),next=mergeMediaLibrary(state,source);setImportDraft({source,added:next.entries.length-state.entries.length});}catch(error){setNotice(error.message);}}
  return <section className="med3b" aria-label={mode==='cinema'?'Ma médiathèque cinéma':'3B Origins · Récits disponibles'}>
@@ -47,7 +47,7 @@ export default function MediaStudio({mode='tv',goTo}){
   </>}
   {tab==='list'&&<>
    <div className="med3b-list-intro"><div><h3>Ton carnet de cinéma.</h3><p>Les titres sont ceux que tu ajoutes. Leur disponibilité se vérifie auprès des plateformes.</p></div><Button variant="champagne" onClick={()=>{if(formOpen)closeForm();else{closeForm();setFormOpen(true);}}} aria-expanded={formOpen}><Plus size={16}/>{formOpen?'Fermer le formulaire':'Ajouter un titre'}</Button></div>
-   {formOpen&&<form className="med3b-form" onSubmit={event=>{event.preventDefault();try{commit(previous=>editingId?updateWatchEntry(previous,editingId,draft):addWatchEntry(previous,draft),editingId?'Titre et notes mis à jour.':'Titre ajouté à ta liste locale.');closeForm();}catch(error){setNotice(error.message);}}}>
+   {formOpen&&<form className="med3b-form" onSubmit={event=>{event.preventDefault();try{commit(previous=>editingId?applyWatchEntryDraft(previous,editingId,draft,editingBase):addWatchEntry(previous,draft),editingId?'Titre et notes mis à jour.':'Titre ajouté à ta liste locale.');closeForm();}catch(error){setNotice(error.message);}}}>
     {editingId&&<strong>Modifier ton titre et tes notes</strong>}
     <label>Titre du film ou de la série<input id="med3b-title-input" required value={draft.title} onChange={event=>setDraft({...draft,title:event.target.value})} maxLength={100}/></label>
     <div><label>Réalisateur ou créateur<input value={draft.creator} onChange={event=>setDraft({...draft,creator:event.target.value})} maxLength={100}/></label><label>Format<select value={draft.kind} onChange={event=>setDraft({...draft,kind:event.target.value})}><option value="film">Film</option><option value="series">Série</option></select></label></div>

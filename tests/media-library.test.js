@@ -1,4 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync,existsSync} from 'node:fs';
+import {applyWatchEntryDraft} from '../src/member/media/media-library.js';
 import {MEDIA_LIBRARY_KEY,MEDIA_BACKUP_MAX_BYTES,NARRATION_IDS,normalizeMediaLibrary,loadMediaLibrary,saveMediaLibrary,saveMediaLibraryDetailed,persistMediaLibrary,createMediaLibrarySession,mediaBackupByteLength,addWatchEntry,updateWatchEntry,toggleSavedNarration,rememberNarration,findWatchEntries,exportMediaLibrary,mergeMediaLibrary} from '../src/member/media/media-library.js';
 const blank=()=>normalizeMediaLibrary(null);
 test('media exposes only nine real local narrated stories with known provenance',()=>{const manifest=JSON.parse(readFileSync(new URL('../src/world/narration-manifest.json',import.meta.url)));assert.deepEqual([...NARRATION_IDS].sort(),manifest.clips.map(clip=>clip.id).sort());for(const clip of manifest.clips)assert.ok(existsSync(new URL('../public'+clip.src,import.meta.url)));assert.match(manifest.attributionUrl,/^https:/);});
@@ -109,4 +110,21 @@ test('a conflicting edit is not silently discarded by a later unrelated action',
  const after=b.commit(state=>rememberNarration(state,'prologue',5,28));assert.equal((await after.persistence).ok,false);
  assert.equal(b.getState().entries[0].notes,'Ma version non enregistrée');assert.equal(b.getState().positions.prologue.seconds,5);
  assert.equal(loadMediaLibrary(target).state.entries[0].notes,'Autre onglet');
+});
+
+test('an open editor changes only dirty fields after an unrelated action refreshes another tab’s notes',async()=>{
+ const target=memory(),locks=lockQueue();saveMediaLibrary(addWatchEntry(blank(),{title:'Titre initial',creator:'Auteur',kind:'film',notes:'Note initiale'},'one'),target);
+ const a=createMediaLibrarySession({storage:target,locks}),b=createMediaLibrarySession({storage:target,locks});
+ const baseline={...a.getState().entries[0]},draft={...baseline,title:'Titre corrigé'};
+ assert.equal((await b.commit(state=>updateWatchEntry(state,'one',{notes:'Note récente onglet B'})).persistence).ok,true);
+ assert.equal((await a.commit(state=>updateWatchEntry(state,'one',{status:'watching'})).persistence).ok,true);
+ assert.equal((await a.commit(state=>applyWatchEntryDraft(state,'one',draft,baseline)).persistence).ok,true);
+ const saved=loadMediaLibrary(target).state.entries[0];assert.equal(saved.title,'Titre corrigé');assert.equal(saved.notes,'Note récente onglet B');assert.equal(saved.status,'watching');
+});
+
+test('an editor refuses a dirty field changed since opening and cannot recreate a removed title',()=>{
+ const original=addWatchEntry(blank(),{title:'Film',notes:'Initiale'},'one'),baseline={...original.entries[0]},draft={...baseline,notes:'Mon texte'};
+ const newer=updateWatchEntry(original,'one',{notes:'Texte récent'});assert.throws(()=>applyWatchEntryDraft(newer,'one',draft,baseline),/champ modifié/);assert.equal(newer.entries[0].notes,'Texte récent');
+ assert.throws(()=>applyWatchEntryDraft(blank(),'one',draft,baseline),/retiré/);
+ assert.equal(applyWatchEntryDraft(newer,'one',baseline,baseline).entries[0].notes,'Texte récent');
 });
