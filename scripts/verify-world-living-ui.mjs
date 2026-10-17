@@ -48,6 +48,23 @@ try{
   check('Three contextual real service links '+width,await home.locator('.world3b-editorial-card').count()===3);
   const canvas=home.locator('canvas.world-living-globe-canvas');
   check('Interactive geographic globe '+width,await canvas.isVisible()&&await canvas.evaluate(el=>el.getBoundingClientRect().width>180&&el.getBoundingClientRect().height>180));
+
+  if(width===390){
+   // Manual animation preference must stop the canvas completely while it
+   // remains interactable, without relying only on the OS preference.
+   await page.evaluate(()=>document.documentElement.dataset.experienceMotion='reduced');
+   await page.waitForTimeout(150);
+   const stopped1=await canvas.evaluate(el=>el.toDataURL('image/png'));
+   await page.waitForTimeout(210);
+   const stopped2=await canvas.evaluate(el=>el.toDataURL('image/png'));
+   check('3B settings reduced motion freezes globe '+width,stopped1===stopped2);
+   await page.evaluate(()=>document.documentElement.dataset.experienceQuality='economical');
+   await page.waitForTimeout(130);
+   const eco=await canvas.evaluate(el=>({bitmap:el.width,css:el.getBoundingClientRect().width}));
+   check('Economical 3B quality reduces globe raster density '+width,eco.bitmap<=eco.css+2);
+   await page.evaluate(()=>{document.documentElement.dataset.experienceMotion='full';document.documentElement.dataset.experienceQuality='full';});
+   await page.waitForTimeout(120);
+  }
   if(width===390){
    const zoomIn=home.getByRole('button',{name:'Agrandir la planète'});
    const zoomOut=home.getByRole('button',{name:'Réduire la planète'});

@@ -362,3 +362,19 @@ html[data-motion="reduced"] .world3b-home *,html[data-motion="reduced"] .albert3
 @media(max-width:720px){
  .albert3b-experience .albert3b-avatar-halo{filter:none!important;opacity:.65}
 }
+
+/* 3B's own Settings > Animations and economical quality flags are authoritative.
+   Browser prefers-reduced-motion alone is not sufficient on S21/Xiaomi. */
+html[data-experience-motion="reduced"] .world3b-home *,
+html[data-experience-motion="reduced"] .albert3b-experience *,
+html[data-experience-motion="reduced"] .world3b-home *::before,
+html[data-experience-motion="reduced"] .world3b-home *::after {
+ animation:none!important;transition:none!important;scroll-behavior:auto!important
+}
+html[data-experience-quality="economical"] .world3b-globe-aura {
+ filter:none!important;opacity:.64!important;
+ background:radial-gradient(circle,rgba(34,117,211,.22),transparent 75%)!important
+}
+html[data-experience-quality="economical"] .albert3b-sculpted-avatar .albert3b-portrait-svg {
+ filter:none!important
+}

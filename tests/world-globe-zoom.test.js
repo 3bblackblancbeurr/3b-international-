@@ -31,4 +31,11 @@ test('zoom controls, pinch handling and suspended animation are built into actua
  assert.match(globe,/if\(!canAnimate\(\)\)return/);
  assert.match(globe,/motionObserver\?\.observe/);
  assert.match(css,/\.world3b-globe-controls/);
+ assert.match(globe,/dataset\.experienceMotion==='reduced'/);
+ assert.match(globe,/dataset\.experienceQuality==='economical'/);
+ assert.match(globe,/data-experience-motion/);
+ assert.match(globe,/data-experience-quality/);
+ assert.match(css,/data-experience-motion="reduced"/);
+ assert.match(css,/data-experience-quality="economical"/);
+
 });
