@@ -162,9 +162,7 @@
  .world-shell .hub-hud .hub-objective-disclosure[open] .hub-objective-toggle::after{transform:rotate(180deg)}
  .world-shell .hub-hud .hub-objective-disclosure[open] .hub-objective-disclosure-copy{position:absolute;top:calc(100% + 5px);right:0;width:min(260px,calc(100vw - 28px));max-height:calc(100svh - 155px);overflow:auto;z-index:30;padding:10px 13px;border:1px solid rgba(215,188,132,.36);border-radius:var(--3b-radius-field);background:rgba(2,16,28,.98);box-shadow:var(--3b-shadow-world-cinema-deep)}
  .world-shell .hub-hud .hub-guide-map{padding-inline:7px}
- .world-shell .hub-hud .hub-evolution-chip{
-  padding:4px 9px;border-left-color:rgba(121,218,229,.43);opacity:.9;
- }
+ .world-shell .hub-hud .hub-evolution-chip{display:none} /* Progress stays accessible from the journal; keep the mobile thumb zone open. */
  .world-shell .hub-hud .hub-evolution-chip small,.world-shell .hub-hud .hub-evolution-chip em{display:none}
  .world-shell .hub-hud .hub-evolution-chip strong{font-size:10px}
  .world-shell .hub-hud .hub-evolution-chip span{display:block;font-size:9px}

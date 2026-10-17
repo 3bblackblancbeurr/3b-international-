@@ -36,6 +36,7 @@ test('premium mobile design uses a lightweight CSS-only overlay with a usable de
  assert.match(css,/\.hub-objective-details\{display:none\}/);
  assert.match(css,/\.hub-objective-disclosure\{display:block/);
  assert.match(css,/\.world-minimap\.hub-minimap/);
+ assert.match(css,/\.hub-evolution-chip\{display:none\}/,'landscape mode does not cover the joystick with a decorative progress card');
  assert.match(css,/backdrop-filter:none/);
  assert.match(css,/@media\(pointer:coarse\)/);
  assert.doesNotMatch(css,/https?:\/\/|@import|url\(/,'no new network or font assets');

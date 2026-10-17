@@ -39,7 +39,7 @@ try{
     viewport:{width:innerWidth,height:innerHeight,scroll:document.documentElement.scrollWidth},
     card:rect('.hub-objective-card'),minimap:rect('.hub-minimap'),
     actions:rect('.hub-objective-actions'),compass:rect('.world-compass'),
-    mission:rect('.hub-mission-rail'),cameraTarget:'scene-controller-default',
+    mission:rect('.hub-mission-rail'),chipDisplay:document.querySelector('.hub-evolution-chip')?getComputedStyle(document.querySelector('.hub-evolution-chip')).display:null,cameraTarget:'scene-controller-default',
     qualitySelected:localStorage.getItem('3b-world-quality'),
     disclosureDisplay:getComputedStyle(document.querySelector('.hub-objective-disclosure')).display,
     detailsDisplay:getComputedStyle(document.querySelector('.hub-objective-details')).display
@@ -56,8 +56,10 @@ try{
    assert.ok(layout.card.y<=92,'Mission starts high enough to show the world behind it');
    assert.ok(layout.card.height<135,'Objective stays compact in landscape');
    assert.ok(layout.minimap.width<=102,'Minimap is compact on mobile');
+   assert.equal(layout.chipDisplay,'none','Decorative restoration strip cannot overlap the mobile movement zone');
   }else{
    assert.equal(layout.disclosureDisplay,'none','Desktop shows full mission text without a duplicate drawer');
+   assert.notEqual(layout.chipDisplay,'none','Desktop retains the visible restoration state');
   }
   await capture(page,out+'/'+device.id+'.png');
   if(device.isMobile){
