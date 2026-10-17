@@ -14,7 +14,7 @@ test('world-engine deployment pack includes nested Hub reducer dependencies',()=
  try{
   execFileSync(process.execPath,[join(root,'scripts','prepare-world-engine.mjs'),out],{cwd:root,stdio:'pipe'});
   const files=JSON.parse(readFileSync(out,'utf8')),names=new Set(files.map((file)=>file.name));
-  for(const name of ['hub/state.js','hub/mission-catalog.js','hub/mission-runtime.js','hub/activity-catalog.js','hub/secret-runtime.js','hub/mission-signals.js','hub/mission-actions.js','hub/mission-graph.js','hub/dialogue-v3.js','hub/dialogue-intents.js','hub/npc-memory.js','guardian-values.js','guardian-combat.js','resonance-context.js','final-circle.js','cinematic-events.js','campaign-spec.js','campaign-state.js','campaign-runtime.js','realm-navigation.js','realm-layout.js','realm-master-spec.js','realm-ground.js','invisible/catalog.js','invisible/progression.js'])assert.ok(names.has(name),name);
+  for(const name of ['hub/state.js','hub/mission-catalog.js','hub/mission-runtime.js','hub/activity-catalog.js','hub/secret-runtime.js','hub/mission-signals.js','hub/mission-actions.js','hub/mission-graph.js','hub/dialogue-v3.js','hub/dialogue-intents.js','hub/npc-memory.js','guardian-values.js','guardian-combat.js','resonance-context.js','final-circle.js','cinematic-events.js','campaign-spec.js','campaign-state.js','campaign-runtime.js','france-investigation.js','realm-navigation.js','realm-layout.js','realm-master-spec.js','realm-ground.js','invisible/catalog.js','invisible/progression.js'])assert.ok(names.has(name),name);
   assert.ok(names.has('engine.js'));
   assert.ok(names.has('rules.js'));
   assert.ok(names.has('global-rewards.js'));
@@ -37,7 +37,7 @@ test('canonical deployment package exactly matches critical client gameplay redu
  try {
  execFileSync(process.execPath,[join(root,'scripts','prepare-world-engine.mjs'),out],{cwd:root,stdio:'pipe'});
  const packaged=new Map(JSON.parse(readFileSync(out,'utf8')).map(file=>[file.name,file.content]));
- const critical=['engine.js','rules.js','adventure-state.js','frontier.js','district-jobs.js','field-world.js','field-combat.js','combat-sight.js','collision.js','guardian-values.js','guardian-combat.js','resonance-context.js','final-circle.js','hub/activity-catalog.js','hub/state.js','hub/mission-signals.js','hub/mission-actions.js','hub/mission-runtime.js','hub/mission-catalog.js','hub/mission-graph.js','hub/dialogue-intents.js','hub/npc-memory.js','campaign-spec.js','campaign-state.js','campaign-runtime.js','realm-navigation.js','realm-layout.js','realm-village-layout.js','realm-master-spec.js','realm-ground.js'];
+ const critical=['engine.js','rules.js','adventure-state.js','frontier.js','district-jobs.js','field-world.js','field-combat.js','combat-sight.js','collision.js','guardian-values.js','guardian-combat.js','resonance-context.js','final-circle.js','hub/activity-catalog.js','hub/state.js','hub/mission-signals.js','hub/mission-actions.js','hub/mission-runtime.js','hub/mission-catalog.js','hub/mission-graph.js','hub/dialogue-intents.js','hub/npc-memory.js','campaign-spec.js','campaign-state.js','campaign-runtime.js','france-investigation.js','realm-navigation.js','realm-layout.js','realm-village-layout.js','realm-master-spec.js','realm-ground.js'];
  for(const name of critical){
   const client=readFileSync(join(root,'src','world',name),'utf8');
   const server=packaged.get(name);
@@ -53,4 +53,18 @@ test('tracked Edge candidate and client agree on every village furniture footpri
   assert.deepEqual(server.realmStreetFurniture(region),client.realmStreetFurniture(region),region+' furniture');
   assert.deepEqual(server.realmStaticObstacles(region),client.realmStaticObstacles(region),region+' navigation collisions');
  }
+});
+
+test('tracked Edge candidate accepts the same authored France investigation positions and evidence ledger',async()=>{
+ for(const name of ['campaign-runtime.js','france-investigation.js'])assert.equal(readFileSync(join(root,'supabase','functions','world-engine-goldmaster-candidate',name),'utf8'),readFileSync(join(root,'src','world',name),'utf8'),name+' candidate source parity');
+ const client=await import('../src/world/campaign-runtime.js'),server=await import('../supabase/functions/world-engine-goldmaster-candidate/campaign-runtime.js');
+ const {blankSave}=await import('../src/world/rules.js');
+ let save={...blankSave(),region:'france',visited:['france']};
+ for(const selected of [undefined,undefined,'archive',undefined,undefined,'rapprocher']){
+  const snapshot=client.campaignSnapshot(save,'france');assert.deepEqual(server.campaignSnapshot(save,'france'),snapshot);
+  const action={region:'france',objective:snapshot.objective,operation:'interact',position:snapshot.target,choice:selected};
+  const result=client.applyCampaignAction(save,action);assert.deepEqual(server.applyCampaignAction(save,action),result);
+  save={...save,adventure:{...save.adventure,campaigns:{...save.adventure.campaigns,france:result.state}}};
+ }
+ assert.equal(client.campaignSnapshot(save).investigation.archivesOpen,true);
 });
