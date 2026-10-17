@@ -357,3 +357,8 @@ html[data-motion="reduced"] .world3b-home *,html[data-motion="reduced"] .albert3
  background:rgba(8,44,72,.76);font-size:13px;font-weight:700;overflow-wrap:anywhere}
 .world3b-search-extra-links a:hover{border-color:var(--wl-gold-bright)}
 .world3b-search-extra-links svg{flex-shrink:0;color:var(--wl-gold-bright)}
+
+/* Final phone compositor guard for lazy-loaded Albert route. */
+@media(max-width:720px){
+ .albert3b-experience .albert3b-avatar-halo{filter:none!important;opacity:.65}
+}
