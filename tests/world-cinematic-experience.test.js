@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {existsSync,readFileSync} from 'node:fs';
 import {WORLD_REALMS,WORLD_MODULES,WORLD_MORE_SERVICES} from '../src/components/world-living-data.js';
-import {REALM_STORIES,getRealmStory} from '../src/components/WorldRealmSpotlight.jsx';
-import {WORLD_EDITORIAL_PATHWAYS,getWorldEditorialPathways} from '../src/components/WorldNowFeed.jsx';
+import {REALM_STORIES,getRealmStory} from '../src/components/world-realm-stories.js';
+import {WORLD_EDITORIAL_PATHWAYS,getWorldEditorialPathways} from '../src/components/world-editorial-pathways.js';
 import {PAGE_HASHES} from '../src/lib/navigation.js';
 
 const read=file=>readFileSync(new URL('../'+file,import.meta.url),'utf8');
@@ -38,7 +38,7 @@ test('each World tab has three real, unique navigation destinations',()=>{
   assert.equal(new Set(pathway.items.map(item=>item.id)).size,3,tab);
   for(const item of pathway.items){
    assert.ok(Object.hasOwn(PAGE_HASHES,item.id),item.id);
-   assert.ok(item.Icon,tab+'/'+item.id);
+   assert.ok(item.icon,tab+'/'+item.id);
    assert.ok(item.title.length>4);
   }
   assert.deepEqual(getWorldEditorialPathways(tab),pathway);
