@@ -157,7 +157,13 @@ try{
   await page.addInitScript(()=>localStorage.setItem('3b-world-quality','fluid'));await page.goto('http://127.0.0.1:5199/__hub-master-qa?account&mode=offline');
   await page.locator('.world-loading').waitFor({state:'hidden',timeout:120000});await page.locator('.hub-save-card-compact').waitFor({timeout:120000});assert.match(await page.locator('.hub-save-card-compact').innerText(),/copie locale reste/);
   await page.evaluate(()=>{qa.mode='ready';window.dispatchEvent(new Event('online'));});await page.locator('.hub-save-card-compact').waitFor({state:'hidden',timeout:30000});
-  await page.getByRole('button',{name:'Pause et options',exact:true}).click();assert.match(await page.locator('.hub-save-card').innerText(),/confirmées par le serveur/);await capture(page,out+'/account-recovered.png');
+  // Private render hold keeps the real Pause button stable on software GPU.
+  // The click remains a genuine browser action: no force, no direct DOM dispatch.
+  await page.waitForFunction(()=>!!qa.scene,undefined,{timeout:120000,polling:250});
+  await page.evaluate(()=>qa.scene.qaHoldRender());
+  try{await page.getByRole('button',{name:'Pause et options',exact:true}).click({timeout:60000});}
+  finally{await page.evaluate(()=>qa.scene.qaResumeCapture());}
+  assert.match(await page.locator('.hub-save-card').innerText(),/confirmées par le serveur/);await capture(page,out+'/account-recovered.png');
   await page.evaluate(()=>localStorage.clear());await page.goto('http://127.0.0.1:5199/__hub-master-qa?account&empty&mode=offline');await page.locator('.hub-recovery').waitFor({timeout:30000});assert.equal(await page.getByRole('dialog',{name:'Ton personnage',exact:true}).count(),0);assert.match(await page.locator('.hub-recovery').innerText(),/Aucune copie locale/);assert.equal(await page.locator('.play-hud').getAttribute('inert'),'');await page.keyboard.press('Tab');await page.keyboard.press('Tab');assert.equal(await page.evaluate(()=>!!document.activeElement.closest('.world-dialog-failure')),true,'Recovery focus stays in modal');assert.equal(await page.evaluate(()=>Object.keys(localStorage).some(key=>key.startsWith('3b_world_actions_v2_'))),false,'No replacement progression is journaled');report.push({device:'account-simulation',ok:true,checks:['offline-backup','online-retry','server-confirmation','no-copy-recovery-gate','recovery-focus-containment']});
  }catch(error){report.push({device:'account-simulation',ok:false,error:error.message});}await context.close();
 }finally{await browser.close();await server.close();await writeFile(out+'/report.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));}
