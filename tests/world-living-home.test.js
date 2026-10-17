@@ -137,3 +137,27 @@ test('World Living Gold Master sources tokens and shared controls',()=>{
  assert.ok(canvas.includes('worldLivingCanvasPalette'));
  assert.equal(hex.test(canvas),false,'canvas pigments belong in JS palette');
 });
+
+
+test('3B Boussole opens the one existing native navigation menu and focuses its search',()=>{
+ const home=read('src/components/LivingWorldHome.jsx');
+ const menu=read('src/components/AppNavigation.jsx');
+ assert.match(home,/threeb:open-app-menu/);
+ assert.match(home,/detail:\{search:true\}/);
+ assert.match(home,/aria-controls="universe-menu"/);
+ assert.match(menu,/search: event\.detail\?\.search === true/);
+ assert.match(menu,/dialog\.current\?\.showModal\(\)/);
+ assert.match(menu,/searchInput\.current\?\.focus/);
+});
+
+test('World mobile rail keeps all 22 real routes reachable, without a second menu or dependency',()=>{
+ const home=read('src/components/LivingWorldHome.jsx');
+ const styles=read('src/styles/world-living-home.css');
+ assert.match(home,/showModuleRail=category==='all'&&!query\.trim\(\)&&!expandedModules/);
+ assert.match(home,/id="world3b-universe-list"/);
+ assert.match(home,/aria-expanded=\{expandedModules\}/);
+ assert.match(home,/className=\{"world3b-universes"\+\(showModuleRail/);
+ assert.match(styles,/\.world3b-universes\.is-rail/);
+ assert.match(styles,/overflow-x:auto/);
+ assert.equal(findWorldModules().length,22);
+});

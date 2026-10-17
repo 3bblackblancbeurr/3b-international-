@@ -44,6 +44,8 @@ export default function LivingWorldHome({goTo,menuItems=[]}){
  const [favorites,setFavorites]=useState(readFavorites);
  const [storageNotice,setStorageNotice]=useState('');
  const [allServices,setAllServices]=useState(true);
+ const [expandedModules,setExpandedModules]=useState(false);
+ const showModuleRail=category==='all'&&!query.trim()&&!expandedModules;
  const items=useMemo(()=>findWorldModules({query,category,favorites}),[query,category,favorites]);
  const extraMatches=useMemo(()=>category==='all'?findWorldExtraServices(query):[],[query,category]);
  const realm=WORLD_REALMS.find(item=>item.id===activeRealm)||WORLD_REALMS[0];
@@ -55,6 +57,7 @@ export default function LivingWorldHome({goTo,menuItems=[]}){
   try{localStorage.setItem(FAVORITES_KEY,JSON.stringify(next));setStorageNotice('');}
   catch{setStorageNotice('Favori modifié pour cette session. La sauvegarde sur ce téléphone est indisponible.');}
  }
+ function openWorldCompass(){window.dispatchEvent(new CustomEvent('threeb:open-app-menu',{detail:{search:true}}));}
  function stepRealm(direction){
   const index=WORLD_REALMS.findIndex(item=>item.id===activeRealm);
   setActiveRealm(WORLD_REALMS[(index+direction+WORLD_REALMS.length)%WORLD_REALMS.length].id);
@@ -62,7 +65,10 @@ export default function LivingWorldHome({goTo,menuItems=[]}){
  return <section className="world3b-home" aria-label="3B World — accueil international">
   <header className="world3b-intro">
    <div className="world3b-intro-name"><span className="world3b-brand">3B <span>INTERNATIONAL</span></span><p>UN MONDE · UNE COMMUNAUTÉ · HUIT HÉRITAGES</p></div>
-   <RouteLink page="albert" goTo={goTo} className="world3b-albert-shortcut"><Sparkles size={18}/> Albert APEX <ArrowRight size={16}/></RouteLink>
+   <div className="world3b-intro-actions">
+    <Button variant="ghost" type="button" className="world3b-quick-access" aria-label="Boussole 3B : rechercher un univers" aria-controls="universe-menu" aria-haspopup="dialog" onClick={openWorldCompass}><Compass size={17}/><span>Boussole 3B</span><Search size={15}/></Button>
+    <RouteLink page="albert" goTo={goTo} className="world3b-albert-shortcut"><Sparkles size={18}/> Albert APEX <ArrowRight size={16}/></RouteLink>
+   </div>
   </header>
   <div className="world3b-hero" aria-labelledby="world3b-hero-title">
    <div className="world3b-hero-background" aria-hidden="true"/>
@@ -115,13 +121,14 @@ export default function LivingWorldHome({goTo,menuItems=[]}){
   </section>
   <WorldRealmSpotlight realmId={activeRealm} onSelect={setActiveRealm} goTo={goTo}/>
   <section className="world3b-module-section" id="world3b-modules" aria-labelledby="world3b-modules-title">
-   <div className="world3b-section-title"><div><span className="world3b-eyebrow">UN SEUL UNIVERS · DES ACCÈS RÉELS</span><h2 id="world3b-modules-title">Les 22 univers 3B</h2></div><span className="world3b-count">22</span></div>
+   <div className="world3b-section-title"><div><span className="world3b-eyebrow">UN SEUL UNIVERS · DES ACCÈS RÉELS</span><h2 id="world3b-modules-title">Les 22 univers 3B</h2></div><div className="world3b-section-title-actions"><span className="world3b-count">22</span>{category==='all'&&!query.trim()&&<Button variant="ghost" type="button" className="world3b-expand-modules" aria-controls="world3b-universe-list" aria-expanded={expandedModules} onClick={()=>setExpandedModules(value=>!value)}>{expandedModules?'Réduire':'Tout afficher'} <ArrowDown size={15}/></Button>}</div></div>
    <div className="world3b-searchbar"><Search size={21} aria-hidden="true"/><label htmlFor="world3b-search" className="visually-hidden">Rechercher une rubrique 3B</label><input id="world3b-search" value={query} onChange={event=>setQuery(event.target.value)} placeholder="Rechercher un univers, un service…" autoComplete="off"/>{query&&<Button variant="ghost" type="button" onClick={()=>setQuery('')} aria-label="Effacer la recherche"><X size={19}/></Button>}</div>
    <div className="world3b-filter-rail" aria-label="Filtrer les univers">
     {WORLD_MODULE_GROUPS.map(group=><Button variant="ghost" key={group.id} type="button" aria-pressed={category===group.id} className={category===group.id?'is-active':''} onClick={()=>setCategory(group.id)}>{group.label}</Button>)}
     <Button variant="ghost" type="button" className={category==='favorites'?'is-active':''} aria-pressed={category==='favorites'} onClick={()=>setCategory('favorites')}><Star size={14}/> Favoris</Button>
    </div>
-   <div className="world3b-universes" aria-live="polite">
+   {showModuleRail&&<p className="world3b-mobile-swipe">Glisse pour découvrir les univers, ou affiche-les tous.</p>}
+   <div id="world3b-universe-list" className={"world3b-universes"+(showModuleRail?" is-rail":"")} aria-live="polite">
     {items.map(item=>{
      const Icon=MODULE_ICONS[item.id]||Globe2;
      const actual=menuItems.find(menu=>menu.id===item.id);

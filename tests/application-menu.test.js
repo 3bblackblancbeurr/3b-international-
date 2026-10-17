@@ -14,3 +14,16 @@ test('all authorized routes have exactly one discoverable destination',()=>{
  assert.equal(ids.includes('games'),false);
  assert.equal(ids.includes('member'),false);assert.deepEqual(partitionDestinations(),{available:[],upcoming:[]});
 });
+
+
+test('global Boussole search shares World aliases for nutrition, recipes and food scanning',()=>{
+ const live=[
+  {id:'health',label:'Santé',description:'Manger, bouger et prendre soin de soi.'},
+  {id:'foodscan',label:'Scanner alimentaire',description:'Scanner des produits.'},
+  {id:'world3b',label:'Monde du 3B',description:'Huit portes.'}
+ ];
+ assert.deepEqual(searchNavigation(live,'nutrition').map(item=>item.id),['health','foodscan']);
+ assert.deepEqual(searchNavigation(live,'recettes').map(item=>item.id),['health']);
+ assert.deepEqual(searchNavigation(live,'code barre').map(item=>item.id),['foodscan']);
+ assert.deepEqual(searchNavigation(live,'kaïs').map(item=>item.id),['world3b']);
+});

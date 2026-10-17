@@ -46,6 +46,25 @@ try{
   check('Actual World home '+width,await home.locator('.world3b-hero h1').isVisible());
   check('22 real primary modules '+width,await home.locator('.world3b-universe-link').count()===22);
   check('Three contextual real service links '+width,await home.locator('.world3b-editorial-card').count()===3);
+  if(width===320||width===390){
+   const compass=home.getByRole('button',{name:'Boussole 3B : rechercher un univers'});
+   check('Boussole can be reached without scrolling the catalog '+width,await compass.isVisible());
+   await compass.click();
+   const existingMenu=page.locator('dialog#universe-menu');
+   check('Boussole reuses the one native menu '+width,await existingMenu.evaluate(el=>el.open));
+   const menuSearch=existingMenu.getByRole('searchbox',{name:'Rechercher une rubrique'});
+   check('Boussole focuses search immediately '+width,await menuSearch.evaluate(el=>document.activeElement===el));
+   await menuSearch.fill('nutrition');
+   check('Global search returns real Santé route '+width,await existingMenu.locator('a[data-menu-id="health"]').count()===1);
+   await page.keyboard.press('Escape');
+   check('Boussole closes without blocking World '+width,await existingMenu.evaluate(el=>!el.open));
+   const catalog=home.locator('#world3b-universe-list');
+   check('Phone catalog starts as horizontal rail '+width,await catalog.evaluate(el=>getComputedStyle(el).overflowX==='auto'&&el.scrollWidth>el.clientWidth));
+   await home.getByRole('button',{name:'Tout afficher'}).click();
+   check('One tap reveals all universe tiles '+width,await catalog.evaluate(el=>getComputedStyle(el).display==='grid'));
+   await home.locator('.world3b-expand-modules').click();
+   check('Compact World catalog can be restored '+width,await catalog.evaluate(el=>getComputedStyle(el).overflowX==='auto'));
+  }
   const canvas=home.locator('canvas.world-living-globe-canvas');
   check('Interactive geographic globe '+width,await canvas.isVisible()&&await canvas.evaluate(el=>el.getBoundingClientRect().width>180&&el.getBoundingClientRect().height>180));
   if(width<720){

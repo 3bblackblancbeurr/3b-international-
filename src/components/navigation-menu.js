@@ -1,3 +1,4 @@
+import {WORLD_MODULES,WORLD_MORE_SERVICES} from './world-living-data.js';
 export const PRINCIPAL_DESTINATIONS=Object.freeze([
  {id:'home',label:'Accueil'},
  {id:'invisible',label:'Scanner'},
@@ -30,6 +31,8 @@ export const MENU_CATEGORIES=Object.freeze([
 ]);
 
 const normalized=value=>String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('fr');
+// One shared vocabulary for the home globe and the global Boussole search.
+const worldSearchAliases=new Map([...WORLD_MODULES,...WORLD_MORE_SERVICES].map(item=>[item.id,item.aliases||[]]));
 const assignedIds=new Set(MENU_CATEGORIES.flatMap(category=>category.ids));
 const scannerDestination=item=>({...item,label:'Scanner',description:'Faire apparaître une scène autour de toi.',target:'scanner'});
 
@@ -50,7 +53,7 @@ export function searchNavigation(menuItems,query){
  const words=normalized(query).trim().split(/\s+/).filter(Boolean);
  const cameraIntent=words.some(word=>word.length>=3&&['scanner','camera'].some(alias=>alias.startsWith(word)));
  return navigationItems(menuItems).filter(item=>item.status!=='soon').filter(item=>{
-  const text=normalized(`${item.id} ${item.label} ${item.description||''} ${item.id==='invisible'?'scanner caméra réalité augmentée':''}`);
+  const text=normalized(`${item.id} ${item.label} ${item.description||''} ${(worldSearchAliases.get(item.id)||[]).join(' ')} ${item.id==='invisible'?'scanner caméra réalité augmentée':''}`);
   return words.every(word=>text.includes(word));
  }).map(item=>item.id==='invisible'&&cameraIntent?scannerDestination(item):item);
 }

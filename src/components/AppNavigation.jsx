@@ -45,7 +45,7 @@ export default function AppNavigation({ page, title, menuItems, goTo, secret, op
   useEffect(() => { dialog.current?.close(); }, [page]);
   useEffect(() => { content.current?.scrollTo(0, 0); }, [category, query]);
   useEffect(() => {
-    const request = event => openMenu({ category: event.detail?.category });
+    const request = event => openMenu({ category: event.detail?.category, search: event.detail?.search === true });
     window.addEventListener('threeb:open-app-menu', request);
     return () => window.removeEventListener('threeb:open-app-menu', request);
   }, [page, menuItems]);
@@ -82,7 +82,10 @@ export default function AppNavigation({ page, title, menuItems, goTo, secret, op
     setCategory(requestedCategory || categoryForPage(page, menuItems));
     if (!dialog.current?.open) dialog.current?.showModal();
     setIsOpen(true);
-    if (search || !window.matchMedia("(max-width: 720px)").matches) {
+    // Search must receive focus synchronously inside the user's touch/click.
+    // Deferred focus can leave the phone keyboard closed (notably on iOS).
+    if (search) searchInput.current?.focus({ preventScroll: true });
+    else if (!window.matchMedia("(max-width: 720px)").matches) {
       requestAnimationFrame(() => searchInput.current?.focus({ preventScroll: true }));
     }
   }

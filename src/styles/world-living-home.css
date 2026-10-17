@@ -424,3 +424,73 @@ html[data-experience-quality="economical"] .albert3b-sculpted-avatar .albert3b-p
  .world3b-home .world3b-globe-controls{top:6%;gap:5px}
  .world3b-home .world3b-globe-controls .gm-button{width:40px;height:40px;min-width:40px;min-height:40px}
 }
+
+
+/* 3B Boussole — instant access reuses the *existing* native navigation dialog.
+   A lighter, scrollable catalog rail replaces the phone's four-screen card wall. */
+.world3b-intro-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;min-width:0}
+.world3b-quick-access.gm-button{
+ display:inline-flex;align-items:center;justify-content:center;gap:9px;
+ min-height:44px;padding:10px 14px;flex-shrink:0;
+ border:1px solid rgba(237,200,130,.64);border-radius:var(--3b-world-radius-01);
+ color:var(--wl-gold-bright);
+ background:linear-gradient(116deg,rgba(78,54,29,.48),rgba(7,29,45,.91) 56%,rgba(9,47,75,.92));
+ font-size:13px;font-weight:850;letter-spacing:.015em;
+ transition:background .2s,border-color .2s,transform .2s
+}
+.world3b-quick-access.gm-button svg{flex-shrink:0}
+.world3b-quick-access.gm-button:hover{border-color:rgba(255,229,180,.94);
+ background:linear-gradient(116deg,rgba(110,74,37,.62),rgba(12,52,80,.94));transform:translateY(-2px)}
+.world3b-section-title-actions{display:flex;align-items:center;gap:10px}
+.world3b-expand-modules.gm-button,.world3b-mobile-swipe{display:none}
+@media(max-width:720px){
+ .world3b-home .world3b-intro-actions{width:100%;justify-content:space-between;gap:7px}
+ .world3b-home .world3b-quick-access.gm-button{font-size:12px;gap:6px;padding:9px 10px;min-height:43px}
+ .world3b-home .world3b-quick-access.gm-button svg:last-child{width:13px}
+ .world3b-home .world3b-albert-shortcut{min-height:43px;font-size:12px;padding:9px 10px;gap:6px;white-space:nowrap}
+ .world3b-expand-modules.gm-button{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  min-height:44px;white-space:nowrap;padding:8px 10px;
+  border:1px solid rgba(233,195,122,.54);border-radius:var(--3b-world-radius-01);
+  background:rgba(13,35,50,.8);color:var(--wl-gold-bright);font-size:12px;font-weight:800
+ }
+ .world3b-expand-modules.gm-button[aria-expanded="true"] svg{transform:rotate(180deg)}
+ .world3b-mobile-swipe{display:block;margin:-3px 0 13px;color:var(--wl-muted);font-size:12px;line-height:1.5}
+ .world3b-home .world3b-universes.is-rail{
+  display:flex;align-items:stretch;gap:11px;width:100%;max-width:100%;
+  overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;
+  scroll-snap-type:x proximity;scroll-padding-inline:3px;
+  padding:5px 3px 17px;scrollbar-width:thin;
+  scrollbar-color:rgba(230,191,119,.68) transparent
+ }
+ .world3b-home .world3b-universes.is-rail .world3b-universe{
+  flex:0 0 clamp(144px,43vw,188px);min-width:0;scroll-snap-align:start;
+  min-height:139px
+ }
+ .world3b-home .world3b-universes.is-rail .world3b-universe-link{min-height:139px}
+}
+@media(max-width:370px){
+ .world3b-home .world3b-quick-access.gm-button{font-size:11px}
+ .world3b-home .world3b-albert-shortcut{font-size:11px}
+ .world3b-home .world3b-section-title-actions{gap:6px}
+ .world3b-home .world3b-expand-modules.gm-button{padding:7px;font-size:11px}
+ .world3b-home .world3b-universes.is-rail .world3b-universe{flex-basis:150px}
+}
+@media(prefers-reduced-motion:reduce){
+ .world3b-quick-access.gm-button{transition:none!important}
+}
+
+
+/* Review from actual 320/390px screenshots: the long serif title must never
+   fight the count and full-catalog button for the same narrow row. */
+@media(max-width:720px){
+ .world3b-home .world3b-module-section .world3b-section-title{
+  display:grid;grid-template-columns:minmax(0,1fr);gap:12px;
+  align-items:start;margin-bottom:13px
+ }
+ .world3b-home .world3b-module-section .world3b-section-title>div:first-child{min-width:0}
+ .world3b-home .world3b-module-section .world3b-section-title-actions{
+  width:100%;min-width:0;justify-content:space-between
+ }
+ .world3b-home .world3b-expand-modules.gm-button{min-width:135px;padding:10px 15px}
+}
