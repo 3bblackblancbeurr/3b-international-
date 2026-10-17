@@ -154,7 +154,7 @@ try{
  check('390: manga last reference, favorite and read progress survive reload',await manga.locator('#manga-reading-title').innerText()==='Céliane'&&/1\/12 lus/.test(await manga.locator('.manga-library-shelf-title').innerText()));
  const mangaBackup=await download(home,manga.getByRole('button',{name:'Exporter mon carnet',exact:true}),'manga-390.json');
  check('390: manga export contains actual saved favorite and read ids',JSON.parse(mangaBackup).favoriteIds.includes('kais')&&JSON.parse(mangaBackup).readIds.includes('kais'));
- await manga.screenshot({path:path.join(out,'manga-390.png')});check('390: manga fits mobile viewport',await fits(home));
+ await manga.screenshot({path:path.join(out,'manga-smoke-390.png')});check('390: manga fits mobile viewport',await fits(home));
  await homeContext.close();
  const blocked=await browser.newContext({viewport:{width:390,height:844},timezoneId:'Europe/Paris',reducedMotion:'reduce'});await setup(blocked);
  await blocked.addInitScript(()=>{Object.defineProperty(window,'localStorage',{configurable:true,get(){throw new DOMException('Storage blocked for QA','SecurityError');}});});
