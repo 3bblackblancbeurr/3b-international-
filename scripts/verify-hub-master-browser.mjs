@@ -53,7 +53,7 @@ function injectCaptureHooks(code){
  const marker='return{\n  refreshHubSchedule:';assert.ok(code.includes(marker),'Scene capture fixture matches the real API');
  return code.replace(marker,`let qaCaptureFrozen=false;return{
   qaHoldRender(){if(!qaCaptureFrozen){cancelAnimationFrame(raf);qaCaptureFrozen=true;}return elapsed;},
-  qaGuidanceState(){return {renderHeld:qaCaptureFrozen,paused,elapsed,waypoint:waypoint?.id||null,routeLength:target?route.length+1:0,planning:routePlanner.status().pending};},
+  qaGuidanceState(){return {renderHeld:qaCaptureFrozen,paused,elapsed,waypoint:waypoint?.id||null,routeLength:target?route.length+1:0,planning:routePlanner.status().pending,routeError:routePlanner.status().error};},
   qaFreezeCapture(){if(!qaCaptureFrozen){cancelAnimationFrame(raf);qaCaptureFrozen=true;}post.render(0);return canvas.toDataURL('image/png');},
   qaResumeCapture(){if(!qaCaptureFrozen)return;qaCaptureFrozen=false;last=performance.now();raf=requestAnimationFrame(tick);},
   refreshHubSchedule:`);
@@ -95,8 +95,18 @@ try{
    await page.locator('.hub-orientation-guide').waitFor({state:'visible',timeout:30000});
    await page.getByRole('button',{name:'Explorer librement',exact:true}).click();
    await page.locator('.hub-guide-primary').click();
-   const stopGuidance=page.getByRole('button',{name:'Arrêter le guidage et retirer le repère',exact:true});await stopGuidance.waitFor({timeout:30000});
-   await page.locator('.hub-guidance-running').waitFor({state:'visible',timeout:30000});
+   // This scenario checks actual route acceptance and cancellation. Keep the
+   // native worker running while its private QA renderer is held: repeated
+   // SwiftShader draws can starve the worker's message and DOM compositor on
+   // Linux. Resume before asserting that the real scene publishes the route.
+   await page.evaluate(()=>qa.scene.qaHoldRender());
+   try{
+    await page.waitForFunction(()=>{const state=qa.scene.qaGuidanceState();return !state.planning&&state.routeLength>0;},undefined,{timeout:120000,polling:250});
+   }catch(error){
+    console.error(device.id+': native route readiness',await page.evaluate(()=>qa.scene.qaGuidanceState()));throw error;
+   }finally{await page.evaluate(()=>qa.scene.qaResumeCapture());}
+   const stopGuidance=page.getByRole('button',{name:'Arrêter le guidage et retirer le repère',exact:true});await stopGuidance.waitFor({timeout:120000});
+   await page.locator('.hub-guidance-running').waitFor({state:'visible',timeout:120000});
    const heldElapsed=await page.evaluate(()=>qa.scene.qaHoldRender());
    try{
     assert.ok(await page.evaluate(()=>qa.scene.qaGuidanceState().waypoint),'Guidance has an actual scene waypoint before cancellation');
