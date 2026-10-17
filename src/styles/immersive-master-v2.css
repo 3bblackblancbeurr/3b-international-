@@ -209,3 +209,30 @@ html[data-experience-quality="economical"] .th-world-planetsheen{display:none}
  .th-earth-fallback{box-shadow:var(--3b-v2-shadow-1c85e124)}
  .th-earth-fallback::after{box-shadow:var(--3b-v2-shadow-bbe57d3a)}
 }
+
+/* Gold Master shared button integration: preserve the authored 3B icon geometry.
+   The mobile icon formerly flex-shrank to 0 inside the 46px control. */
+.th-world-screen .th-world-menu-launch.gm-button{
+ background:linear-gradient(140deg,var(--3b-v2-palette-122e43b8),var(--3b-v2-palette-041422bf));
+ border:1px solid var(--3b-v2-palette-d4b77a99);
+ border-radius:var(--3b-radius-pill);
+ color:var(--th-gold-bright);
+ padding:0 21px 0 15px;
+ box-shadow:var(--3b-shadow-contact);
+}
+.th-world-screen .th-world-menu-launch.gm-button svg{
+ width:22px;height:22px;min-width:22px;flex-shrink:0;color:var(--th-ice);
+}
+.th-world-screen .th-world-explore.gm-button{
+ background:var(--3b-gold-metal);
+ color:var(--3b-gold-ink);
+ border:1px solid var(--3b-champagne-highlight);
+ border-radius:var(--3b-radius-pill);
+}
+@media(max-width:720px){
+ .th-world-screen .th-world-menu-launch.gm-button{
+  width:46px;min-width:46px;height:46px;min-height:46px;
+  padding:0!important;gap:0;justify-content:center;
+ }
+ .th-world-screen .th-world-explore.gm-button{display:none!important}
+}

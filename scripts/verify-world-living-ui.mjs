@@ -35,6 +35,10 @@ try{
   check('All primary controls present '+width,await home.locator('.th-world-earth-controls button').count()===4);
   check('Mobile navigation does not obscure the world '+width,await page.locator('.mobile-navigation').isHidden());
   check('World menu launch always visible '+width,await home.getByRole('button',{name:'Ouvrir tous les univers 3B'}).isVisible());
+  if(width<=720){
+   check('Mobile menu icon retains a usable width '+width,await home.locator('.th-world-menu-launch svg').evaluate(el=>el.getBoundingClientRect().width>=18));
+   check('Redundant Explore button stays hidden on phone '+width,await home.locator('.th-world-explore').isHidden());
+  }
   const realm=home.locator('.th-world-realm-insight h2');
   const first=await realm.innerText();
   await home.getByRole('button',{name:'Choisir le royaume Algérie'}).click();

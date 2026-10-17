@@ -18,7 +18,9 @@ Ce qui a été développé :
 
 ## Validations avant production
 - Suite Node : **2 625 réussis, 0 échec, 1 ignoré** (2 626 au total).
-- Navigateur (Microsoft Edge / Playwright) : **176 validations sur 7 formats** 320×568, 320×650, 360×800, 390×844, 393×873, 768×1024, 1440×1000, sans exception JS.
+- Navigateur (Microsoft Edge / Playwright) : **186 validations sur 7 formats** 320×568, 320×650, 360×800, 390×844, 393×873, 768×1024, 1440×1000, sans exception JS ; contrôle renforcé de l’icône Menu et de la suppression du bouton Explorer superposé sur mobile.
+- Parcours applicatif immersif : **24/24** contrôles sur le nouveau globe, les raccourcis, le menu, l’accessibilité clavier et le scanner, sans lancement automatique de caméra.
+- 3B Maintenant : **62/62** vérifications de ses six onglets, du coffre chiffré, des préférences locales et de la navigation.
 - Santé : Jour / Cuisine / Aliments / Scanner / Corps / Pas visibles en simulation 360, 390, 1440 ; caméra inactive sans demande d’autorisation.
 - Studio Visuel : 8 familles, édition réelle du brief, format 16:9, export du fichier .txt, retour au menu IA vérifiés sur 390 et 1440.
 - Les comportements du globe 3D enrichi sur les GPU physiques, le capteur pas automatique Samsung S21, le rendu Xiaomi et les contraintes WebView sur smartphones **restent à tester sur ces appareils**.
