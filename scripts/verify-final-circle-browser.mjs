@@ -29,13 +29,17 @@ const report=[];
 const profiles=[{id:'desktop',viewport:{width:1280,height:800}},{id:'touch',viewport:{width:844,height:390},isMobile:true,hasTouch:true,reducedMotion:'reduce'}].filter(p=>!process.env.FINAL_CIRCLE_PROFILES||process.env.FINAL_CIRCLE_PROFILES.split(',').includes(p.id));
 async function hold(page,callback){await page.evaluate(()=>qa.scene.qaHoldRender());return callback();}
 async function skipStories(page){
- for(let i=0;i<6;i++){
-  const button=page.getByRole('button',{name:'Passer',exact:true});
-  if(await button.count()){await button.first().click();continue;}
+ const story=page.locator('.world-cinematic-director'),deadline=Date.now()+60000;
+ for(let i=0;i<8;i++){
   await page.waitForTimeout(100);
-  if(!await page.locator('.world-cinematic-director').count())break;
+  if(!await story.isVisible())break;
+  while(await story.isVisible()){
+   if(Date.now()>=deadline)throw Error('Final story controls did not release the world within 60 seconds');
+   try{await story.getByRole('button',{name:'Passer',exact:true}).click({timeout:2000});}
+   catch(error){if(error.name!=='TimeoutError')throw error;}
+  }
  }
- await page.locator('.world-cinematic-director').waitFor({state:'hidden',timeout:30000});
+ await story.waitFor({state:'hidden',timeout:30000});
  await page.evaluate(()=>qa.scene.skipCinematic());
 }
 async function draw(page){return page.evaluate(()=>{qa.scene.qaFrame(8);return qa.scene.qaFinalState();});}
@@ -56,8 +60,11 @@ try{
    // Accepted final command creates the canonical field at the true Hub apron.
    await page.evaluate(()=>qa.interact(qa.scene.qaFinalState().region==='hub'?{id:'final',type:'final'}:null));await page.getByRole('region',{name:'Combat en déplacement libre'}).waitFor();
    await skipStories(page);await page.evaluate(()=>{qa.scene.setQuality('fluid');qa.scene.qaFinalLook();});
+   assert.equal(await page.getByRole('heading',{name:'La manifestation de l’Oubli',exact:true}).count(),1,'The final enemy keeps its story identity instead of a collectible card placeholder');
    let s=await draw(page);for(let i=0;i<8;i++)s=await draw(page);cameraCheck(s);
    assert.equal(s.body.art,'authored-fragment-body');assert.equal(s.environment.fighting,true);assert.equal(s.region,'hub');
+   const status=await page.locator('.field-status').boundingBox();assert.ok(status&&status.x>=0&&status.y>=0&&status.x+status.width<=profile.viewport.width+1&&status.y+status.height<=profile.viewport.height+1,'Final status stays in the viewport');
+   for(const name of ['Frapper','Garder','Esquiver','Pouvoir']){const box=await page.getByRole('button',{name,exact:true}).boundingBox();assert.ok(box&&box.width>=30&&box.height>=30&&box.x>=0&&box.y>=0&&box.x+box.width<=profile.viewport.width+1&&box.y+box.height<=profile.viewport.height+1,'Actual '+name+' control stays reachable');}
    await capture(page,out+'/'+profile.id+'-phase-1.png');await page.evaluate(()=>qa.scene.qaHoldRender());
    // A real defense button enters the production input buffer. The remainder
    // replays fixed-step canonical commands to test every phase without waiting
