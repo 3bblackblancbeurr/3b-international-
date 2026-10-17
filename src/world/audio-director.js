@@ -21,6 +21,16 @@ export const SCORE_LAYER_STATES=Object.freeze({
 });
 export function scoreLayerProfile(state='exploration'){return SCORE_LAYER_STATES[state]||SCORE_LAYER_STATES.exploration;}
 
+/** Music orchestration changes by environment without inventing new recordings.
+ * Keeps guardian/combat attack clear; softens upper harmonics in the evening
+ * and inside occupied buildings, without adjusting the user's volume choice. */
+export function scoreAtmosphereMix({region='hub',state='exploration',phase='day',weather='clear',inside=false}={}){
+ const active=['combat','guardian'].includes(state),night=['evening','night'].includes(phase),wet=['rain','heavy_rain','storm','snow'].includes(weather);
+ const nightFactor=night&&!active?.76:1,wetFactor=wet&&!active?.84:1,roomFactor=inside&&!active?.72:1;
+ const softness=nightFactor*wetFactor*roomFactor;
+ return {melody:softness,harmony:Math.max(.55,softness*.94),bass:active?1:.92,response:active?0:Math.max(.35,softness*.8)*(region==='estonie'?.82:1),percussion:active?1:.72};
+}
+
 /* Three intentional, low-fatigue headphones/phone-speaker mixes. They only
  * change local preference gain; no user consent or sound on/off is overridden. */
 export const WORLD_AUDIO_PRESETS=Object.freeze({

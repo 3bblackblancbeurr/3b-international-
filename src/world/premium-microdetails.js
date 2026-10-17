@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {wetnessForWeather} from './wetness.js';
+import {worldRealmArt,worldArtMaterials} from '../design-system/tokens.js';
 
 function hash(input){let h=2166136261;for(let i=0;i<input.length;i++){h^=input.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
 function seeded(id){let h=hash(id);return()=>{h=(Math.imul(h,1664525)+1013904223)>>>0;return h/4294967296;};}
@@ -38,10 +39,12 @@ export function addPremiumMicroDetails({region,field,root,owned}){
   drain:new THREE.MeshStandardMaterial({color:'#252c30',roughness:.68,metalness:.58}),
   litter:new THREE.MeshStandardMaterial({color:'#49423a',roughness:.92,metalness:.02}),
   puddle:new THREE.MeshPhysicalMaterial({color:'#071118',roughness:.12,metalness:.02,clearcoat:.85,clearcoatRoughness:.08,transparent:true,opacity:.08,depthWrite:false}),
+  realmCloth:new THREE.MeshStandardMaterial({color:worldRealmArt[region]?.cloth||worldArtMaterials.travellerMetal,roughness:.94,metalness:0,side:THREE.DoubleSide}),
+  realmLantern:new THREE.MeshStandardMaterial({color:worldArtMaterials.monumentGold,emissive:worldArtMaterials.civicWindowEmission,emissiveIntensity:.04,roughness:.48,metalness:.25}),
  };
  Object.values(materials).forEach(m=>owned.push(m));
 
- const bollards=[],drains=[],utility=[],litter=[],puddles=[],crates=[],signs=[],bins=[];
+ const bollards=[],drains=[],utility=[],litter=[],puddles=[],crates=[],signs=[],bins=[],realmBanners=[],realmLanterns=[];
  for(const road of field.roads||[]){
   for(let i=1;i<road.points.length;i++){
    const a=road.points[i-1],b=road.points[i],dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz)||1,nx=-dz/len,nz=dx/len,heading=Math.atan2(dx,dz),rng=seeded(region+':road:'+road.id+':'+i);
@@ -71,6 +74,13 @@ export function addPremiumMicroDetails({region,field,root,owned}){
   const rng=seeded(region+':building:'+i),r=Math.max(b.width,b.depth)/2+1.05,a=(b.rotation||0)+Math.PI/2,x=b.x+Math.sin(a)*r,z=b.z+Math.cos(a)*r,y=field.height(x,z);
   if(i%2===0)utility.push({x,y:y+.68,z,sx:.55+rng()*.35,sy:1.15+rng()*.45,sz:.42+rng()*.28,ry:b.rotation||0});
   if(i%3===0)for(let k=0;k<2;k++)crates.push({x:x+(k-.5)*1.2,y:y+.35,z:z+.7,sx:.55,sy:.62,sz:.55,ry:(b.rotation||0)+k*.15});
+  // Region-specific life details at eye level, instanced for phone draw-call budgets.
+  // These are fictional cloth accents, not literal national flags or copied designs.
+  if(region!=='hub'&&i%6===0&&realmBanners.length<72){
+   const height=Math.max(6,Number(b.height)||8),ry=b.rotation||0;
+   realmBanners.push({x:x+Math.cos(a)*.62,y:y+Math.min(4.2,height*.66),z:z-Math.sin(a)*.62,sx:1.18+rng()*.43,sy:.75+rng()*.25,sz:.065,ry,rz:(rng()-.5)*.12});
+   realmLanterns.push({x:x-Math.cos(a)*.62,y:y+2.3,z:z+Math.sin(a)*.62,sx:.25,sy:.39,sz:.25,ry});
+  }
  }
 
  // Waterfront gets a few deliberate service objects without turning into clutter.
@@ -93,6 +103,12 @@ export function addPremiumMicroDetails({region,field,root,owned}){
   instanced(root,owned,'micro-sign-posts',geometries.box,materials.iron,signs),
   instanced(root,owned,'micro-puddles',geometries.puddle,materials.puddle,puddles),
  ].filter(Boolean);
+ if(region!=='hub'){
+  const cloth=instanced(root,owned,'micro-realm-fabric',geometries.box,materials.realmCloth,realmBanners);
+  const lanterns=instanced(root,owned,'micro-realm-lanterns',geometries.box,materials.realmLantern,realmLanterns);
+  if(cloth)meshes.push(cloth);
+  if(lanterns)meshes.push(lanterns);
+ }
  const counts=meshes.map(m=>m.count);
  const signFaces=signs.slice(0,Math.min(signs.length,80)).map((s,i)=>({x:s.x,y:s.y+.62,z:s.z,sx:.62,sy:.32,sz:.04,ry:s.ry,rz:(i%3-1)*.025}));
  const signFaceMat=new THREE.MeshStandardMaterial({color:'#17242c',roughness:.38,metalness:.28,emissive:'#00a8ff',emissiveIntensity:.08});owned.push(signFaceMat);
@@ -116,7 +132,7 @@ export function addPremiumMicroDetails({region,field,root,owned}){
  return{
   setWetness,
   setWeather(weather){setWetness(wetnessForWeather(weather));},
-  setDaylight(daylight){materials.paint.emissive?.set?.('#000000');materials.puddle.clearcoat=Math.max(.58,.92-(Number(daylight)||0)*.08);},
+  setDaylight(daylight){materials.paint.emissive?.set?.(0x000000);const light=Math.max(0,Math.min(1,Number(daylight)||0));materials.puddle.clearcoat=Math.max(.58,.92-light*.08);materials.realmLantern.emissiveIntensity=.03+(1-light)*.52;},
   setQuality(mode){const factor=mode==='fluid'?.45:mode==='detail'?1:.76;meshes.forEach((mesh,i)=>mesh.count=Math.max(0,Math.round(counts[i]*factor)));if(cable)cable.visible=mode!=='fluid';},
  };
 }

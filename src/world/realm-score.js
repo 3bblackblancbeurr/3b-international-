@@ -24,6 +24,7 @@ export function realmScoreStep(region,state='exploration',step=0){
  const motif=theme.motif[index%16];
  if(motif!==null){note(motif+12,theme.instrument,'melody',combat?.8:1.8,combat?.036:.030,theme.pan);if(cinematic&&index%4===0)note(motif+24,'bell','counterline',2.6,.009,-theme.pan);}
  if(index%8===0){note(chord-12,'lowstring','bass',combat?2.8:4.8,.028);note(chord,'strings','harmony',5.5,.012,-.26);note(chord+7,'strings','harmony',5.5,.010,.26);}
+ if(!combat&&!cinematic&&index%8===4)note(chord+12,theme.instrument==='bell'?'strings':'bell','response',2.2,.008,-theme.pan*.7);
  if(combat&&index%4===2)note(chord-12,'lowstring','pulse',1.3,.022);
  if(state==='guardian'&&index%4===0)note(chord+12,'reed','threat',1.4,.015,-theme.pan);
  return {theme:theme.title,region:theme.region,step:index,seconds:30/realmScoreTempo(region,state),notes,percussion:combat&&index%4===0?{frequency:index%8===0?170:740,gain:.025,duration:.095}:null};
