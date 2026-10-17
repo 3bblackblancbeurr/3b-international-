@@ -5,6 +5,7 @@ import {RouteLink} from './AppNavigation.jsx';
 import AlbertDailyTimeline from './AlbertDailyTimeline.jsx';
 import AlbertHologramAvatar from './AlbertHologramAvatar.jsx';
 import {albertLocalGuideAnswer} from './world-living-data.js';
+import {readAlbertFavoriteModules,WORLD_FAVORITES_KEY} from './albert-favorite-routes.js';
 import '../styles/world-living-home.css';
 
 const SUGGESTIONS=[
@@ -21,9 +22,17 @@ export default function AlbertPublicPreview({goTo}){
  const [listening,setListening]=useState(false);
  const [notice,setNotice]=useState('');
  const [speaking,setSpeaking]=useState(false);
+ const [favoriteRoutes,setFavoriteRoutes]=useState(()=>readAlbertFavoriteModules(typeof window!=='undefined'?window.localStorage:null));
  const recognition=useRef(null),chatEnd=useRef(null);
  useEffect(()=>()=>{try{recognition.current?.abort();window.speechSynthesis?.cancel();}catch{/* cleanup */}},[]);
  useEffect(()=>{chatEnd.current?.scrollIntoView?.({block:'nearest',behavior:'smooth'});},[messages.length]);
+ useEffect(()=>{
+  const refresh=()=>setFavoriteRoutes(readAlbertFavoriteModules(typeof window!=='undefined'?window.localStorage:null));
+  const onStorage=event=>{if(event.key===WORLD_FAVORITES_KEY||event.key===null)refresh();};
+  window.addEventListener('focus',refresh);
+  window.addEventListener('storage',onStorage);
+  return()=>{window.removeEventListener('focus',refresh);window.removeEventListener('storage',onStorage);};
+ },[]);
  function ask(value){
   const text=String(value??draft).trim().slice(0,300);
   if(!text)return;
@@ -92,6 +101,13 @@ export default function AlbertPublicPreview({goTo}){
     <div className="albert3b-suggestions">
      {SUGGESTIONS.map(({label,query,Icon})=><Button variant="ghost" type="button" key={query} onClick={()=>ask(query)}><Icon size={25}/><span>{label}</span><ArrowRight size={16}/></Button>)}
     </div>
+     {favoriteRoutes.length>0&&<section className="albert3b-local-favorites" aria-labelledby="albert3b-favorites-title">
+      <div><span className="world3b-eyebrow">VOS CHOIX SUR CET APPAREIL</span><h3 id="albert3b-favorites-title">Mes raccourcis préférés</h3></div>
+      <div className="albert3b-local-favorite-links">
+       {favoriteRoutes.map(item=><RouteLink goTo={goTo} page={item.id} key={item.id}>{item.label}<ArrowRight size={15} aria-hidden="true"/></RouteLink>)}
+      </div>
+      <p>Ces accès viennent uniquement de tes favoris dans la Carte du Monde 3B. Albert ne lit pas ton Passeport ou tes données Santé.</p>
+     </section>}
      <AlbertDailyTimeline goTo={goTo}/>
 
     <div className="albert3b-actual-ai"><AudioLines size={25}/><div><strong>Besoin d’une conversation IA ?</strong><p>Le Mode 3 IA est un espace existant, distinct d’Albert APEX.</p></div><RouteLink goTo={goTo} page="ia-trio">Mode 3 IA <ArrowRight size={16}/></RouteLink></div>
