@@ -3,6 +3,8 @@ import {useEffect,useMemo,useState} from 'react';
 import {ArrowDown,ArrowRight,BadgePercent,BookImage,BookOpen,ChevronLeft,ChevronRight,Clapperboard,Compass,CreditCard,Eye,FileText,Gamepad2,Globe2,HandHeart,Handshake,Headphones,HeartPulse,IdCard,Landmark,MapPin,Newspaper,Plane,Search,ShieldCheck,ShoppingBag,Sparkles,Star,Trophy,UserRound,Users,X,ZoomIn,ZoomOut,RotateCcw} from 'lucide-react';
 import {RouteLink} from './AppNavigation.jsx';
 import LivingWorldGlobe from './LivingWorldGlobe.jsx';
+import WorldNowFeed from './WorldNowFeed.jsx';
+import WorldRealmSpotlight from './WorldRealmSpotlight.jsx';
 import {clampGlobeZoom,GLOBE_ZOOM_MIN,GLOBE_ZOOM_MAX} from './world-globe-zoom.js';
 import {WORLD_MODULE_GROUPS,WORLD_MODULES,WORLD_MORE_SERVICES,WORLD_REALMS,findWorldModules,findWorldExtraServices} from './world-living-data.js';
 import '../styles/world-living-home.css';
@@ -96,6 +98,7 @@ export default function LivingWorldHome({goTo,menuItems=[]}){
     <RouteLink goTo={goTo} page={tab==='community'?'community':tab==='opportunities'?'deals':'world3b'} className="world3b-outline-link">{tab==='community'?'Découvrir la Communauté':tab==='opportunities'?'Voir les bons plans':'Explorer le Monde du 3B'} <ArrowRight size={17}/></RouteLink>
    </div>
   </section>
+  <WorldNowFeed tab={tab} goTo={goTo}/>
   <section className="world3b-country-section" aria-labelledby="world3b-country-title">
    <div className="world3b-section-title"><div><span className="world3b-eyebrow">LES HUIT HÉRITAGES</span><h2 id="world3b-country-title">Royaumes à découvrir</h2></div><span className="world3b-subtle">Univers du Monde 3B</span></div>
    <div className="world3b-country-rail">
@@ -108,6 +111,7 @@ export default function LivingWorldHome({goTo,menuItems=[]}){
    </div>
    <p className="world3b-clarity"><ShieldCheck size={15}/> Ces pays représentent les royaumes narratifs de 3B. Ils ne désignent pas des locaux ou des hubs physiques officiellement ouverts.</p>
   </section>
+  <WorldRealmSpotlight realmId={activeRealm} onSelect={setActiveRealm} goTo={goTo}/>
   <section className="world3b-module-section" id="world3b-modules" aria-labelledby="world3b-modules-title">
    <div className="world3b-section-title"><div><span className="world3b-eyebrow">UN SEUL UNIVERS · DES ACCÈS RÉELS</span><h2 id="world3b-modules-title">Les 22 univers 3B</h2></div><span className="world3b-count">22</span></div>
    <div className="world3b-searchbar"><Search size={21} aria-hidden="true"/><label htmlFor="world3b-search" className="visually-hidden">Rechercher une rubrique 3B</label><input id="world3b-search" value={query} onChange={event=>setQuery(event.target.value)} placeholder="Rechercher un univers, un service…" autoComplete="off"/>{query&&<Button variant="ghost" type="button" onClick={()=>setQuery('')} aria-label="Effacer la recherche"><X size={19}/></Button>}</div>
