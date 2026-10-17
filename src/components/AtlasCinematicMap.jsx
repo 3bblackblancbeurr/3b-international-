@@ -72,7 +72,6 @@ export default function AtlasCinematicMap({onRealm,onTravel,activeRealm}){
    onClick={()=>p.action==='travel'?onTravel():onRealm(p.action)}>
    <MapPin size={p.gold?21:18} strokeWidth={2} aria-hidden="true"/>
   </Button>)}
-  <div className="atlas3b-world-pin" aria-hidden="true"><span>3B</span></div>
   <span className="atlas3b-night-signature" aria-hidden="true">THE WORLD IS OUR HOME</span>
  </div>;
 }

@@ -1,4 +1,11 @@
 /* Member Universe · immersive, one focused stage instead of grids of boxes */
+.mx-shell[data-standalone=true]{margin:18px auto 60px;padding:0 clamp(8px,2vw,24px)}
+.mx-shell[data-standalone=true]>.mx-hero{display:none}
+.mx-shell[data-standalone=true]>.mx-rail{margin-top:0;padding-top:5px}
+.mx-shell[data-standalone=true]>.mx-stage{background:var(--3b-obsidian);border:1px solid var(--3b-border);padding:clamp(18px,3vw,38px)}
+.mx-shell[data-standalone=true] .mx-stage-heading{gap:16px;padding-bottom:24px}
+.mx-shell[data-standalone=true] .mx-stage-heading h3{font:400 clamp(24px,3vw,36px)/1.2 Georgia,serif}
+.mx-directory-title{font:28px Georgia,serif;color:var(--3b-member-champagne);margin-top:42px}
 .mx-shell{--mx-gold:var(--3b-member-champagne);--mx-ink:var(--3b-member-night);--mx-line:rgba(234,220,185,.19);--mx-blue:var(--3b-member-blue);color:var(--3b-feature-white);max-width:1220px;margin:clamp(26px,5vw,76px) auto 64px;padding:0 clamp(10px,2vw,25px);font-family:inherit;text-align:left;position:relative;isolation:isolate}
 .mx-shell *{box-sizing:border-box}
 .mx-shell button,.mx-shell select{font:inherit}

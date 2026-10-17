@@ -8,14 +8,14 @@ export const contactHref = subject => 'mailto:' + CONTACT_EMAIL + '?subject=' + 
 export const MEMBER_SPACES = Object.freeze([
   { id:'loyalty', name:'Fidélité', eyebrow:'TES AVANTAGES', tagline:'Ta carte. Tes points. Ton histoire.', icon:'wallet', hint:'Carte boutique et XP existantes.' },
   { id:'news', name:'Le monde en direct', eyebrow:'ACTUALITÉS & ÉVÉNEMENTS', tagline:'Ouvre une fenêtre sur le monde.', icon:'globe', hint:'Sources identifiées, actualité externe.' },
-  { id:'association', name:'Association 3B', eyebrow:'CONSTRUIRE ENSEMBLE', tagline:'Une cause. Des rencontres. Des actions.', icon:'heart', hint:'Projet associatif — statut à confirmer.' },
-  { id:'partners', name:'Partenaires', eyebrow:'COLLABORATIONS', tagline:'Faire grandir les idées ensemble.', icon:'handshake', hint:'Prises de contact, sans partenaires inventés.' },
-  { id:'finance', name:'Banque & crypto', eyebrow:'COMPRENDRE & SE PROTÉGER', tagline:'Garder le contrôle de ses choix.', icon:'landmark', hint:'Guides officiels, aucun service bancaire 3B.' },
-  { id:'travel', name:'Voyage 3B', eyebrow:'EXPLORER LE MONDE', tagline:'Le monde est plus grand qu’un écran.', icon:'plane', hint:'Destinations et conseils officiels.' },
-  { id:'join', name:'Nous recherchons', eyebrow:'REJOINDRE L’AVENTURE', tagline:'Chaque talent change quelque chose.', icon:'users', hint:'Participations et candidatures spontanées.' },
-  { id:'tv', name:'3B Origins TV', eyebrow:'CRÉATION ORIGINALE', tagline:'Des histoires qui prennent vie.', icon:'tv', hint:'Univers 3B, productions et futurs programmes.' },
-  { id:'admin', name:'Administratif', eyebrow:'LA VIE, PLUS SIMPLE', tagline:'Le bon service. Au bon moment.', icon:'file', hint:'Démarches officielles, sans usurpation.' },
-  { id:'cinema', name:'Cinéma', eyebrow:'HISTOIRES À DÉCOUVRIR', tagline:'Le cinéma, du bon côté de l’écran.', icon:'film', hint:'Accès aux offres légales, pas de films piratés.' },
+  { id:'association', name:'Association 3B', eyebrow:'CONSTRUIRE ENSEMBLE', tagline:'Une cause. Des rencontres. Des actions.', icon:'heart', hint:'Prépare et suis ton initiative sur cet appareil.' },
+  { id:'partners', name:'Partenaires', eyebrow:'COLLABORATIONS', tagline:'Faire grandir les idées ensemble.', icon:'handshake', hint:'Construis ta proposition et garde le fil des échanges.' },
+  { id:'finance', name:'Banque & crypto', eyebrow:'LE LABORATOIRE FINANCIER', tagline:'Garder le contrôle de ses choix.', icon:'landmark', hint:'Portefeuille et opérations en simulation, avec unités fictives.' },
+  { id:'travel', name:'Voyage 3B', eyebrow:'EXPLORER LE MONDE', tagline:'Le monde est plus grand qu’un écran.', icon:'plane', hint:'Tes destinations, tes étapes et ton budget prévisionnel.' },
+  { id:'join', name:'Nous recherchons', eyebrow:'REJOINDRE L’AVENTURE', tagline:'Chaque talent change quelque chose.', icon:'users', hint:'Prépare une proposition de participation à ton rythme.' },
+  { id:'tv', name:'3B Origins TV', eyebrow:'CRÉATION ORIGINALE', tagline:'Des histoires qui prennent vie.', icon:'tv', hint:'Neuf récits audio, textes et progression locale.' },
+  { id:'admin', name:'Administratif', eyebrow:'LA VIE, PLUS SIMPLE', tagline:'Le bon service. Au bon moment.', icon:'file', hint:'Organise ton suivi et retrouve les organismes officiels.' },
+  { id:'cinema', name:'Cinéma', eyebrow:'HISTOIRES À DÉCOUVRIR', tagline:'Le cinéma, du bon côté de l’écran.', icon:'film', hint:'Ta liste personnelle, tes notes et les sources légales.' },
 ]);
 
 export const COUNTRY_INDEX = Object.freeze([

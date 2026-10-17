@@ -69,13 +69,13 @@ const BASE_MENU_ITEMS = [
   { id: "deals", label: "3 bons plans", description: "Des offres datées et sourcées pour le quotidien." },
   { id: "news", label: "Informations actuelles", description: "Actualités et événements datés, avec leurs sources." },
   { id: "association", label: "Association 3B", description: "Projet associatif 3B, entraide et actions culturelles." },
-  { id: "partners", label: "Partenariats & collaborations", description: "Créer des projets avec 3B sans annoncer de faux partenaires." },
-  { id: "finance", label: "Banque & crypto", description: "Informations et protection financière, sans service bancaire 3B." },
-  { id: "travel", label: "Voyage 3B", description: "Destinations, voyages et conseils officiels." },
+  { id: "partners", label: "Partenariats & collaborations", description: "Préparer un brief, suivre une proposition et construire un projet." },
+  { id: "finance", label: "Banque & crypto", description: "Laboratoire de simulation bancaire et crypto en unités fictives." },
+  { id: "travel", label: "Voyage 3B", description: "Carnets de voyage, itinéraires, préparatifs et budget prévisionnel." },
   { id: "join", label: "Nous recherchons", description: "Talents, artistes, développeurs, associations et testeurs." },
-  { id: "tv", label: "3B Origins TV", description: "Les créations 3B et les futurs programmes originaux." },
-  { id: "admin", label: "Administration", description: "Trouver les démarches et services publics officiels." },
-  { id: "cinema", label: "Cinéma", description: "Trouver des films sur les plateformes légales." },
+  { id: "tv", label: "3B Origins TV", description: "Neuf récits audio du Monde 3B, textes et progression de lecture." },
+  { id: "admin", label: "Administration", description: "Suivre ses démarches, échéances et étapes avec les sources officielles." },
+  { id: "cinema", label: "Cinéma", description: "Créer sa liste de films et séries, garder ses notes et trouver les offres légales." },
   { id: "foodscan", label: "Scanner alimentaire", description: "Scanner un code-barres et consulter les ingrédients et allergènes." },
   { id: "albert", label: "Albert APEX · 3B", description: "Concierge 3B et orientation locale, connexion au moteur Albert personnel non activée." },
   { id: "guide", label: "Guide & XP", description: "Les repères pour commencer." },
@@ -380,7 +380,7 @@ export default function App() {
       <div className="app3b" data-page={page} data-glow={options.premiumGlow} data-matrix={options.matrix}>
         <div className="app3b-background" aria-hidden="true" />
         <div className={options.matrix ? "matrix-layer active" : "matrix-layer"} aria-hidden="true" />
-        {!["finance","health","foodscan","home","albert"].includes(page) && <CompanionLayer goTo={goTo} page={page} secretPhase={secret.phase} memberRegistered={member.isRegistered} />}
+        {!MEMBER_SPACE_ROUTES[page] && !["finance","health","foodscan","home","albert"].includes(page) && <CompanionLayer goTo={goTo} page={page} secretPhase={secret.phase} memberRegistered={member.isRegistered} />}
         <AppNavigation page={page} title={preparationTitle} menuItems={menuItems} goTo={goTo} secret={secret} options={options} toggleOption={toggleOption} installation={installation} />
         <main id="main-content" tabIndex={-1}>
           <ComingSoon
@@ -411,7 +411,7 @@ export default function App() {
       <div className="app3b-background" aria-hidden="true" />
       <div className={options.matrix ? "matrix-layer active" : "matrix-layer"} aria-hidden="true" />
 
-      {!["finance","health","foodscan","home","albert"].includes(page) && <CompanionLayer goTo={goTo} page={page} secretPhase={secret.phase} memberRegistered={member.isRegistered} />}
+      {!MEMBER_SPACE_ROUTES[page] && !["finance","health","foodscan","home","albert"].includes(page) && <CompanionLayer goTo={goTo} page={page} secretPhase={secret.phase} memberRegistered={member.isRegistered} />}
 
       <AppNavigation immersive={['world3b','arena','game','control','invisible'].includes(page)} page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} secret={secret} options={options} toggleOption={toggleOption} installation={installation} />
       <main id="main-content" tabIndex={-1}>
@@ -464,7 +464,7 @@ export default function App() {
       {page === "sport" && <SportPage goTo={goTo} />}
       {page === "health" && <HealthPage />}
       {page === "foodscan" && <HealthPage initialTab="scanner" />}
-      {MEMBER_SPACE_ROUTES[page] && <MemberExperiences key={page} goTo={goTo} profile={loyalty.profile || null} initialSpace={MEMBER_SPACE_ROUTES[page]} />}
+      {MEMBER_SPACE_ROUTES[page] && <MemberExperiences key={page} goTo={goTo} profile={loyalty.profile || null} initialSpace={MEMBER_SPACE_ROUTES[page]} standalone />}
       {page === "deals" && <DealsPage />}
       {page === "control" && <ControlCenterPage goTo={goTo} />}
        {page === "albert" && <AlbertPublicPreview goTo={goTo} />}

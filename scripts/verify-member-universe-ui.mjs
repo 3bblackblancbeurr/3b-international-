@@ -17,7 +17,7 @@ const rows=Array.from({length:7},(_,i)=>({
 }));
 const events=Array.from({length:7},(_,i)=>({
  title:'Événement culturel de test '+(i+1),
- starts_local:'2026-10-'+String(i+20).padStart(2,'0')+'T15:00:00',
+ starts_local:new Date(Date.now()+(i+2)*86400000).toISOString().slice(0,10)+'T15:00:00',
  link:'https://openagenda.com/culture/events/test-'+i,
  location:'Lieu de test · France',
  source:'Ministère de la Culture · OpenAgenda',published:'2026-10-16T10:00:00Z'
@@ -63,6 +63,7 @@ try{
   check(width+': all directory links have an official hostname',await page.locator('.mx-directory-profile').evaluateAll(items=>items.every(a=>new URL(a.href).hostname==='lannuaire.service-public.gouv.fr')));
   await page.screenshot({path:out+'/admin-'+width+'.png',fullPage:true});
   await page.getByRole('button',{name:'Cinéma'}).click();
+  await page.getByRole('button',{name:'Trouver un film',exact:true}).click();
   await page.getByLabel('Quel film cherches-tu ?').fill('La Haine');
   const link=await page.locator('.mx-cinema-primary').getAttribute('href');
   check(width+': film search targets an official provider',new URL(link).hostname==='www.arte.tv'&&new URL(link).searchParams.get('q')==='La Haine');
