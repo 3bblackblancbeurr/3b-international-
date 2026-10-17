@@ -112,8 +112,14 @@ try{
   check('Concierge uses unobstructed local navigation '+width,await page.locator('.albert3b-local-dock').isVisible() && await page.locator('.mobile-navigation').isHidden());
   check('Floating companion does not cover Albert conversation '+width,await page.locator('.companion3b-shell').count()===0);
    if(width<720){
-    const avatarHaloFilter=await page.locator('.albert3b-avatar-halo').evaluate(el=>getComputedStyle(el).filter);
-    check('Mobile Albert avatar renders without blur filter '+width,avatarHaloFilter==='none');
+    const avatarHaloState=await page.locator('.albert3b-avatar-halo').evaluate(el=>({
+     filter:getComputedStyle(el).filter,
+     coarse:matchMedia('(pointer: coarse)').matches,
+     phone:matchMedia('(max-width:720px)').matches,
+     background:getComputedStyle(el).backgroundImage.slice(0,90)
+    }));
+    if(avatarHaloState.filter!=='none')console.log('MOBILE_AVATAR_HALO_DIAGNOSTIC',width,JSON.stringify(avatarHaloState));
+    check('Mobile Albert avatar renders without blur filter '+width,avatarHaloState.filter==='none');
    }
   check('Albert route is reachable '+width,true);
   await page.screenshot({path:path.join(out,'albert-'+width+'.png'),fullPage:true,animations:'disabled',scale:'css',timeout:60000});
