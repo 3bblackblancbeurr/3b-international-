@@ -6,7 +6,7 @@ import {campaignSnapshot,campaignObjectives} from '../src/world/campaign-runtime
 import {CAMPAIGN_RUNTIME_SPEC} from '../src/world/campaign-spec.js';
 import {GUARDIAN_VALUES} from '../src/world/guardian-values.js';
 import {FRANCE_INVESTIGATION_STATIONS,franceInvestigationObjective,franceInvestigationState} from '../src/world/france-investigation.js';
-import {realmCampaignPosition,realmDimensions,realmPositionValid,realmSites,realmStaticObstacles} from '../src/world/realm-layout.js';
+import {realmCampaignPosition,realmDimensions,realmPositionValid,realmSites,realmStaticObstacles,safeRealmPosition} from '../src/world/realm-layout.js';
 import {obstacleDistance} from '../src/world/collision.js';
 import {findPath} from '../src/world/navigation.js';
 
@@ -14,7 +14,7 @@ const reload=save=>normalizeSave(JSON.parse(JSON.stringify(save)));
 const arrive=()=>reload(applyWorldAction(blankSave(),{type:'visit',region:'france'}));
 function act(save,extra={}){
  const current=campaignSnapshot(save,'france');
- return reload(applyWorldAction(save,{type:'campaignAction',region:'france',objective:current.objective,operation:'interact',position:current.target,...extra}));
+ return reload(applyWorldAction(save,{type:'campaignAction',region:'france',objective:current.objective,operation:'interact',position:current.target,layoutVersion:2,...extra}));
 }
 const choice=(save,value)=>act(save,{choice:value});
 function reachArchives(){let save=arrive();save=act(save);save=act(save);return choice(save,'archive');}
@@ -121,7 +121,7 @@ test('the complete France case keeps its IDs, reward ledger, boss gate and visib
   if(current.objective==='france:post:mediation'){
    const before=save;save=choice(save,'effacer');assert.equal(franceInvestigationState(save).caseResolved,false);assert.equal(save.xp,before.xp);
   }
-  const action={type:'campaignAction',region:'france',objective:current.objective,operation:'interact',position:current.target,choice:selected};
+  const action={type:'campaignAction',region:'france',objective:current.objective,operation:'interact',position:current.target,choice:selected,layoutVersion:2};
   save=reload(applyWorldAction(save,action));
   const reward=save.xp;assert.deepEqual(applyWorldAction(reload(save),action),save,'a duplicate accepted action changes neither inventory nor rewards');rewards.push(reward);
   if(current.mode==='homecoming')save=reload(applyWorldAction(save,{type:'visit',region:'france'}));
@@ -142,4 +142,52 @@ test('presentation flags come from accepted evidence and effects, never from pha
  assert.equal(franceInvestigationObjective('memory','memory0'),null);
  const metadata=franceInvestigationObjective('rumor','relieuse');metadata.position.x=0;
  assert.notEqual(franceInvestigationObjective('rumor','relieuse').position.x,0,'callers cannot move the shared authored stations');
+});
+
+function oldPosition(current){
+ const base=realmCampaignPosition('france',Math.min(2,current.phaseIndex));
+ const anchor=safeRealmPosition('france',{x:base.x+current.stepIndex*13,z:base.z});
+ return current.mode==='relay'&&current.started?safeRealmPosition('france',{x:anchor.x+18,z:anchor.z}):anchor;
+}
+
+test('pending original-layout evidence and mid-relay journals replay safely while version 2 requires the new physical stations',()=>{
+ let save=arrive();const journal=[];
+ for(const selected of [undefined,undefined,'archive',undefined,undefined,'rapprocher']){
+  const current=campaignSnapshot(save),position=oldPosition(current);
+  assert.ok(Math.hypot(current.target.x-position.x,current.target.z-position.z)>6.5);
+  assert.throws(()=>act(save,{position,layoutVersion:2,choice:selected}),/véritable point/,'new clients cannot use a retired evidence location');
+  const command={type:'campaignAction',region:'france',objective:current.objective,operation:'interact',position,choice:selected};
+  journal.push(command);save=reload(applyWorldAction(save,command));
+  assert.deepEqual(applyWorldAction(reload(save),command),save,'an old accepted receipt remains idempotent');
+ }
+ assert.equal(franceInvestigationState(save).archivesOpen,true);
+ const current=campaignSnapshot(save),command={type:'campaignAction',region:'france',objective:current.objective,operation:'interact',position:oldPosition(current)};
+ journal.push(command);save=reload(applyWorldAction(save,command));
+ save=reload(applyWorldAction(save,{type:'companionOrder',value:'guard'}));
+ for(let count=0;count<5;count++){
+  const relay=campaignSnapshot(save),tick={type:'campaignAction',region:'france',objective:relay.objective,operation:'tick',position:oldPosition(relay),tick:relay.tick+1};
+  assert.throws(()=>applyWorldAction(save,{...tick,layoutVersion:2}),/véritable point/);
+  journal.push(tick);save=reload(applyWorldAction(save,tick));
+  assert.deepEqual(applyWorldAction(reload(save),tick),save);
+ }
+ assert.equal(campaignSnapshot(save).trial,5,'already accepted legacy hold time survives a reload');
+ const oldArrival=realmSites('france').find(site=>site.id==='france:realm:province-2').arrival;
+ save.adventure.realmTravel={region:'france',...oldArrival,nonce:1,to:'france:realm:province-2:relay'};save=reload(save);
+ assert.deepEqual(save.adventure.realmTravel,{region:'france',...oldArrival,nonce:1,to:'france:realm:province-2:relay'},'the previous relay arrival is preserved');
+ const resumed=save;
+ for(let count=0;count<10;count++){const relay=campaignSnapshot(save);save=act(save,{operation:'tick',tick:relay.tick+1});}
+ assert.equal(campaignSnapshot(save).objective,'france:coordination:reparer');
+ const xp=save.xp;
+ for(const entry of journal)assert.deepEqual(applyWorldAction(reload(save),entry),save,'delayed receipts from completed legacy objectives never issue a second reward');
+ assert.equal(save.xp,xp);
+ save=choice(save,'rendre');assert.equal(franceInvestigationState(save).namesRestored,true);
+ assert.equal(save.adventure.campaigns.france.claimed.filter(id=>id==='coordination').length,1);
+ assert.deepEqual(resumed.adventure.campaigns.france.inventory,save.adventure.campaigns.france.inventory,'resuming the physical link never duplicates or consumes evidence');
+});
+
+test('unknown layout versions cannot be used for either new actions or duplicate receipts',()=>{
+ const save=arrive();
+ for(const layoutVersion of [null,1,3,'2'])assert.throws(()=>act(save,{layoutVersion}),/Version du lieu/);
+ const accepted=act(save),before=campaignSnapshot(save);
+ assert.throws(()=>applyWorldAction(accepted,{type:'campaignAction',region:'france',objective:before.objective,position:before.target,layoutVersion:3}),/Version du lieu/);
 });
