@@ -135,7 +135,7 @@
 .albert3b-sculpted-avatar .albert3b-orbit-one{
  width:116%;height:25%;bottom:15%;left:-8%;z-index:3;
  border-color:rgba(116,210,250,.35);
- box-shadow:0 0 12px rgba(43,161,231,.13);
+ box-shadow:var(--3b-albert-shadow-orbit);
  animation:albert3b-portrait-orbit-one 10s ease-in-out infinite alternate
 }
 .albert3b-sculpted-avatar .albert3b-orbit-two{
@@ -152,7 +152,7 @@
  .albert3b-sculpted-avatar .albert3b-portrait-svg{filter:none}
  .albert3b-sculpted-avatar .albert3b-avatar-halo{filter:none!important}
  .albert3b-sculpted-avatar .albert3b-orbit-one,
- .albert3b-sculpted-avatar .albert3b-orbit-two{box-shadow:none}
+ .albert3b-sculpted-avatar .albert3b-orbit-two{box-shadow:var(--3b-shadow-flat)}
 }
 @media(prefers-reduced-motion:reduce){
  .albert3b-sculpted-avatar *{animation:none!important;transition:none!important}

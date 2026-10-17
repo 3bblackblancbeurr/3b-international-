@@ -34,4 +34,11 @@ test('Albert uses bespoke sculpted portrait with economical mobile styling',()=>
  assert.match(css,/prefers-reduced-motion:reduce/);
  assert.match(css,/\.albert3b-sculpted-avatar \.albert3b-portrait-svg\{filter:none\}/);
  assert.doesNotMatch(avatar,/\bgetContext\s*\(|\bnew\s+WebGLRenderer\b|https:\/\//);
+ const gold=read('src/styles/gold-master.css');
+ const palette=[...avatar.matchAll(/var\(--3b-albert-tone-([0-9a-f]{3,8})\)/g)].map(m=>m[1]);
+ assert.ok(palette.length>40,'all portrait materials must use Gold Master tokens');
+ for(const tone of new Set(palette))assert.ok(gold.includes('--3b-albert-tone-'+tone+':'),tone);
+ assert.doesNotMatch(avatar, /#[0-9a-fA-F]{3,8}\b/);
+ assert.match(css,/box-shadow:var\(--3b-albert-shadow-orbit\)/);
+
 });
