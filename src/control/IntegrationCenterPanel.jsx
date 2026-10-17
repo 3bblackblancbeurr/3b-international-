@@ -1,6 +1,6 @@
 import {useCallback,useEffect,useMemo,useState} from 'react';
 import {
- BrainCircuit,CalendarDays,Database,Github,Mail,Monitor,Radar,RefreshCw,Share2,
+ BrainCircuit,CalendarDays,Database,GitBranch,Mail,Monitor,Radar,RefreshCw,Share2,
  ShieldCheck,WalletCards,Workflow
 } from 'lucide-react';
 import {commandIntegrationsStatus} from './integrations-client.js';
@@ -93,7 +93,7 @@ export default function IntegrationCenterPanel({pulse,dataAvailable,primaryDevic
 
  const rows=[
   {Icon:Database,label:'Supabase / Control Center',state:internal.supabase,detail:'Session propriétaire + données privées du cockpit.',next:'Actif dans Command OS.'},
-  {Icon:Github,label:'GitHub / Actions',state:internal.github,detail:'Commits, CI, PR et déploiements GitHub publics.',next:'Actif dans Dev Center.'},
+  {Icon:GitBranch,label:'GitHub / Actions',state:internal.github,detail:'Commits, CI, PR et déploiements GitHub publics.',next:'Actif dans Dev Center.'},
   {Icon:Monitor,label:'PC 3B',state:internal.pc,detail:primaryDevice?'Agent appairé connu.':'Aucun agent appairé.',next:primaryDevice?'Relancer l’agent si nécessaire.':'Appairer depuis le centre Appareils.'},
   {Icon:Radar,label:'Radar 3B',state:'available',detail:'Fréquentation agrégée via RPC Supabase.',next:'Actif dans Radar 3B.'}
  ];

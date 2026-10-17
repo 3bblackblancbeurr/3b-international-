@@ -1,7 +1,7 @@
 import {useMemo,useState} from 'react';
 import {
  Activity,AppWindow,ChevronDown,ChevronRight,ChevronUp,
- CircleOff,Database,Eye,EyeOff,Github,Monitor,Radar,ShieldCheck,Workflow
+ CircleOff,Database,Eye,EyeOff,GitBranch,Monitor,Radar,ShieldCheck,Workflow
 } from 'lucide-react';
 
 const stateLabel={
@@ -59,7 +59,7 @@ export default function CommandNexus({
    {id:'app',label:'Application 3B',Icon:AppWindow,state:productionState,detail:pulse?.production===true?'Production répond au contrôle réel':pulse?.production===false?'Production inaccessible au dernier contrôle':'Vérification en cours',anchor:'cc-now'},
    {id:'radar',label:'Radar 3B',Icon:Radar,state:'available',detail:'Module réel · données RPC affichées si disponibles',anchor:'cc-traffic'},
    {id:'supabase',label:'Supabase',Icon:Database,state:coreState,detail:dataAvailable?'Control Center authentifié côté serveur':error?'Dernières données conservées si disponibles':'Synchronisation du propriétaire',anchor:'cc-live'},
-   {id:'github',label:'GitHub / CI',Icon:Github,state:githubState,detail:pulse?.github===true?(pulse?.workflow||'Dépôt public et Actions joignables'):pulse?.github===false?'GitHub indisponible au dernier contrôle':'Vérification en cours',anchor:'cc-log'},
+   {id:'github',label:'GitHub / CI',Icon:GitBranch,state:githubState,detail:pulse?.github===true?(pulse?.workflow||'Dépôt public et Actions joignables'):pulse?.github===false?'GitHub indisponible au dernier contrôle':'Vérification en cours',anchor:'cc-log'},
    {id:'pc',label:'PC autorisé',Icon:Monitor,state:pcState,detail:primaryDevice?(primaryOnline?'Agent connecté':'Appareil connu · agent hors ligne'):'Aucun appareil appairé',anchor:'cc-devices'},
    {id:'security',label:'Sécurité',Icon:ShieldCheck,state:dataAvailable?'available':coreState,detail:'Accès propriétaire serveur · allowlist · journal d’audit',anchor:'cc-log'},
    {id:'integrations',label:'Intégrations externes',Icon:Workflow,state:'available',detail:'Gmail, Agenda, réseaux, Stripe, Vercel et IA vérifiés côté serveur',anchor:'cc-integrations'},
