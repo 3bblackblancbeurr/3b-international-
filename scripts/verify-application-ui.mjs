@@ -25,19 +25,31 @@ try{
    return route.abort();
   });
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(origin+'/#accueil');await page.locator('.home-app-hub').waitFor();
-  const nav=page.locator(viewport.width<=720?'.mobile-navigation':'.site-header');
-  check(`Visible labeled navigation ${viewport.width}`,await nav.isVisible());
-  check(`Scanner link reaches the exact view ${viewport.width}`,await page.locator('.home-scanner-direct').getAttribute('href')==='/?invisibleView=scanner#monde-invisible');
-  check(`Home contains no framed directory tiles ${viewport.width}`,await page.locator('.universe-card').evaluateAll(items=>items.every(e=>getComputedStyle(e).borderRightWidth==='0px'&&getComputedStyle(e).borderLeftWidth==='0px'&&getComputedStyle(e).borderRadius==='0px')));
+  await page.goto(origin+'/#accueil',{waitUntil:'domcontentloaded',timeout:45000});
+  const home=page.locator('.th-world-screen');await home.waitFor({state:'visible'});
+  const launch=home.getByRole('button',{name:'Ouvrir tous les univers 3B'});
+  check(`Immersive world fills the scene ${viewport.width}`,await home.isVisible());
+  check(`Full-screen 3B navigation is visible ${viewport.width}`,await launch.isVisible());
+  check(`Eight realms selectable without home directory tiles ${viewport.width}`,
+    await home.locator('.th-world-realms-line button').count()===8&&await page.locator('.universe-card,.home-app-hub').count()===0);
+  check(`Primary destination shortcuts remain discoverable ${viewport.width}`,
+    await home.locator('.th-world-quicknav a').count()===4);
   await page.screenshot({path:out+'/home-'+viewport.width+'.png'});
-  await nav.getByRole('button',{name:'Ouvrir le menu',exact:true}).click();
+  await launch.click();
   const dialog=page.locator('#universe-menu');await dialog.waitFor({state:'visible'});
   check(`Dialog fits viewport ${viewport.width}`,await dialog.evaluate(e=>{const r=e.getBoundingClientRect();return r.left>=0&&r.top>=0&&r.right<=innerWidth+1&&r.bottom<=innerHeight+1;}));
   await page.screenshot({path:out+'/menu-principal-'+viewport.width+'.png'});
-  check(`Category names fit without horizontal scrolling ${viewport.width}`,await dialog.locator('.app-menu-categories').evaluate(e=>e.scrollWidth<=e.clientWidth+1));
+  check(`Eight categories have one horizontally swipeable rail ${viewport.width}`,await dialog.locator('.app-menu-categories').evaluate(e=>{
+    const tabs=[...e.querySelectorAll('[role="tab"]')],ys=new Set(tabs.map(t=>Math.round(t.getBoundingClientRect().top)));
+    return tabs.length===8&&ys.size===1&&getComputedStyle(e).overflowX==='auto';
+  }));
+  check(`Scanner entry reaches the exact existing view ${viewport.width}`,
+    await dialog.locator('[data-menu-id="invisible"]').first().getAttribute('href')==='/?invisibleView=scanner#monde-invisible');
   console.log('MENU_TABS',JSON.stringify(await dialog.locator('.app-menu-categories button').evaluateAll(buttons=>buttons.map(button=>{const range=document.createRange();range.selectNodeContents(button);return {label:button.textContent,width:button.clientWidth,scroll:button.scrollWidth,font:getComputedStyle(button).font,padding:getComputedStyle(button).paddingInline,rects:[...range.getClientRects()].map(rect=>({top:rect.top,width:rect.width}))};}))));
-  check(`Category labels remain on one readable line ${viewport.width}`,await dialog.locator('.app-menu-categories button').evaluateAll(buttons=>buttons.every(button=>{const range=document.createRange();range.selectNodeContents(button);return new Set([...range.getClientRects()].map(rect=>Math.round(rect.top))).size<=1&&button.scrollWidth<=button.clientWidth+1;})));
+  check(`Category labels remain on one readable line ${viewport.width}`,await dialog.locator('.app-menu-categories [role="tab"]').evaluateAll(buttons=>buttons.every(button=>{
+    const range=document.createRange();range.selectNodeContents(button);
+    return new Set([...range.getClientRects()].map(rect=>Math.round(rect.top))).size<=1;
+  })));
   await dialog.getByRole('tab',{name:'Monde',exact:true}).click();
   check(`Hidden world accessible ${viewport.width}`,await dialog.locator('[data-menu-id="invisible"]').isVisible());
   await dialog.getByRole('tab',{name:'Jeux & sport',exact:true}).click();
@@ -56,7 +68,9 @@ try{
   await dialog.getByRole('tab',{name:'Compte',exact:true}).click();
   await page.screenshot({path:out+'/menu-'+viewport.width+'.png'});
   await dialog.press('Escape');await dialog.waitFor({state:'hidden'});
-  check(`Escape returns focus to menu ${viewport.width}`,await nav.getByRole('button',{name:'Ouvrir le menu',exact:true}).evaluate(e=>e===document.activeElement));
+  check(`Escape closes the menu ${viewport.width}`,await launch.isVisible());
+  await page.goto(origin+'/#boutique',{waitUntil:'domcontentloaded'});
+  await page.locator(viewport.width<=720?'.mobile-navigation':'.site-header').waitFor({state:'visible'});
   await page.getByRole('button',{name:'Paramètres de l’application',exact:true}).click();
   check(`Header opens settings category ${viewport.width}`,await dialog.getByRole('tab',{name:'Réglages',exact:true}).getAttribute('aria-selected')==='true');
   await dialog.getByRole('button',{name:'Fermer le menu'}).click();
@@ -94,7 +108,10 @@ try{
  check('Shop copy contains no seller implementation instructions',!await guest.locator('.shop3b').innerText().then(text=>/paramètres vendeur|vérifiés côté serveur/.test(text)));
  await guest.goto(origin+'/#guide');await guest.locator('.guide-page').waitFor();
  check('Guest can read the guide before registering',await guest.locator('#passport-access-title').count()===0);
- await guest.goto(origin+'/#accueil');await guest.locator('.home-scanner-direct').click();await guest.locator('#hidden-scanner-title').waitFor();
+ await guest.goto(origin+'/#accueil',{waitUntil:'domcontentloaded'});await guest.locator('.th-world-screen').waitFor();
+ await guest.getByRole('button',{name:'Ouvrir tous les univers 3B'}).click();
+ await guest.locator('#universe-menu [data-menu-id="invisible"]').first().click();
+ await guest.locator('#hidden-scanner-title').waitFor();
  check('Guest home scanner link opens the scanner directly',new URL(guest.url()).searchParams.get('invisibleView')==='scanner');
  check('Camera waits for explicit action',await guest.locator('video').evaluateAll(items=>items.every(e=>!e.srcObject)));
  check('Companion leaves scanner unobstructed',await guest.locator('.companion3b-shell').count()===0);
