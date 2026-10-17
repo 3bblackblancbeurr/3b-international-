@@ -35,6 +35,23 @@ async function setup(context){
 async function openPage(context){const page=await context.newPage();page.setDefaultTimeout(15000);page.on('pageerror',error=>errors.push(error.message));await page.goto(origin+'/tests/member-preview.html',{waitUntil:'domcontentloaded',timeout:45000});await page.locator('.mx-shell').waitFor({timeout:30000});return page;}
 async function download(page,button,name){const pending=page.waitForEvent('download');await button.click();const file=await pending;await file.saveAs(path.join(out,name));return readFile(path.join(out,name),'utf8');}
 const fits=page=>page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1);
+async function openCinemaEditor(cinema,title){
+ // Editing schedules the title's initial focus in requestAnimationFrame.
+ // Complete that UI transition before fill() focuses a different field: a
+ // late autofocus between Playwright's selection and insertText can otherwise
+ // send the text to the title, especially in a newly foregrounded second tab.
+ await cinema.page().bringToFront();
+ await cinema.getByRole('button',{name:'Modifier '+title,exact:true}).click();
+ await cinema.locator('.med3b-form #med3b-title-input').waitFor();
+ await cinema.page().waitForFunction(()=>document.activeElement===document.querySelector('.med3b-form #med3b-title-input'));
+}
+async function fillCinemaNotes(cinema,value){
+ const title=cinema.getByLabel('Titre du film ou de la série',{exact:true}),notes=cinema.locator('.med3b-form').getByLabel(/^Pourquoi tu veux le découvrir/),before=await title.inputValue();
+ assert.equal(await notes.evaluate(element=>element.tagName),'TEXTAREA','Cinema notes locator must identify the textarea');
+ await notes.fill(value);
+ assert.equal(await notes.inputValue(),value,'Cinema note text must reach the notes textarea before submit');
+ assert.equal(await title.inputValue(),before,'Filling cinema notes must leave the title unchanged');
+}
 async function waitForStoredMedia(page,expected,phase,successNotice=''){
  try{
   await page.waitForFunction(expected=>{
@@ -109,22 +126,22 @@ try{
   await waitForStoredMedia(page,{title:'Film personnel · recette QA',status:'planned'},prefix+'initial title','Titre ajouté à ta liste locale.');
   await cinema.getByLabel('État de Film personnel · recette QA',{exact:true}).selectOption('watched');
   await waitForStoredMedia(page,{title:'Film personnel · recette QA',status:'watched'},prefix+'initial watched status');
-  await cinema.getByRole('button',{name:'Modifier Film personnel · recette QA',exact:true}).click();
+  await openCinemaEditor(cinema,'Film personnel · recette QA');
   await cinema.getByLabel('Titre du film ou de la série',{exact:true}).fill('Film personnel modifié · recette QA');
-  await cinema.getByLabel(/^Pourquoi tu veux le découvrir/).fill('Une note personnelle modifiée pendant la recette.');
+  await fillCinemaNotes(cinema,'Une note personnelle modifiée pendant la recette.');
   await cinema.getByRole('button',{name:'Enregistrer les modifications',exact:true}).click();
   await waitForStoredMedia(page,{title:'Film personnel modifié · recette QA',status:'watched',notes:'Une note personnelle modifiée pendant la recette.'},prefix+'edited title and notes','Titre et notes mis à jour.');
   check(prefix+'cinema title and notes can be edited without resetting status',await cinema.getByLabel('État de Film personnel modifié · recette QA',{exact:true}).inputValue()==='watched'&&await cinema.getByText('Une note personnelle modifiée pendant la recette.',{exact:true}).count()===1);
-  await cinema.getByRole('button',{name:'Modifier Film personnel modifié · recette QA',exact:true}).click();
+  await openCinemaEditor(cinema,'Film personnel modifié · recette QA');
   await cinema.getByLabel('Titre du film ou de la série',{exact:true}).fill('Modification annulée');
   await cinema.locator('.med3b-form').getByRole('button',{name:'Annuler',exact:true}).click();
   check(prefix+'cinema editor cancellation preserves the saved title',await cinema.getByLabel('État de Film personnel modifié · recette QA',{exact:true}).count()===1&&await cinema.getByText('Modification annulée',{exact:true}).count()===0);
   // Reproduce an editor left open while another tab changes a different field.
-  await cinema.getByRole('button',{name:'Modifier Film personnel modifié · recette QA',exact:true}).click();
+  await openCinemaEditor(cinema,'Film personnel modifié · recette QA');
   const secondCinemaPage=await openPage(context);let secondCinema=await navigate(secondCinemaPage,'Cinéma','.med3b');
-  await secondCinema.getByRole('button',{name:'Modifier Film personnel modifié · recette QA',exact:true}).click();
+  await openCinemaEditor(secondCinema,'Film personnel modifié · recette QA');
   const remoteNote='Note récente du second onglet · recette QA';
-  await secondCinema.getByLabel(/^Pourquoi tu veux le découvrir/).fill(remoteNote);
+  await fillCinemaNotes(secondCinema,remoteNote);
   await secondCinema.getByRole('button',{name:'Enregistrer les modifications',exact:true}).click();
   await waitForStoredMedia(secondCinemaPage,{title:'Film personnel modifié · recette QA',status:'watched',notes:remoteNote},prefix+'first second-tab note','Titre et notes mis à jour.');
   await cinema.getByLabel('État de Film personnel modifié · recette QA',{exact:true}).selectOption('watching');
@@ -136,12 +153,12 @@ try{
   // the second tab must wait for both the stored rename and its success state.
   await waitForStoredMedia(page,{title:'Film personnel vérifié · recette QA',status:'watching',notes:remoteNote},prefix+'rename before second-tab reload','Titre et notes mis à jour.');
   check(prefix+'cinema stale editor preserves notes merged from another tab',await cinema.getByLabel('État de Film personnel vérifié · recette QA',{exact:true}).inputValue()==='watching'&&await cinema.locator('.med3b-watchlist').getByText(remoteNote,{exact:true}).count()===1);
-  await cinema.getByRole('button',{name:'Modifier Film personnel vérifié · recette QA',exact:true}).click();
-  await cinema.getByLabel(/^Pourquoi tu veux le découvrir/).fill('Ma modification non enregistrée dans le formulaire A');
+  await openCinemaEditor(cinema,'Film personnel vérifié · recette QA');
+  await fillCinemaNotes(cinema,'Ma modification non enregistrée dans le formulaire A');
   await secondCinemaPage.reload();await secondCinemaPage.locator('.mx-shell').waitFor();secondCinema=await navigate(secondCinemaPage,'Cinéma','.med3b');
-  await secondCinema.getByRole('button',{name:'Modifier Film personnel vérifié · recette QA',exact:true}).click();
+  await openCinemaEditor(secondCinema,'Film personnel vérifié · recette QA');
   const newestNote='Notes plus récentes de B · recette QA';
-  await secondCinema.getByLabel(/^Pourquoi tu veux le découvrir/).fill(newestNote);
+  await fillCinemaNotes(secondCinema,newestNote);
   await secondCinema.getByRole('button',{name:'Enregistrer les modifications',exact:true}).click();
   await waitForStoredMedia(secondCinemaPage,{title:'Film personnel vérifié · recette QA',status:'watching',notes:newestNote},prefix+'newest second-tab note','Titre et notes mis à jour.');
   await cinema.getByLabel('État de Film personnel vérifié · recette QA',{exact:true}).selectOption('watched');
