@@ -1,3 +1,4 @@
+import {Button} from '../design-system/index.jsx';
 import {useMemo,useRef,useState} from 'react';
 import {ArrowLeft,ArrowRight,Check,Copy,Download,Images,Layers3,ShieldCheck,Sparkles} from 'lucide-react';
 import {VISUAL_FAMILIES,VISUAL_RATIOS,VISUAL_COUNTS,makeVisualBrief} from './visual-director-catalog.js';
@@ -36,7 +37,7 @@ export default function VisualDirector3B({onClose}){
  return <section className="vd3b" aria-label="Studio Visuel 3B — bibliothèque créative">
   <div className="vd3b-atmosphere" data-family={family} aria-hidden="true"/>
   <header className="vd3b-header">
-   <button type="button" className="vd3b-back" onClick={onClose}><ArrowLeft size={18}/> Espace IA</button>
+   <Button variant="ghost" type="button" className="vd3b-back" onClick={onClose}><ArrowLeft size={18}/> Espace IA</Button>
    <span>3B INTERNATIONAL · LABORATOIRE CRÉATIF</span>
   </header>
   <div className="vd3b-hero">
@@ -48,26 +49,26 @@ export default function VisualDirector3B({onClose}){
   <div className="vd3b-workspace">
    <div className="vd3b-workspace-head"><div><span>01 / CHOISIS TON UNIVERS</span><h2>À quoi donner vie ?</h2></div><Layers3 size={24}/></div>
    <nav className="vd3b-families" aria-label="Familles de visuels">
-    {VISUAL_FAMILIES.map(f=><button key={f.id} type="button" aria-pressed={family===f.id} onClick={()=>changeCategory(f.id)}>{f.label}</button>)}
+    {VISUAL_FAMILIES.map(f=><Button variant="ghost" key={f.id} type="button" aria-pressed={family===f.id} onClick={()=>changeCategory(f.id)}>{f.label}</Button>)}
    </nav>
    <div className="vd3b-workspace-head vd3b-workspace-head--sub"><div><span>02 / CHOISIS UN TYPE DE SCÈNE</span><h3>{category.label}</h3></div><span className="vd3b-workspace-count">{category.presets.length} styles</span></div>
    <div className="vd3b-scenes" role="group" aria-label="Types de rendus">
-    {category.presets.map((item,index)=><button key={item[0]} type="button" aria-pressed={preset===item[0]} onClick={()=>{setPreset(item[0]);setNotice('');}}>
+    {category.presets.map((item,index)=><Button variant="ghost" key={item[0]} type="button" aria-pressed={preset===item[0]} onClick={()=>{setPreset(item[0]);setNotice('');}}>
      <span>{String(index+1).padStart(2,'0')}</span><strong>{item[1]}</strong><ArrowRight size={16}/>
-    </button>)}
+    </Button>)}
    </div>
    <div className="vd3b-scene-selection"><span>TA SCÈNE</span><strong>{selected[1]}</strong><p>{selected[2]}</p></div>
    <div className="vd3b-fields">
     <label><span>Ton sujet ou ton projet</span><input value={subject} onChange={e=>setSubject(e.target.value.slice(0,250))} maxLength={250} placeholder="Ex. : royaume France, sneakers 3B, affiche esport…"/></label>
-    <fieldset><legend>Format de destination</legend><div className="vd3b-formats">{VISUAL_RATIOS.map(f=><button key={f.id} type="button" aria-pressed={ratio===f.id} onClick={()=>setRatio(f.id)}>{f.label}</button>)}</div></fieldset>
+    <fieldset><legend>Format de destination</legend><div className="vd3b-formats">{VISUAL_RATIOS.map(f=><Button variant="ghost" key={f.id} type="button" aria-pressed={ratio===f.id} onClick={()=>setRatio(f.id)}>{f.label}</Button>)}</div></fieldset>
     <label><span>Détails particuliers (facultatif)</span><textarea rows={3} maxLength={480} value={notes} onChange={e=>setNotes(e.target.value.slice(0,480))} placeholder="Palette, saison, tenue, âge du personnage fictif, atmosphère, contexte…"/></label>
    </div>
    <div className="vd3b-brief">
     <div><span>03 / TON BRIEF PERSONNALISÉ</span><strong>Prêt à créer</strong></div>
     <textarea ref={briefRef} readOnly value={brief} rows={11} aria-label="Brief créatif 3B à copier"/>
     <div className="vd3b-actions">
-     <button type="button" className="vd3b-primary" onClick={copyBrief}><Copy size={17}/> Copier le brief</button>
-     <button type="button" className="vd3b-secondary" onClick={downloadBrief}><Download size={17}/> Exporter .txt</button>
+     <Button variant="ghost" type="button" className="vd3b-primary" onClick={copyBrief}><Copy size={17}/> Copier le brief</Button>
+     <Button variant="ghost" type="button" className="vd3b-secondary" onClick={downloadBrief}><Download size={17}/> Exporter .txt</Button>
     </div>
     {notice&&<p className="vd3b-notice" role="status"><Check size={14}/>{notice}</p>}
    </div>
