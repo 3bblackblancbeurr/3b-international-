@@ -18,16 +18,16 @@ const SIGNALS=[
 export default function HeritageSignalNetwork(){
  return <svg className="th-earth-network" viewBox="0 0 1000 1000" aria-hidden="true" focusable="false">
   <defs>
-   <linearGradient id="th-network-gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#f8dba0" stopOpacity="0"/><stop offset=".47" stopColor="#ffe59b" stopOpacity=".9"/><stop offset="1" stopColor="#dc9841" stopOpacity=".18"/></linearGradient>
-   <linearGradient id="th-network-blue" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stopColor="#64d6ff" stopOpacity="0"/><stop offset=".4" stopColor="#87e8ff" stopOpacity=".94"/><stop offset="1" stopColor="#3795ff" stopOpacity=".13"/></linearGradient>
-   <radialGradient id="th-network-signal"><stop offset="0" stopColor="#fff4c2"/><stop offset=".4" stopColor="#ffc975"/><stop offset="1" stopColor="#f0a54c" stopOpacity="0"/></radialGradient>
+   <linearGradient id="th-network-gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="var(--3b-v2-palette-f8dba0)" stopOpacity="0"/><stop offset=".47" stopColor="var(--3b-v2-palette-ffe59b)" stopOpacity=".9"/><stop offset="1" stopColor="var(--3b-v2-palette-dc9841)" stopOpacity=".18"/></linearGradient>
+   <linearGradient id="th-network-blue" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stopColor="var(--3b-v2-palette-64d6ff)" stopOpacity="0"/><stop offset=".4" stopColor="var(--3b-v2-palette-87e8ff)" stopOpacity=".94"/><stop offset="1" stopColor="var(--3b-v2-palette-3795ff)" stopOpacity=".13"/></linearGradient>
+   <radialGradient id="th-network-signal"><stop offset="0" stopColor="var(--3b-v2-palette-fff4c2)"/><stop offset=".4" stopColor="var(--3b-v2-palette-ffc975)"/><stop offset="1" stopColor="var(--3b-v2-palette-f0a54c)" stopOpacity="0"/></radialGradient>
   </defs>
-  <circle cx="500" cy="500" r="419" fill="none" stroke="#88d6ff" strokeOpacity=".27" strokeWidth="1.8"/>
+  <circle cx="500" cy="500" r="419" fill="none" stroke="var(--3b-v2-palette-88d6ff)" strokeOpacity=".27" strokeWidth="1.8"/>
   {ROUTES.map(([d,shade],i)=><path key={i} d={d} fill="none" stroke={shade==='gold'?'url(#th-network-gold)':'url(#th-network-blue)'} strokeWidth={i%3===0?3.7:2.4} strokeLinecap="round" opacity=".84"/>)}
   {SIGNALS.map(([x,y,label],i)=><g key={label+'-'+i} transform={`translate(${x} ${y})`}>
    <circle r="24" fill="url(#th-network-signal)" opacity=".65"/>
-   <circle r="11" fill="#031727" stroke={i%3?'#8addff':'#e7b36c'} strokeWidth="2.5"/>
-   <circle r="3" fill={i%3?'#abecff':'#ffe3af'}/>
+   <circle r="11" fill="var(--3b-v2-palette-031727)" stroke={i%3?'var(--3b-v2-palette-8addff)':'var(--3b-v2-palette-e7b36c)'} strokeWidth="2.5"/>
+   <circle r="3" fill={i%3?'var(--3b-v2-palette-abecff)':'var(--3b-v2-palette-ffe3af)'}/>
   </g>)}
  </svg>;
 }
