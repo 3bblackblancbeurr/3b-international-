@@ -158,6 +158,8 @@ try{
    await page.getByRole('button',{name:'Envoyer ma question'}).click();
    check('Local assistant links to real games route',await page.locator('.albert3b-reply-link').last().getAttribute('href').then(h=>h.includes('#jeux')));
    check('Albert clearly describes disconnected PC mode',await page.locator('.albert3b-status').innerText().then(t=>t.includes('non connecté')));
+   check('Albert offers the saved World 3B favorite on-device',await page.locator('.albert3b-local-favorites a').count()===1);
+   check('Albert favorite shortcut navigates to an existing module',await page.locator('.albert3b-local-favorites a').first().getAttribute('href').then(h=>h?.startsWith('#')===true));
    const planner=page.locator('.albert3b-daily');
    check('Albert daily planner is visible',await planner.isVisible());
    await planner.getByRole('button',{name:/Ajouter à ma journée : Prendre soin de moi/}).click();
