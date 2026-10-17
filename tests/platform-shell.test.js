@@ -26,13 +26,13 @@ test('interactive app hides the static SEO fallback without removing no-JS disco
 
 test('home opens on one full-screen immersive scene, with services still in navigation',()=>{
  const home=read('src/components/HomePage.jsx');
- const scene=read('src/components/ImmersiveWorldHome.jsx');
+ const scene=read('src/components/Concept13AtlasHome.jsx');
  const menu=read('src/components/AppNavigation.jsx');
- assert.match(home,/ImmersiveWorldHome/);
+ assert.match(home,/Concept13AtlasHome/);
  assert.doesNotMatch(home,/WorldPortalCard|secondaryGroups\.map|home-journey-status/);
- assert.match(scene,/th-world-screen/);
+ assert.match(scene,/atlas3b/);
  assert.match(scene,/threeb:open-app-menu/);
- assert.match(scene,/RouteLink page="world3b"/);
+ assert.match(scene,/RouteLink goTo=\{goTo\} page="world3b"/);
  assert.match(menu,/universe-menu/);
  assert.match(read('src/components/navigation-menu.js'),/Comprendre 3B/);
 });

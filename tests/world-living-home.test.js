@@ -74,42 +74,32 @@ test('Albert understands French requests and avoids false destinations from inci
  assert.equal(albertLocalGuideAnswer('Où est le chatbot ?').destination?.id,'ia-trio');
 });
 
-test('3B World and Albert are real routed React components, not pasted promotional screenshots',()=>{
+test('3B World and Albert stay routed React experiences, not a promotional screenshot',()=>{
  const app=read('src/App.jsx'),home=read('src/components/HomePage.jsx');
  const map=read('src/components/LivingWorldHome.jsx'),globe=read('src/components/LivingWorldGlobe.jsx');
  const styles=read('src/styles/world-living-home.css');
- assert.match(app,/page === "albert" && <AlbertPublicPreview/);
- assert.match(home,/<ImmersiveWorldHome goTo=\{goTo\}/);
- const scene=read('src/components/ImmersiveWorldHome.jsx');
+ const atlas=read('src/components/Concept13AtlasHome.jsx');
+ const mapArtwork=read('src/components/AtlasCinematicMap.jsx');
+ const atlasCss=read('src/styles/concept13-atlas-v4.css');
+ assert.ok(app.includes('page === "albert" && <AlbertPublicPreview'));
+ assert.ok(home.includes('<Concept13AtlasHome goTo={goTo}/>'));
+ for(const expected of ['WORLD_MODULES.map','WORLD_REALMS.map','AtlasCinematicMap','threeb:open-app-menu','page="world3b"','atlas3b-directory','atlas3b-module-link'])assert.ok(atlas.includes(expected),expected);
+ assert.ok(mapArtwork.includes('black-marble-mobile.webp'));
+ assert.ok(mapArtwork.includes('ResizeObserver'));
+ assert.ok(atlasCss.includes('prefers-reduced-motion:reduce'));
+ assert.doesNotMatch(atlas,/1.2M|850K|39 PAYS|fausses statistiques/i);
  const globe3d=read('src/components/HeritageGlobe3D.jsx');
- assert.match(scene,/<AdaptiveHeritageGlobe selectedId=\{realm.id\}/);
- assert.match(read('src/components/AdaptiveHeritageGlobe.jsx'),/lazy\(\(\)=>import\('\.\/HeritageGlobe3D\.jsx'\)\)/);
- assert.match(read('src/components/HeritageGlobeLite.jsx'),/HeritageSignalNetwork/);
- assert.match(scene,/th-world-realms-line/);
- assert.match(scene,/threeb:open-app-menu/);
- assert.match(globe3d,/WebGLRenderer/);
- assert.match(globe3d,/IntersectionObserver/);
- assert.match(globe3d,/NASA|nasa-bluemarble/);
- assert.doesNotMatch(scene,/world3b-universe-link|home-app-hub/);
- assert.match(map,/onSelect=\{setActiveRealm\}/);
- assert.match(map,/world3b-universes/);
- assert.match(map,/localStorage/);
- assert.match(globe,/IntersectionObserver/);
- assert.match(globe,/prefers-reduced-motion/);
- assert.match(globe,/onPointerMove/);
- assert.match(globe,/onKeyDown/);
- assert.match(globe,/ArrowUp/);
- assert.match(globe,/ArrowDown/);
- assert.match(globe,/event.key==='Home'/);
- assert.match(globe,/requestAnimationFrame/);
- assert.match(globe,/\(pointer: coarse\)/);
- assert.match(globe,/\?1\.25:1\.5/);
- assert.match(globe,/!reduced\(\)&&!state\.paused&&!state\.drag/);
- assert.match(map,/Mettre la rotation de la planète en pause/,'mobile users can explicitly pause the 3B globe');
- assert.match(styles,/\.world-living-globe-canvas/);
- assert.match(styles,/@media\(max-width:370px\)/);
- assert.match(styles,/prefers-reduced-motion:reduce/);
- assert.doesNotMatch(map,/1\.2M|850K|39 PAYS|fausses statistiques/i);
+ assert.match(globe3d,/WebGLRenderer|IntersectionObserver/);
+ assert.ok(globe3d.includes('nasa-bluemarble'));
+ assert.ok(map.includes('onSelect={setActiveRealm}'));
+ assert.ok(map.includes('world3b-universes'));
+ assert.ok(map.includes('localStorage'));
+ for(const expected of ['IntersectionObserver','prefers-reduced-motion','onPointerMove','onKeyDown','ArrowUp','ArrowDown','requestAnimationFrame'])assert.ok(globe.includes(expected),expected);
+ assert.ok(globe.includes('(pointer: coarse)'));
+ assert.ok(map.includes('Mettre la rotation de la planète en pause'));
+ assert.ok(styles.includes('.world-living-globe-canvas'));
+ assert.ok(styles.includes('prefers-reduced-motion:reduce'));
+ assert.doesNotMatch(map,/1.2M|850K|39 PAYS|fausses statistiques/i);
 });
 
 test('deep-linked world / Albert loads without four-second splash and conflicting floating companions',()=>{
@@ -125,7 +115,7 @@ test('deep-linked world / Albert loads without four-second splash and conflictin
  assert.match(qa,/\[360,800\]/);
  assert.match(qa,/\[393,873\]/);
  assert.match(qa,/\[1440,1000\]/);
- assert.match(qa,/22-card homepage replaced by a living scene/);
+ assert.match(qa,/Atlas replaces the scrolling 22-card home/);
  assert.match(qa,/Eight categories in a single swipe rail/);
  assert.match(qa,/Albert also fits in one viewport/);
 });

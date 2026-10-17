@@ -26,14 +26,14 @@ try{
   });
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   await page.goto(origin+'/#accueil',{waitUntil:'domcontentloaded',timeout:45000});
-  const home=page.locator('.th-world-screen');await home.waitFor({state:'visible'});
-  const launch=home.getByRole('button',{name:'Ouvrir tous les univers 3B'});
+  const home=page.locator('.atlas3b');await home.waitFor({state:'visible'});
+  const launch=home.getByRole('button',{name:'Ouvrir le menu général 3B'});
   check(`Immersive world fills the scene ${viewport.width}`,await home.isVisible());
   check(`Full-screen 3B navigation is visible ${viewport.width}`,await launch.isVisible());
-  check(`Eight realms selectable without home directory tiles ${viewport.width}`,
-    await home.locator('.th-world-realms-line button').count()===8&&await page.locator('.universe-card,.home-app-hub').count()===0);
+  check(`Eight realms selectable in the atlas without framed home cards ${viewport.width}`,
+    await home.locator('.atlas3b-realm').count()===8&&await page.locator('.universe-card,.home-app-hub').count()===0);
   check(`Primary destination shortcuts remain discoverable ${viewport.width}`,
-    await home.locator('.th-world-quicknav a').count()===4);
+    await home.locator('.atlas3b-dock a').count()===4);
   await page.screenshot({path:out+'/home-'+viewport.width+'.png'});
   await launch.click();
   const dialog=page.locator('#universe-menu');await dialog.waitFor({state:'visible'});
@@ -108,8 +108,8 @@ try{
  check('Shop copy contains no seller implementation instructions',!await guest.locator('.shop3b').innerText().then(text=>/paramètres vendeur|vérifiés côté serveur/.test(text)));
  await guest.goto(origin+'/#guide');await guest.locator('.guide-page').waitFor();
  check('Guest can read the guide before registering',await guest.locator('#passport-access-title').count()===0);
- await guest.goto(origin+'/#accueil',{waitUntil:'domcontentloaded'});await guest.locator('.th-world-screen').waitFor();
- await guest.getByRole('button',{name:'Ouvrir tous les univers 3B'}).click();
+ await guest.goto(origin+'/#accueil',{waitUntil:'domcontentloaded'});await guest.locator('.atlas3b').waitFor();
+ await guest.getByRole('button',{name:'Ouvrir le menu général 3B'}).click();
  await guest.locator('#universe-menu [data-menu-id="invisible"]').first().click();
  await guest.locator('#hidden-scanner-title').waitFor();
  check('Guest home scanner link opens the scanner directly',new URL(guest.url()).searchParams.get('invisibleView')==='scanner');

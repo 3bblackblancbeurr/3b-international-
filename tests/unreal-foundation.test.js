@@ -126,8 +126,8 @@ test('dimensional platform layer loads after compact styles and exposes the 3B w
  assert.match(app,/styles\/compact\.css/);
  assert.match(app,/styles\/dimension\.css/);
  assert.ok(app.indexOf('styles/dimension.css')>app.indexOf('styles/compact.css'));
- assert.match(home,/ImmersiveWorldHome/);
- assert.match(read('src/components/ImmersiveWorldHome.jsx'),/RouteLink page="world3b"/);
+ assert.match(home,/Concept13AtlasHome/);
+ assert.match(read('src/components/Concept13AtlasHome.jsx'),/RouteLink goTo=\{goTo\} page="world3b"/);
  assert.match(dimension,/dimensional surface layer/i);
  assert.match(dimension,/box-shadow/);
 });
