@@ -115,7 +115,7 @@ test('deep-linked world / Albert loads without four-second splash and conflictin
  assert.match(qa,/\[360,800\]/);
  assert.match(qa,/\[393,873\]/);
  assert.match(qa,/\[1440,1000\]/);
- assert.match(qa,/Atlas replaces the scrolling 22-card home/);
+ assert.match(qa,/Atlas can scroll to every universe/);
  assert.match(qa,/Eight categories in a single swipe rail/);
  assert.match(qa,/Albert also fits in one viewport/);
 });
