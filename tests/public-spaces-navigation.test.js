@@ -23,8 +23,8 @@ test('all ten new public 3B destinations have direct, unique routes and home car
   assert.ok(MENU_CATEGORIES.some(c=>c.ids.includes(id)),'menu category must expose '+id);
   assert.ok(NAV_GROUPS.some(c=>c.ids.includes(id)),'home page group must expose '+id);
  }
- assert.match(home,/ImmersiveWorldHome/);
- assert.match(readFileSync(new URL('../src/components/ImmersiveWorldHome.jsx',import.meta.url),'utf8'),/threeb:open-app-menu/);
+ assert.match(home,/Concept13AtlasHome/);
+ assert.match(readFileSync(new URL('../src/components/Concept13AtlasHome.jsx',import.meta.url),'utf8'),/threeb:open-app-menu/);
  assert.match(app,/\.\.\.Object\.keys\(MEMBER_SPACE_ROUTES\), "foodscan", "home"/);
 });
 

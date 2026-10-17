@@ -15,11 +15,11 @@ test('home hides technical status cards and keeps the ecosystem guide at the bot
  assert.doesNotMatch(home,/heritage-poster|background\.png/);
  assert.doesNotMatch(home,/welcome-hero|Un héritage|Nos différences|Notre force|luxury-manifesto-line/);
  assert.doesNotMatch(home,/PRIMARY_IDS|L’essentiel|home-primary-directory/);
- assert.match(home,/<ImmersiveWorldHome goTo=\{goTo\}/);
- const immersive=readFileSync(new URL('../src/components/ImmersiveWorldHome.jsx',import.meta.url),'utf8');
- assert.match(immersive,/th-world-screen/);
- assert.match(immersive,/Ouvrir tous les univers 3B/);
- assert.match(immersive,/th-world-quicknav/);
+ assert.match(home,/<Concept13AtlasHome goTo=\{goTo\}/);
+ const immersive=readFileSync(new URL('../src/components/Concept13AtlasHome.jsx',import.meta.url),'utf8');
+ assert.match(immersive,/atlas3b/);
+ assert.match(immersive,/Ouvrir le menu général 3B/);
+ assert.match(immersive,/atlas3b-dock/);
  assert.doesNotMatch(home,/secondaryGroups\.map|universe-grid|WorldPortalCard/);
  assert.deepEqual(NAV_GROUPS.find(group=>group.title==='Identité & progression').ids,['passport','member']);
  assert.ok(account.includes('<MemberExperiences goTo={goTo} profile={profile}/>'));

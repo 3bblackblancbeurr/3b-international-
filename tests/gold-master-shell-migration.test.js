@@ -15,11 +15,11 @@ test("CompactCard composes the shared Gold Master Card", () => {
 });
 
 test("immersive home uses shared Gold Master Buttons for its principal actions", () => {
-  const scene=readFileSync("src/components/ImmersiveWorldHome.jsx","utf8");
-  assert.match(home,/ImmersiveWorldHome/);
+  const scene=readFileSync("src/components/Concept13AtlasHome.jsx","utf8");
+  assert.match(home,/Concept13AtlasHome/);
   assert.match(scene,/import \{Button\} from '\.\.\/design-system\/index\.jsx'/);
-  assert.match(scene,/<Button variant="ghost" type="button" className="th-world-menu-launch"/);
-  assert.match(scene,/<Button variant="ghost" type="button" className="th-world-explore"/);
+  assert.match(scene,/<Button variant="ghost" type="button" className="atlas3b-menu"/);
+  assert.match(scene,/className="atlas3b-dock-center"/);
 });
 
 test("World portal actions use the shared Gold Master Button", () => {

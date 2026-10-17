@@ -97,7 +97,7 @@ test('six modules are wired honestly, no camera starts without user action and n
  const heritage=read('../src/maintenant/HeritagePanel.jsx');
  assert.match(app,/page === "maintenant" && <MaintenantPage/);
  assert.match(app,/\"maintenant\"/);
- assert.match(home,/<ImmersiveWorldHome goTo=\{goTo\}\/>/);
+ assert.match(home,/<Concept13AtlasHome goTo=\{goTo\}\/>/);
  const nav=read('../src/components/navigation-menu.js');
  assert.match(nav,/maintenant/,'3B Maintenant remains reachable from the single app menu');
  assert.match(source,/role="tablist"/);
