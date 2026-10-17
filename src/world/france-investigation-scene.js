@@ -22,7 +22,7 @@ export function createFranceInvestigationScene(save,{groundY=()=>0,material,redu
  let plaqueMaterial=null;
  if(typeof document!=='undefined'){
   const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=768;const ctx=canvas.getContext('2d');
-  if(ctx){ctx.fillStyle=worldArtMaterials.dust;ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle=worldRealmArt.france.cloth;ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='600 44px Georgia, serif';Object.values(titles).forEach((title,i)=>ctx.fillText(title,512,i*128+64,960));const texture=own(new THREE.CanvasTexture(canvas));texture.colorSpace=THREE.SRGBColorSpace;plaqueMaterial=own(new THREE.MeshStandardMaterial({color:worldArtMaterials.dust,map:texture,roughness:.9}));}
+  if(ctx){ctx.fillStyle=worldArtMaterials.dust;ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle=worldRealmArt.france.cloth;ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='600 64px Georgia, serif';Object.values(titles).forEach((title,i)=>ctx.fillText(title,512,i*128+64,960));const texture=own(new THREE.CanvasTexture(canvas));texture.colorSpace=THREE.SRGBColorSpace;plaqueMaterial=own(new THREE.MeshStandardMaterial({color:worldArtMaterials.dust,map:texture,roughness:.9}));}
  }
  function batch(parent,name,draw){
   const parts=new Map();
@@ -45,7 +45,7 @@ export function createFranceInvestigationScene(save,{groundY=()=>0,material,redu
  }
  function plaque(station,parent){
   const label=titles[station.kind]||station.place;parent.userData.label=label;
-  if(plaqueMaterial){const geometry=own(new THREE.PlaneGeometry(4.65,.58)),uv=geometry.attributes.uv,index=Object.keys(titles).indexOf(station.kind);for(let i=0;i<uv.count;i++)uv.setY(i,1-(Math.max(0,index)+1-uv.getY(i))/6);const mesh=new THREE.Mesh(geometry,plaqueMaterial);mesh.position.set(0,3.08,-6.116);parent.add(mesh);}
+  if(plaqueMaterial){const geometry=own(new THREE.PlaneGeometry(4.65,.58)),uv=geometry.attributes.uv,index=Object.keys(titles).indexOf(station.kind);for(let i=0;i<uv.count;i++)uv.setY(i,1-(Math.max(0,index)+1-uv.getY(i))/6);const mesh=new THREE.Mesh(geometry,plaqueMaterial);mesh.position.set(0,station.kind==='archive'?4.22:3.08,-6.116);parent.add(mesh);}
  }
  for(const station of FRANCE_INVESTIGATION_STATIONS){
   const group=new THREE.Group();group.name='3B · '+station.place;group.position.set(station.position.x,groundY(station.position.x,station.position.z),station.position.z);group.userData.stationId=station.id;root.add(group);
@@ -53,17 +53,18 @@ export function createFranceInvestigationScene(save,{groundY=()=>0,material,redu
   if(station.kind==='plateau')continue;
   plaque(station,group);
   batch(group,'Mobilier · '+station.kind,put=>{
-   put('cloth',0,3.08,-6.2,4.9,.78,.14);put('gold',0,2.65,-6.2,4.9,.045,.19);
+   const signY=station.kind==='archive'?4.22:3.08;put('cloth',0,signY,-6.2,4.9,.78,.14);put('gold',0,signY-.43,-6.2,4.9,.045,.19);
    if(station.kind!=='archive')for(const x of [-2.25,2.25])put('stone',x,1.36,-6.25,.21,2.72,.27);
    // A flush sill describes the place without introducing a step or deck.
    put('stone',0,.018,-4.8,6.5,.036,4.6);desk(put,station.kind==='archive'?4.9:4.6);
    if(station.kind==='archive'){
-    for(const x of [-2.75,2.75])put('cloth',x,1.87,-6.28,.22,3.74,1.08);
+    for(const x of [-2.75,2.75])put('cloth',x,2.325,-6.28,.22,4.65,1.08);
     for(const y of [.2,1.15,2.1,2.55]){put('cloth',0,y,-6.28,5.7,.14,1.08);for(let i=0;i<8;i++){const xx=-2.35+i*.67;put(i%3?'paper':'cloth',xx,y+.39,-6.23,.43,.62,.68);put('gold',xx,y+.42,-5.88,.24,.025,.022);}}
+    book(put,-1.4,1.49,-4.7,{signed:true,width:1.6});
    }else if(station.kind==='atelier'){
     for(const side of [-1,1]){put('cloth',side*1.95,1.96,-5.30,.16,1.28,.24);put('gold',side*1.95,2.51,-5.30,.28,.14,.36);}
     put('cloth',0,2.44,-5.3,4.06,.18,.30);put('paper',-.95,1.73,-5.3,.75,.55,.62);put('gold',.95,1.77,-5.1,.14,.68,.14,0,cylinder);
-    for(let thread=0;thread<5;thread++)put('gold',-1.25+thread*.15,1.49,-4.53,.022,.028,.65);
+    for(let thread=0;thread<3;thread++)put('cloth',-1.16+thread*.23,1.52,-4.53,.052,.04,.65);
    }else if(station.kind==='comparison'){
     for(const x of [-1.05,1.05])book(put,x,1.49,-4.75,{open:true,width:1.68});
     put('gold',0,1.65,-4.75,.04,.04,.89);put('gold',0,1.67,-4.25,.88,.04,.035);
@@ -76,7 +77,7 @@ export function createFranceInvestigationScene(save,{groundY=()=>0,material,redu
    }
   });
   collider(station,0,-4.8,station.kind==='archive'?5.05:4.75,1.85,1.5);
-  collider(station,0,-6.25,station.kind==='archive'?5.9:4.95,station.kind==='archive'?1.2:.32,3.65);
+  collider(station,0,-6.25,station.kind==='archive'?5.9:4.95,station.kind==='archive'?1.2:.32,station.kind==='archive'?4.7:3.65);
   if(station.kind==='mediation')for(const x of [-2.7,2.7])collider(station,x,-3.7,.87,.87,1.05);
   entry.unrestored=batch(group,'Trace encore incomplète',put=>{
    if(station.kind==='archive'){put('cloth',0,2.49,-5.67,4.9,.13,.07);put('gold',0,2.49,-5.60,.20,.26,.09);}
@@ -84,8 +85,8 @@ export function createFranceInvestigationScene(save,{groundY=()=>0,material,redu
    else if(station.kind==='witness'){for(const x of [-.9,.9])put('cloth',x,1.99,-6.035,.70,.16,.03);}
   });
   entry.restored=batch(group,'Faits rendus au registre',put=>{
-   if(station.kind==='archive')book(put,0,1.49,-4.7,{open:true,signed:true,width:2.7});
-   else if(station.kind==='atelier'){book(put,.85,1.49,-4.5,{open:true,signed:true,width:1.8});for(let stitch=0;stitch<6;stitch++)put('gold',.85,1.74,-4.86+stitch*.14,.17,.027,.035);}
+   if(station.kind==='archive')book(put,.85,1.49,-4.7,{open:true,signed:true,width:2.2});
+   else if(station.kind==='atelier'){book(put,.85,1.49,-4.5,{open:true,signed:true,width:1.8});for(let stitch=0;stitch<3;stitch++)put('cloth',.85,1.74,-4.8+stitch*.25,.20,.027,.05);}
    else if(station.kind==='witness'){for(let line=0;line<4;line++)put('cloth',0,1.68+line*.20,-6.035,2.7-line%2*.5,.045,.025);put('gold',1.45,1.99,-6.02,.14,.50,.04);}
   });
   if(station.kind==='archive'||station.kind==='mediation')entry.resolved=batch(group,'Dossier signé · correction conservée',put=>{book(put,1.16,1.65,-4.5,{signed:true,width:1.38});put('cloth',1.04,1.86,-4.69,.70,.018,.16);put('gold',1.04,1.88,-4.69,.51,.012,.025);});
