@@ -3,6 +3,8 @@ import {cinemaProfile} from './cinematic-director.js';
 import {createLivingActor} from './living.js';
 import {campaignPerson} from './journey-presence.js';
 import {createStoryRelic} from './story-relic.js';
+import {createRealmStoryRelic} from './realm-story-relic.js';
+import {realmStoryStaging} from './realm-story-staging.js';
 
 /** Visualise the authoritative boss state. This object never awards damage,
  * invulnerability, a seal or a new elemental/totem ability. */
@@ -82,14 +84,16 @@ export function createRealmMarker(item,{groundY=()=>0,library,reducedMotion=fals
  }
  // The authored artefact changes when the authoritative campaign progresses.
  // A marker reused across missions must not display yesterday's evidence.
- let relic=createStoryRelic(item),relicKey=[item.region,item.type,item.campaign?.phaseId].join(':');
+ const storyKey=()=>realmStoryStaging(item)?.key||[item.region,item.type,item.campaign?.phaseId].join(':');
+ const makeRelic=()=>createStoryRelic(item)||createRealmStoryRelic(item);
+ let relic=makeRelic(),relicKey=storyKey();root.userData.storyStaging=relic?.stage||null;
  if(relic){root.add(relic.root);figure.visible=false;}
  let previousTime=0,oldPoint={x:item.x,z:item.z};
  return {root,update(next){
   Object.assign(item,next);
-  const nextKey=[item.region,item.type,item.campaign?.phaseId].join(':');
+  const nextKey=storyKey();
   if(nextKey!==relicKey){
-   relic?.dispose();relic=createStoryRelic(item);relicKey=nextKey;
+   relic?.dispose();relic=makeRelic();relicKey=nextKey;root.userData.storyStaging=relic?.stage||null;
    if(relic)root.add(relic.root);
    figure.visible=!relic;
   }
