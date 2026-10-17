@@ -62,3 +62,17 @@ export const hubServiceArt=Object.freeze({
  heritageBase:'#101a26',matrixBase:'#14354a',matrixAccent:'#00a8ff',solarBase:'#e6ded0',solarAccent:'#d2a451',gardenBase:'#264b3e',gardenAccent:'#d9c78a',cabin:'#ce88b5',
  studio:'#0b1420',skyLight:'#d9edff',groundLight:'#132033',keyLight:'#fff1d6',rimLight:'#74c9ff',sample:'#ffffff',floor:'#172533',
 });
+
+/* Separate canvas pigments: JS canvas contexts cannot consume CSS var() strings
+   as fillStyle without forced style recalculation every frame. */
+export const worldLivingCanvasPalette=Object.freeze({
+ t135b9a:'#135b9a',
+ t073a74:'#073a74',
+ t04182e:'#04182e',
+ t02070f:'#02070f',
+ tffe5a8:'#ffe5a8',
+ t66c7ff:'#66c7ff',
+ tf2b94b:'#f2b94b',
+ t0a9afa:'#0a9afa',
+ tf8d393:'#f8d393',
+});

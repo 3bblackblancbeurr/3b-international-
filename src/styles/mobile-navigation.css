@@ -176,6 +176,15 @@
   .dialog-footer { padding: 10px 20px; }
   .dialog-footer > span { display: none; }
 }
+@media (max-width: 720px) and (pointer: coarse) {
+  /* Avoid fixed backdrop blur on real phones: it can trigger expensive GPU
+     compositing and vendor-specific soft rendering while scrolling. */
+  .mobile-navigation {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: var(--3b-carbon);
+  }
+}
 @media (max-width: 360px) {
   .app3b { padding-inline: 16px; }
   .brand-name { font-size: 9px; letter-spacing: .1em; }

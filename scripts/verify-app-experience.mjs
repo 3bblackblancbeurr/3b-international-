@@ -26,6 +26,8 @@ try{
  const page=await context.newPage();page.setDefaultTimeout(20000);
  page.on('pageerror',error=>errors.push(error.message));
  await page.goto(origin+'/#accueil');
+ // The classic cinematic Broken Circle remains available under a disclosure.
+ await page.locator('.world3b-legacy-archive > summary').click();
  const art=page.locator('.home-aaa-art');
  await art.waitFor({state:'visible'});
  const scene=art.locator('.home-aaa-artwork');

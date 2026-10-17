@@ -15,7 +15,8 @@ test('local bridge detects the real ALBERT Windows runtime without arbitrary she
  assert.match(agent,/streaming_chat\.py/);
  assert.match(agent,/evaluation_200\.py/);
  assert.match(agent,/127\.0\.0\.1:8765/);
- assert.match(agent,/127\.0\.0\.1:8766\/health/);
+ assert.match(agent,/127\.0\.0\.1:8767\/health/);
+ assert.match(agent,/data\?\.name!=='ALBERT APEX OS V2'/,'never accept an unrelated local server as APEX');
  assert.match(agent,/ollamaModels/);
  assert.match(agent,/runFixed\('ollama',\['list'\],3500\)/);
  assert.match(agent,/albert_runtime_telemetry:true/);
@@ -37,7 +38,7 @@ test('APEX cockpit exposes verified local runtime details and direct navigation'
  assert.match(panel,/ALBERT WINDOWS LOCAL/);
  assert.match(panel,/localAlbert\.api_online/);
  assert.match(panel,/localAlbert\.apex_core/);
- assert.match(panel,/Core APEX :8766/);
+ assert.match(panel,/Core APEX :8767/);
  assert.match(panel,/localAlbert\.models/);
  assert.match(panel,/localAlbert\.modules/);
  assert.match(services,/albertRuntime===true/);

@@ -23,7 +23,9 @@ export function LuxuryProvider({ children }) {
   const [scene, setScene] = useState(null);
   const audio = useRef(null), activated = useRef(false), lastCue = useRef(0), serial = useRef(0), speaking = useRef(false);
   const policy = useMemo(() => experiencePolicy(options, device), [options, device]);
-  const [launching, setLaunching] = useState(() => !experiencePolicy(options, device).reduced);
+  // The cinematic sequence belongs to the introduction, not deep-linked app pages.
+  // Direct #accueil and #albert-3b links must show real content immediately.
+  const [launching, setLaunching] = useState(() => !experiencePolicy(options, device).reduced && (!window.location.hash || window.location.hash === '#intro'));
   const [revealing, setRevealing] = useState(false);
   const current = useRef(policy); current.current = policy;
 
