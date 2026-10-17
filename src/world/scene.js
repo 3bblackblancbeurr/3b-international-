@@ -25,7 +25,7 @@ import {LANDMARK_SITE} from './heritage.js';
 import * as THREE from 'three';
 import {loadWorldModels} from './models.js';
 import {createLivingActor} from './living.js';
-import {DEFAULT_ORBIT,restoreOrbit,rotateOrbit,zoomOrbit,orbitView} from './orbit.js';
+import {DEFAULT_ORBIT,IMMERSIVE_ORBIT,restoreOrbit,rotateOrbit,zoomOrbit,orbitView} from './orbit.js';
 import {createIndexedMotion,pointerStick,joystickProfile,sprintIntent,createQualityController,createMotionSmoother} from './motion.js';
 import {createFrameHealth,createFrameTimeline} from './frame-health.js';
 import {movementHeading} from './heading.js';
@@ -107,7 +107,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  const advanceMotion=createIndexedMotion();
  const movementFrame=createMovementFrame(),motionSmoother=createMotionSmoother(),gameplay=createGameplayMotion();
  let playFrame={lift:0,guard:0},freeEffectUntil=0;const freeEffectTarget=new THREE.Vector3();
- let orbit={...DEFAULT_ORBIT},orbitHeld=null,avatarKey='';try{orbit=restoreOrbit(JSON.parse(localStorage.getItem('3b-world-camera')));}catch{}
+ let orbit={...DEFAULT_ORBIT},orbitHeld=null,avatarKey='';try{const savedCamera=localStorage.getItem('3b-world-camera');orbit=savedCamera?restoreOrbit(JSON.parse(savedCamera)):region==='hub'?{...IMMERSIVE_ORBIT}:{...DEFAULT_ORBIT};}catch{}
  const rememberCamera=()=>{try{localStorage.setItem('3b-world-camera',JSON.stringify({...orbit,version:2}));}catch{}};const touchPoints=new Map();let pinchDistance=null;
  const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
  const hubScheduleClockKey=(date=new Date())=>`${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}-${date.getHours()}`;

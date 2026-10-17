@@ -1,0 +1,193 @@
+/* 3B MONDE — Scene-first visual pass.
+   Pure layout/paint: no extra WebGL postpasses, geometry or remote assets.
+   Only the active 3D game uses these styles; progression and hit targets remain intact. */
+.world-shell .world-vignette{
+ pointer-events:none;
+ background:linear-gradient(180deg,rgba(1,11,24,.40),rgba(3,16,28,.08) 24%,transparent 44%,transparent 73%,rgba(3,11,21,.22) 100%),
+ radial-gradient(ellipse 88% 90% at 50% 44%,transparent 62%,rgba(1,12,25,.17) 100%);
+}
+.world-shell .hub-hud .play-top{
+ z-index:12;gap:10px;
+}
+.world-shell .hub-hud .play-button{
+ width:44px;min-width:44px;height:44px;min-height:44px;
+ color:#f6ecd9;
+ background:linear-gradient(145deg,rgba(4,16,27,.88),rgba(11,33,43,.77));
+ border:1px solid rgba(210,183,127,.24);
+ box-shadow:0 6px 17px rgba(0,7,16,.3),inset 0 1px 0 rgba(255,239,194,.10);
+ backdrop-filter:none;
+}
+.world-shell .hub-hud .hub-help-trigger.is-newcomer{border-color:rgba(246,211,141,.77);color:#ffe1a5}
+.world-shell .hub-hud .play-button:focus-visible,
+.world-shell .hub-hud .hub-objective-toggle:focus-visible{
+ outline:2px solid #81dfff;outline-offset:3px;
+}
+.world-shell .hub-hud .world-district{
+ top:67px;max-width:min(46vw,520px);
+ padding:5px 16px;
+ font-weight:650;letter-spacing:.025em;
+ border:1px solid rgba(238,209,152,.19);
+ border-radius:999px;
+ color:#f4f1e7;
+ background:linear-gradient(90deg,rgba(5,19,31,.78),rgba(7,23,37,.61));
+ box-shadow:0 5px 14px rgba(0,8,17,.16);
+ backdrop-filter:none;
+}
+.world-shell .hub-hud .world-district small{color:#c0dbe1;font-weight:400}
+.world-shell .hub-hud .hub-mission-rail{
+ top:112px;width:min(320px,calc(100% - 265px));
+ max-height:calc(100svh - 207px);padding:0!important;gap:6px;align-content:start;
+ border-radius:0;background:transparent;
+ scrollbar-width:thin;scrollbar-color:rgba(211,185,127,.38) transparent;
+}
+.world-shell .hub-hud .hub-mission-rail>.hud-widget-close{
+ top:0;right:-39px;width:36px;height:36px;min-height:36px;
+ border:1px solid rgba(226,196,130,.27);color:#f5deac;
+ background:rgba(3,18,31,.74);opacity:.87;
+}
+.world-shell .hub-hud .hub-objective-card{
+ min-width:0;
+ padding:15px 18px 13px;
+ border:0;border-left:2px solid rgba(224,193,124,.86);
+ border-radius:0 16px 16px 0;
+ background:linear-gradient(95deg,rgba(2,13,24,.96) 1%,rgba(5,19,29,.89) 65%,rgba(6,20,30,.62) 100%);
+ box-shadow:0 13px 27px rgba(0,8,18,.27);
+ color:#f5ecd8;
+ backdrop-filter:none;
+}
+.world-shell .hub-hud .hub-objective-card.is-guiding{
+ border-color:#75cfe0;background:linear-gradient(105deg,rgba(2,25,34,.98),rgba(5,22,30,.76));
+}
+.world-shell .hub-hud .hub-objective-heading{gap:7px}
+.world-shell .hub-hud .hub-objective-heading>svg{color:#e8ca87}
+.world-shell .hub-hud .hub-objective-heading>small{
+ color:#ecd397;letter-spacing:.085em;text-transform:uppercase;font-size:9px;font-weight:750;
+}
+.world-shell .hub-hud .hub-objective-distance{
+ color:#d7e8e4;font-weight:700;font-variant-numeric:tabular-nums;font-size:11px;
+}
+.world-shell .hub-hud .hub-objective-card h2{
+ font:650 clamp(15px,1.5vw,19px)/1.28 Sora,Inter,system-ui,sans-serif;
+ margin:7px 0 6px;color:#f6edda;text-wrap:balance;letter-spacing:-.025em;
+}
+.world-shell .hub-hud .hub-objective-details p{line-height:1.45;color:#c1ced0}
+.world-shell .hub-hud .hub-objective-details .hub-objective-destination{color:#e0c78f}
+.world-shell .hub-hud .hub-objective-actions{margin-top:10px;gap:5px}
+.world-shell .hub-hud .hub-objective-actions button{
+ min-height:44px;min-width:44px;border-radius:11px;
+ border-color:rgba(207,181,128,.23);
+ background:rgba(13,33,45,.75);
+ color:#f4ecd9;
+}
+.world-shell .hub-hud .hub-objective-actions .hub-guide-primary{
+ background:linear-gradient(135deg,#f3dba7,#c8a15e);color:#17242a;
+ border-color:rgba(255,232,169,.9);box-shadow:inset 0 1px 0 #fff6d8;
+}
+.world-shell .hub-hud .hub-objective-disclosure{display:none}
+.world-shell .hub-hud .hub-evolution-chip{
+ padding:9px 13px 8px;gap:3px;
+ background:linear-gradient(90deg,rgba(3,15,27,.86),rgba(4,18,28,.39));
+ border:0;border-left:1px solid rgba(121,218,229,.65);
+ border-radius:0 12px 12px 0;box-shadow:none;backdrop-filter:none;
+}
+.world-shell .hub-hud .hub-evolution-chip small{color:#95b6bf}
+.world-shell .hub-hud .hub-evolution-chip strong{color:#edd29c}
+.world-shell .hub-hud .hub-evolution-chip span{color:#bdd0cf}
+.world-shell .hub-hud .world-minimap.hub-minimap{
+ top:110px;right:max(20px,env(safe-area-inset-right));
+ width:144px;height:auto;max-height:35svh;overflow:hidden;
+ border:1px solid rgba(211,185,130,.24);border-radius:14px;
+ background:rgba(4,18,32,.82);box-shadow:0 12px 27px rgba(0,8,18,.25);
+ opacity:.87;filter:none;backdrop-filter:none;
+}
+.world-shell .hub-hud .world-minimap.hub-minimap:hover,
+.world-shell .hub-hud .world-minimap.hub-minimap:focus-within{opacity:1}
+.world-shell .hub-hud .hub-minimap .minimap-heading,
+.world-shell .hub-hud .hub-minimap .minimap-footer{background:rgba(1,11,21,.70);border-color:rgba(222,193,131,.15)}
+.world-shell .hub-hud .hub-minimap .minimap-heading>span{color:#f2d99b}
+.world-shell .hub-hud .play-arrival{
+ top:21%;left:50%;width:min(590px,calc(100% - 370px));
+ text-shadow:0 6px 30px rgba(1,9,16,.85);
+}
+.world-shell .hub-hud .play-arrival h1{
+ font:500 clamp(29px,3.25vw,47px)/1.14 Georgia,serif;
+ letter-spacing:.015em;color:#f6e8c6;
+}
+.world-shell .hub-hud .play-arrival span{color:#f4d494;letter-spacing:.3em}
+.world-shell .hub-hud .play-interaction-cluster .play-interaction{
+ border-radius:12px;background:linear-gradient(100deg,rgba(5,24,37,.97),rgba(13,44,49,.9));
+ border:1px solid rgba(221,198,144,.57);box-shadow:0 10px 28px rgba(0,8,19,.32);
+ backdrop-filter:none;
+}
+.world-shell .hub-hud .play-interaction>span>span{color:#f8ecd6}
+.world-shell .hub-hud .play-profile{box-shadow:0 9px 24px rgba(0,8,18,.3);backdrop-filter:none}
+.world-shell .hub-hud.is-roaming .hub-evolution-chip{opacity:.25;transition:opacity .22s ease}
+@media(max-width:1100px){
+ .world-shell .hub-hud .hub-mission-rail{width:min(285px,calc(100% - 245px))}
+}
+@media(max-height:560px) and (orientation:landscape){
+ .world-shell .hub-hud .play-top{top:max(7px,env(safe-area-inset-top))}
+ .world-shell .hub-hud .world-district{
+  top:53px;max-width:calc(100% - 370px);padding:3px 10px;
+  font-size:9px;border-color:rgba(221,196,134,.13);
+ }
+ .world-shell .hub-hud .world-district small{font-size:9px}
+ .world-shell .hub-hud .hub-mission-rail{
+  top:73px;width:clamp(200px,29vw,252px);
+  max-height:none;overflow:visible;align-content:start;gap:5px;
+ }
+ .world-shell .hub-hud .hub-objective-card{
+  padding:9px 10px 8px;border-left-width:2px;
+  background:linear-gradient(90deg,rgba(1,12,23,.94),rgba(2,18,28,.70));
+  box-shadow:0 8px 18px rgba(0,8,17,.21);
+ }
+ .world-shell .hub-hud .hub-objective-card h2{
+  font:650 13px/1.2 Sora,Inter,system-ui,sans-serif;
+  margin:5px 0 4px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+  overflow:hidden;text-wrap:pretty;
+ }
+ .world-shell .hub-hud .hub-objective-heading>small{font-size:8px;letter-spacing:.06em}
+ .world-shell .hub-hud .hub-objective-distance{font-size:10px}
+ .world-shell .hub-hud .hub-objective-details{display:none}
+ .world-shell .hub-hud .hub-objective-disclosure-copy p{font-size:10px;margin:6px 0}
+ .world-shell .hub-hud .hub-objective-actions{margin-top:5px;gap:4px;position:relative;flex-wrap:wrap}
+ .world-shell .hub-hud .hub-objective-actions button{
+  padding:5px 7px;min-height:44px;min-width:40px;font-size:10px;
+ }
+ .world-shell .hub-hud .hub-objective-actions .hub-guide-primary{min-width:83px}
+ .world-shell .hub-hud .hub-objective-disclosure{display:block;position:relative;flex:0 0 auto;margin:0}
+ .world-shell .hub-hud .hub-objective-toggle{display:flex;align-items:center;gap:5px;min-height:44px;padding:0 5px;font-size:10px;font-weight:650;letter-spacing:.02em;color:#b7d8d9;cursor:pointer;list-style:none}
+ .world-shell .hub-hud .hub-objective-toggle::-webkit-details-marker{display:none}
+ .world-shell .hub-hud .hub-objective-toggle::after{content:'⌄';font-size:14px;line-height:1;color:#e6c885}
+ .world-shell .hub-hud .hub-objective-disclosure[open] .hub-objective-toggle::after{transform:rotate(180deg)}
+ .world-shell .hub-hud .hub-objective-disclosure[open] .hub-objective-disclosure-copy{position:absolute;top:calc(100% + 5px);right:0;width:min(260px,calc(100vw - 28px));max-height:calc(100svh - 155px);overflow:auto;z-index:30;padding:10px 13px;border:1px solid rgba(215,188,132,.36);border-radius:10px;background:rgba(2,16,28,.98);box-shadow:0 15px 35px rgba(0,5,15,.48)}
+ .world-shell .hub-hud .hub-guide-map{padding-inline:7px}
+ .world-shell .hub-hud .hub-evolution-chip{
+  padding:4px 9px;border-left-color:rgba(121,218,229,.43);opacity:.9;
+ }
+ .world-shell .hub-hud .hub-evolution-chip small,.world-shell .hub-hud .hub-evolution-chip em{display:none}
+ .world-shell .hub-hud .hub-evolution-chip strong{font-size:10px}
+ .world-shell .hub-hud .hub-evolution-chip span{display:block;font-size:9px}
+ .world-shell .hub-hud .hub-orientation-guide{padding:9px;max-height:calc(100svh - 145px);overflow:auto}
+ .world-shell .hub-hud .world-minimap.hub-minimap{
+  top:76px!important;right:max(12px,env(safe-area-inset-right));
+  width:98px!important;max-height:calc(100svh - 150px);opacity:.84;
+ }
+ .world-shell .hub-hud .hub-minimap .minimap-heading{min-height:23px;padding:1px 6px}
+ .world-shell .hub-hud .hub-minimap .minimap-footer{display:none}
+ .world-shell .hub-hud .play-arrival{left:50%;top:30%;width:calc(100% - 340px)}
+ .world-shell .hub-hud .play-arrival h1{font-size:24px}
+ .world-shell .hub-hud .play-interaction-cluster{max-width:calc(100% - 260px)}
+ .world-shell .hub-hud.is-roaming .hub-evolution-chip{opacity:0;pointer-events:none}
+ .world-shell .hub-hud.is-roaming .hub-objective-disclosure-copy{display:none}
+}
+/* Mobile GPU budget: avoid backdrop filters; no heavy faux-glass masks. */
+@media(pointer:coarse){
+ .world-shell .world-vignette{background:linear-gradient(180deg,rgba(2,12,23,.32),transparent 24%,transparent 79%,rgba(2,9,18,.16))}
+ .world-shell .hub-hud .hub-objective-card,
+ .world-shell .hub-hud .world-minimap.hub-minimap,
+ .world-shell .hub-hud .play-button{backdrop-filter:none;filter:none}
+}
+@media(prefers-reduced-motion:reduce){
+ .world-shell .hub-hud .hub-evolution-chip,.world-shell .hub-hud .world-minimap{transition:none!important}
+}
