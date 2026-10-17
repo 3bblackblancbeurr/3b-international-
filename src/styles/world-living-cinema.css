@@ -18,7 +18,8 @@
  radial-gradient(ellipse at 20% 5%,rgba(243,189,101,.14),transparent 52%)
 }
 .world3b-cinema-image{position:absolute;z-index:0;inset:0;overflow:hidden}
-.world3b-cinema-image img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 43%;opacity:.55;transform:scale(1.04)}
+.world3b-cinema-image img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 43%;opacity:.72;transform:scale(1.04)}
+.world3b-cinema-spotlight[data-realm=france] .world3b-cinema-image img{object-position:center 36%;opacity:.86}
 .world3b-cinema-horizon{position:absolute;inset:36% 0 0;background:linear-gradient(0deg,rgba(5,12,19,.76),transparent 60%),
  radial-gradient(ellipse at 70% 90%,rgba(247,192,101,.34),transparent 65%)}
 .world3b-cinema-copy{position:relative;z-index:2;min-width:0;max-width:760px}
@@ -109,8 +110,9 @@
 @media(max-width:720px){
  .world3b-cinema-spotlight{grid-template-columns:1fr;min-height:430px;margin:18px 0 28px;
    padding:24px 19px 61px;border-radius:var(--3b-world-radius-02)}
- .world3b-cinema-image img{object-position:58% center;opacity:.42}
- .world3b-cinema-spotlight::before{background:linear-gradient(115deg,rgba(2,10,20,.95),rgba(3,17,30,.78) 72%,rgba(3,14,25,.55))}
+ .world3b-cinema-image img{object-position:58% center;opacity:.7}
+ .world3b-cinema-spotlight[data-realm=france] .world3b-cinema-image img{object-position:54% 38%;opacity:.83}
+ .world3b-cinema-spotlight::before{background:linear-gradient(115deg,rgba(2,10,20,.88),rgba(3,17,30,.67) 72%,rgba(3,14,25,.32))}
  .world3b-cinema-overline{font-size:9px;letter-spacing:.1em}
  .world3b-cinema-count{margin-left:0}
  .world3b-cinema-copy h2{font-size:clamp(36px,8.5vw,51px);line-height:1.02}
