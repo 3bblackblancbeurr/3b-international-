@@ -69,8 +69,9 @@ test('page includes keyboard navigation, FAQ and product image alternatives', ()
 });
 
 test('application entry and sitemap expose the software page without opening the textile shop', () => {
-  assert.match(home, /id="home-software-title">Logiciels 3B/);
-  assert.match(home, /href="\/logiciels-3b\.html"/);
+  const nav=readFileSync(new URL('../src/components/AppNavigation.jsx',import.meta.url),'utf8');
+  assert.match(home,/ImmersiveWorldHome/);
+  assert.match(nav,/href="\/logiciels-3b\.html">Logiciels 3B/);
   assert.equal((sitemap.match(/<loc>https:\/\/3b-international\.vercel\.app\/logiciels-3b\.html<\/loc>/g) || []).length, 1);
   assert.doesNotMatch(home, /SHOP_ENABLED\s*=|SHOP_LIVE_APPROVED\s*=/);
 });

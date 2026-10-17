@@ -13,6 +13,7 @@ import "./styles/launch-premium.css";
 import "./styles/companion-premium.css";
 import "./styles/application-ui.css";
 import "./styles/home-aaa-animated.css";
+import "./styles/3b-presence-premium-v2.css";
 import { setupNativeApp } from './native/runtime.js';
 import { captureAppOpen } from './lib/analytics.js';
 import AppUpdateManager from "./update/AppUpdateManager.jsx";

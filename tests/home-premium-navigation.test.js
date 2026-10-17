@@ -15,15 +15,18 @@ test('home hides technical status cards and keeps the ecosystem guide at the bot
  assert.doesNotMatch(home,/heritage-poster|background\.png/);
  assert.doesNotMatch(home,/welcome-hero|Un héritage|Nos différences|Notre force|luxury-manifesto-line/);
  assert.doesNotMatch(home,/PRIMARY_IDS|L’essentiel|home-primary-directory/);
- assert.ok(home.indexOf('<WorldPortalCard') < home.indexOf('Les espaces 3B'));
- const guide=home.lastIndexOf('Le guide 3B');
- assert.ok(guide>home.indexOf('secondaryGroups.map'));
+ assert.match(home,/<ImmersiveWorldHome goTo=\{goTo\}/);
+ const immersive=readFileSync(new URL('../src/components/ImmersiveWorldHome.jsx',import.meta.url),'utf8');
+ assert.match(immersive,/th-world-screen/);
+ assert.match(immersive,/Ouvrir tous les univers 3B/);
+ assert.match(immersive,/th-world-quicknav/);
+ assert.doesNotMatch(home,/secondaryGroups\.map|universe-grid|WorldPortalCard/);
  assert.deepEqual(NAV_GROUPS.find(group=>group.title==='Identité & progression').ids,['passport','member']);
  assert.ok(account.includes('<MemberExperiences goTo={goTo} profile={profile}/>'));
  assert.match(app,/page === "loyalty" && <LoyaltyPage/);
  assert.deepEqual(NAV_GROUPS.find(group=>group.title==='Univers 3B').ids,['world3b','invisible','secret']);
  assert.doesNotMatch(home,/<InstallCards|dashboard-footer/);
- assert.match(home,/item.status!=='soon'/);
+ assert.match(nav,/itemsForCategory|searchNavigation/);
 });
 
 test('mobile navigation keeps an active destination instead of staged games',()=>{

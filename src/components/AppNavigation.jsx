@@ -8,6 +8,7 @@ import SecretClock from "../secret/SecretClock.jsx";
 import CompanionPresenceControl from '../companion/CompanionPresenceControl.jsx';
 import { PRINCIPAL_DESTINATIONS, availableCategories, categoryForPage, itemsForCategory, searchNavigation } from './navigation-menu.js';
 import '../styles/simple-navigation.css';
+import '../styles/immersive-navigation-v2.css';
 
 const ICONS = { albert:Sparkles, news: Newspaper, foodscan: ScanLine, association: HeartHandshake, partners: Handshake, finance: Landmark, travel: Plane, join: UsersRound, tv: Clapperboard, admin: FileText, cinema: Film, maintenant: Compass, health: HeartPulse, deals: BadgePercent, invisible: ScanLine, home: Home, passport: Fingerprint, loyalty: CreditCard, manga: BookOpen, world3b: Globe2, nosbloc: Boxes, games: Gamepad2, religion: BookOpen, guide: Compass, community: Users, secret: LockKeyhole, sport: Trophy, esports: Swords, ia: Sparkles, shop: ShoppingBag, member: UserRound };
 export function SectionIcon({ page, ...props }) {
@@ -182,7 +183,7 @@ export default function AppNavigation({ page, title, menuItems, goTo, secret, op
           {matching.length === 0 && <p className="app-menu-empty" role="status">Aucune rubrique trouvée. Essaie « monde », « passeport » ou « boutique ».</p>}
         </div>}
       </section>
-      <footer className="app-menu-footer"><RouteLink page="intro" goTo={navigate}>Revoir l’introduction</RouteLink><span>{online ? '3B International' : 'Hors ligne'}</span></footer>
+      <footer className="app-menu-footer"><RouteLink page="intro" goTo={navigate}>Revoir l’introduction</RouteLink><a href="/logiciels-3b.html">Logiciels 3B</a><span>{online ? '3B International' : 'Hors ligne'}</span></footer>
     </dialog>
   </>;
 }

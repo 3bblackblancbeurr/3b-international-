@@ -40,7 +40,10 @@ test('Jeux 3B contains Créer ma Ville, football and all historic games',()=>{
  assert.match(hub,/setCityOpen\(true\)/);
  assert.match(hub,/NexusCityGateway open/);
  assert.doesNotMatch(home,/city-essential-card|PassportNexus|cityOpen/);
- assert.match(home,/<WorldPortalCard goTo=\{goTo\}/);
+ assert.match(home,/<ImmersiveWorldHome goTo=\{goTo\}/);
+ const immersive=file('../src/components/ImmersiveWorldHome.jsx');
+ assert.match(immersive,/page="world3b"/);
+ assert.match(immersive,/page=\{id\}/);
 });
 test('16-18 e-sport has a routable deep link',()=>{
  const source=new URL('https://3b.example/#accueil');

@@ -1,3 +1,4 @@
+import {Button} from '../design-system/index.jsx';
 import {placementsFor,selectGarment} from './studio-options.js';
 import {useEffect,useRef,useState} from 'react';
 import {ArrowLeft,ArrowRight,Layers3,Shirt,Sparkles,Send,Download,Mic,Square,Check} from 'lucide-react';
@@ -7,6 +8,7 @@ import {ecosystem,ecosystemPublic} from '../lib/ecosystem.js';
 import CompactCard from '../components/CompactCard.jsx';
 import DesignPreview from './DesignPreview.jsx';
 import './studio.css';
+import VisualDirector3B from './VisualDirector3B.jsx';
 function useCapabilities(){const[caps,setCaps]=useState(null);useEffect(()=>{const c=new AbortController();ecosystemPublic('capabilities',{signal:c.signal}).then(setCaps).catch(()=>setCaps({}));return()=>c.abort();},[]);return caps;}
 function readDraft(){try{const saved=JSON.parse(localStorage.getItem('3b-studio-config')||'null');return saved?{design:validateDesign(saved.design||saved),idea:typeof saved.idea==='string'?saved.idea.slice(0,2000):''}:{design:DEFAULT_DESIGN,idea:''};}catch{return {design:DEFAULT_DESIGN,idea:''};}}
 function GroupOptions({groups}){return Object.entries(groups).map(([label,options])=><optgroup label={label} key={label}>{options.map(x=><option key={x}>{x}</option>)}</optgroup>);}
@@ -36,6 +38,8 @@ function TrioChat({goTo,caps}){
 }
 export default function AiPage({page,goTo}){
  const caps=useCapabilities(),textile=page==='ia-textile',trio=page==='ia-trio',detail=textile||trio;
- return <section className="editorial-page studio-page">{detail&&<button className="quiet-button" onClick={()=>goTo('ia')}><ArrowLeft size={16}/>Espace IA</button>}<div className="editorial-heading"><p className="eyebrow">L’INTELLIGENCE AU SERVICE DES IDÉES</p><h1>{textile?'L’atelier 3B.':trio?'Mode 3 IA.':'Imagine la suite.'}</h1><p>{textile?'Une pièce. Ton style. Trois étapes.':trio?'Écris ou parle. On s’occupe de la suite.':'Deux entrées simples pour créer et avancer.'}</p></div>{!detail&&<div className="compact-list"><CompactCard title="IA textile" eyebrow="ATELIER & CRÉATIONS" description="Vêtements, sacs et accessoires. Crée ton concept en trois étapes." icon={<Shirt size={25}/>} onClick={()=>goTo('ia-textile')}/><CompactCard title="Mode 3 IA" eyebrow="TON ASSISTANT" description="Pose ta question. GPT, Claude et Gemini sont intégrés automatiquement." icon={<Layers3 size={25}/>} onClick={()=>goTo('ia-trio')}/></div>}{textile&&<TextileStudio goTo={goTo} caps={caps}/>} {trio&&<TrioChat goTo={goTo} caps={caps}/>}</section>;
+ const [visualOpen,setVisualOpen]=useState(false);
+ if(!detail&&visualOpen)return <VisualDirector3B onClose={()=>setVisualOpen(false)}/>;
+ return <section className="editorial-page studio-page">{detail&&<Button variant="ghost" className="quiet-button" onClick={()=>goTo('ia')}><ArrowLeft size={16}/>Espace IA</Button>}<div className="editorial-heading"><p className="eyebrow">L’INTELLIGENCE AU SERVICE DES IDÉES</p><h1>{textile?'L’atelier 3B.':trio?'Mode 3 IA.':'Imagine la suite.'}</h1><p>{textile?'Une pièce. Ton style. Trois étapes.':trio?'Écris ou parle. On s’occupe de la suite.':'Deux entrées simples pour créer et avancer.'}</p></div>{!detail&&<><div className="compact-list"><CompactCard title="IA textile" eyebrow="ATELIER & CRÉATIONS" description="Vêtements, sacs et accessoires. Crée ton concept en trois étapes." icon={<Shirt size={25}/>} onClick={()=>goTo('ia-textile')}/><CompactCard title="Mode 3 IA" eyebrow="TON ASSISTANT" description="Pose ta question. GPT, Claude et Gemini sont intégrés automatiquement." icon={<Layers3 size={25}/>} onClick={()=>goTo('ia-trio')}/></div><div className="vd3b-entry"><div><span>STUDIO CRÉATIF · NOUVEAU</span><strong>La bibliothèque visuelle 3B</strong><p>Des directions artistiques pour ton Monde 3B, Albert, jeux, cuisine, boutique et réseaux.</p></div><Button variant="ghost" type="button" onClick={()=>setVisualOpen(true)}>Explorer les visuels <ArrowRight size={18}/></Button></div></>}{textile&&<TextileStudio goTo={goTo} caps={caps}/>} {trio&&<TrioChat goTo={goTo} caps={caps}/>}</section>;
 }
 
