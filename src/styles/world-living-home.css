@@ -378,3 +378,22 @@ html[data-experience-quality="economical"] .world3b-globe-aura {
 html[data-experience-quality="economical"] .albert3b-sculpted-avatar .albert3b-portrait-svg {
  filter:none!important
 }
+
+/* On-device favourite shortcuts, never a claimed AI-generated recommendation. */
+.albert3b-local-favorites{margin:21px 0 4px;padding:16px;border-radius:var(--3b-world-radius-08);
+ border:1px solid rgba(229,188,118,.3);
+ background:radial-gradient(ellipse at top right,rgba(176,130,57,.13),transparent 64%),
+ linear-gradient(125deg,rgba(12,41,62,.76),rgba(6,17,30,.91))}
+.albert3b-local-favorites h3{font:500 clamp(19px,2vw,24px)/1.22 Georgia,'Times New Roman',serif;color:var(--wl-gold-bright);margin:7px 0 13px}
+.albert3b-local-favorite-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.albert3b-local-favorite-links a{display:flex;gap:7px;align-items:center;justify-content:space-between;min-width:0;
+ color:rgba(247,242,230,.96)!important;min-height:46px;font-weight:800;font-size:12px;line-height:1.35;
+ padding:10px 11px;border:1px solid rgba(150,194,213,.37);border-radius:var(--3b-world-radius-01);
+ background:linear-gradient(115deg,rgba(9,42,68,.92),rgba(12,24,38,.97));overflow-wrap:anywhere}
+.albert3b-local-favorite-links a:hover{border-color:rgba(255,213,146,.9)}
+.albert3b-local-favorite-links svg{color:var(--wl-gold-bright);flex-shrink:0}
+.albert3b-local-favorites p{font-size:10px;line-height:1.62;margin:11px 0 0;color:rgba(182,206,224,.85)}
+@media(max-width:370px){
+ .albert3b-local-favorites{padding:13px}
+ .albert3b-local-favorite-links{grid-template-columns:1fr}
+}
