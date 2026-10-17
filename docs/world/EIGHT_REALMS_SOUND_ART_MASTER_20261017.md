@@ -1,5 +1,5 @@
 # Monde du 3B — Dossier de livraison Audio & Décors Master
-Date : 17 octobre 2026 · base GitHub `e742986` · branche `feat/world-eight-realms-audio-master-20261017`
+Date : 17 octobre 2026 · base GitHub `8d9c41c` (Albert APEX V3 inclus) · branche `feat/world-eight-realms-audio-master-20261017`
 
 ## Objectif produit
 Une expérience qui mérite un rendez-vous professionnel : stabilité, lisibilité des scènes, son vivant, valeur du gameplay et preuves de fonctionnement **dans le moteur réel**. Les huit royaumes sont une fiction respectueuse des pays d'inspiration. L'objectif est de renforcer le jeu déjà en place, pas de vendre des images conceptuelles comme une preuve AAA.
@@ -9,6 +9,7 @@ Une expérience qui mérite un rendez-vous professionnel : stabilité, lisibilit
 - Les **neuf motifs 3B existants** sont conservés et complétés par une réponse musicale douce en exploration. Intensité adaptée à la nuit, la pluie, l'intérieur, le combat et les Gardiens.
 - Transitions liées à la position du personnage, au jour/nuit et à la météo. Les sons ne sont activés que si le joueur accepte l'audio ; le bouton muet interrompt tout. Aucun téléchargement de banque de sons, publicité, achat ou modèle vocal obligatoire.
 - **Quatre boucles ambiantes maximum** (1 lit sonore général + 3 lieux voisins), en réutilisant le moteur Web Audio existant et ses procédures de destruction.
+- Les scénarios de vérification savent générer deux familles de prévisualisations **cinématique** et **exploration**, entièrement en local sur le PC, sans base de morceaux externe.
 - Bruits de pas variables en ville, terre, forêt/montagne et intérieur. Aucune influence sur les dégâts, récompenses ou états serveur.
 - **Deux nouveaux groupes de détails 3D instanciés** dans les huit territoires : textiles non figuratifs de leur palette propre et lanternes réagissant à la luminosité. Le mode Fluide réduit ces objets, sans point lumineux 3D ajouté.
 - Aucun changement d'identité de membre, de sauvegarde, de monnaie ou de Passeport.
