@@ -6,6 +6,8 @@ import {FRANCE_INVESTIGATION_STATIONS,franceInvestigationObjective} from '../src
 import {blankCampaignState} from '../src/world/campaign-state.js';
 import {campaignSnapshot} from '../src/world/campaign-runtime.js';
 import {obstacleDistance} from '../src/world/collision.js';
+import {realmCivilianRoadItems,realmStaticObstacles} from '../src/world/realm-layout.js';
+import {createCivilianRoutes,civilianRoutePoint} from '../src/world/ambient-civilian-routes.js';
 
 const phases=['rumor','evidence','coordination','memory','value','guardian','homecoming','post'];
 function save({completed=[],step=0,effects=[],inventory={},...extra}={}){
@@ -40,6 +42,9 @@ test('all interaction approaches and both plates remain free of physical furnitu
  for(const row of FRANCE_INVESTIGATION_STATIONS.filter(row=>row.kind!=='plateau')){
   assert.ok(scene.collisions.some(obstacle=>obstacleDistance({x:row.position.x,z:row.position.z-4.8},obstacle)<0),'solid tables have colliders');
  }
+ const routes=createCivilianRoutes(realmCivilianRoadItems('france'),{obstacles:[...realmStaticObstacles('france'),...scene.collisions]});
+ assert.ok(routes.length>0);
+ for(const route of routes)for(let sample=0;sample<=20;sample++)assert.ok(scene.collisions.every(obstacle=>obstacleDistance(civilianRoutePoint(route,sample/20),obstacle)>.85),'resident aisles yield to the same furniture');
  scene.dispose();
 });
 
