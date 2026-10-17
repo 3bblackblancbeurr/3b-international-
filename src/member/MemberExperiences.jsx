@@ -6,6 +6,7 @@ import './member-experiences.css';
 const OfficialDirectory = React.lazy(() => import('./OfficialDirectory.jsx'));
 const FrenchEvents = React.lazy(() => import('./FrenchEvents.jsx'));
 const CinemaFinder = React.lazy(() => import('./CinemaFinder.jsx'));
+const FinanceStudio = React.lazy(() => import('../finance/FinanceStudio.jsx'));
 
 
 const ICONS = {wallet: WalletCards, globe:Globe2, heart:HeartHandshake, handshake:Handshake, landmark:Landmark, plane:Plane, users:UsersRound, tv:Clapperboard, file:FileText, film:Film};
@@ -143,9 +144,12 @@ export default function MemberExperiences({goTo,profile,initialSpace='loyalty'})
         </>}
 
         {active==='finance'&&<>
-          <SectionIntro eyebrow="BANQUE & CRYPTO" title="S’informer avant d’engager son argent.">Retrouve des outils d’éducation financière et les autorités qui contrôlent les établissements. 3B ne conserve pas de fonds, ne réalise pas de transactions crypto et ne délivre pas de conseil en investissement.</SectionIntro>
-          <SourceRows rows={FINANCE_GUIDES}/>
-          <p className="mx-honesty"><LockKeyhole size={16}/> Les fonctionnalités de comptes, virements, achat/vente et portefeuille nécessiteraient un partenaire autorisé, une conformité réglementaire et une intégration de sécurité distincte.</p>
+          <React.Suspense fallback={<p role="status" className="mx-status">Ouverture du laboratoire financier 3B…</p>}><FinanceStudio/></React.Suspense>
+          <details className="mx-admin-guides"><summary>Comprendre la finance et vérifier les organismes <ArrowRight size={17} aria-hidden="true"/></summary>
+            <p>3B ne conserve pas de fonds, ne réalise pas de transactions crypto et ne délivre pas de conseil en investissement.</p>
+            <SourceRows rows={FINANCE_GUIDES}/>
+            <p className="mx-honesty"><LockKeyhole size={16}/> Les services financiers réels nécessiteraient un partenaire autorisé, une conformité réglementaire et une intégration de sécurité distincte.</p>
+          </details>
         </>}
 
         {active==='travel'&&<>

@@ -1,4 +1,4 @@
-// Browser QA for 3B Concept 13 satellite atlas, no synthetic users or writes.
+// Browser QA for the scrollable 3B Concept 13 atlas, no synthetic users or writes.
 import assert from 'node:assert/strict';
 import {createServer} from 'vite';
 import {mkdir,writeFile} from 'node:fs/promises';
@@ -11,6 +11,23 @@ const origin='http://127.0.0.1:5312',out=process.env.APP_EXPERIENCE_QA_OUT||'/tm
 await mkdir(out,{recursive:true});
 const errors=[],checks=[];
 const check=(name,value)=>{assert.ok(value,name);checks.push(name);console.log('PASS',name);};
+async function controlsRemainReachable(controls){
+ const blocked=[];
+ for(let index=0;index<await controls.count();index++){
+  const control=controls.nth(index);
+  const label=await control.getAttribute('aria-label')||await control.textContent();
+  if(!await control.isVisible()){blocked.push(label+' (hidden)');continue;}
+  await control.evaluate(el=>el.scrollIntoView({block:'center',inline:'nearest',behavior:'instant'}));
+  const usable=await control.evaluate(el=>{
+   const bounds=el.getBoundingClientRect(),x=bounds.left+bounds.width/2,y=bounds.top+bounds.height/2;
+   const hit=document.elementFromPoint(x,y);
+   return bounds.width>0&&bounds.height>0&&x>=0&&x<innerWidth&&y>=0&&y<innerHeight&&Boolean(hit&&(hit===el||el.contains(hit)));
+  });
+  if(!usable)blocked.push(label+' (clipped or covered)');
+ }
+ assert.deepEqual(blocked,[],'Controls must remain reachable after scrolling');
+ return true;
+}
 try{
  const ctx=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:'reduce'});
  await ctx.route('**/*',route=>{
@@ -27,18 +44,26 @@ try{
  await page.goto(origin+'/#accueil',{waitUntil:'domcontentloaded',timeout:45000});
  const home=page.locator('.atlas3b');await home.waitFor({state:'visible'});
  check('Atlas concept 13 replaces old framed card directory',await home.isVisible()&&await page.locator('.home-app-hub,.world3b-legacy-archive').count()===0);
- check('Night map loads from local assets',await home.locator('.atlas3b-earth-photo').evaluate(e=>e.complete&&e.naturalWidth>0));
+ await page.waitForFunction(()=>{const image=document.querySelector('.atlas3b-earth-photo');return image?.complete&&image.naturalWidth>0;});
+ check('World artwork loads from local assets',await home.locator('.atlas3b-earth-photo').evaluate(e=>e.complete&&e.naturalWidth>0&&new URL(e.currentSrc).origin===location.origin));
  check('All 22 routes and eight realms remain discoverable',await home.locator('.atlas3b-module-link').count()===22&&await home.locator('.atlas3b-realm').count()===8);
  check('Reduced motion disables animated flight paths',await home.locator('.atlas3b-flight-line').first().evaluate(e=>getComputedStyle(e).animationName==='none'));
- check('Decorative routes do not fabricate live users or hubs',await home.locator('.atlas3b-attribution').innerText().then(s=>s.includes('pas de hubs actifs')));
- await page.screenshot({path:path.join(out,'atlas-reduced-390.png'),animations:'disabled'});
+ check('Artwork identifies AI provenance and illustrative connections',await home.locator('.atlas3b-attribution').innerText().then(s=>s.includes('Création visuelle IA')&&s.includes('Connexions illustratives')));
+ await page.screenshot({path:path.join(out,'atlas-reduced-390.png'),animations:'disabled',fullPage:true});
  await page.emulateMedia({reducedMotion:'no-preference'});
+ await page.waitForFunction(()=>{const flight=document.querySelector('.atlas3b-flight-line');return flight&&getComputedStyle(flight).animationName==='atlas3b-route-flow';});
  check('Flight paths can animate only when user allows motion',await home.locator('.atlas3b-flight-line').first().evaluate(e=>getComputedStyle(e).animationName==='atlas3b-route-flow'));
  for(const width of [390,320]){
   await page.setViewportSize({width,height:844});
-  check('Atlas layout fits '+width,await home.evaluate(el=>el.scrollWidth<=el.clientWidth+1&&document.documentElement.scrollHeight<=innerHeight+3));
+  check('Atlas scrolls vertically without horizontal overflow '+width,await home.evaluate(el=>{
+   const bounds=el.getBoundingClientRect();
+   return el.scrollWidth<=el.clientWidth+1&&document.documentElement.scrollWidth<=innerWidth+1&&document.body.scrollWidth<=innerWidth+1&&bounds.height>innerHeight&&document.documentElement.scrollHeight>innerHeight&&el.scrollHeight<=bounds.height+2;
+  }));
   check('Header button stays available '+width,await home.getByRole('button',{name:'Ouvrir le menu général 3B'}).isVisible());
-  await page.screenshot({path:path.join(out,'atlas-'+width+'.png'),animations:'disabled'});
+  check('Header, map and dock controls stay reachable after scrolling '+width,await controlsRemainReachable(home.locator('.atlas3b-header button:visible,.atlas3b-header a:visible,.atlas3b-find input,.atlas3b-tabs [role="tab"],.atlas3b-map-pin,.atlas3b-dock a,.atlas3b-dock button')));
+  check('All module links and favorite controls stay reachable after scrolling '+width,await controlsRemainReachable(home.locator('.atlas3b-module-link,.atlas3b-favorite')));
+  await page.evaluate(()=>scrollTo({top:0,behavior:'instant'}));
+  await page.screenshot({path:path.join(out,'atlas-'+width+'.png'),animations:'disabled',fullPage:true});
  }
  await home.getByRole('tab',{name:'Hubs 3B'}).click();
  check('Hubs tab is honest about future projects',await home.getByText(/Aucun lieu physique 3B/).isVisible());
