@@ -108,13 +108,17 @@ test('opening cinematic starts low over water before revealing the hub skyline',
  assert.match(camera,/waterReveal\?\.80:\.72/);
 });
 
-test('quality selector exposes clear performance tiers while preserving legacy technical values',()=>{
+test('world graphics are automatic without a manual Pause selector or stale preference',()=>{
  const page=read('src/world/WorldPage.jsx');
  const settings=read('src/world/WorldSettingsPanel.jsx');
- assert.match(page,/onQuality=\{changeQuality\}/);
- assert.match(settings,/value="fluid">Fluide/);
- assert.match(settings,/value="auto">Adaptative/);
- assert.match(settings,/value="detail">Détaillée/);
+ const scene=read('src/world/scene.js');
+ assert.match(page,/localStorage\.removeItem\('3b-world-quality'\)/);
+ assert.doesNotMatch(page,/localStorage\.getItem\('3b-world-quality'\)|onQuality=|setQuality\(quality\)/);
+ assert.doesNotMatch(settings,/onQuality|id="world-quality"|<option value="fluid">|<option value="detail">/);
+ assert.match(settings,/<summary>Audio<\/summary>/);
+ assert.match(settings,/Qualité graphique ajustée automatiquement/);
+ assert.match(scene,/createQualityController\('auto',\{targetFps:/);
+ assert.match(scene,/quality\.sampleFrames\(frames,frameTime/);
 });
 
 

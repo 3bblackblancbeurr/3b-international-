@@ -7,7 +7,11 @@ import {AVATAR_PATHS} from '../world/avatar-rules.js';
 export function ArenaStage({state,side=0,cardId,avatar,focus='body',pose='idle',angle=null,cinematic=null}){
  const ref=useRef(null),liveState=useRef({state,side,cardId,avatar,focus,pose,angle,cinematic}),[error,setError]=useState('');liveState.current={state,side,cardId,avatar,focus,pose,angle,cinematic};
  useEffect(()=>{
-  const canvas=ref.current;let lowPower=false;try{lowPower=localStorage.getItem('3b-world-quality')==='fluid';}catch{}
+  const canvas=ref.current;
+  // This small character preview chooses its own budget; no old manual world setting.
+  const coarsePointer=window.matchMedia('(pointer: coarse)').matches;
+  const deviceMemory=Number(navigator.deviceMemory),cores=Number(navigator.hardwareConcurrency);
+  const lowPower=coarsePointer&&((deviceMemory>0&&deviceMemory<=4)||(cores>0&&cores<=4));
   let renderer;try{renderer=new THREE.WebGLRenderer({canvas,antialias:!lowPower,alpha:true,powerPreference:lowPower?'low-power':'high-performance'});}catch{setError('La 3D est indisponible sur ce navigateur. Les textes et les commandes restent accessibles.');return;}
   const library=createLivingLibrary(),scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(38,1,.05,110),geometry=[],materials=[];
   renderer.setPixelRatio(Math.min(devicePixelRatio||1,lowPower?1:1.5));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.24;renderer.shadowMap.enabled=!lowPower;renderer.shadowMap.type=THREE.PCFShadowMap;
