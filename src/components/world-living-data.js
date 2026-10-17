@@ -10,23 +10,23 @@ export const WORLD_MODULE_GROUPS = Object.freeze([
 
 export const WORLD_MODULES = Object.freeze([
  {id:'deals',label:'3B Bons Plans',group:'daily',icon:'badge-percent',aliases:['bons plans','offres','reductions']},
- {id:'health',label:'Santé',group:'daily',icon:'heart-pulse',aliases:['sante','bien etre','nutrition','pas','recettes']},
+ {id:'health',label:'Santé',group:'daily',icon:'heart-pulse',aliases:['sante','bien etre','nutrition','pas','recettes','cuisine','cuisiner','pedomètre','compteur de pas']},
  {id:'religion',label:'3B Religion',group:'daily',icon:'book-open',aliases:['religion','islam','christianisme','judaisme','arbre']},
  {id:'invisible',label:'Monde caché',group:'daily',icon:'eye',aliases:['secret','realite augmentee','monde cache']},
  {id:'world3b',label:'Monde du 3B',group:'daily',icon:'globe-2',aliases:['royaumes','kais','monde 3b']},
  {id:'sport',label:'Sport 3B',group:'play',icon:'trophy',aliases:['sport','football','foot']},
  {id:'manga',label:'Manga 3B',group:'play',icon:'book-image',aliases:['manga','anime']},
- {id:'games',label:'Jeux 3B',group:'play',icon:'gamepad-2',aliases:['jeux','jouer','creer ma ville']},
+ {id:'games',label:'Jeux 3B',group:'play',icon:'gamepad-2',aliases:['jeux','jeu','jeux video','jouer','creer ma ville']},
  {id:'esports',label:'16-18 E-sport',group:'play',icon:'headphones',aliases:['esport','e-sport','gaming','competition','recrutement joueur']},
  {id:'passport',label:'Passeport 3B',group:'member',icon:'id-card',aliases:['passeport','identite']},
  {id:'member',label:'Espace membre',group:'member',icon:'user-round',aliases:['membre','compte','connexion']},
  {id:'loyalty',label:'Carte de fidélité',group:'member',icon:'credit-card',aliases:['fidelite','carte']},
- {id:'shop',label:'Boutique',group:'member',icon:'shopping-bag',aliases:['boutique','vetements','hoodie']},
+ {id:'shop',label:'Boutique',group:'member',icon:'shopping-bag',aliases:['boutique','vetements','hoodie','shopping']},
  {id:'community',label:'Communauté',group:'member',icon:'users',aliases:['communaute','membres','entraide']},
  {id:'ia',label:'Espace tactile IA',group:'member',icon:'sparkles',aliases:['textile','ia','creation textile']},
  {id:'news',label:'Info Actu',group:'daily',icon:'newspaper',aliases:['actualites','actualite','informations','evenements']},
  {id:'association',label:'Association 3B',group:'business',icon:'hand-heart',aliases:['association','solidarite']},
- {id:'partners',label:'Partenaires',group:'business',icon:'handshake',aliases:['partenaires','collaboration','collaborations']},
+ {id:'partners',label:'Partenaires',group:'business',icon:'handshake',aliases:['partenaires','partenaire','collaboration','collaborations']},
  {id:'finance',label:'Banque & crypto',group:'business',icon:'landmark',aliases:['banque','crypto','finance']},
  {id:'travel',label:'Voyage 3B',group:'business',icon:'plane',aliases:['voyage','pays','destinations','tourisme']},
  {id:'tv',label:'3B ORIGINS TV',group:'play',icon:'clapperboard',aliases:['television','origins tv','chaine tv','video']},
@@ -80,29 +80,34 @@ export function findWorldModules({query='',category='all',favorites=[]}={}){
  });
 }
 
+// Keep Albert's navigation deterministic: full words or clear French inflections
+// match, never incidental substrings (notably "ia" inside "social" or "pas" in "je ne sais pas").
 export function findAlbertDestination(input){
- const query=normalizeWorldSearch(input);
- if(!query)return null;
- const extra=[
-  {id:'foodscan',label:'Scanner alimentaire',aliases:['scanner alimentaire','aliment','code barre','allergene']},
-  {id:'cinema',label:'Cinéma 3B',aliases:['cinema','film','streaming']},
-  {id:'join',label:'Nous recherchons',aliases:['nous recherchons','offre emploi','recherche joueur','recrutement']},
-  {id:'maintenant',label:'3B Maintenant',aliases:['boussole','aujourd hui','maintenant','coup de main']},
+ const query=normalizeWorldSearch(input).slice(0,300);
+ const words=query.split(/[^a-z0-9]+/).filter(Boolean);
+ if(!words.length)return null;
+ const candidates=[
+  ...WORLD_MODULES,
+  ...WORLD_MORE_SERVICES.filter(item=>item.id!=='secret'),
   {id:'albert',label:'Albert APEX',aliases:['albert']},
+  {id:'ia-trio',label:'Mode 3 IA',aliases:['chatbot','assistant conversationnel','conversation ia','parler a une ia','intelligence artificielle']}
  ];
- const candidates=[...WORLD_MODULES,...extra];
- const words=query.split(/\s+/).filter(Boolean);
  let best=null,score=0;
  for(const mod of candidates){
-  const aliases=[mod.label,mod.id,...mod.aliases].map(normalizeWorldSearch);
   let next=0;
-  for(const alias of aliases){
-   if(alias && (query===alias || query.includes(alias)))next=Math.max(next,alias.length+20);
-   else if(alias.length>3 && words.every(word=>alias.includes(word)))next=Math.max(next,words.join('').length);
+  for(const alias of [mod.label,mod.id,...(mod.aliases||[])]){
+   const terms=normalizeWorldSearch(alias).split(/[^a-z0-9]+/).filter(Boolean);
+   if(!terms.length)continue;
+   // "pas" is often a negation. Only route it to the step counter in a walking context.
+   if(terms.length===1&&terms[0]==='pas'&&words.length>1&&!words.some(word=>['mes','compteur','nombre','suivi','marche','marcher','mesurer','pedomètre','podometre'].includes(word)))continue;
+   const matches=terms.every(term=>words.some(word=>word===term||(term.length>=5&&word.startsWith(term)&&word.length-term.length<=4)));
+   if(!matches)continue;
+   const exact=words.join(' ')===terms.join(' ');
+   next=Math.max(next,terms.join('').length+(terms.length>1?10:0)+(exact?30:0));
   }
   if(next>score){score=next;best=mod;}
  }
- return best&&score>=3?{id:best.id,label:best.label}:null;
+ return best?{id:best.id,label:best.label}:null;
 }
 
 export function albertLocalGuideAnswer(input){
