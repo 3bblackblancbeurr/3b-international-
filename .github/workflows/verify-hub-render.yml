@@ -10,6 +10,7 @@ on:
       - 'scripts/verify-world-master-combat-browser.mjs'
       - 'scripts/verify-world-adaptive-quality-browser.mjs'
       - 'scripts/verify-realm-journey-browser.mjs'
+      - 'scripts/verify-france-investigation-browser.mjs'
       - 'scripts/verify-eight-realms-browser.mjs'
       - 'scripts/verify-route-planner-browser.mjs'
       - '.github/workflows/verify-hub-render.yml'
@@ -74,7 +75,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [gestures, journey, routes, audio, quality]
+        suite: [gestures, journey, routes, audio, quality, investigation]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
@@ -99,6 +100,11 @@ jobs:
         run: node scripts/verify-route-planner-browser.mjs
         env:
           ROUTE_PLANNER_OUT: artifacts/realm-gameplay/routes
+      - name: Play France evidence on desktop and touch without pausing the world
+        if: matrix.suite == 'investigation'
+        run: node scripts/verify-france-investigation-browser.mjs
+        env:
+          FRANCE_INVESTIGATION_OUT: artifacts/realm-gameplay/investigation
       - name: Check real WebAudio touch unlock, silence and resume
         if: matrix.suite == 'audio'
         run: node scripts/verify-world-audio-browser.mjs
