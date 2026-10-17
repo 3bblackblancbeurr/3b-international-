@@ -35,7 +35,7 @@ jobs:
         run: node scripts/verify-world-master-combat-browser.mjs
         env:
           MASTER_COMBAT_OUT: ${{ runner.temp }}/world-master-combat
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         if: always()
         with:
           name: world-master-combat
@@ -62,7 +62,7 @@ jobs:
         run: node scripts/verify-hub-master-browser.mjs
         env:
           HUB_MASTER_OUT: artifacts/hub-interface/master-ui
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         if: always()
         with:
           name: playable-hub-interface
@@ -109,7 +109,7 @@ jobs:
         run: node scripts/verify-world-adaptive-quality-browser.mjs
         env:
           QUALITY_OUT: artifacts/realm-gameplay/quality
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         if: always()
         with:
           name: playable-realm-gameplay-${{ matrix.suite }}
@@ -144,7 +144,7 @@ jobs:
         env:
           EIGHT_REALMS_REGIONS: ${{ matrix.regions }}
           EIGHT_REALMS_OUT: artifacts/eight-realms/${{ matrix.group }}
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         if: always()
         with:
           name: eight-realms-terrain-${{ matrix.group }}
@@ -199,7 +199,7 @@ jobs:
           WORLD_ART_QUALITY: ${{ matrix.quality }}
           WORLD_ART_CLOCK: ${{ matrix.clock }}
           WORLD_ART_OUT: artifacts/hub-${{ matrix.view }}
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         if: always()
         with:
           name: playable-hub-${{ matrix.view }}
