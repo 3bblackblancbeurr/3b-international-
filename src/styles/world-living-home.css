@@ -179,6 +179,12 @@
 }
 @media(max-width:720px) and (pointer:coarse){
  .world-living-globe-canvas{filter:none}
+ /* Keep premium blue/gold lighting without costly full-frame blur on phones. */
+ .world3b-globe-aura{
+  filter:none;opacity:1;
+  background:radial-gradient(circle,rgba(34,117,211,.26),rgba(34,117,211,0) 74%)
+ }
+ .albert3b-avatar-halo{filter:none;opacity:.65}
 }
 @media(max-width:720px){
  .world3b-home,.albert3b-experience{padding:14px 12px 45px}
