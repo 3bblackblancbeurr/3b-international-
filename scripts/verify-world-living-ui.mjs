@@ -76,6 +76,8 @@ try{
    check('Phone globe caps raster density '+width,globeBudget.bitmapWidth<=globeBudget.cssWidth*1.3+3);
    check('Phone globe receives intended touch/display styles '+width,globeBudget.touchAction==='none'&&globeBudget.display==='block');
    check('Phone globe avoids filtered canvas compositing '+width,globeBudget.filter==='none');
+    const globeAura=await home.locator('.world3b-globe-aura').evaluate(el=>({filter:getComputedStyle(el).filter,background:getComputedStyle(el).backgroundImage}));
+    check('Mobile globe halo renders without expensive blur '+width,globeAura.filter==='none'&&globeAura.background.includes('radial-gradient'));
   }
   const overflow=await home.evaluate(el=>{
    const root=el.getBoundingClientRect();
@@ -109,6 +111,10 @@ try{
   await page.locator('.albert3b-experience').waitFor({state:'visible'});
   check('Concierge uses unobstructed local navigation '+width,await page.locator('.albert3b-local-dock').isVisible() && await page.locator('.mobile-navigation').isHidden());
   check('Floating companion does not cover Albert conversation '+width,await page.locator('.companion3b-shell').count()===0);
+   if(width<720){
+    const avatarHaloFilter=await page.locator('.albert3b-avatar-halo').evaluate(el=>getComputedStyle(el).filter);
+    check('Mobile Albert avatar renders without blur filter '+width,avatarHaloFilter==='none');
+   }
   check('Albert route is reachable '+width,true);
   await page.screenshot({path:path.join(out,'albert-'+width+'.png'),fullPage:true,animations:'disabled',scale:'css',timeout:60000});
   if(width===390){
