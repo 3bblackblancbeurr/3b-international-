@@ -79,6 +79,8 @@ import {hubMissionReward} from './hub/mission-catalog.js';
 import './hub/hub-master.css';
 import {activeCampaignSnapshot} from './campaign-runtime.js';
 import {CampaignDialog,CampaignChallenge,RealmJournal,RealmTravelPanel} from './RealmJourney.jsx';
+import {FranceFieldInteraction} from './FranceFieldInteraction.jsx';
+import {franceFieldInteraction} from './france-field-interaction.js';
 
 function Modal({title,onClose,children,wide=false,kind}){
  const ref=useRef(null),closeRef=useRef(null);
@@ -108,6 +110,7 @@ export default function WorldPage({goTo}){const account=useLoyalty();return acco
 function WorldSession({uid,goTo}){
  const { present } = useLuxury();
  const[franceResident,setFranceResident]=useState(null);
+ const [investigationId,setInvestigationId]=useState(null);
  const [applicationMenuOpen,setApplicationMenuOpen]=useState(false);
  useEffect(()=>{const update=event=>setApplicationMenuOpen(event.detail?.open===true);window.addEventListener('threeb:app-menu-state',update);return()=>window.removeEventListener('threeb:app-menu-state',update);},[]);
  const[save,setSave]=useState(blankSave),[loaded,setLoaded]=useState(false),[snapshot,setSnapshot]=useState({region:'hub',position:{x:0,z:9}}),[panel,setPanel]=useState(null),[error,setError]=useState(''),[notice,setNotice]=useState(''),[saveMessage,setSaveMessage]=useState('Chargement de la sauvegarde…'),[gps,setGPS]=useState(false),[gpsMessage,setGPSMessage]=useState('Le GPS est désactivé.'),[walkSession,setWalkSession]=useState(0),[sound,setSound]=useState(()=>{try{return localStorage.getItem('3b-world-sound')!=='0';}catch{return true;}});
@@ -126,6 +129,13 @@ function WorldSession({uid,goTo}){
  const [towerLift,setTowerLift]=useState(null),[combatImpact,setCombatImpact]=useState(null),[npcDialogue,setNpcDialogue]=useState(null),[hubGuardianInfo,setHubGuardianInfo]=useState(null),[hubOffer,setHubOffer]=useState(null),[hubPlace,setHubPlace]=useState(null),[hubMechanism,setHubMechanism]=useState(null),[storyCinematic,setStoryCinematic]=useState(null),[cinematicQueue,setCinematicQueue]=useState([]);
  const canvas=useRef(null),shell=useRef(null),scene=useRef(null),saveRef=useRef(save),callbacks=useRef({}),ready=useRef(false),paused=useRef(false),activity=useRef(0),rewardEngine=useRef({status:'playing'}),watch=useRef(null),tracker=useRef(createWalkTracker()),walkRef=useRef(0),audio=useRef(null),dirty=useRef(false),saveTimer=useRef(null),noticeTimer=useRef(null),captionTimer=useRef(null),dialogueTurns=useRef(new Map()),cinematicKeys=useRef(new Set()),partyRuntimeSelf=useRef(null),partyDownKey=useRef(null);
  saveRef.current=save;
+ const fieldInvestigation=activeCampaignSnapshot(save);
+ useEffect(()=>{
+  if(investigationId&&!franceFieldInteraction(fieldInvestigation,snapshot.position,investigationId)){
+   setInvestigationId(null);
+   if(!panel&&!cityOpen&&!storyCinematic)canvas.current?.focus({preventScroll:true});
+  }
+ },[investigationId,fieldInvestigation?.objective,snapshot.position?.x,snapshot.position?.z,save.region]);
  const rewardMessage=useGameRewards('world',rewardEngine,paused,ready,activity);
  useEffect(()=>{const orientation=globalThis.screen?.orientation;orientation?.lock?.('landscape').catch(()=>{});return()=>orientation?.unlock?.();},[]);
  const announce=useCallback(text=>{setNotice(text);clearTimeout(noticeTimer.current);noticeTimer.current=setTimeout(()=>setNotice(''),2400);},[]);
@@ -235,7 +245,11 @@ function WorldSession({uid,goTo}){
  function interactDefault(item){
   if(Number.isFinite(item?.x)&&Number.isFinite(item?.z))audio.current?.spatialEvent(item.type,item);
   if(item.type==='portal'){travel(item.id);return;}
-  if(item.type==='campaignObjective'){setPanel('campaign');return;}
+  if(item.type==='campaignObjective'){
+   const current=activeCampaignSnapshot(saveRef.current),point=scene.current?.snapshotPosition?.()||snapshot.position;
+   if(franceFieldInteraction(current,point,item.id)){setInvestigationId(item.id);return;}
+   setPanel('campaign');return;
+  }
   if(item.type==='realmTravel'){
    const core=item.id===saveRef.current.region+':realm:core';
    if(!core&&!act({type:'realmRelayDiscover',id:item.id,position:scene.current?.snapshotPosition?.()||snapshot.position}))return;
@@ -364,7 +378,7 @@ function WorldSession({uid,goTo}){
  const moveInput=useCallback(value=>scene.current?.setMoveInput?.(value),[]);
  const playAction=useCallback(kind=>{audio.current?.unlock?.();return scene.current?.gameplayAction?.(kind);},[]);
  const onGuardHeld=useCallback(value=>scene.current?.setGuardHeld?.(value),[]);
- callbacks.current={interact,campaign:input=>act({type:'campaignAction',...input}),combat:input=>act({type:'field',...input}),step:region=>audio.current?.step(region),gameplay:kind=>audio.current?.gameplay?.(kind)};
+ callbacks.current={interact,campaign:input=>act({type:'campaignAction',...input,layoutVersion:2}),combat:input=>act({type:'field',...input}),step:region=>audio.current?.step(region),gameplay:kind=>audio.current?.gameplay?.(kind)};
  useEffect(()=>{let live=true;loadWorld(uid).then(result=>{if(!live)return;if(uid&&!result.status.hasLocalCopy&&['offline','auth','receipt','storage'].includes(result.status.outcome)){setSaveStatus(result.status);setSaveMessage(result.message);setError('La progression de ton compte n’a pas pu être retrouvée. Aucune copie locale n’est disponible : reconnecte-toi puis réessaie pour reprendre ta partie.');setAssetsLoading(false);return;}const entry=worldEntryPolicy(result.data);let data=result.data,entryRecorded=false;if(entry.action){try{data=recordWorldAction(uid,data,entry.action);entryRecorded=true;}catch(error){setError('Le Nexus n’a pas pu être préparé sans risquer ta sauvegarde · '+error.message);}}saveUsable.current=true;setSave(data);saveRef.current=data;dirty.current=!!result.needsSave||entryRecorded;setSaveMessage(result.message+(entryRecorded?' · entrée au Nexus préparée.':''));setSaveStatus(result.status);setLoaded(true);setWorldRequested(!!result.data.adventure.avatar.created||!!result.data.adventure.encounter);if(entry.resumeEncounter)setPanel('encounter');else if(!data.adventure.avatar.created)setPanel('avatar');});return()=>{live=false;};},[uid]);
  useEffect(()=>{
   if(!loaded||!worldRequested)return;
@@ -408,10 +422,15 @@ function WorldSession({uid,goTo}){
  }
  function runCampaign(operation,choice){
   const before=activeCampaignSnapshot(saveRef.current);if(!before||before.finished)return;
-  const next=act({type:'campaignAction',region:before.region,objective:before.objective,operation,choice,position:scene.current?.snapshotPosition?.()||snapshot.position});if(!next)return;
+  const next=act({type:'campaignAction',region:before.region,objective:before.objective,operation,choice,layoutVersion:2,position:scene.current?.snapshotPosition?.()||snapshot.position});if(!next)return;
   const after=activeCampaignSnapshot(next);
   if(next.adventure.encounter&&!next.adventure.encounter.result){setPanel('encounter');return;}
   if(after?.started||after?.objective!==before.objective)setPanel(null);
+  return next;
+ }
+ function guardCompanion(){
+  if(!saveRef.current.adventure.companion||saveRef.current.adventure.companionHidden)act({type:'companion',id:saveRef.current.adventure.companion||saveRef.current.leader});
+  act({type:'companionOrder',value:'guard'});
  }
  function relayTravel(destination){
   if(!relayOrigin)return;
@@ -432,7 +451,7 @@ function WorldSession({uid,goTo}){
   <div className="world-vignette"/>
   {storyCinematic&&<CinematicOverlay key={storyCinematic.key} presentation={storyCinematic} audioDirector={audio.current} sceneDirector={scene.current} onDone={finishStoryCinematic} onSkip={finishStoryCinematic}/>}
   {panel==='encounter'&&snapshot.combat&&combatImpact&&<div className="combat-impact-layer" aria-hidden="true" key={combatImpact.key}>{combatImpact.outgoing>0&&<b className="impact-enemy" style={{left:snapshot.combat.enemy.x+'%',top:snapshot.combat.enemy.y+'%'}}>−{combatImpact.outgoing}</b>}{(combatImpact.incoming>0||combatImpact.healing>0)&&<b className={combatImpact.healing?'impact-heal':'impact-hero'} style={{left:snapshot.combat.hero.x+'%',top:snapshot.combat.hero.y+'%'}}>{combatImpact.healing?'+'+combatImpact.healing:'−'+combatImpact.incoming}</b>}</div>}
-  <WorldHUD onCompanionGuard={()=>{if(!saveRef.current.adventure.companion||saveRef.current.adventure.companionHidden)act({type: 'companion',id:saveRef.current.adventure.companion||saveRef.current.leader});act({type: 'companionOrder',value: 'guard'});}} onCampaignAction={runCampaign} onPlay={playAction} onNavigate={navigate} snapshot={snapshot} save={save} panel={error?'failure':touchEdit?'touchEdit':panel} onPanel={value=>{if(saveUsable.current&&!error)setPanel(value);}} onInteract={()=>scene.current?.interact()} onContextAction={(item,id)=>interact(item,id)} onGuide={()=>scene.current?.waypoint(snapshot.waypoint,true)} onGuideTo={item=>scene.current?.waypoint(item,true)} onCancelGuide={cancelGuidance} notificationVisible={!!notice} loaded={loaded&&!assetsLoading} controls={controls}/>
+  <WorldHUD onCompanionGuard={guardCompanion} onCampaignAction={runCampaign} onPlay={playAction} onNavigate={navigate} snapshot={snapshot} save={save} panel={error?'failure':touchEdit?'touchEdit':panel} onPanel={value=>{if(saveUsable.current&&!error)setPanel(value);}} onInteract={()=>scene.current?.interact()} onContextAction={(item,id)=>interact(item,id)} onGuide={()=>scene.current?.waypoint(snapshot.waypoint,true)} onGuideTo={item=>scene.current?.waypoint(item,true)} onCancelGuide={cancelGuidance} notificationVisible={!!notice} loaded={loaded&&!assetsLoading} controls={controls}/>
   {loaded&&!assetsLoading&&!error&&!storyCinematic&&!cityOpen&&(!panel||fieldCombat)&&<WorldPlayControls onAction={playAction} onMove={moveInput} onGuardHeld={onGuardHeld} controls={controls} combat={fieldCombat} editMode={touchEdit} onSaveLayout={()=>{setTouchEdit(false);announce('Disposition tactile enregistrée sur cet appareil.');}} onCancelLayout={()=>setTouchEdit(false)}/>}
   {!panel&&<><button className="play-button play-party" aria-label="Rejoindre la Maison de la Communauté" title="Maison de la Communauté" onClick={()=>{const place=regionItems.find(i=>i.buildingId==='community_house');if(place)navigate(place);else setPanel('party');}}><Users size={21}/></button>{partyState?.party&&<span className={'party-online '+connection}>{connection==='connected'?'● Groupe '+partyState.members.length+'/4':'Reconnexion…'}</span>}</>}
   {snapshot.cinematic&&!panel&&!storyCinematic&&<div className="play-cinematic"><div><h2>{snapshot.cinematic.title}</h2><p>{snapshot.cinematic.detail}</p></div><button onClick={()=>scene.current?.skipCinematic()}>Passer</button></div>}
@@ -443,6 +462,7 @@ function WorldSession({uid,goTo}){
   {soundCaptions&&soundCaption&&<div className="world-sound-caption" role="status" aria-live="polite">{soundCaption}</div>}
   {(!loaded||assetsLoading)&&!error&&<div className="world-loading" role="status">Préparation de ton voyage…</div>}
   {error&&<Modal title="Reprendre l’exploration" kind="failure" onClose={()=>goTo('home')}><div className="hub-recovery" role="alert"><p>{error}</p><div className="world-actions"><Button className="world-primary" onClick={()=>location.reload()}>Réessayer</Button>{uid&&<Button variant="neutral" onClick={()=>goTo('member')}>Me reconnecter</Button>}<Button variant="neutral" onClick={()=>goTo('home')}>Retour à l’application</Button></div></div></Modal>}
+  {!panel&&!storyCinematic&&!cityOpen&&!error&&!touchEdit&&loaded&&!assetsLoading&&investigationId&&<FranceFieldInteraction current={fieldInvestigation} position={snapshot.position} objective={investigationId} onAction={runCampaign} onClose={()=>{setInvestigationId(null);canvas.current?.focus({preventScroll:true});}} onNavigate={navigate} onCompanionGuard={guardCompanion}/>}
   {fieldCombat&&<FieldEncounter save={save} act={act} onRetreat={finishEncounter} onPause={()=>setPanel('encounterPause')} snapshot={snapshot} controls={controls} onJump={()=>playAction('jump')} onFieldAction={kind=>scene.current?.combatAction(kind)}/>}
   {!panel&&snapshot.lifeInteraction&&<div className="hub-life-reading" role="status"><strong>{snapshot.lifeInteraction.title}</strong><p>{snapshot.lifeInteraction.detail}</p><span>{snapshot.lifeInteraction.caption}</span><button onClick={()=>scene.current?.endLifeInteraction?.()}>Reprendre la marche</button></div>}
   {!panel&&snapshot.region==='hub'&&snapshot.interior&&<div className="hub-place">{snapshot.towerFloor?.name||regionItems.find(i=>i.buildingId===snapshot.interior)?.name||'Lieu de la cité'}</div>}
