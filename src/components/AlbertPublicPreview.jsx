@@ -2,6 +2,7 @@ import {Button} from '../design-system/index.jsx';
 import {useEffect,useRef,useState} from 'react';
 import {ArrowLeft,ArrowRight,AudioLines,BookOpen,Compass,Gamepad2,Globe2,HeartPulse,Home,Mic,MicOff,Plane,Send,ShieldCheck,ShoppingBag,Sparkles,UserRound,Volume2,VolumeX} from 'lucide-react';
 import {RouteLink} from './AppNavigation.jsx';
+import AlbertDailyTimeline from './AlbertDailyTimeline.jsx';
 import {albertLocalGuideAnswer} from './world-living-data.js';
 import '../styles/world-living-home.css';
 
@@ -11,11 +12,7 @@ const SUGGESTIONS=[
  {label:'Gaming 16-18',query:'gaming',Icon:Gamepad2},
  {label:'Explorer les royaumes',query:'monde du 3b',Icon:Compass},
 ];
-const JOURNEY=[
- {step:'01',title:'Découvrir',hint:'Informations et opportunités',page:'news',Icon:BookOpen},
- {step:'02',title:'Prendre soin de soi',hint:'Santé et recettes',page:'health',Icon:HeartPulse},
- {step:'03',title:'Partager',hint:'L’espace Communauté',page:'community',Icon:Sparkles},
-];
+
 
 function AlbertAvatar(){
  return <div className="albert3b-avatar" aria-hidden="true">
@@ -117,10 +114,8 @@ export default function AlbertPublicPreview({goTo}){
     <div className="albert3b-suggestions">
      {SUGGESTIONS.map(({label,query,Icon})=><Button variant="ghost" type="button" key={query} onClick={()=>ask(query)}><Icon size={25}/><span>{label}</span><ArrowRight size={16}/></Button>)}
     </div>
-    <div className="albert3b-section-head albert3b-timeline-head"><div><span className="world3b-eyebrow">PARCOURS LIBRE</span><h2>Votre parcours vivant</h2></div></div>
-    <ol className="albert3b-timeline">
-     {JOURNEY.map(({step,title,hint,page,Icon})=><li key={step}><span className="albert3b-step">{step}</span><Icon size={20}/><RouteLink goTo={goTo} page={page}><strong>{title}</strong><small>{hint}</small></RouteLink><ArrowRight size={16}/></li>)}
-    </ol>
+     <AlbertDailyTimeline goTo={goTo}/>
+
     <div className="albert3b-actual-ai"><AudioLines size={25}/><div><strong>Besoin d’une conversation IA ?</strong><p>Le Mode 3 IA est un espace existant, distinct d’Albert APEX.</p></div><RouteLink goTo={goTo} page="ia-trio">Mode 3 IA <ArrowRight size={16}/></RouteLink></div>
    </section>
   </div>
