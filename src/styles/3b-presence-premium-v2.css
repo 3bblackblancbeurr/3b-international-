@@ -5,12 +5,12 @@
 }
 .app3b[data-page="games"] .arcade-heading h1{
  font:500 clamp(32px,5vw,55px)/1.05 Georgia,'Times New Roman',serif!important;
- color:#fff0d0!important;letter-spacing:-.045em!important
+ color:var(--3b-v2-palette-fff0d0)!important;letter-spacing:-.045em!important
 }
 .app3b[data-page="games"] .arcade-heading .arcade-eyebrow,
 .app3b[data-page="shop"] .shop-eyebrow,
 .app3b[data-page="esports"] .esports3b-kicker{
- color:#e6c68b!important;letter-spacing:.14em!important
+ color:var(--3b-v2-palette-e6c68b)!important;letter-spacing:.14em!important
 }
 /* Autonomous visual travel competes with game HUD and retail content.
    Discreet anchored companion preserves its click-and-expand interaction. */
@@ -33,7 +33,7 @@
   display:none!important
  }
  .app3b:is([data-page="games"],[data-page="shop"],[data-page="manga"],[data-page="esports"]) .companion3b-shell:focus-visible{
-  outline:3px solid #ffe9b1!important;outline-offset:2px
+  outline:3px solid var(--3b-v2-palette-ffe9b1)!important;outline-offset:2px
  }
 }
 @media(prefers-reduced-motion:reduce){
