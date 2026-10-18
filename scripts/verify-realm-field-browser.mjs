@@ -12,6 +12,17 @@ if(process.env.REALM_FIELD_GPU==='native')fixture=fixture.replace("'--use-angle=
 const cases=String.raw`
 const report=[],errors=[];
 async function hud(page,callback){await page.evaluate(()=>qa.scene.qaHoldRender());try{return await callback();}finally{await page.evaluate(()=>qa.scene.qaResumeCapture());}}
+// Keep the native click and its React/DOM acceptance in the same brief render
+// hold. Resuming SwiftShader between them can starve the closure observation.
+async function closeLocal(callback,accepted=async()=>{}){return hud(page,async()=>{await callback();await card.waitFor({state:'hidden',timeout:10000});await accepted();});}
+async function preCaptureDiagnostic(){
+ let timer;try{return await Promise.race([page.evaluate(()=>{
+  const q=window.qa,summarize=s=>s?{version:s.version,region:s.region,xp:s.xp,shards:s.shards,visited:s.visited,seals:s.seals,adventure:{campaigns:s.adventure?.campaigns,chapters:s.adventure?.chapters,cinematicSeen:s.adventure?.cinematicSeen,finished:s.adventure?.finished}}:null;
+  let stored;try{const s=JSON.parse(localStorage.getItem('3b_world_v1_guest')||'null');stored=s?{dirty:s.dirty,data:summarize(s.data)}:null;}catch(error){stored={error:String(error)};}
+  const describe=el=>({label:el.getAttribute('aria-label'),bounds:el.getBoundingClientRect().toJSON(),text:el.innerText.slice(0,8000),html:el.outerHTML.slice(0,12000)});
+  return{at:Date.now(),phase:'before-capture',save:summarize(q?.state?.()),stored,position:q?.scene?.snapshotPosition?.(),snapshot:{region:q?.snapshot?.region,position:q?.snapshot?.position,campaign:q?.snapshot?.campaign,cinematic:q?.snapshot?.cinematic},scene:q?.scene?.qaGuidanceState?.(),view:q?.view?.(),events:q?.events,dom:{cards:[...document.querySelectorAll('.france-field-interaction')].slice(0,2).map(describe),stories:[...document.querySelectorAll('.world-cinematic-director,.play-cinematic')].slice(0,3).map(describe),body:document.body.innerText.slice(0,20000)}};
+ }),new Promise(resolve=>{timer=setTimeout(()=>resolve({phase:'before-capture',error:'Diagnostic deadline exceeded (10 seconds)'}),10000);})]);}catch(error){return{phase:'before-capture',error:String(error)};}finally{clearTimeout(timer);}
+}
 const context=await browser.newContext({viewport:{width:1280,height:800},deviceScaleFactor:1}),page=await context.newPage();page.setDefaultTimeout(45000);
 page.on('pageerror',error=>{errors.push(error.message);console.error('PAGE_ERROR '+error.message);});
 page.on('console',message=>{if(message.type()==='error')console.error('BROWSER '+message.text());});
@@ -63,8 +74,7 @@ async function staleUiEvidence(expected){
  // Arrange a lagged React pose while the live simulation remains beside the
  // real objective. E and the evidence button must use the live point; neither
  // this hook nor the render hold changes the canonical save or command rules.
- await hud(page,()=>card.getByRole('button',{name:'Reprendre la marche',exact:true}).last().click({timeout:8000}));
- await card.waitFor({state:'hidden'});
+ await closeLocal(()=>card.getByRole('button',{name:'Reprendre la marche',exact:true}).last().click({timeout:8000}));
  await hud(page,async()=>{
   const live=await page.evaluate(()=>qa.scene.snapshotPosition()),old={x:live.x-13,z:live.z};
   try{
@@ -76,6 +86,7 @@ async function staleUiEvidence(expected){
    assert.equal(await page.evaluate(()=>qa.view().investigationId),expected.objective);
    await card.getByRole('button',{name:'Examiner sur place',exact:true}).click({timeout:8000});await card.waitFor({state:'hidden',timeout:8000});
    assert.equal(await page.evaluate(token=>qa.state().adventure.campaigns.algerie.inventory[token],expected.token),1,'the real button grants the canonical evidence once');
+   assert.equal(await page.evaluate(()=>qa.state().adventure.campaigns.algerie.step),1);
    assert.deepEqual(await page.evaluate(()=>qa.view().position),old,'evidence acceptance does not rewrite the arranged lagged pose');
    assert.deepEqual(await page.evaluate(()=>qa.scene.snapshotPosition()),live,'a display-only fixture cannot move the live player');
   }finally{
@@ -91,38 +102,42 @@ try{
   await visit(region);await openCurrent();console.log(region+': local card open');
   await capture(page,out+'/'+region+'-local.png');
   if(region==='maroc'){
-   await page.evaluate(()=>{const point=qa.scene.snapshotPosition();qa.scene.relocateRealm({region:'maroc',x:point.x+15,z:point.z});});await card.waitFor({state:'hidden'});await openCurrent();
+   const away=await page.evaluate(()=>{const point=qa.scene.snapshotPosition(),away={region:'maroc',x:point.x+15,z:point.z};qa.scene.relocateRealm(away);return away;});
+   // A genuine scene snapshot must publish the move before the render hold;
+   // holding first would prevent the real proximity-closing effect from running.
+   await page.waitForFunction(away=>qa.snapshot?.position&&Math.hypot(qa.snapshot.position.x-away.x,qa.snapshot.position.z-away.z)<1,away,{polling:100,timeout:90000});
+   await hud(page,async()=>{await card.waitFor({state:'hidden',timeout:10000});assert.equal(await page.evaluate(()=>qa.view().investigationId),null);});await openCurrent();
   }
   const expected=await page.evaluate(async()=>{const {CAMPAIGN_RUNTIME_SPEC}=await import('/src/world/campaign-spec.js');const current=qa.snapshot.campaign;return{token:CAMPAIGN_RUNTIME_SPEC[current.region][0].steps[0].grant,objective:current.objective};});
   if(region==='algerie')await staleUiEvidence(expected);
-  else{await hud(page,()=>card.getByRole('button',{name:'Examiner sur place',exact:true}).click());await card.waitFor({state:'hidden'});}
-  assert.equal(await page.evaluate(({region,token})=>qa.state().adventure.campaigns[region].inventory[token],{region,token:expected.token}),1);
-  assert.equal(await page.evaluate(region=>qa.state().adventure.campaigns[region].step,region),1);
+  else await closeLocal(()=>card.getByRole('button',{name:'Examiner sur place',exact:true}).click(),async()=>{
+   assert.equal(await page.evaluate(({region,token})=>qa.state().adventure.campaigns[region].inventory[token],{region,token:expected.token}),1);
+   assert.equal(await page.evaluate(region=>qa.state().adventure.campaigns[region].step,region),1);
+  });
   report.push({region,pass:true,objective:expected.objective,acceptedToken:expected.token,checks:['native-local-card','world-unpaused','actual-button-accepted','no-duplicate-objective']});console.log(region+': accepted');
   if(region==='algerie'){
-   await openCurrent();await hud(page,()=>card.getByRole('button',{name:'Entendre chacun avant de partir',exact:true}).click());await card.waitFor({state:'hidden'});
-   await openCurrent();await hud(page,()=>card.getByRole('button',{name:'Accompagner le groupe',exact:true}).click());await card.waitFor({state:'hidden'});
-   await page.getByRole('complementary',{name:'Épreuve en cours',exact:true}).waitFor({state:'visible'});
-   assert.equal(await page.evaluate(()=>qa.state().adventure.campaigns.algerie.started),true);report.at(-1).checks.push('lagged-React-pose-live-E-and-canonical-evidence','escort-start-returns-to-active-HUD');
+   await openCurrent();await closeLocal(()=>card.getByRole('button',{name:'Entendre chacun avant de partir',exact:true}).click(),async()=>{
+    const state=await page.evaluate(()=>qa.state().adventure.campaigns.algerie);assert.equal(state.phase,1);assert.equal(state.step,0);assert.equal(state.started,false);assert.ok(state.effects.includes('groupe_reuni'));assert.ok(state.completed.includes('rumor'));
+   });
+   await openCurrent();await closeLocal(()=>card.getByRole('button',{name:'Accompagner le groupe',exact:true}).click(),async()=>{
+    await page.getByRole('complementary',{name:'Épreuve en cours',exact:true}).waitFor({state:'visible',timeout:10000});assert.equal(await page.evaluate(()=>qa.state().adventure.campaigns.algerie.started),true);
+   });report.at(-1).checks.push('lagged-React-pose-live-E-and-canonical-evidence','escort-start-returns-to-active-HUD');
   }
  }
  if(!process.env.REALM_FIELD_REGIONS||regions.includes('italie')){
   await visit('italie');await seedRepair();await relocateCurrent();
-  await hud(page,()=>page.getByRole('button',{name:'Choisir la réparation',exact:true}).click());await card.waitFor({state:'visible'});
+  await hud(page,async()=>{await page.getByRole('button',{name:'Choisir la réparation',exact:true}).click();await card.waitFor({state:'visible',timeout:10000});});
   assert.equal(await page.getByRole('dialog').count(),0,'HUD opens the nearby repair in the running world');
-  await hud(page,()=>card.getByRole('button',{name:'Recommencer le plan qui a échoué',exact:true}).click());
-  assert.equal(await page.evaluate(()=>qa.state().adventure.campaigns.italie.trial),2);assert.ok(!await page.evaluate(()=>qa.state().adventure.campaigns.italie.effects.includes('jardin_reconstruit')));
-  await hud(page,()=>card.getByRole('button',{name:'Renforcer le nouvel assemblage',exact:true}).click());await card.waitFor({state:'hidden'});
-  assert.ok(await page.evaluate(()=>qa.state().adventure.campaigns.italie.effects.includes('jardin_reconstruit')));await capture(page,out+'/italie-repair-accepted.png');
+  await hud(page,async()=>{await card.getByRole('button',{name:'Recommencer le plan qui a échoué',exact:true}).click();assert.equal(await page.evaluate(()=>qa.state().adventure.campaigns.italie.trial),2);assert.ok(!await page.evaluate(()=>qa.state().adventure.campaigns.italie.effects.includes('jardin_reconstruit')));assert.equal(await card.isVisible(),true,'a wrong repair keeps the local choices open');});
+  await closeLocal(()=>card.getByRole('button',{name:'Renforcer le nouvel assemblage',exact:true}).click(),async()=>{assert.ok(await page.evaluate(()=>qa.state().adventure.campaigns.italie.effects.includes('jardin_reconstruit')));});await capture(page,out+'/italie-repair-accepted.png');
   await seedRepair();await relocateCurrent(20);
-  await hud(page,()=>page.getByRole('button',{name:'Choisir la réparation',exact:true}).click());const dialogue=page.getByRole('dialog',{name:'Une étape du royaume',exact:true});await dialogue.waitFor();
-  await hud(page,()=>dialogue.getByRole('button',{name:'Renforcer le nouvel assemblage',exact:true}).click());
-  assert.ok(!await page.evaluate(()=>qa.state().adventure.campaigns.italie.effects.includes('jardin_reconstruit')),'a remote dialog cannot bypass the canonical distance check');
-  await hud(page,()=>dialogue.getByRole('button',{name:'Reprendre dans le monde',exact:true}).click());
+  const dialogue=page.getByRole('dialog',{name:'Une étape du royaume',exact:true});await hud(page,async()=>{await page.getByRole('button',{name:'Choisir la réparation',exact:true}).click();await dialogue.waitFor({state:'visible',timeout:10000});});
+  await hud(page,async()=>{await dialogue.getByRole('button',{name:'Renforcer le nouvel assemblage',exact:true}).click();assert.ok(!await page.evaluate(()=>qa.state().adventure.campaigns.italie.effects.includes('jardin_reconstruit')),'a remote dialog cannot bypass the canonical distance check');assert.equal(await dialogue.isVisible(),true);});
+  await hud(page,async()=>{await dialogue.getByRole('button',{name:'Reprendre dans le monde',exact:true}).click();await dialogue.waitFor({state:'hidden',timeout:10000});});
   report.push({region:'italie-repair',pass:true,checks:['HUD-nearby-opens-local','two-repair-choices-preserved','wrong-repair-does-not-advance','accepted-repair','far-dialog-cannot-bypass-server-distance']});
  }
  assert.deepEqual(errors,[]);await writeFile(out+'/report.json',JSON.stringify({pass:true,errors,scenarios:report},null,2));console.log('REALM_FIELD_OK '+JSON.stringify(report));
-}catch(error){console.error('REALM_FIELD_FAILED '+error.stack);await capture(page,out+'/failure.png').catch(()=>{});await writeFile(out+'/failure.txt',String(error.stack)+'\n'+JSON.stringify(await page.evaluate(()=>({region:qa.state()?.region,position:qa.snapshot?.position,campaign:qa.snapshot?.campaign,scene:qa.scene?.qaGuidanceState(),view:qa.view?.(),events:qa.events})),null,2)+'\n'+await page.locator('body').innerText());throw error;
+}catch(error){console.error('REALM_FIELD_FAILED '+error.stack);const diagnostic=await preCaptureDiagnostic();await writeFile(out+'/failure.txt',String(error.stack)+'\n'+JSON.stringify(diagnostic,null,2));await capture(page,out+'/failure.png').catch(()=>{});throw error;
 }finally{await context.close();await browser.close();await server.close();}
 `;
 const generated=new URL('./.realm-field-fixture.mjs',import.meta.url);await fs.writeFile(generated,fixture+cases);try{await import(generated.href);}finally{await fs.unlink(generated).catch(()=>{});}

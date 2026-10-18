@@ -8,7 +8,7 @@ let fixture=original.slice(0,original.indexOf('const report=[];'))
  .replace("import {blankSave} from '/src/world/rules.js';","import {blankSave} from '/src/world/rules.js';import {campaignSnapshot} from '/src/world/campaign-runtime.js';")
  .replace('const save=blankSave();',"const save=applyWorldAction(blankSave(),{type:'visit',region:'france'});")
  .replace('let canonical=structuredClone(save);',"save.adventure.realmTravel={region:'france',...campaignSnapshot(save).target};let canonical=structuredClone(save);")
- .replace("return code.replace(marker,'window.qa.scene=scene.current;'+marker);","code=code.replace(/callbacks\\.current\\s*=\\s*\\{\\s*interact\\s*,/,'window.qa.act=act;window.qa.state=()=>saveRef.current;callbacks.current={interact,');return code.replace(marker,'window.qa.scene=scene.current;'+marker);")
+ .replace("return code.replace(marker,'window.qa.scene=scene.current;'+marker);","code=code.replace(/callbacks\\.current\\s*=\\s*\\{\\s*interact\\s*,/,'window.qa.act=act;window.qa.state=()=>saveRef.current;window.qa.view=()=>({panel,investigationId,story:storyCinematic?.key,loading:assetsLoading,region:save.region,position:snapshot.position,objective:fieldInvestigation?.objective});callbacks.current={interact,');return code.replace(marker,'window.qa.scene=scene.current;'+marker);")
  .replace("return code.replace(marker,`let qaCaptureFrozen=false;","code=code.replace('onSnapshot({','onSnapshot(window.qa.snapshot={');return code.replace(marker,`let qaCaptureFrozen=false;");
 if(process.env.FRANCE_INVESTIGATION_GPU==='native')fixture=fixture.replace("'--use-angle=swiftshader','--enable-unsafe-swiftshader'","'--use-angle=d3d11'");
 if(process.env.FRANCE_INVESTIGATION_DEBUG)fixture=fixture.replace('function injectCaptureHooks(code){',`function injectCaptureHooks(code){
@@ -16,6 +16,16 @@ if(process.env.FRANCE_INVESTIGATION_DEBUG)fixture=fixture.replace('function inje
 const cases=String.raw`
 const report=[];
 async function hud(page,callback){await page.evaluate(()=>qa.scene.qaHoldRender());try{return await callback();}finally{await page.evaluate(()=>qa.scene.qaResumeCapture());}}
+// Observe the real click's closure/acceptance before software WebGL resumes.
+async function closeLocal(page,card,callback,accepted=async()=>{}){return hud(page,async()=>{await callback();await card.waitFor({state:'hidden',timeout:10000});await accepted();});}
+async function preCaptureDiagnostic(page){
+ let timer;try{return await Promise.race([page.evaluate(()=>{
+  const q=window.qa,summarize=s=>s?{version:s.version,region:s.region,xp:s.xp,shards:s.shards,visited:s.visited,seals:s.seals,adventure:{campaigns:s.adventure?.campaigns,chapters:s.adventure?.chapters,cinematicSeen:s.adventure?.cinematicSeen,finished:s.adventure?.finished}}:null;
+  let stored;try{const s=JSON.parse(localStorage.getItem('3b_world_v1_guest')||'null');stored=s?{dirty:s.dirty,data:summarize(s.data)}:null;}catch(error){stored={error:String(error)};}
+  const describe=el=>({label:el.getAttribute('aria-label'),bounds:el.getBoundingClientRect().toJSON(),text:el.innerText.slice(0,8000),html:el.outerHTML.slice(0,12000)});
+  return{at:Date.now(),phase:'before-capture',save:summarize(q?.state?.()),stored,position:q?.scene?.snapshotPosition?.(),snapshot:{region:q?.snapshot?.region,position:q?.snapshot?.position,campaign:q?.snapshot?.campaign,cinematic:q?.snapshot?.cinematic},scene:q?.scene?.qaGuidanceState?.(),view:q?.view?.(),events:q?.events,dom:{cards:[...document.querySelectorAll('.france-field-interaction')].slice(0,2).map(describe),stories:[...document.querySelectorAll('.world-cinematic-director,.play-cinematic')].slice(0,3).map(describe),body:document.body.innerText.slice(0,20000)}};
+ }),new Promise(resolve=>{timer=setTimeout(()=>resolve({phase:'before-capture',error:'Diagnostic deadline exceeded (10 seconds)'}),10000);})]);}catch(error){return{phase:'before-capture',error:String(error)};}finally{clearTimeout(timer);}
+}
 async function dismissStory(page,deadline=Date.now()+60000){
  const story=page.locator('.world-cinematic-director');
  while(await story.isVisible()){
@@ -90,34 +100,34 @@ try{
     assert.equal(await page.locator('.realm-challenge').count(),0,'the same objective is not repeated over the scene while reading it');
    }
    await openCurrent();await capture(page,out+'/'+profile.id+'-lea.png');
-   await hud(page,()=>card.getByRole('button',{name:'Écouter Léa et relever son témoignage',exact:true}).click());
-   await card.waitFor({state:'hidden'});
-   assert.equal(await page.evaluate(()=>qa.state().adventure.campaigns.france.inventory.temoignage_lea),1);
-   await openCurrent();await hud(page,()=>card.getByRole('button',{name:'Interroger le témoin du quai',exact:true}).click());
-   await card.waitFor({state:'hidden'});await openCurrent();
-   await hud(page,()=>card.getByRole('button',{name:'Accuser le premier témoin',exact:true}).click());
-   assert.equal(await page.evaluate(()=>qa.state().adventure.campaigns.france.phase),0,'wrong accusation cannot advance');
-   assert.match(await card.innerText(),/ne résout pas/);
-   await hud(page,()=>card.getByRole('button',{name:'Chercher le registre original',exact:true}).click());await card.waitFor({state:'hidden'});
+   await closeLocal(page,card,()=>card.getByRole('button',{name:'Écouter Léa et relever son témoignage',exact:true}).click(),async()=>{assert.equal(await page.evaluate(()=>qa.state().adventure.campaigns.france.inventory.temoignage_lea),1);});
+   await openCurrent();await closeLocal(page,card,()=>card.getByRole('button',{name:'Interroger le témoin du quai',exact:true}).click());await openCurrent();
+   await hud(page,async()=>{await card.getByRole('button',{name:'Accuser le premier témoin',exact:true}).click();assert.equal(await page.evaluate(()=>qa.state().adventure.campaigns.france.phase),0,'wrong accusation cannot advance');assert.equal(await card.isVisible(),true,'a wrong accusation keeps the local choices open');assert.match(await card.innerText(),/ne résout pas/);});
+   await closeLocal(page,card,()=>card.getByRole('button',{name:'Chercher le registre original',exact:true}).click());
    await openCurrent();assert.match(await card.innerText(),/sceau porte encore la date/);await capture(page,out+'/'+profile.id+'-archives.png');
-   await hud(page,()=>card.getByRole('button',{name:'Examiner le sceau et relever la date',exact:true}).click());await card.waitFor({state:'hidden'});
-   await openCurrent();await hud(page,()=>card.getByRole('button',{name:'Examiner les trois points de couture',exact:true}).click());await card.waitFor({state:'hidden'});
-   await openCurrent();await hud(page,()=>card.getByRole('button',{name:'Relier les deux traces',exact:true}).click());await card.waitFor({state:'hidden'});
-   assert.ok(await page.evaluate(()=>qa.state().adventure.campaigns.france.effects.includes('archives_ouvertes')));
+   await closeLocal(page,card,()=>card.getByRole('button',{name:'Examiner le sceau et relever la date',exact:true}).click());
+   await openCurrent();await closeLocal(page,card,()=>card.getByRole('button',{name:'Examiner les trois points de couture',exact:true}).click());
+   await openCurrent();await closeLocal(page,card,()=>card.getByRole('button',{name:'Relier les deux traces',exact:true}).click(),async()=>{assert.ok(await page.evaluate(()=>qa.state().adventure.campaigns.france.effects.includes('archives_ouvertes')));});
    await openCurrent();await capture(page,out+'/'+profile.id+'-plateaux.png');
    const bounds=await card.evaluate(el=>{const r=el.getBoundingClientRect();return{left:r.left,right:r.right,bottom:r.bottom,viewport:innerWidth,height:innerHeight,scroll:el.scrollWidth,width:el.clientWidth};});
    assert.ok(bounds.left>=0&&bounds.right<=bounds.viewport+1&&bounds.bottom<bounds.height,'interaction remains within viewport');assert.ok(bounds.scroll<=bounds.width+2,'no horizontal clue overflow');
    // Move away through the real scene API: a once-open conversation cannot be
    // used from afar. Tests arrange points; canonical commands still check range.
-   await page.evaluate(()=>{const p=qa.scene.snapshotPosition();qa.scene.relocateRealm({region:'france',x:p.x,z:p.z+14});});await card.waitFor({state:'hidden'});
+   const away=await page.evaluate(()=>{const p=qa.scene.snapshotPosition(),away={region:'france',x:p.x,z:p.z+14};qa.scene.relocateRealm(away);return away;});
+   await page.waitForFunction(away=>qa.snapshot?.position&&Math.hypot(qa.snapshot.position.x-away.x,qa.snapshot.position.z-away.z)<1,away,{polling:100,timeout:90000});
+   await hud(page,async()=>{await card.waitFor({state:'hidden',timeout:10000});assert.equal(await page.evaluate(()=>qa.view().investigationId),null);});
+   // Yield the old WebGL context before persistence checks and real navigation.
+   // The new document creates/resumes its own scene normally after the reload.
+   await page.evaluate(()=>qa.scene.qaHoldRender());
    const ledger=await page.evaluate(()=>structuredClone(qa.state().adventure.campaigns.france));
    await page.waitForFunction(()=>JSON.parse(localStorage.getItem('3b_world_v1_guest')||'{}').data?.adventure?.campaigns?.france?.effects?.includes('archives_ouvertes'),undefined,{timeout:20000});
+   assert.equal(await page.evaluate(()=>qa.scene.qaGuidanceState().renderHeld),true);console.log(profile.id+': ledger persisted; reloading with old render held');
    await page.reload({waitUntil:'domcontentloaded',timeout:120000});await page.waitForFunction(()=>qa.scene&&qa.state().adventure.campaigns.france.effects.includes('archives_ouvertes'),undefined,{timeout:150000});
    assert.deepEqual(await page.evaluate(()=>qa.state().adventure.campaigns.france),ledger,'accepted evidence and consequences survive reload');
    assert.deepEqual(errors,[],'no browser runtime exceptions');
    report.push({profile:profile.id,pass:true,checks:['real-WebGL-world','six-canonical-UI-evidence-actions','wrong-accusation','world-keeps-running','proximity-close','touch-layout','ledger-reload']});
    console.log(profile.id+': PASS');
-  }catch(error){console.error(profile.id+': FAILED '+error.stack);await capture(page,out+'/'+profile.id+'-failure.png').catch(()=>{});await fs.writeFile(out+'/'+profile.id+'-failure.txt',String(error.stack)+'\n'+await page.locator('body').innerText());throw error;}
+  }catch(error){console.error(profile.id+': FAILED '+error.stack);const diagnostic=await preCaptureDiagnostic(page);await fs.writeFile(out+'/'+profile.id+'-failure.txt',String(error.stack)+'\n'+JSON.stringify(diagnostic,null,2));await capture(page,out+'/'+profile.id+'-failure.png').catch(()=>{});throw error;}
   finally{await context.close();}
  }
  await writeFile(out+'/report.json',JSON.stringify(report,null,2));console.log('FRANCE_INVESTIGATION_OK '+JSON.stringify(report));
