@@ -25,8 +25,9 @@ export function platformWorldState(save){
 }
 export function hubPublicPlaces(){
  const districts=Object.entries(HUB_DISTRICT_STORIES).map(([district,story])=>({id:'hub:place:'+district,type:'hubPublicPlace',kind:'district',district,name:'Borne · '+story.name,detail:story.story,actions:['use','inspect'],...PLATFORM_DISTRICTS[district],range:4.5}));
- // The core itself is a fountain. Put its public console on the approach promenade.
- districts.find(p=>p.district==='broken_circle_tower').z=28*HUB_SCALE;
+ // Keep the console beside the promenade: the central approach is the final
+ // combat apron and must remain readable from the player's south-facing view.
+ Object.assign(districts.find(p=>p.district==='broken_circle_tower'),{x:12*HUB_SCALE,z:28*HUB_SCALE});
  const sites={heritage_square:[0,50],archives:[-96,-52],arena:[95,-50],commerce:[125,0],community:[-95,20],innovation:[0,-125],docks:[0,116],city3b_portal:[80,104],gardens:[-92,64]};
  for(const p of districts)if(sites[p.district]){p.x=sites[p.district][0]*HUB_SCALE;p.z=sites[p.district][1]*HUB_SCALE;}
  const gates=HUB_VALUES.map((value,index)=>{const p=platformPortal(index),len=Math.hypot(p.x,p.z),r=len-18*HUB_SCALE,country=COUNTRIES[index],referenceValue=HUB_REFERENCE_VALUES[index];return {id:'hub:value:'+index,type:'hubPublicPlace',kind:'value',district:'broken_circle_tower',name:country.name+' · Porte de '+referenceValue,detail:'La porte de '+country.name+' porte '+referenceValue+'. Cette qualité inspire la vie de la cité : explorer, apprendre, créer et partager. Au-delà du hub, son Gardien poursuit l’histoire de '+value+'. Écoute les habitants et rapporte les fragments au Cercle pour reconstruire ces liens.',actions:['use','inspect'],value,referenceValue,country:country.id,index,x:p.x/len*r+Math.cos(index*Math.PI/4)*8*HUB_SCALE,z:p.z/len*r+Math.sin(index*Math.PI/4)*8*HUB_SCALE,range:4.5};});

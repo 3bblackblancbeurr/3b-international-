@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {mergeGeometries,mergeVertices} from 'three/addons/utils/BufferGeometryUtils.js';
 import {worldRealmArt,worldArtMaterials} from '../design-system/tokens.js';
 import {REALM_COURT_COLUMNS} from './realm-layout.js';
+import {addGuardianCourtArt} from './guardian-court-art.js';
 import {createRealmMasonryTextures,installRealmMasonryAtlas,realmMasonryUv} from './realm-masonry.js';
 
 const STYLES={
@@ -196,9 +197,14 @@ export function createRealmArchitecture(region){
   // draw call. Their undersides are embedded beneath the paving surface.
   for(let i=0;i<8;i++){const a=i*Math.PI/4;b(trim,Math.sin(a)*4,.015,Math.cos(a)*4,.4,.02,4,a,2);}
   for(const p of REALM_COURT_COLUMNS){
-   b(wall,p.x,.16,p.z,3.6,.62,3.6);add(cylinder,wall,p.x,4.2,p.z,1.2,7.8,1.2);add(cylinder,trim,p.x,.55,p.z,1.5,.35,1.5);b(trim,p.x,8.25,p.z,3.5,.5,3.5);add(cylinder,roof,p.x,8.64,p.z,1.15,.28,1.15);
+   // Scale the existing guardians' columns to a genuine 19m-high landmark.
+   // The diameter/collision footprint remains unchanged and the top stays
+   // outside the accepted combat area, where the six arcade spans connect.
+   b(wall,p.x,.16,p.z,3.6,.62,3.6);add(cylinder,wall,p.x,8.95,p.z,1.35,16.9,1.35);add(cylinder,trim,p.x,.55,p.z,1.5,.35,1.5);
+   b(trim,p.x,17.22,p.z,3.5,.72,3.5);add(cylinder,roof,p.x,17.81,p.z,1.15,.4,1.15);add(cone,roof,p.x,18.35,p.z,.98,1.06,.98);
   }
-  const geometry=finish();geometry.userData={guardianCourt:true,clearRadius:40,columnRadius:47};templates.set(key,geometry);return geometry;
+  const art=addGuardianCourtArt(region,{columns:REALM_COURT_COLUMNS,box:b});
+  const geometry=finish();geometry.userData={guardianCourt:true,clearRadius:40,columnRadius:47,art};templates.set(key,geometry);return geometry;
  }
  let disposed=false;return{material,house,monument,guardianCourt,setDaylight(value){const day=Math.max(0,Math.min(1,Number(value)||0));night.value=Math.max(0,Math.min(1,(.55-day)/.35))*.85;},surfaces:surfaces.diagnostics,dispose(){if(disposed)return;disposed=true;for(const geometry of geometries)geometry.dispose();for(const g of [box,facadeBox,cylinder,sphere,cone,bud])g.dispose();material.dispose();surfaces.dispose();}};
 }

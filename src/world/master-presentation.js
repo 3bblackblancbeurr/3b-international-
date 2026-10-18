@@ -13,12 +13,13 @@ export function masterRenderBudget(mode='auto',{desktopClass=false}={}){
   skyDetail:mode==='fluid'?0:desktopClass?1:.35};
 }
 
-export function combatCameraView(view,hero,enemy,{enabled=true,aspect=1,fov=60}={}){
+export function combatCameraView(view,hero,enemy,{enabled=true,aspect=1,fov=60,enemyHeight=4.5}={}){
  if(!enabled||![hero?.x,hero?.y,hero?.z,enemy?.x,enemy?.y,enemy?.z].every(Number.isFinite))return view;
  const distance=Math.hypot(enemy.x-hero.x,enemy.z-hero.z);
  if(distance>36)return view;
  const focus=clamp((36-distance)/14,0,1),weight=.42*focus;
- const target={x:view.target.x+(enemy.x-hero.x)*weight,y:view.target.y+(enemy.y-hero.y)*weight,z:view.target.z+(enemy.z-hero.z)*weight};
+ const extraHeight=clamp((Number(enemyHeight)||4.5)-4.5,0,10)*focus;
+ const target={x:view.target.x+(enemy.x-hero.x)*weight,y:view.target.y+(enemy.y-hero.y)*weight+extraHeight*.42,z:view.target.z+(enemy.z-hero.z)*weight};
  let dx=view.position.x-view.target.x,dz=view.position.z-view.target.z;
  const dy=view.position.y-view.target.y,length=Math.hypot(dx,dy,dz)||1;
  // When both actors line up with the camera, their silhouettes and attacks
@@ -29,8 +30,10 @@ export function combatCameraView(view,hero,enemy,{enabled=true,aspect=1,fov=60}=
  const shoulder=clamp((alignment-.78)/.22,0,1)*.42*focus,c=Math.cos(shoulder),s=Math.sin(shoulder);
  [dx,dz]=[dx*c+dz*s,dz*c-dx*s];
  const halfFov=Math.atan(Math.tan(clamp(fov,35,90)*Math.PI/360)*clamp(aspect,.35,1));
- const required=(distance*Math.max(weight,1-weight)+2.8)/Math.sin(halfFov);
- const framed=length+(clamp(required,length,70)-length)*focus;
+ const required=(distance*Math.max(weight,1-weight)+2.8+extraHeight*.6)/Math.sin(halfFov);
+ // A giant's extended wings need more space on portrait screens. Ordinary
+ // encounters retain their existing 70-unit bound and chosen orbit behavior.
+ const framed=length+(clamp(required,length,70+extraHeight*3)-length)*focus;
  return {target,position:{x:target.x+dx/length*framed,y:target.y+dy/length*framed,z:target.z+dz/length*framed}};
 }
 

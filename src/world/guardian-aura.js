@@ -36,20 +36,30 @@ export function createGuardianAura(region,{reducedMotion=false}={}){
  raysGeo.setAttribute('position',new THREE.BufferAttribute(positions,3));
  const rayMaterial=new THREE.LineBasicMaterial({color,transparent:true,opacity:.24,depthWrite:false,blending:THREE.AdditiveBlending});
  const rays=new THREE.LineSegments(raysGeo,rayMaterial);rays.renderOrder=8;group.add(rays);
- let disposed=false;
- function tick(time,{visible=true}={}){
+ let disposed=false,lastPhase=1,lastLiberated=false,lastThreat=false;
+ function tick(time,{visible=true,liberated=false,phase=1,cinematic=false,threat=false}={}){
   if(disposed)return;
-  group.visible=visible;
+  group.visible=!!visible;
+  if(!visible)return;
   const p=Number.isFinite(time)?time:0;
-  const wave=reducedMotion?.5:.5+.5*Math.sin(p*signature.tempo*2);
-  rings[0].scale.setScalar(reducedMotion?1:.93+wave*.12);
-  rings[1].scale.setScalar(reducedMotion?1:1.11-wave*.13);
-  materials[0].opacity=reducedMotion?.15:.12+.2*wave;
-  materials[1].opacity=reducedMotion?.15:.1+.16*(1-wave);
-  rays.rotation.y=reducedMotion?0:p*signature.tempo*.25;
-  rayMaterial.opacity=reducedMotion?.1:.1+.18*wave;
+  // Every boss already has 3 gameplay phases. Reflect those accepted phases
+  // in the actual ground aura, without adding a light, shader, or fourth draw.
+  const chapter=THREE.MathUtils.clamp(Math.round(Number(phase)||1),1,3),freed=!!liberated,danger=!!threat&&!freed;
+  const movie=!!cinematic,force=freed?0:(chapter-1),wave=reducedMotion?.5:.5+.5*Math.sin(p*signature.tempo*(2+force*.56+(danger?.65:0)));
+  group.scale.setScalar((freed?.43:.43+force*.085)+(movie?.025:0));
+  rings[0].scale.setScalar(reducedMotion?1:1+force*.09+wave*.07);
+  rings[1].scale.setScalar(reducedMotion?1:1.04+force*.13-wave*.09);
+  rays.scale.setScalar(1+force*.13+(danger?.1:0));
+  materials[0].opacity=THREE.MathUtils.clamp((freed?.12:.15+force*.045)+(freed?0:wave*.10)+(danger?.11:0)+(movie?.04:0),0,.48);
+  materials[1].opacity=THREE.MathUtils.clamp((freed?.15:.12+force*.035)+(freed?0:(1-wave)*.12)+(movie?.05:0),0,.45);
+  materials[0].color.copy(freed?gold:color);
+  rayMaterial.color.copy(freed?gold:color);
+  rays.rotation.y=reducedMotion?0:p*signature.tempo*(freed?.045:.24+force*.11);
+  rayMaterial.opacity=THREE.MathUtils.clamp((freed?.08:.11+force*.04)+wave*(freed?0:.12)+(danger?.09:0)+(movie?.05:0),0,.42);
+  lastPhase=chapter;lastLiberated=freed;lastThreat=danger;
  }
  return{group,signature,tick,
+  get state(){return {phase:lastPhase,liberated:lastLiberated,threat:lastThreat,visible:group.visible};},
   dispose(){if(disposed)return;disposed=true;group.removeFromParent();geometry.dispose();innerGeometry.dispose();raysGeo.dispose();materials.forEach(m=>m.dispose());rayMaterial.dispose();}
  };
 }

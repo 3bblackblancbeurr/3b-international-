@@ -3,6 +3,7 @@ import {blankCampaignState,normalizeCampaignState} from './campaign-state.js';
 import {REALM_REFERENCE_RADIUS,realmCampaignPosition,realmPositionValid,safeRealmPosition} from './realm-layout.js';
 import {GUARDIAN_VALUES,guardianValueStep,guardianValueOptions,guardianValueDecision} from './guardian-values.js';
 import {COUNTRIES} from './catalog.js';
+import {franceInvestigationObjective,franceInvestigationPosition,franceInvestigationState} from './france-investigation.js';
 
 export const CAMPAIGN_TICK=100;
 const requireThat=(ok,message)=>{if(!ok)throw Error(message);};
@@ -11,23 +12,31 @@ const operationSet=new Set(['interact','tick','strike','guard','repair','retry']
 const modeOperations={escort:['interact'],hazard:['interact'],route:['interact'],relay:['interact'],rhythm:['strike','guard'],defend:['guard'],rebuild:['repair']};
 const phaseState=(save,region)=>normalizeCampaignState(region,save.adventure?.campaigns?.[region]);
 export function campaignObjectiveId(region,phase,step){return `${region}:${phase.id}:${step.id}`;}
-function anchorFor(region,state,step){
+function legacyAnchorFor(region,state,step){
  if(step.homecoming){const i=COUNTRIES.findIndex(c=>c.id===region),a=i*Math.PI/4;return{x:Math.cos(a)*32,z:Math.sin(a)*32};}
  if(step.guardian)return realmCampaignPosition(region,3);
  const index=state.phase===3||state.phase===4?state.step:state.phase===7?2:Math.min(2,state.phase);
  const base=realmCampaignPosition(region,index),offset=step.offset||[state.step*13,0];
  return safeRealmPosition(region,{x:base.x+offset[0],z:base.z+offset[1]});
 }
+function anchorFor(region,state,step){
+ if(region==='france'){
+  const authored=franceInvestigationPosition(CAMPAIGN_RUNTIME_SPEC.france[state.phase]?.id,step.id);
+  if(authored)return authored;
+ }
+ return legacyAnchorFor(region,state,step);
+}
 function checkpoints(region,state,step){
  const base=anchorFor(region,state,step),variant=step.routeVariant||0;
  const offsets=variant===1?[[8,0],[8,12],[-5,12],[-5,25]]:variant===2?[[12,0],[12,16],[0,16],[-12,16]]:variant===3?[[10,0],[10,14],[-4,14],[-4,28]]:[[9,0],[9,14],[-5,14],[-5,28]];
  return offsets.map(([x,z])=>safeRealmPosition(region,{x:base.x+x,z:base.z+z}));
 }
-function targetFor(region,state,step){
+function targetFor(region,state,step,legacy=false){
+ const anchor=legacy?legacyAnchorFor:anchorFor;
  if(step.mode==='escort'&&state.started&&state.escort)return state.escort;
  if(step.mode==='route'&&state.started)return checkpoints(region,state,step)[Math.min(3,state.trial)];
- if(step.mode==='relay'&&state.started){const base=anchorFor(region,state,step);return safeRealmPosition(region,{x:base.x+18,z:base.z});}
- return anchorFor(region,state,step);
+ if(step.mode==='relay'&&state.started){const base=anchor(region,state,step);return safeRealmPosition(region,{x:base.x+18,z:base.z});}
+ return anchor(region,state,step);
 }
 function sceneChoices(save,region,state,step){
  if(step.value!==undefined)return guardianValueOptions(region,save.adventure?.values?.[region]).map(({id,label,consequence})=>({id,label,consequence}));
@@ -37,13 +46,14 @@ function sceneChoices(save,region,state,step){
 export function campaignSnapshot(save,region=save.region){
  const spec=CAMPAIGN_RUNTIME_SPEC[region];if(!spec)return null;
  const state=phaseState(save,region),phase=spec[state.phase],step=phase?.steps[state.step];
- if(!phase||!step)return{region,active:state.active,finished:true,phaseIndex:8,completed:state.completed,effects:state.effects,message:state.message,title:'Héritage retrouvé',progress:1};
+ if(!phase||!step)return{region,active:state.active,finished:true,phaseIndex:8,completed:state.completed,effects:state.effects,message:state.message,title:'Héritage retrouvé',progress:1,...(region==='france'?{investigation:franceInvestigationState(save)}:{})};
  const target=targetFor(region,state,step),period=step.period||(step.mode==='rhythm'?12:30),window=step.window||(step.mode==='rhythm'?[4,8]:[6,14]);
  const value=step.value!==undefined?guardianValueStep(region,save.adventure?.values?.[region]):null;
  const mode=step.mode||(step.guardian?'guardian':step.homecoming?'homecoming':step.value!==undefined?'value':step.memory!==undefined?'memory':step.choices?'choice':'interact');
  const actions=state.integrity<=0?[{operation:'retry',label:'Reprendre cette épreuve'}]:!state.started&&step.mode?[{operation:'interact',label:'Commencer l’épreuve'}]:(modeOperations[mode]||['interact']).map(operation=>({operation,label:{interact:mode==='route'?'Confirmer le repère':mode==='hazard'?'Traverser dans la fenêtre':'Agir ici',strike:'Frappe sur le temps',guard:'Garde · reprendre le contrôle',repair:'Réparer l’assemblage'}[operation]||operation}));
  const actionCooldown=mode==='rhythm'?Math.max(0,3-(state.tick-state.actionTick))*CAMPAIGN_TICK:mode==='rebuild'&&state.started?Math.max(0,5-state.clock)*CAMPAIGN_TICK:0;
- return{region,active:state.active,finished:false,phaseIndex:state.phase,phaseId:phase.id,title:phase.title,stepIndex:state.step,stepCount:phase.steps.length,objective:campaignObjectiveId(region,phase,step),name:step.name,dialogue:value?.prompt||step.dialogue,instruction:state.message||step.dialogue,mode,target,range:6,choices:sceneChoices(save,region,state,step),actions,actionReady:actionCooldown===0,actionCooldown,started:state.started,tick:state.tick,clock:state.clock,period,window,safe:state.clock%period>=window[0]&&state.clock%period<=window[1],trial:state.trial,trialCount:mode==='escort'||mode==='route'?4:mode==='rhythm'?5:mode==='relay'?15:3,integrity:state.integrity,intensity:state.intensity,escort:state.escort,escortGoal:mode==='escort'&&state.started?checkpoints(region,state,step)[Math.min(3,state.trial)]:null,relay:mode==='relay'?{companion:anchorFor(region,state,step),player:target,hold:state.trial,required:15}:null,effects:state.effects,completed:state.completed,inventory:state.inventory,attempt:state.attempt,progress:(state.phase+state.step/phase.steps.length)/8};
+ const staging=region==='france'?franceInvestigationObjective(phase.id,step.id):null;
+ return{region,active:state.active,finished:false,phaseIndex:state.phase,phaseId:phase.id,title:phase.title,stepIndex:state.step,stepCount:phase.steps.length,objective:campaignObjectiveId(region,phase,step),name:step.name,dialogue:value?.prompt||step.dialogue,instruction:state.message||step.dialogue,mode,target,range:6,choices:sceneChoices(save,region,state,step),actions,actionReady:actionCooldown===0,actionCooldown,started:state.started,tick:state.tick,clock:state.clock,period,window,safe:state.clock%period>=window[0]&&state.clock%period<=window[1],trial:state.trial,trialCount:mode==='escort'||mode==='route'?4:mode==='rhythm'?5:mode==='relay'?15:3,integrity:state.integrity,intensity:state.intensity,escort:state.escort,escortGoal:mode==='escort'&&state.started?checkpoints(region,state,step)[Math.min(3,state.trial)]:null,relay:mode==='relay'?{companion:anchorFor(region,state,step),player:target,hold:state.trial,required:15}:null,effects:state.effects,completed:state.completed,inventory:state.inventory,attempt:state.attempt,progress:(state.phase+state.step/phase.steps.length)/8,...(region==='france'?{staging,investigation:franceInvestigationState(save)}:{})};
 }
 export function activeCampaignSnapshot(save){
  if(CAMPAIGN_RUNTIME_SPEC[save.region])return campaignSnapshot(save,save.region);
@@ -71,6 +81,7 @@ function failTrial(state,message,loss=25){state.integrity=Math.max(0,state.integ
  * not an authoritative continuous walking simulation. */
 export function applyCampaignAction(save,action){
  const region=action.region||save.region,spec=CAMPAIGN_RUNTIME_SPEC[region];requireThat(spec,'Campagne inconnue.');
+ requireThat(action.layoutVersion===undefined||action.layoutVersion===2,'Version du lieu de campagne inconnue.');
  const state=phaseState(save,region),phase=spec[state.phase],step=phase?.steps[state.step];
  if(spec.slice(0,state.phase).some(p=>p.steps.some(s=>campaignObjectiveId(region,p,s)===action.objective)))return{state,duplicate:true};
  requireThat(state.phase<8&&phase&&step,'Cet héritage est déjà retrouvé.');
@@ -83,7 +94,12 @@ export function applyCampaignAction(save,action){
  const position=action.position;requireThat(position&&Number.isFinite(position.x)&&Number.isFinite(position.z),'Position de campagne manquante.');
  const valid=step.homecoming?Math.hypot(position.x,position.z)<=REALM_REFERENCE_RADIUS:realmPositionValid(region,position);
  requireThat(valid,'Cette position est hors du monde praticable.');
- const target=targetFor(region,state,step),separation=distance(position,target);
+ const target=targetFor(region,state,step);
+ // Existing offline journals store the position of the original interaction.
+ // Their accepted inputs must still replay after this scenery release. New
+ // clients tag commands as layoutVersion 2 and must use the authored stations.
+ const legacy=action.layoutVersion===undefined&&region==='france';
+ const separation=Math.min(distance(position,target),legacy?distance(position,targetFor(region,state,step,true)):Infinity);
  requireThat(separation<=(operation==='tick'?55:6.5),'Approche-toi du véritable point d’action.');
  state.active=true;
  if(operation==='tick'){

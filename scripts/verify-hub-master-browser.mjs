@@ -53,7 +53,7 @@ function injectCaptureHooks(code){
  const marker='return{\n  refreshHubSchedule:';assert.ok(code.includes(marker),'Scene capture fixture matches the real API');
  return code.replace(marker,`let qaCaptureFrozen=false;return{
   qaHoldRender(){if(!qaCaptureFrozen){cancelAnimationFrame(raf);qaCaptureFrozen=true;}return elapsed;},
-  qaGuidanceState(){return {renderHeld:qaCaptureFrozen,paused,elapsed,waypoint:waypoint?.id||null,routeLength:target?route.length+1:0,planning:routePlanner.status().pending};},
+  qaGuidanceState(){return {renderHeld:qaCaptureFrozen,paused,elapsed,waypoint:waypoint?.id||null,routeLength:target?route.length+1:0,planning:routePlanner.status().pending,routeError:routePlanner.status().error};},
   qaFreezeCapture(){if(!qaCaptureFrozen){cancelAnimationFrame(raf);qaCaptureFrozen=true;}post.render(0);return canvas.toDataURL('image/png');},
   qaResumeCapture(){if(!qaCaptureFrozen)return;qaCaptureFrozen=false;last=performance.now();raf=requestAnimationFrame(tick);},
   refreshHubSchedule:`);
@@ -73,6 +73,13 @@ async function capture(page,path){
   await page.evaluate(()=>{document.querySelector('[data-hub-qa-capture]')?.remove();const canvas=document.querySelector('.world-canvas');if(canvas?.hasAttribute('data-hub-qa-visibility')){canvas.style.visibility=canvas.dataset.hubQaVisibility;delete canvas.dataset.hubQaVisibility;}const scene=window.qa?.captureScene;if(window.qa)delete window.qa.captureScene;scene?.qaResumeCapture();});
  }
 }
+// Keep real HUD hit testing bounded while software WebGL yields the compositor.
+// This private animation-loop hook leaves the game's pause flag unchanged.
+async function withHubUiFrame(page,callback){
+ await page.evaluate(()=>qa.scene.qaHoldRender());
+ try{return await callback({timeout:15000});}
+ finally{await page.evaluate(()=>qa.scene.qaResumeCapture());}
+}
 const report=[];
 try{
  for(const device of [{id:'desktop',viewport:{width:1280,height:800}},{id:'touch-landscape',viewport:{width:844,height:390},isMobile:true,hasTouch:true}]){
@@ -84,19 +91,29 @@ try{
    await page.goto('http://127.0.0.1:5199/__hub-master-qa',{waitUntil:'domcontentloaded'});
    await page.locator('.world-loading').waitFor({state:'hidden',timeout:120000});await page.locator('.hub-objective-card').waitFor({timeout:120000});
    const skip=page.getByRole('button',{name:'Passer',exact:true});
-   if(await skip.count())await skip.first().click({timeout:8000}).catch(async error=>{if(await skip.first().isVisible())throw error;});
+   if(await skip.count())await withHubUiFrame(page,()=>skip.first().click({timeout:8000}).catch(async error=>{if(await skip.first().isVisible())throw error;}));
    // The short arrival shot can end while SwiftShader waits for two stable
    // compositor frames. Both a successful skip and natural completion are valid.
    await page.locator('.play-cinematic').waitFor({state:'hidden',timeout:120000});
    await page.waitForTimeout(4200);
    assert.equal(await page.locator('.hub-recovery').count(),0);
    assert.equal(await page.locator('.hub-orientation-guide').count(),0,'first entry does not obscure the world');
-   await page.getByRole('button',{name:'Premiers pas dans la cité',exact:true}).click();
+   await withHubUiFrame(page,options=>page.getByRole('button',{name:'Premiers pas dans la cité',exact:true}).click(options));
    await page.locator('.hub-orientation-guide').waitFor({state:'visible',timeout:30000});
-   await page.getByRole('button',{name:'Explorer librement',exact:true}).click();
-   await page.locator('.hub-guide-primary').click();
-   const stopGuidance=page.getByRole('button',{name:'Arrêter le guidage et retirer le repère',exact:true});await stopGuidance.waitFor({timeout:30000});
-   await page.locator('.hub-guidance-running').waitFor({state:'visible',timeout:30000});
+   await withHubUiFrame(page,options=>page.getByRole('button',{name:'Explorer librement',exact:true}).click(options));
+   await withHubUiFrame(page,options=>page.locator('.hub-guide-primary').click(options));
+   // This scenario checks actual route acceptance and cancellation. Keep the
+   // native worker running while its private QA renderer is held: repeated
+   // SwiftShader draws can starve the worker's message and DOM compositor on
+   // Linux. Resume before asserting that the real scene publishes the route.
+   await page.evaluate(()=>qa.scene.qaHoldRender());
+   try{
+    await page.waitForFunction(()=>{const state=qa.scene.qaGuidanceState();return !state.planning&&state.routeLength>0;},undefined,{timeout:120000,polling:250});
+   }catch(error){
+    console.error(device.id+': native route readiness',await page.evaluate(()=>qa.scene.qaGuidanceState()));throw error;
+   }finally{await page.evaluate(()=>qa.scene.qaResumeCapture());}
+   const stopGuidance=page.getByRole('button',{name:'Arrêter le guidage et retirer le repère',exact:true});await stopGuidance.waitFor({timeout:120000});
+   await page.locator('.hub-guidance-running').waitFor({state:'visible',timeout:120000});
    const heldElapsed=await page.evaluate(()=>qa.scene.qaHoldRender());
    try{
     assert.ok(await page.evaluate(()=>qa.scene.qaGuidanceState().waypoint),'Guidance has an actual scene waypoint before cancellation');
@@ -106,7 +123,7 @@ try{
    }finally{await page.evaluate(()=>qa.scene.qaResumeCapture());}
    console.log(device.id+': guidance cancels with rendering suspended');
    assert.equal(await page.evaluate(()=>localStorage.getItem('3b-world-quality')),null,'old graphics overrides are discarded automatically');
-   await page.getByRole('button',{name:'Pause et options',exact:true}).click();const dialog=page.getByRole('dialog',{name:'Une pause dans le voyage',exact:true});await dialog.waitFor();
+   await withHubUiFrame(page,options=>page.getByRole('button',{name:'Pause et options',exact:true}).click(options));const dialog=page.getByRole('dialog',{name:'Une pause dans le voyage',exact:true});await dialog.waitFor();
    await dialog.getByText('Commandes clavier et tactile',{exact:true}).click();await dialog.getByRole('button',{name:'QWERTY',exact:true}).click();
    await dialog.getByLabel('Touche pour interagir',{exact:true}).selectOption('w');assert.equal(await dialog.getByLabel('Touche pour interagir',{exact:true}).inputValue(),'e');
    await dialog.getByLabel('Touche pour interagir',{exact:true}).selectOption('f');assert.equal(await dialog.getByLabel('Touche pour interagir',{exact:true}).inputValue(),'f');
@@ -131,11 +148,11 @@ try{
     await page.waitForFunction(()=>qa.scene.qaGuidanceState().paused===false,null,{timeout:25000});
     const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('3b-world-touch-layout-v1')));
     assert.ok(saved.jump.x<90&&saved.jump.y<65,'touch customization is saved on this device');
-    await page.getByRole('button',{name:'Pause et options',exact:true}).click();await dialog.waitFor();
+    await withHubUiFrame(page,options=>page.getByRole('button',{name:'Pause et options',exact:true}).click(options));await dialog.waitFor();
    }
    await dialog.getByRole('button',{name:'Fermer',exact:true}).click();await page.waitForTimeout(2500);await capture(page,out+'/'+device.id+'-hub.png');
-   await page.getByRole('button',{name:'Ouvrir la carte',exact:true}).click();const atlas=page.getByRole('dialog',{name:'L’Atlas des huit portes',exact:true});await atlas.waitFor();assert.doesNotMatch(await atlas.innerText(),/talk:|weather:|mael_rivière|Terrasses de l’Onis/);await capture(page,out+'/'+device.id+'-atlas.png');await atlas.getByRole('button',{name:'Fermer',exact:true}).click();
-   await page.getByRole('button',{name:'Journal et objectif',exact:true}).click();const journal=page.getByRole('dialog',{name:'Journal d’exploration',exact:true});await journal.waitFor();assert.doesNotMatch(await journal.innerText(),/talk:|weather:|mael_rivière/);await journal.getByRole('button',{name:'Fermer',exact:true}).click();
+   await withHubUiFrame(page,options=>page.getByRole('button',{name:'Ouvrir la carte',exact:true}).click(options));const atlas=page.getByRole('dialog',{name:'L’Atlas des huit portes',exact:true});await atlas.waitFor();assert.doesNotMatch(await atlas.innerText(),/talk:|weather:|mael_rivière|Terrasses de l’Onis/);await capture(page,out+'/'+device.id+'-atlas.png');await atlas.getByRole('button',{name:'Fermer',exact:true}).click();
+   await withHubUiFrame(page,options=>page.getByRole('button',{name:'Journal et objectif',exact:true}).click(options));const journal=page.getByRole('dialog',{name:'Journal d’exploration',exact:true});await journal.waitFor();assert.doesNotMatch(await journal.innerText(),/talk:|weather:|mael_rivière/);await journal.getByRole('button',{name:'Fermer',exact:true}).click();
    console.log(device.id+': interface, guidance and captures passed; checking reload');
    await page.reload({waitUntil:'domcontentloaded'});await page.locator('.hub-objective-card').waitFor({timeout:120000});await page.locator('.world-loading').waitFor({state:'hidden',timeout:120000});assert.equal(await page.getByRole('dialog',{name:'Ton personnage',exact:true}).count(),0);assert.equal(await page.locator('.hub-orientation-guide').count(),0);
    if(device.hasTouch){
@@ -157,12 +174,16 @@ try{
   await page.addInitScript(()=>localStorage.setItem('3b-world-quality','fluid'));await page.goto('http://127.0.0.1:5199/__hub-master-qa?account&mode=offline');
   await page.locator('.world-loading').waitFor({state:'hidden',timeout:120000});await page.locator('.hub-save-card-compact').waitFor({timeout:120000});assert.match(await page.locator('.hub-save-card-compact').innerText(),/copie locale reste/);
   await page.evaluate(()=>{qa.mode='ready';window.dispatchEvent(new Event('online'));});await page.locator('.hub-save-card-compact').waitFor({state:'hidden',timeout:30000});
-  // Private render hold keeps the real Pause button stable on software GPU.
-  // The click remains a genuine browser action: no force, no direct DOM dispatch.
+  // SwiftShader can make a real Pause button unstable during a heavy frame.
+  // Suspend only the private QA renderer; keep the genuine Playwright click and
+  // the existing account recovery/security assertions unchanged.
   await page.waitForFunction(()=>!!qa.scene,undefined,{timeout:120000,polling:250});
-  await page.evaluate(()=>qa.scene.qaHoldRender());
-  try{await page.getByRole('button',{name:'Pause et options',exact:true}).click({timeout:60000});}
-  finally{await page.evaluate(()=>qa.scene.qaResumeCapture());}
+  // A fast simulated reconnect can finish before the arrival shot does. Use its
+  // actual skip control before holding the animation loop for the Pause click.
+  const arrival=page.locator('.play-cinematic'),arrivalSkip=arrival.getByRole('button',{name:'Passer',exact:true});
+  if(await arrivalSkip.count())await withHubUiFrame(page,()=>arrivalSkip.click({timeout:8000}).catch(async error=>{if(await arrivalSkip.isVisible())throw error;}));
+  await arrival.waitFor({state:'hidden',timeout:120000});
+  await withHubUiFrame(page,options=>page.getByRole('button',{name:'Pause et options',exact:true}).click(options));
   assert.match(await page.locator('.hub-save-card').innerText(),/confirmées par le serveur/);await capture(page,out+'/account-recovered.png');
   await page.evaluate(()=>localStorage.clear());await page.goto('http://127.0.0.1:5199/__hub-master-qa?account&empty&mode=offline');await page.locator('.hub-recovery').waitFor({timeout:30000});assert.equal(await page.getByRole('dialog',{name:'Ton personnage',exact:true}).count(),0);assert.match(await page.locator('.hub-recovery').innerText(),/Aucune copie locale/);assert.equal(await page.locator('.play-hud').getAttribute('inert'),'');await page.keyboard.press('Tab');await page.keyboard.press('Tab');assert.equal(await page.evaluate(()=>!!document.activeElement.closest('.world-dialog-failure')),true,'Recovery focus stays in modal');assert.equal(await page.evaluate(()=>Object.keys(localStorage).some(key=>key.startsWith('3b_world_actions_v2_'))),false,'No replacement progression is journaled');report.push({device:'account-simulation',ok:true,checks:['offline-backup','online-retry','server-confirmation','no-copy-recovery-gate','recovery-focus-containment']});
  }catch(error){report.push({device:'account-simulation',ok:false,error:error.message});}await context.close();

@@ -3,6 +3,9 @@ import {cinemaProfile} from './cinematic-director.js';
 import {createLivingActor} from './living.js';
 import {campaignPerson} from './journey-presence.js';
 import {createStoryRelic} from './story-relic.js';
+import {createRealmStoryRelic} from './realm-story-relic.js';
+import {realmStoryStaging} from './realm-story-staging.js';
+import {createGuardianMechanicArt} from './guardian-mechanic-art.js';
 
 /** Visualise the authoritative boss state. This object never awards damage,
  * invulnerability, a seal or a new elemental/totem ability. */
@@ -26,6 +29,7 @@ export function createRealmEffects(region,{reducedMotion=false,groundY=()=>0}={}
  const beamMaterial=keep(new THREE.LineBasicMaterial({color:profile.accent,transparent:true,opacity:.65,depthWrite:false}));
  const beams=new THREE.LineSegments(beamGeometry,beamMaterial);beams.frustumCulled=false;root.add(beams);
  const echoes=[];
+ const mechanicArt=createGuardianMechanicArt(region,{reducedMotion});if(mechanicArt)root.add(mechanicArt.root);
  const echoGeometry=keep(new THREE.CapsuleGeometry(.55,2.3,3,7));
  for(let i=0;i<3;i++){const echo=new THREE.Mesh(echoGeometry,spectral);root.add(echo);echoes.push(echo);}
  root.visible=false;
@@ -34,6 +38,7 @@ export function createRealmEffects(region,{reducedMotion=false,groundY=()=>0}={}
   const field=encounter?.field,active=!!encounter?.boss&&!encounter.result;
   root.visible=active||cinematic;if(!root.visible||!player||!focus)return;
   const home=field?.home||focus,base=groundY(home.x,home.z);root.position.set(home.x,base,home.z);
+  mechanicArt?.update(presentation,home);
   const phase=Math.max(1,Math.min(3,presentation?.index||encounter?.phase||1)),pulse=reducedMotion?.5:.5+.5*Math.sin(time*.9);
   glow.opacity=.17+pulse*.12;spectral.opacity=.09+pulse*.07;
   rings[1].rotation.z=reducedMotion?0:time*.07;
@@ -55,7 +60,8 @@ export function createRealmEffects(region,{reducedMotion=false,groundY=()=>0}={}
   }
   root.userData.state={region,phase,signature:region,integrity,shield:encounter?.guardianShield||0,intensity:region==='espagne'?encounter?.guardianMeter||0:0,verified:!!encounter?.guardianFlag,windup:field?.windup||0};
  }
- return {root,tick,dispose(){root.removeFromParent();owned.forEach(resource=>resource.dispose());}};
+ let disposed=false;
+ return {root,tick,dispose(){if(disposed)return;disposed=true;mechanicArt?.dispose();root.removeFromParent();owned.forEach(resource=>resource.dispose());}};
 }
 
 export function createRealmMarker(item,{groundY=()=>0,library,reducedMotion=false,onError}={}){
@@ -80,9 +86,23 @@ export function createRealmMarker(item,{groundY=()=>0,library,reducedMotion=fals
   }
   figure.position.x=-1.4;
  }
- const relic=createStoryRelic(item);if(relic){root.add(relic.root);figure.visible=false;}
+ // The authored artefact changes when the authoritative campaign progresses.
+ // A marker reused across missions must not display yesterday's evidence.
+ const storyKey=()=>realmStoryStaging(item)?.key||[item.region,item.type,item.campaign?.phaseId].join(':');
+ const makeRelic=()=>createStoryRelic(item)||createRealmStoryRelic(item);
+ let relic=makeRelic(),relicKey=storyKey();root.userData.storyStaging=relic?.stage||null;
+ if(relic){root.add(relic.root);figure.visible=false;}
  let previousTime=0,oldPoint={x:item.x,z:item.z};
- return {root,update(next){Object.assign(item,next);root.position.set(item.x,groundY(item.x,item.z),item.z);},tick(time,position,{reducedMotion=false}={}){
+ return {root,update(next){
+  Object.assign(item,next);
+  const nextKey=storyKey();
+  if(nextKey!==relicKey){
+   relic?.dispose();relic=makeRelic();relicKey=nextKey;root.userData.storyStaging=relic?.stage||null;
+   if(relic)root.add(relic.root);
+   figure.visible=!relic;
+  }
+  root.position.set(item.x,groundY(item.x,item.z),item.z);
+ },tick(time,position,{reducedMotion=false}={}){
   const dt=Math.min(.1,Math.max(0,time-previousTime));previousTime=time;root.visible=Math.hypot(position.x-item.x,position.z-item.z)<260;if(!root.visible)return;
   figure.rotation.y=reducedMotion?0:time*.2;figure.position.y=1.45+(reducedMotion?0:Math.sin(time*1.1)*.08);
   if(trialBands.length){const challenge=item.campaign;trialMaterial.color.set(challenge?.safe?'#83c6bb':'#c9a569');trialMaterial.opacity=challenge?.started ? .32 : .16;trialBands.forEach(band=>band.visible=challenge?.integrity>0);}

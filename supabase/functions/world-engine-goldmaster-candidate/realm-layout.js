@@ -113,7 +113,7 @@ export function realmMonumentObstacles(region){return realmSites(region).filter(
  if(s.kind==='lighthouse'||s.kind==='windmill')return[{id:s.id+':monument',x,z,width:13,depth:11,height:26,rotation:0}];
  return [{id:s.id+':monument',x,z,width:26,depth:19,height:22,rotation:0}];
 });}
-const realmStructuralObstacles=region=>[...realmBuildings(region).map(b=>({...b})),...realmMonumentObstacles(region),...realmSites(region).filter(s=>s.kind==='guardianCourt').flatMap(s=>REALM_COURT_COLUMNS.map((p,i)=>({id:s.id+':column:'+i,x:s.x+p.x,z:s.z+p.z,width:3.6,depth:3.6,height:9,rotation:0})))];
+const realmStructuralObstacles=region=>[...realmBuildings(region).map(b=>({...b})),...realmMonumentObstacles(region),...realmSites(region).filter(s=>s.kind==='guardianCourt').flatMap(s=>REALM_COURT_COLUMNS.map((p,i)=>({id:s.id+':column:'+i,x:s.x+p.x,z:s.z+p.z,width:3.6,depth:3.6,height:19,rotation:0})))];
 const furnitureCache=new Map();
 export function realmStreetFurniture(region){if(!realmLayout(region))return[];if(!furnitureCache.has(region))furnitureCache.set(region,createVillageFurnitureLayout(realmLayout(region),realmStructuralObstacles(region)));return furnitureCache.get(region);}
 export const realmStaticObstacles=region=>[...realmStructuralObstacles(region),...realmStreetFurniture(region).map(p=>({...p}))];

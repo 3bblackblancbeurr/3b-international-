@@ -2,7 +2,7 @@
 // or invented choice. Completed effects come from the canonical quest ledger.
 export function journeyPresence(campaign,distance=Infinity){
  if(!campaign||campaign.finished)return null;
- if(distance<=14)return{speaker:/Léa|témoin|Amel|Yanis/.test(campaign.name)?campaign.name.split(' · ')[0]:'Kaïs',text:campaign.dialogue,near:true};
+ if(distance<=14)return{speaker:campaign.staging?.speaker||(/Léa|témoin|Amel|Yanis/.test(campaign.name)?campaign.name.split(' · ')[0]:'Kaïs'),text:campaign.dialogue,near:true};
  if(campaign.phaseId==='homecoming')return{speaker:'Kaïs',text:'Ce fragment porte ce que nous avons traversé ensemble. Ramenons-le à la Cité.'};
  const effects=campaign.effects||[];
  if(campaign.region==='france'){
