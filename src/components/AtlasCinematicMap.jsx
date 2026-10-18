@@ -1,29 +1,14 @@
 import {MapPin} from 'lucide-react';
 import {useEffect,useRef,useState} from 'react';
 import {Button} from '../design-system/index.jsx';
+import {ATLAS_PORTALS,atlasConnections,atlasPortalForRealm} from './atlas-map-model.js';
 
-// These are illustrated routes between geographic regions, not actual
-// operational 3B hubs, registered members or verified partner locations.
-const PORTALS=[
- {id:'americas',x:20,y:36,label:'Amériques',action:'travel',gold:false},
- {id:'south-america',x:25,y:65,label:'Amérique du Sud',action:'travel',gold:false},
- {id:'europe',x:52,y:26,label:'Europe et les huit héritages',action:'france',gold:true},
- {id:'africa',x:48,y:44,label:'Afrique du Nord',action:'maroc',gold:true},
- {id:'asia',x:78,y:32,label:'Asie',action:'travel',gold:false},
- {id:'oceania',x:87,y:76,label:'Océanie',action:'travel',gold:false},
-];
-const CONNECTIONS=[
- ['M510 130 Q410 55 290 140','warm'],
- ['M510 130 Q340 120 360 320','cold'],
- ['M510 130 Q420 180 470 180','cold'],
- ['M510 130 Q725 10 880 160','warm'],
- ['M510 130 Q750 205 910 340','cold'],
- ['M470 180 Q370 45 290 140','warm'],
-];
-export const ATLAS_PORTALS=PORTALS;
+export {ATLAS_PORTALS} from './atlas-map-model.js';
 export default function AtlasCinematicMap({onRealm,onTravel,activeRealm}){
  const frameRef=useRef(null);
  const [frame,setFrame]=useState(null);
+ const selectedPortal=atlasPortalForRealm(activeRealm);
+ const connections=atlasConnections(activeRealm);
  useEffect(()=>{
   const stage=frameRef.current?.parentElement;
   if(!stage)return;
@@ -55,18 +40,19 @@ export default function AtlasCinematicMap({onRealm,onTravel,activeRealm}){
      <stop offset="1" stopColor="var(--3b-energy-blue-highlight)" stopOpacity=".16"/>
     </linearGradient>
    </defs>
-   {CONNECTIONS.map(([path,color],i)=><g key={i}>
+   {connections.map(({id,path,color,activePath})=><g key={id}>
     <path d={path} className="atlas3b-flight-base"
      stroke={color==='warm'?'url(#atlas3b-sky-arc)':'url(#atlas3b-ice-arc)'}
      fill="none" strokeWidth="1.35" strokeLinecap="round" opacity=".75"/>
-    <path d={path} className={'atlas3b-flight-line atlas3b-flight-line--'+color}
+    {activePath&&<path d={activePath} className={'atlas3b-flight-line atlas3b-flight-line--'+color+' is-active'}
      stroke={color==='warm'?'url(#atlas3b-sky-arc)':'url(#atlas3b-ice-arc)'}
-     fill="none" strokeWidth="3" strokeLinecap="round" pathLength="100"/>
+     fill="none" strokeWidth="3" strokeLinecap="round" pathLength="100"/>}
    </g>)}
   </svg>
-  {PORTALS.map(p=><Button variant="ghost" key={p.id} type="button"
-   className={'atlas3b-map-pin'+(p.gold?' atlas3b-map-pin--gold':'')+((p.action===activeRealm)?' is-selected':'')}
+  {ATLAS_PORTALS.map(p=><Button variant="ghost" key={p.id} type="button"
+   className={'atlas3b-map-pin'+(p.gold?' atlas3b-map-pin--gold':'')+(p.id===selectedPortal?' is-selected':'')}
    style={{left:p.x+'%',top:p.y+'%'}}
+   aria-pressed={p.action==='travel'?undefined:p.id===selectedPortal}
    aria-label={'Explorer '+p.label+(p.action==='travel'?' dans Voyage 3B':' dans les royaumes 3B')}
    title={p.label}
    onClick={()=>p.action==='travel'?onTravel():onRealm(p.action)}>

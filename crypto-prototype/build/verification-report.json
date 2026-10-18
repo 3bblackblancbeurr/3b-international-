@@ -1,0 +1,63 @@
+{
+  "status": "passed",
+  "scope": "12 ERC20 EVM tests and 6 offline deployment preparation tests; no RPC, public network, keys, wallet, signed transaction or real fees.",
+  "capturedAt": "2026-10-17T23:22:32.183Z",
+  "tests": 18,
+  "passed": 18,
+  "failed": 0,
+  "erc20EvmTests": 12,
+  "deploymentPreparationTests": 6,
+  "testNetworkGuard": "fetch, HTTP(S) and TCP connect paths throw during EVM tests",
+  "compiler": {
+    "status": "compiled",
+    "scope": "local-only; no public deployment",
+    "compiler": "0.8.37+commit.f401782d.Emscripten.clang",
+    "node": "v24.21.0",
+    "evmVersion": "cancun",
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "viaIR": false,
+    "sourceCount": 6,
+    "creationBytecodeBytes": 2748,
+    "runtimeBytecodeBytes": 1764,
+    "errors": [],
+    "warnings": [],
+    "sha256": {
+      "entry": "d164b4f389ddbafb461d0c91d17e94dd4cf9abfc73e416227710d062d03f1ef3",
+      "lockfile": "4f0d4e6e6177065b899f875f6c21825ca32924397d3ee2aee3309e1622d58249",
+      "artifact": "e74d4f49e7fa6465971b3c51e1f415aa6f8b44e36ae8e2385e6f59deba3b28d7"
+    },
+    "packages": {
+      "name": "threeb-token-prototype",
+      "version": "0.1.0",
+      "private": true,
+      "type": "module",
+      "description": "Prototype ERC-20 local uniquement, sans reseau ni portefeuille.",
+      "engines": {
+        "node": ">=22"
+      },
+      "scripts": {
+        "compile": "node scripts/compile.mjs",
+        "test": "npm run compile && node --test tests/token.test.mjs",
+        "verify": "node scripts/verify.mjs"
+      },
+      "dependencies": {
+        "@openzeppelin/contracts": "5.6.1"
+      },
+      "overrides": {
+        "tmp": "0.2.7"
+      },
+      "devDependencies": {
+        "@ethereumjs/common": "10.1.3",
+        "@ethereumjs/util": "10.1.3",
+        "@ethereumjs/vm": "10.1.3",
+        "ethers": "6.17.0",
+        "solc": "0.8.37"
+      }
+    }
+  },
+  "testSourceSha256": "0223c446a2a2b6305d428ab9b4e73b507a6f2be76994fe1127ef35741e6f78c7",
+  "deploymentTestSourceSha256": "096bd181b918c78af3c128bcdb16d93dd2f6f77eebc8e6cc6f239e5459a02ce5"
+}

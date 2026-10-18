@@ -1,0 +1,96 @@
+.app3b .albert3b-experience.th-albert-screen[data-panel="assistant"]{height:auto;min-height:100svh;overflow:clip;padding-bottom:110px!important}
+.th-albert-screen[data-panel="assistant"] .albert3b-topbar{position:relative}
+.th-albert-screen[data-panel="assistant"] .albert3b-stage{position:relative;inset:auto!important;height:330px}
+.th-albert-screen[data-panel="assistant"] .albert3b-stage-copy{top:24px;left:max(6vw,24px);max-width:55%}
+.th-albert-screen[data-panel="assistant"] .albert3b-stage-copy h1{font-size:clamp(68px,7vw,102px);margin:12px 0 16px}
+.th-albert-screen[data-panel="assistant"] .albert3b-stage-copy h1 span{display:inline;margin-left:16px}
+.th-albert-screen[data-panel="assistant"] .albert3b-tagline{font-size:16px;max-width:420px;margin-bottom:16px}
+.th-albert-screen[data-panel="assistant"] .albert3b-avatar.albert3b-sculpted-avatar{right:8%;top:0;width:36%;height:100%}
+.th-albert-screen[data-panel="assistant"] .th-albert-stage-constellation{display:none}
+.th-albert-screen[data-panel="assistant"] .th-albert-toolbar{position:relative;inset:auto;max-width:1120px;margin:0 auto;padding:0 24px;gap:28px}
+.th-albert-screen[data-panel="assistant"] .albert3b-content{position:relative;inset:auto;max-width:1120px;margin:0 auto;padding:28px 24px;width:100%}
+.th-albert-screen[data-panel="assistant"] .albert3b-local-dock{position:fixed;bottom:12px}
+.th-albert-screen .albert3b-content>[hidden]{display:none!important}
+.albert-chat-ai{color:var(--3b-world-cinema-ivory);min-width:0}
+.albert-ai-heading{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-bottom:20px}
+.albert-ai-heading span{font-size:9px;letter-spacing:.16em;color:var(--3b-champagne)}
+.albert-ai-heading h2{font:400 clamp(27px,3.2vw,42px)/1.18 Georgia,serif;letter-spacing:-.02em;margin:12px 0 0}
+.albert-ai-heading em{color:var(--3b-champagne-highlight);font-weight:400}
+.albert-ai-heading>svg{color:var(--3b-champagne);flex-shrink:0}
+.albert-ai-service{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--3b-world-cinema-muted);padding:12px 0;border-block:1px solid color-mix(in srgb,var(--3b-champagne) 20%,transparent)}
+.albert-ai-service .gm-button{min-height:36px;padding:7px;margin-left:auto}
+.albert-ai-dot{width:7px;height:7px;border-radius:var(--3b-radius-circle);background:var(--3b-world-cinema-muted);flex-shrink:0}
+.albert-ai-dot.is-configured{background:var(--3b-matrix)}
+.albert-ai-account{display:flex;align-items:center;gap:16px;padding:18px 0}
+.albert-ai-account>svg{flex-shrink:0;color:var(--3b-champagne)}
+.albert-ai-account>div{flex:1;min-width:0}
+.albert-ai-account strong{font-size:13px}
+.albert-ai-account p,.albert-ai-unavailable{font-size:12px;line-height:1.6;color:var(--3b-world-cinema-muted);margin:5px 0}
+.albert-ai-account .gm-button{font-size:12px;gap:6px;flex-shrink:0}
+.albert-ai-tools{display:flex;align-items:center;gap:16px;padding:17px 0;font-size:11px;flex-wrap:wrap}
+.albert-ai-tools .gm-button,.albert-ai-answer .gm-button{display:inline-flex;gap:7px;padding:7px 0;font-size:11px;min-height:36px}
+.albert-ai-tools>span{margin-left:auto;color:var(--3b-world-cinema-muted)}
+.albert-ai-messages{max-height:640px;min-height:270px;overflow:auto;overscroll-behavior:contain;scrollbar-color:var(--3b-champagne) transparent;padding:0 5px 8px 0}
+.albert-ai-empty{padding:28px clamp(16px,4vw,54px);text-align:center;border:1px solid color-mix(in srgb,var(--3b-champagne) 20%,transparent);border-radius:var(--3b-radius-md);background:radial-gradient(ellipse at top,color-mix(in srgb,var(--3b-matrix) 9%,transparent),transparent 65%)}
+.albert-ai-empty>svg{color:var(--3b-champagne)}
+.albert-ai-empty h3{font:400 25px/1.3 Georgia,serif;margin:14px 0}
+.albert-ai-empty>p{max-width:650px;margin:0 auto 22px;font-size:13px;line-height:1.75;color:var(--3b-world-cinema-muted)}
+.albert-ai-ideas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.albert-ai-ideas .gm-button{justify-content:space-between;gap:10px;text-align:left;white-space:normal;min-height:48px;padding:11px 13px;border:1px solid color-mix(in srgb,var(--3b-champagne) 20%,transparent);border-radius:var(--3b-radius-sm);font-size:12px}
+.albert-ai-ideas svg{flex-shrink:0;color:var(--3b-champagne)}
+.albert-ai-turn{margin:0 0 22px;overflow-wrap:anywhere}
+.albert-ai-turn small{font-size:9px;letter-spacing:.12em;color:var(--3b-champagne)}
+.albert-ai-turn p{white-space:pre-wrap;font-size:14px;line-height:1.8;margin:9px 0}
+.albert-ai-question{padding:16px 20px;border-left:2px solid var(--3b-champagne);background:color-mix(in srgb,var(--3b-champagne) 7%,transparent);border-radius:var(--3b-radius-sm)}
+.albert-ai-answer{padding:20px 20px 5px}
+.albert-ai-answer>div{display:flex;gap:20px}
+.albert-ai-answer p.albert-ai-partial,.albert-ai-thinking{color:var(--3b-world-cinema-muted);font-size:12px}
+.albert-ai-notice{font-size:12px;line-height:1.65;color:var(--3b-champagne-highlight);border-left:2px solid var(--3b-champagne);padding:10px 15px}
+.albert-ai-composer{padding:18px;margin-top:12px;border:1px solid color-mix(in srgb,var(--3b-champagne) 43%,transparent);border-radius:var(--3b-radius-md);background:color-mix(in srgb,var(--3b-obsidian) 85%,transparent)}
+.albert-ai-composer label{display:block;font-size:11px;color:var(--3b-champagne);margin-bottom:10px}
+.albert-ai-composer textarea{display:block;width:100%;resize:vertical;min-height:90px;max-height:330px;border:0;border-radius:var(--3b-radius-flat);background:transparent;color:var(--3b-world-cinema-ivory);font:inherit;font-size:14px;line-height:1.7;padding:4px}
+.albert-ai-composer textarea::placeholder{color:var(--3b-world-cinema-muted)}
+.albert-ai-composer textarea:focus-visible{outline:1px solid var(--3b-champagne);outline-offset:4px}
+.albert-ai-composer>div{display:flex;align-items:center;gap:15px;margin-top:14px;flex-wrap:wrap}
+.albert-ai-composer>div>span{margin-right:auto;font-size:10px;color:var(--3b-world-cinema-muted)}
+.albert-ai-composer .gm-button{gap:7px;font-size:12px;min-height:42px}
+.albert-ai-privacy{margin:20px 0;color:var(--3b-world-cinema-muted);font-size:11px;line-height:1.7}
+.albert-ai-privacy summary{cursor:pointer;color:var(--3b-champagne);padding:10px 0}
+.albert-ai-privacy summary svg{vertical-align:middle;margin-right:7px}
+.albert-ai-privacy p{max-width:900px}
+@media(max-width:720px){
+ .th-albert-toolbar button{font-size:10px;gap:4px}
+ .th-albert-toolbar svg{width:14px}
+ .th-albert-screen[data-panel="assistant"] .albert3b-topbar{padding-bottom:12px}
+ .th-albert-screen[data-panel="assistant"] .albert3b-stage{height:255px}
+ .th-albert-screen[data-panel="assistant"] .albert3b-stage-copy{left:19px;top:18px;max-width:58%;right:auto}
+ .th-albert-screen[data-panel="assistant"] .albert3b-stage-copy h1{font-size:55px;margin:12px 0}
+ .th-albert-screen[data-panel="assistant"] .albert3b-stage-copy h1 span{display:block;margin-left:0}
+ .th-albert-screen[data-panel="assistant"] .albert3b-tagline{font-size:11px;width:auto;margin-bottom:10px}
+ .th-albert-screen[data-panel="assistant"] .albert3b-status{max-width:195px}
+ .th-albert-screen[data-panel="assistant"] .albert3b-avatar.albert3b-sculpted-avatar{width:51%;right:-2%;top:15%;height:85%}
+ .th-albert-screen[data-panel="assistant"] .th-albert-toolbar{padding:0 14px;gap:7px;justify-content:space-between}
+ .th-albert-screen[data-panel="assistant"] .albert3b-content{padding:23px 16px}
+ .albert-ai-heading h2{font-size:28px}
+ .albert-ai-heading>svg{display:none}
+ .albert-ai-heading span{font-size:8px;letter-spacing:.1em}
+ .albert-ai-account{gap:10px;flex-wrap:wrap}
+ .albert-ai-account>div{flex-basis:75%}
+ .albert-ai-account .gm-button{margin-left:30px}
+ .albert-ai-tools{gap:13px}
+ .albert-ai-tools>span{display:none}
+ .albert-ai-empty{padding:24px 15px}
+ .albert-ai-empty h3{font-size:23px}
+ .albert-ai-empty>p{font-size:12px}
+ .albert-ai-ideas{grid-template-columns:1fr;gap:8px}
+ .albert-ai-ideas .gm-button{font-size:11px}
+ .albert-ai-messages{min-height:250px;max-height:65svh}
+ .albert-ai-question{padding:14px}
+ .albert-ai-answer{padding:18px 8px 0}
+ .albert-ai-turn p{font-size:13px}
+ .albert-ai-composer{padding:14px}
+ .albert-ai-composer>div{gap:10px}
+ .albert-ai-composer .gm-button{font-size:11px}
+ .albert-ai-composer textarea{font-size:16px}
+}
+@media(max-width:360px){.th-albert-toolbar button svg{display:none}.albert-ai-composer>div>span{width:100%}}

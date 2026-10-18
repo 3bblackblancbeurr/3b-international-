@@ -1,0 +1,86 @@
+{
+  "format": "3b-crypto-project",
+  "version": 1,
+  "project": {
+    "version": 1,
+    "title": "FIXTURE EVM LOCALE — ne pas réutiliser",
+    "purpose": "Tester uniquement le constructeur en mémoire. Adresse et quantité arbitraires sans portefeuille ni valeur.",
+    "supplyTokens": "1000.000000000000000001",
+    "recipient": "0x2000000000000000000000000000000000000002",
+    "network": "local",
+    "organisation": "",
+    "lead": "",
+    "reviewer": "",
+    "evidence": {
+      "design": {
+        "reference": "",
+        "reviewer": "",
+        "date": ""
+      },
+      "custody": {
+        "reference": "",
+        "reviewer": "",
+        "date": ""
+      },
+      "security": {
+        "reference": "",
+        "reviewer": "",
+        "date": ""
+      },
+      "testnet": {
+        "reference": "",
+        "reviewer": "",
+        "date": ""
+      },
+      "legal": {
+        "reference": "",
+        "reviewer": "",
+        "date": ""
+      },
+      "operations": {
+        "reference": "",
+        "reviewer": "",
+        "date": ""
+      }
+    }
+  },
+  "contract": {
+    "name": "ThreeBTokenPrototype",
+    "tokenName": "3B Token Prototype",
+    "symbol": "T3B",
+    "decimals": 18,
+    "supplyMode": "fixed-constructor-only",
+    "mintAdmin": false,
+    "upgradeable": false
+  },
+  "parameters": {
+    "initialRecipient": "0x2000000000000000000000000000000000000002",
+    "supplyBaseUnits": "1000000000000000000001"
+  },
+  "network": {
+    "name": "EVM locale",
+    "chainId": null,
+    "tier": "local",
+    "deployed": false,
+    "contractAddress": null
+  },
+  "review": {
+    "status": "documentation",
+    "parametersValid": true,
+    "governanceComplete": false,
+    "missingEvidence": [
+      "design"
+    ],
+    "evidenceNature": "user-declared references; not independently verified"
+  },
+  "execution": {
+    "mode": "preparation-only",
+    "signed": false,
+    "broadcast": false
+  },
+  "simulation": {
+    "symbol": "3BT démo",
+    "decimals": 2,
+    "linkedToPrototype": false
+  }
+}

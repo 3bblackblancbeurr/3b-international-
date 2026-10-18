@@ -89,7 +89,7 @@ export default function LivingWorldHome({goTo,menuItems=[]}){
     <div aria-live="polite" className="world3b-realm-current"><span>{realm.flag} {realm.name}</span><small>{realm.value} · {realm.guardian}</small></div>
     <Button variant="ghost" type="button" onClick={()=>stepRealm(1)} aria-label="Royaume suivant"><ChevronRight size={20}/></Button>
    </div>
-   <div className="world3b-hero-bottom"><p>Tourne la planète, pince pour zoomer ou touche un royaume</p><Button variant="ghost" type="button" onClick={()=>document.getElementById('world3b-modules')?.scrollIntoView({behavior:'smooth',block:'start'})}>Découvrir les 22 univers <ArrowDown size={16}/></Button></div>
+   <div className="world3b-hero-bottom"><p>Tourne la planète, pince pour zoomer ou touche un royaume</p><Button variant="ghost" type="button" onClick={()=>document.getElementById('world3b-modules')?.scrollIntoView({behavior:'smooth',block:'start'})}>Découvrir les espaces <ArrowDown size={16}/></Button></div>
   </div>
   <nav className="world3b-tabs" aria-label="Explorer la carte mondiale">
    {TABS.map(({id,label,Icon})=><Button variant="ghost" type="button" key={id} className={tab===id?'is-active':''} aria-current={tab===id?'page':undefined} onClick={()=>setTab(id)}><Icon size={18}/>{label}</Button>)}
@@ -115,7 +115,7 @@ export default function LivingWorldHome({goTo,menuItems=[]}){
   </section>
   <WorldRealmSpotlight realmId={activeRealm} onSelect={setActiveRealm} goTo={goTo}/>
   <section className="world3b-module-section" id="world3b-modules" aria-labelledby="world3b-modules-title">
-   <div className="world3b-section-title"><div><span className="world3b-eyebrow">UN SEUL UNIVERS · DES ACCÈS RÉELS</span><h2 id="world3b-modules-title">Les 22 univers 3B</h2></div><span className="world3b-count">22</span></div>
+   <div className="world3b-section-title"><div><span className="world3b-eyebrow">UN SEUL UNIVERS · DES ACCÈS RÉELS</span><h2 id="world3b-modules-title">Les espaces 3B</h2></div><span className="world3b-count">22</span></div>
    <div className="world3b-searchbar"><Search size={21} aria-hidden="true"/><label htmlFor="world3b-search" className="visually-hidden">Rechercher une rubrique 3B</label><input id="world3b-search" value={query} onChange={event=>setQuery(event.target.value)} placeholder="Rechercher un univers, un service…" autoComplete="off"/>{query&&<Button variant="ghost" type="button" onClick={()=>setQuery('')} aria-label="Effacer la recherche"><X size={19}/></Button>}</div>
    <div className="world3b-filter-rail" aria-label="Filtrer les univers">
     {WORLD_MODULE_GROUPS.map(group=><Button variant="ghost" key={group.id} type="button" aria-pressed={category===group.id} className={category===group.id?'is-active':''} onClick={()=>setCategory(group.id)}>{group.label}</Button>)}
