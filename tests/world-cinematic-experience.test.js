@@ -47,7 +47,7 @@ test('each World tab has three real, unique navigation destinations',()=>{
  const world=read('src/components/LivingWorldHome.jsx');
  assert.match(world,/<WorldNowFeed tab=\{tab\} goTo=\{goTo\}/);
  assert.match(world,/<WorldRealmSpotlight realmId=\{activeRealm\} onSelect=\{setActiveRealm\} goTo=\{goTo\}/);
- assert.equal(WORLD_MODULES.length,22);
+ assert.equal(WORLD_MODULES.length,21);
  assert.ok(WORLD_MORE_SERVICES.some(item=>item.id==='cinema'));
 });
 

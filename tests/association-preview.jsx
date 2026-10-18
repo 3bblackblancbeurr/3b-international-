@@ -1,0 +1,1 @@
+import React from 'react';import {createRoot} from 'react-dom/client';import '../src/styles/gold-master.css';import CollaborationStudio from '../src/member/collaboration/CollaborationStudio.jsx';createRoot(document.getElementById('association-test-root')).render(<main style={{maxWidth:1150,margin:'0 auto',padding:24}}><CollaborationStudio space="association"/></main>);

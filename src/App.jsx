@@ -77,7 +77,7 @@ const BASE_MENU_ITEMS = [
   { id: "admin", label: "Administration", description: "Suivre ses démarches, échéances et étapes avec les sources officielles." },
   { id: "cinema", label: "Cinéma", description: "Créer sa liste de films et séries, garder ses notes et trouver les offres légales." },
   { id: "foodscan", label: "Scanner alimentaire", description: "Scanner un code-barres et consulter les ingrédients et allergènes." },
-  { id: "albert", label: "Albert APEX · 3B", description: "Concierge 3B et orientation locale, connexion au moteur Albert personnel non activée." },
+  { id: "albert", label: "Albert APEX · 3B", description: "Conversation IA généraliste, disponibilité du service vérifiée à l’ouverture, et guide de navigation 3B." },
   { id: "guide", label: "Guide & XP", description: "Les repères pour commencer." },
   {
     id: "passport",

@@ -1,3 +1,4 @@
+import {companionApplicationReply} from './companion-application.js';
 /** Local, deterministic character dialogue. No remote assistant, account access or reward writes. */
 export const COMPANION_PERSONALITIES = Object.freeze([
   Object.freeze({ id: 'bienveillant', label: 'Gentil', description: 'Chaleureux, encourageant et attentif à ton rythme.', color: 'var(--3b-champagne)', energy: 0.5 }),
@@ -297,6 +298,9 @@ export function companionReply(options = {}) {
   if (/\b(?:silence|tais toi|(?:coupe|eteins|desactive|arrete) (?:ta |la |ton )?(?:voix|son)|arrete de (?:me )?parler|ne (?:me )?parle (?:pas|plus))\b/.test(input)) return { ...act('rest'), control: 'mute' };
   if (/\b(?:laisse moi tranquille|arrete tout|ne (?:te )?bouge (?:pas|plus)|reste tranquille|ne fais plus rien|ne (?:me )?pose (?:pas|plus) de questions|pas d initiatives?|desactive (?:tes |les )?initiatives)\b/.test(input)) return { ...act('rest'), control: 'quiet' };
   if (/\b(?:stop|arrete)\b/.test(input) || /\b(?:ne|n)\b.*\b(?:pas|plus)\b/.test(input) && /\b(?:danse|danser|marche|marcher|bouge|bouger|parle|parler|questions?)\b/.test(input)) return { ...act('rest'), control: 'stop' };
+
+  const applicationReply=companionApplicationReply(input,{memberRegistered,page});
+  if(applicationReply)return applicationReply;
 
   if (/devinette des villes/.test(input) || /^(?:une|la) carte$/.test(input) || lastQuestion === 1 && /^(?:(?:un|une|la|le|l) )?(?:carte|reve|plan|atlas)$/.test(input)) {
     if (/indice/.test(input)) return { message: 'Indice : tu peux la plier, ou l’ouvrir pour préparer un trajet. Elle représente des lieux.', pose: 'curious', choices: [{ label: 'Une carte ?', text: 'Pour ta devinette des villes : une carte.' }] };

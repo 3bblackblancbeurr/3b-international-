@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "createdAt": "2026-10-18",
+  "tool": "OpenAI imagegen",
+  "asset": "/health/anatomy/human-glass-v3.webp",
+  "width": 840,
+  "height": 1260,
+  "bytes": 171548,
+  "sha256": "0e1bb1b4e1d4fa9e9e9c99e6fb82ebb0254e8f06cc2c5d4db2f39c882e098872",
+  "transparent": true,
+  "disclosure": "Illustration pédagogique générée par IA ; repères approximatifs, pas un examen médical individuel.",
+  "productionDirection": "A premium full-body frontal gender-neutral adult anatomical educational illustration on a transparent background. A subtle glass body contour surrounds an anatomically plausible ivory skeleton, brain, lungs, heart on the subject left (viewer right), liver on subject right (viewer left), kidneys, stomach and intestines. Restrained gold and cyan vessels, realistic materials, refined cinematic medical visualization. No text, UI, watermark, blood, wounds or surgical scene. This is an educational synthesis illustration and not an individual medical scan."
+}

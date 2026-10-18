@@ -9,8 +9,8 @@ const healthData = readFileSync(new URL('../src/health/useHealth.js', import.met
 
 test('third-party telemetry requires explicit feature enablement and member opt-in', () => {
   assert.match(analytics, /VITE_POSTHOG_ENABLED\s*===\s*'true'/);
-  assert.match(analytics, /ANALYTICS_CONSENT_KEY/);
-  assert.match(analytics, /localStorage\.getItem\(ANALYTICS_CONSENT_KEY\) === 'yes'/);
+  assert.match(analytics, /readAnalyticsConsent\(window\.localStorage\)/);
+  assert.match(analytics, /isPrivateAnalyticsContext/);
   assert.match(analytics, /!externalAnalyticsAllowed\(\)/);
   assert.match(policy, /désactivé par défaut/);
   assert.match(policy, /accord explicite du membre/);

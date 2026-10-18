@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "generated": "2026-10-18",
+  "generator": "Built-in image_gen",
+  "purpose": "3B game library artwork; not a gameplay screenshot",
+  "artworks": [
+    {
+      "id": "dada3b",
+      "file": "/games/covers/dada3b-premium.webp",
+      "width": 960,
+      "height": 640,
+      "bytes": 114060,
+      "prompt": "Use case: stylized-concept. Asset type: premium game library cover, landscape 1536x1024. Primary request: cinematic AAA game key art for DADA 3B, a luxury eight-player strategy race board called The Circle of Eight Gates. Scene: a monumental circular black obsidian board with precisely eight distinct colored home sectors and engraved gold pathways, miniature sculpted horse-head pawns in eight jewel colors, a physical ivory dice near the front, eight architectural stone gates softly visible in the background. Board and pawns are the hero, no human characters. Style: extremely detailed believable PBR materials, elegant dark fantasy game art, photographic depth and atmospheric cinematic light; deep midnight blue and charcoal, champagne gold, soft cyan highlights, one controlled warm light source. Composition: centered subject, camera low three-quarter overhead, show the whole circular board within the central 75 percent, calm dark edge space, subject readable in a small mobile cover. Cohesive 3B collection art direction: cinematic, tactile, refined, no flat icon, no CSS-look shapes, no collage. Constraints: no title, no letters, no digits, no logos, no watermark, no UI, no frame. This is artwork of a fantasy eight-sector board, not a screenshot of a real game."
+    },
+    {
+      "id": "penalty-rush",
+      "file": "/games/covers/penalty-rush-premium.webp",
+      "width": 960,
+      "height": 640,
+      "bytes": 108660,
+      "prompt": "A football striker wearing a plain deep navy jersey prepares a penalty shot, back three-quarter view at the edge of the penalty area, realistic dark leather ball foreground, monumental floodlit night stadium, subtle golden stadium details, dramatic cyan floodlight through light mist, goal and goalkeeper visible in the distance. Sport realism with premium atmosphere, not war fantasy. Use case: stylized-concept. Asset type: premium cinematic game library key art, landscape 1536x1024, consistent 3B collection. Style: highly detailed believable AAA game PBR render, refined dark fantasy, tactile obsidian stone, weathered metal and champagne gold, midnight blue shadows, restrained cyan rim light, volumetric atmosphere, photographic depth. Composition: centered clear hero in central 75%, environmental storytelling, similar contrast and image density as a luxury fantasy horse-pawn board game cover, clean dark edges, readable mobile. No text, no letters or digits, no logos or watermark, no UI, no frame, no collage. "
+    },
+    {
+      "id": "city3b",
+      "file": "/games/covers/city3b-premium.webp",
+      "width": 960,
+      "height": 640,
+      "bytes": 114650,
+      "prompt": "A magnificent buildable coastal city seen at cinematic elevated three-quarter angle: elegant mixed-use towers, warm windows, connected avenues, green courtyards and marina waterfront, a subtle broken-circle landmark in gold stone. Rich realistic miniature architecture, designed city-building game atmosphere, no text or HUD. Use case: stylized-concept. Asset type: premium cinematic game library key art, landscape 1536x1024, consistent 3B collection. Style: highly detailed believable AAA game PBR render, refined dark fantasy, tactile obsidian stone, weathered metal and champagne gold, midnight blue shadows, restrained cyan rim light, volumetric atmosphere, photographic depth. Composition: centered clear hero in central 75%, environmental storytelling, similar contrast and image density as a luxury fantasy horse-pawn board game cover, clean dark edges, readable mobile. No text, no letters or digits, no logos or watermark, no UI, no frame, no collage. "
+    },
+    {
+      "id": "arena",
+      "file": "/games/covers/arena-premium.webp",
+      "width": 960,
+      "height": 640,
+      "bytes": 111378,
+      "prompt": "Kaïs, a young adult male adventurer with tousled short dark brown hair, light tan skin, dark blue jacket over open-collar ivory shirt, brown crossbody leather harness, dark trousers and weathered boots, stands poised in a circular ancient stone plaza, back three-quarter, holding a subtle cyan light in one hand. Wispy shadow creatures approach at the distant perimeter, gold engraved circles underfoot, one single heroic figure. Preserve this costume and avoid generic armor. Use case: stylized-concept. Asset type: premium cinematic game library key art, landscape 1536x1024, consistent 3B collection. Style: highly detailed believable AAA game PBR render, refined dark fantasy, tactile obsidian stone, weathered metal and champagne gold, midnight blue shadows, restrained cyan rim light, volumetric atmosphere, photographic depth. Composition: centered clear hero in central 75%, environmental storytelling, similar contrast and image density as a luxury fantasy horse-pawn board game cover, clean dark edges, readable mobile. No text, no letters or digits, no logos or watermark, no UI, no frame, no collage. "
+    },
+    {
+      "id": "tower",
+      "file": "/games/covers/tower-premium.webp",
+      "width": 960,
+      "height": 640,
+      "bytes": 114472,
+      "prompt": "Kaïs, same young adult adventurer in dark blue jacket, ivory open-collar shirt, brown crossbody leather harness, dark trousers and boots, seen from behind standing before an immense forbidden golden circular doorway built into an ancient stone temple. A giant enigmatic stone guardian silhouette is inside the doorway, soft violet and cyan light, ornate weathered stone and cinematic scale. Use case: stylized-concept. Asset type: premium cinematic game library key art, landscape 1536x1024, consistent 3B collection. Style: highly detailed believable AAA game PBR render, refined dark fantasy, tactile obsidian stone, weathered metal and champagne gold, midnight blue shadows, restrained cyan rim light, volumetric atmosphere, photographic depth. Composition: centered clear hero in central 75%, environmental storytelling, similar contrast and image density as a luxury fantasy horse-pawn board game cover, clean dark edges, readable mobile. No text, no letters or digits, no logos or watermark, no UI, no frame, no collage. "
+    },
+    {
+      "id": "maze",
+      "file": "/games/covers/maze-premium.webp",
+      "width": 960,
+      "height": 640,
+      "bytes": 114304,
+      "prompt": "Kaïs, young adult adventurer in dark blue jacket over ivory shirt, brown leather crossbody harness, dark trousers and boots, seen from behind carrying a small cyan lantern, explores a labyrinth of monumental ancient stone walls. Elevated three-quarter camera reveals a winding route, three distant golden seals, a luminous portal and crawling shadow mist, readable architectural depth, mysterious not horror gore. Use case: stylized-concept. Asset type: premium cinematic game library key art, landscape 1536x1024, consistent 3B collection. Style: highly detailed believable AAA game PBR render, refined dark fantasy, tactile obsidian stone, weathered metal and champagne gold, midnight blue shadows, restrained cyan rim light, volumetric atmosphere, photographic depth. Composition: centered clear hero in central 75%, environmental storytelling, similar contrast and image density as a luxury fantasy horse-pawn board game cover, clean dark edges, readable mobile. No text, no letters or digits, no logos or watermark, no UI, no frame, no collage. "
+    },
+    {
+      "id": "key-race",
+      "file": "/games/covers/key-race-premium.webp",
+      "width": 960,
+      "height": 640,
+      "bytes": 112442,
+      "prompt": "An ornate physical golden key hovers above an ancient dark stone causeway, luminous golden path leads through a series of architectural archways into the distance, cyan mist and subtle dust particles, adventurous premium fantasy setting, key is the clear hero and fills central third, solid believable materials. Use case: stylized-concept. Asset type: premium cinematic game library key art, landscape 1536x1024, consistent 3B collection. Style: highly detailed believable AAA game PBR render, refined dark fantasy, tactile obsidian stone, weathered metal and champagne gold, midnight blue shadows, restrained cyan rim light, volumetric atmosphere, photographic depth. Composition: centered clear hero in central 75%, environmental storytelling, similar contrast and image density as a luxury fantasy horse-pawn board game cover, clean dark edges, readable mobile. No text, no letters or digits, no logos or watermark, no UI, no frame, no collage. "
+    },
+    {
+      "id": "power3b",
+      "file": "/games/covers/power3b-premium.webp",
+      "width": 960,
+      "height": 640,
+      "bytes": 115030,
+      "prompt": "A cinematic strategic command table: sculpted miniature land vehicles, ships and aircraft arranged on an elegant dark relief world map, eight colored headquarters beacons connected by engraved golden routes, view three-quarter overhead, obsidian and bronze table edge, dramatic warm light and soft cyan map glow. Modern fantasy strategy game with no real country flags, no text, no weapons firing. Use case: stylized-concept. Asset type: premium cinematic game library key art, landscape 1536x1024, consistent 3B collection. Style: highly detailed believable AAA game PBR render, refined dark fantasy, tactile obsidian stone, weathered metal and champagne gold, midnight blue shadows, restrained cyan rim light, volumetric atmosphere, photographic depth. Composition: centered clear hero in central 75%, environmental storytelling, similar contrast and image density as a luxury fantasy horse-pawn board game cover, clean dark edges, readable mobile. No text, no letters or digits, no logos or watermark, no UI, no frame, no collage. "
+    }
+  ]
+}

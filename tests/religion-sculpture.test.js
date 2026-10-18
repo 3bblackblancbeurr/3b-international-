@@ -3,7 +3,22 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createSculpture,renderSoftwareTree} from '../src/religion/sculpture.js';
 import {PerspectiveCamera,Vector3} from 'three';
+import {createTreeLeafGeometry,createTreeBarkTexture} from '../src/religion/tree-materials.js';
 const corpus=JSON.parse(readFileSync(new URL('../src/religion/corpus.json',import.meta.url),'utf8'));
+
+test('folded leaves have real curved surfaces and finite normals within the instancing budget',()=>{
+ const geometry=createTreeLeafGeometry();
+ assert.ok(geometry.attributes.position.count<40);
+ assert.ok(geometry.index.count/3<=40);
+ for(const key of ['position','normal','uv'])assert.ok([...geometry.attributes[key].array].every(Number.isFinite));
+ const z=Array.from(geometry.attributes.position.array).filter((value,index)=>index%3===2);
+ assert.ok(Math.max(...z)-Math.min(...z)>.15);
+ geometry.dispose();
+});
+
+test('bark texture remains optional when a canvas context is unavailable',()=>{
+ assert.equal(createTreeBarkTexture(()=>({getContext:()=>null})),null);
+});
 test('organic tree shares finite 3D positions and a bounded geometry budget across renderers',()=>{
  const model=createSculpture(corpus.nodes),again=createSculpture(corpus.nodes);
  assert.equal(model.positions.size,corpus.nodes.length);

@@ -37,6 +37,7 @@ try{
    if(url.pathname==='/api/official-directory')payload={services:rows,total:27,city:url.searchParams.get('ville')};
    return route.fulfill({contentType:'application/json',body:JSON.stringify(payload)});
   });
+  await context.route('**/functions/v1/ecosystem-public?**',route=>route.fulfill({contentType:'application/json',body:JSON.stringify({version:1,country:'FR',retrievedAt:new Date().toISOString(),articles:[{id:'news-10001',title:'Actualité sourcée de test',url:'https://www.service-public.gouv.fr/particuliers/actualites/A10001',publishedAt:new Date().toISOString(),sourceId:'public-fr',language:'fr',countries:['FR'],topic:'public',summary:'Extrait synthétique pour la recette du lecteur dans 3B.'}],sources:[{id:'public-fr',available:true}],stale:false,partial:false})}));
   const page=await context.newPage();
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto(origin+'/tests/member-preview.html');
@@ -45,8 +46,8 @@ try{
   check(width+': document fits screen',await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
   check(width+': real loyalty points are visible',await page.getByText('510 points boutique').count()===1);
   await page.getByRole('button',{name:'Le monde en direct'}).click();
-  await page.locator('.mx-news-feed a').first().waitFor({timeout:12000});
-  check(width+': publisher news visible',await page.locator('.mx-news-feed a').count()===1);
+  await page.locator('.news3b-card').first().waitFor({timeout:12000});
+  check(width+': publisher news visible',await page.locator('.news3b-card').count()===1);
   await page.getByRole('button',{name:'Événements'}).click();
   await page.locator('.mx-events-list li').first().waitFor({timeout:12000});
   check(width+': events initially five',await page.locator('.mx-events-list li').count()===5);

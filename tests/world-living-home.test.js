@@ -6,9 +6,9 @@ import {WORLD_MODULES,WORLD_MORE_SERVICES,WORLD_REALMS,WORLD_MODULE_GROUPS,findW
 
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 
-test('22 principal world modules are unique, routed and discoverable without inventing data',()=>{
- assert.equal(WORLD_MODULES.length,22);
- assert.equal(new Set(WORLD_MODULES.map(item=>item.id)).size,22);
+test('21 principal world modules are unique, routed and discoverable without inventing data',()=>{
+ assert.equal(WORLD_MODULES.length,21);
+ assert.equal(new Set(WORLD_MODULES.map(item=>item.id)).size,21);
  for(const item of WORLD_MODULES){
   assert.ok(item.label.length>3&&item.group&&item.icon,item.id);
   assert.ok(Object.hasOwn(PAGE_HASHES,item.id),'real route missing for '+item.id);
@@ -17,7 +17,7 @@ test('22 principal world modules are unique, routed and discoverable without inv
   assert.equal(readLocation(result).page,item.id);
  }
  for(const extra of WORLD_MORE_SERVICES)assert.ok(Object.hasOwn(PAGE_HASHES,extra.id));
- assert.equal(findWorldModules().length,22);
+ assert.equal(findWorldModules().length,21);
  assert.equal(findWorldModules({query:'Santé'})[0].id,'health');
  assert.deepEqual(findWorldModules({category:'favorites',favorites:['health','travel']}).map(item=>item.id),['health','travel']);
  assert.equal(findWorldModules({query:'aucun-module-connu'}).length,0);
@@ -26,7 +26,7 @@ test('22 principal world modules are unique, routed and discoverable without inv
  assert.deepEqual(findWorldExtraServices('film').map(item=>item.id),['cinema']);
  assert.deepEqual(findWorldExtraServices('recrutement').map(item=>item.id),['join']);
  assert.equal(findWorldExtraServices('').length,0);
- assert.equal(findWorldModules().length,22,'extra results must not inflate the 22 core universe tiles');
+ assert.equal(findWorldModules().length,21,'extra results must not inflate the 21 main spaces after grouping fidelity');
  for(const id of ['news','association','partners','finance','travel','tv','admin'])
   assert.ok(WORLD_MODULES.some(item=>item.id===id),'required 3B space missing: '+id);
  for(const id of ['foodscan','cinema','join'])

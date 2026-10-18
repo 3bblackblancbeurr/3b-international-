@@ -1,7 +1,7 @@
 import {Button as GoldButton} from '../design-system/index.jsx';
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {ArrowRight, ArrowUpRight, CalendarDays, Clapperboard, Compass, FileText, Film, Globe2, Handshake, HeartHandshake, Landmark, LockKeyhole, Mail, MapPin, Newspaper, Plane, Radio, RefreshCw, ShieldCheck, Sparkles, Star, UsersRound, WalletCards} from 'lucide-react';
-import {MEMBER_SPACES, COUNTRY_INDEX, CONTACT_EMAIL, contactHref, countryFor, countryNewsHref, countryEventsHref, ADMIN_GUIDES, CINEMA_GUIDES, FINANCE_GUIDES, OPPORTUNITIES} from './memberSources.js';
+import {MEMBER_SPACES, COUNTRY_INDEX, CONTACT_EMAIL, contactHref, countryFor, countryEventsHref, ADMIN_GUIDES, CINEMA_GUIDES, FINANCE_GUIDES, OPPORTUNITIES} from './memberSources.js';
 import './member-experiences.css';
 const OfficialDirectory = React.lazy(() => import('./OfficialDirectory.jsx'));
 const FrenchEvents = React.lazy(() => import('./FrenchEvents.jsx'));
@@ -9,6 +9,7 @@ const MediaStudio = React.lazy(() => import('./media/MediaStudio.jsx'));
 const TravelNotebook = React.lazy(() => import('./travel/TravelNotebook.jsx'));
 const AdminJourney = React.lazy(() => import('./admin/AdminJourney.jsx'));
 const CollaborationStudio = React.lazy(() => import('./collaboration/CollaborationStudio.jsx'));
+const NewsStudio = React.lazy(() => import('./news/NewsStudio.jsx'));
 const FinanceStudio = React.lazy(() => import('../finance/FinanceStudio.jsx'));
 
 
@@ -30,56 +31,22 @@ function SectionIntro({eyebrow,title,children}) {
 function PrimaryAction({children,onClick}) {
   return <GoldButton variant="health" type="button" className="mx-primary mx-link" onClick={onClick}>{children}<ArrowRight size={17} aria-hidden="true"/></GoldButton>;
 }
-function formatPublished(value) {
-  const d = new Date(value);
-  return Number.isFinite(d.getTime()) ? new Intl.DateTimeFormat('fr-FR',{dateStyle:'medium',timeStyle:'short'}).format(d) : 'Date indisponible';
-}
 function WorldBrief({country, onCountryChange, mode, setMode}) {
-  const [items,setItems] = useState([]);
-  const [loading,setLoading] = useState(false);
-  const [error,setError] = useState('');
-  const [retry,setRetry] = useState(0);
-  const chosen = countryFor(country);
-  const feed = country === 'FR' ? 'fr' : 'world';
-
-  useEffect(()=>{
-    if(mode !== 'news')return;
-    const controller = new AbortController();
-    setLoading(true);setError('');setItems([]);
-    fetch('/api/member-brief?feed='+feed, {signal:controller.signal,credentials:'omit'})
-      .then(async response=>{
-        if(!response.ok)throw new Error('Source indisponible');
-        const payload=await response.json();
-        if(!Array.isArray(payload.items))throw new Error('Réponse source invalide');
-        setItems(payload.items);
-      })
-      .catch(e=>{if(!controller.signal.aborted)setError(e.message||'Flux inaccessible');})
-      .finally(()=>{if(!controller.signal.aborted)setLoading(false);});
-    return ()=>controller.abort();
-  },[feed,mode,retry]);
-
-  return <>
-    <div className="mx-world-controls">
-      <label className="mx-country"><span>Explorer un pays</span><select value={country} onChange={e=>onCountryChange(e.target.value)}>{COUNTRY_INDEX.map(c=><option key={c[0]} value={c[0]}>{c[3]} {c[1]}</option>)}</select></label>
-      <div className="mx-switch" role="group" aria-label="Mode d’exploration">
-        <GoldButton variant="health" type="button" aria-pressed={mode==='news'} onClick={()=>setMode('news')}><Newspaper size={16}/> Actualités</GoldButton>
-        <GoldButton variant="health" type="button" aria-pressed={mode==='events'} onClick={()=>setMode('events')}><CalendarDays size={16}/> Événements</GoldButton>
-      </div>
-    </div>
-    {mode==='news'?<>
-      <SectionIntro eyebrow="INFORMATIONS DATÉES" title={country==='FR'?'Actus de France · France 24':'Vue mondiale · BBC News'}>{country==='FR'?'Titres d’un éditeur indépendant, liens vers les articles d’origine.':'Le fil intégré est mondial et non filtré par pays. Utilise le lien ci-dessous pour les actualités locales de '+chosen[1]+'.'}</SectionIntro>
-      {loading&&<p className="mx-status" role="status">Récupération des titres publiés…</p>}
-      {error&&<p className="mx-status" role="status">Impossible de lire le flux actuellement. <GoldButton variant="health" type="button" onClick={()=>setRetry(n=>n+1)}><RefreshCw size={15}/> Réessayer</GoldButton></p>}
-      {!loading&&!error&&!items.length&&<p className="mx-status">Aucun titre récent disponible depuis cette source.</p>}
-      {!!items.length&&<div className="mx-news-feed">{items.map(item=><a key={item.link} href={item.link} target="_blank" rel="noopener noreferrer"><span><small>{item.source} · {formatPublished(item.published)}</small><strong>{item.title}</strong></span><ArrowUpRight size={18}/></a>)}</div>}
-      <SourceLink primary href={countryNewsHref(country)}>Actualités de {chosen[1]} sur Google Actualités</SourceLink>
-    </>:<>
-      <SectionIntro eyebrow="SORTIES, RENCONTRES, CULTURE" title={country==='FR'?'Que se passe-t-il en France ?':'Événements en '+chosen[1]}>Consulte les agendas directement à la source : les dates et les lieux doivent être confirmés par l’organisateur. Aucun événement inventé ni ancienne affiche présentée comme actuelle.</SectionIntro>
-      {country==='FR'&&<React.Suspense fallback={<p role="status" className="mx-status">Ouverture des événements publics…</p>}><FrenchEvents/></React.Suspense>}
-      <SourceLink primary href={countryEventsHref(country)}>{country==='FR'?'Explorer tous les agendas OpenAgenda':'Chercher des événements dans le pays'}</SourceLink>
-      {country==='FR'&&<p className="mx-honesty">Le flux RSS libre d’accès couvre une sélection d’événements culturels ; les autres programmes restent accessibles auprès de leurs organisateurs.</p>}
-    </>}
-  </>;
+ const chosen=countryFor(country);
+ return <>
+  <div className="mx-world-controls">
+   {mode==='events'&&<label className="mx-country"><span>Explorer un pays</span><select value={country} onChange={e=>onCountryChange(e.target.value)}>{COUNTRY_INDEX.map(c=><option key={c[0]} value={c[0]}>{c[3]} {c[1]}</option>)}</select></label>}
+   <div className="mx-switch" role="group" aria-label="Mode d’exploration">
+    <GoldButton variant="health" type="button" aria-pressed={mode==='news'} onClick={()=>setMode('news')}><Newspaper size={16}/> Actualités</GoldButton>
+    <GoldButton variant="health" type="button" aria-pressed={mode==='events'} onClick={()=>setMode('events')}><CalendarDays size={16}/> Événements</GoldButton>
+   </div>
+  </div>
+  {mode==='news'?<React.Suspense fallback={<p role="status" className="mx-status">Ouverture du fil 3B…</p>}><NewsStudio initialCountry={country} onCountryChange={onCountryChange}/></React.Suspense>:<>
+   <SectionIntro eyebrow="SORTIES, RENCONTRES, CULTURE" title={country==='FR'?'Que se passe-t-il en France ?':'Événements en '+chosen[1]}>Les dates et les lieux sont à confirmer auprès de l’organisateur.</SectionIntro>
+   {country==='FR'&&<React.Suspense fallback={<p role="status" className="mx-status">Ouverture des événements publics…</p>}><FrenchEvents/></React.Suspense>}
+   <SourceLink primary href={countryEventsHref(country)}>{country==='FR'?'Explorer tous les agendas OpenAgenda':'Chercher des événements dans le pays'}</SourceLink>
+  </>}
+ </>;
 }
 
 export default function MemberExperiences({goTo,profile,initialSpace='loyalty',standalone=false}) {

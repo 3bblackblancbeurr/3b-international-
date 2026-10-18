@@ -19,8 +19,7 @@ export const WORLD_MODULES = Object.freeze([
  {id:'games',label:'Jeux 3B',group:'play',icon:'gamepad-2',aliases:['jeux','jeu','jeux video','jouer','creer ma ville']},
  {id:'esports',label:'16-18 E-sport',group:'play',icon:'headphones',aliases:['esport','e-sport','gaming','competition','recrutement joueur']},
  {id:'passport',label:'Passeport 3B',group:'member',icon:'id-card',aliases:['passeport','identite']},
- {id:'member',label:'Espace membre',group:'member',icon:'user-round',aliases:['membre','compte','connexion']},
- {id:'loyalty',label:'Carte de fidélité',group:'member',icon:'credit-card',aliases:['fidelite','carte']},
+ {id:'member',label:'Espace membre',group:'member',icon:'user-round',aliases:['membre','compte','connexion','fidelite','carte de fidelite','mes cartes','avantages','points']},
  {id:'shop',label:'Boutique',group:'member',icon:'shopping-bag',aliases:['boutique','vetements','hoodie','shopping']},
  {id:'community',label:'Communauté',group:'member',icon:'users',aliases:['communaute','membres','entraide']},
  {id:'ia',label:'Espace tactile IA',group:'member',icon:'sparkles',aliases:['textile','ia','creation textile']},
@@ -33,7 +32,7 @@ export const WORLD_MODULES = Object.freeze([
  {id:'admin',label:'Administratif',group:'business',icon:'file-text',aliases:['administration','administratif','demarches']},
 ]);
 
-// Additional actual routes are not squeezed out to force an artificial 22-item total.
+// Fidelity belongs inside the member space. Legacy routes remain available.
 export const WORLD_MORE_SERVICES = Object.freeze([
  {id:'maintenant',label:'3B Maintenant',aliases:['boussole','coup de main','activités']},
  {id:'foodscan',label:'Scanner alimentaire',aliases:['scanner','nutrition','code barre','allergènes']},
@@ -59,7 +58,7 @@ export function normalizeWorldSearch(value){
  return String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('fr').trim();
 }
 
-// Search extra real routes too, without pretending there are more than 22 primary tiles.
+// Search extra real routes too; presentation totals are derived from this catalog.
 export function findWorldExtraServices(query=''){
  const words=normalizeWorldSearch(query).split(/\s+/).filter(Boolean);
  if(!words.length)return [];

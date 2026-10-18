@@ -3,7 +3,9 @@ import './tree.js';
 import corpus from './corpus.json';
 // Public ES modules are copied unchanged by Vite. Resolve this fixed same-origin
 // URL at runtime rather than asking Rollup to bundle a public-directory import.
-const discoveryModuleUrl = '/religion/discovery-plus.js';
+// The absolute same-origin URL also avoids Vite's development-only ?import
+// rewriting, which cannot transform modules intentionally served from public/.
+const discoveryModuleUrl = new URL('/religion/discovery-plus.js', window.location.origin).href;
 import(/* @vite-ignore */ discoveryModuleUrl)
   .then(({ mountTree }) => mountTree(corpus))
   .catch(error => {

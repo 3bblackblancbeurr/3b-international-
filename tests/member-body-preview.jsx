@@ -1,0 +1,12 @@
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import '../src/styles/gold-master.css';
+import '../src/styles/companion-living.css';
+import MemberHub from '../src/member/MemberHub.jsx';
+import BodyExplorer from '../src/health/BodyExplorer.jsx';
+import CompanionStudio from '../src/companion/CompanionStudio.jsx';
+import PrivacyCenter from '../src/components/PrivacyCenter.jsx';
+import {DEFAULT_LIVING_PREFS} from '../src/companion/companion-personality.js';
+const goTo=page=>{document.body.dataset.lastRoute=page;};
+const noop=()=>{};
+createRoot(document.getElementById('preview-root')).render(<main style={{maxWidth:1100,margin:'auto',padding:20}}><MemberHub profile={{points:510}} goTo={goTo}/><div className="health3b"><BodyExplorer onOpenFood={item=>{document.body.dataset.food=item.id;}}/></div><div className="companion3b-panel" style={{position:'relative',width:'100%',maxWidth:380,inset:'auto',margin:'40px auto',maxHeight:'none'}}><CompanionStudio goTo={goTo} page="community" living={DEFAULT_LIVING_PREFS} onLivingChange={noop} onAction={noop} onSubmit={text=>{document.body.dataset.companionMessage=text;}} history={[]} voice={{available:false,voices:[]}} onVoiceToggle={noop} onVoiceSample={noop} onVoiceStop={noop} onResume={noop}/></div><PrivacyCenter/></main>);

@@ -1,3 +1,4 @@
+import PrivacyCenter from '../components/PrivacyCenter.jsx';
 import InstallCards from '../install/InstallCards.jsx';
 import CinematicLaunch, { BRAND_ICON } from './CinematicLaunch.jsx';
 import EntryAtmosphere from './EntryAtmosphere.jsx';
@@ -164,6 +165,7 @@ export function ExperienceControls({ options, toggleOption, page, inline = false
       <p>Des sons discrets pour tes actions. La voix se choisit dans les réglages de ton compagnon.</p>
       <Button variant="ghost" onClick={toggleSensor} aria-pressed={options.sensorReflections}>Reflets au mouvement<span>{options.sensorReflections ? "Oui" : "Non"}</span></Button>
       {sensorNotice && <p role="status">{sensorNotice}</p>}
+      <PrivacyCenter/>
     </div>
   </Container>;
 }

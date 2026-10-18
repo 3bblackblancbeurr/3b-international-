@@ -1,3 +1,5 @@
+import {useLoyalty} from '../loyalty/LoyaltyContext.jsx';
+import {companionDestinationAllowed} from './companion-application.js';
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { flushSync } from 'react-dom';
 import CompanionAvatar from "./CompanionAvatar.jsx";
@@ -33,6 +35,7 @@ const TRAVEL_ACTIONS = new Set(['walk', 'hang', 'fall']);
 const POSE_LABELS = { dance: 'Le rythme est lancé', breakdance: 'Place au mouvement', pocket: 'Une petite surprise', hologram: 'Une idée prend forme', hang: 'Accroché aux lettres', fall: 'Attention, j’arrive !', land: 'Bien réceptionné', highfive: 'Tape-là !', hello: 'Salut toi', curious: 'J’ai une question', focus: 'À ton rythme', think: 'Je réfléchis' };
 
 export default function CompanionLayer({ page, secretPhase, memberRegistered, goTo }) {
+  const accountId=useLoyalty()?.user?.id||'guest';
   const prefs = useCompanionPreferences();
   const [worldPresence,setWorldPresence]=useState(()=>{try{return localStorage.getItem('3b-world-app-companion')==='1';}catch{return false;}});
   useEffect(()=>{const change=event=>setWorldPresence(event.detail?.visible===true);window.addEventListener('threeb:world-companion',change);return()=>window.removeEventListener('threeb:world-companion',change);},[]);
@@ -120,6 +123,7 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
     setRequestedTab(null); setLinkOpen(false);
     setHistory([]); recentRef.current = [];
   }, [stopVoice, stage.suspend]);
+  useEffect(()=>{clearPresence();},[accountId]);
   useLayoutEffect(() => {
     if (!prefs.enabled) clearPresence();
   }, [prefs.enabled, clearPresence]);
@@ -204,7 +208,7 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
     }
     else if (reply.action) performAction(reply.action, reply);
     else { showReply(reply, { userGesture: true }); stage.play(reply.pose || 'think'); }
-    if (destination && goTo && ['home', 'passport', 'member', 'secret', 'world3b', 'guide', 'shop'].includes(destination)) { setPanelOpen(false); goTo(destination); }
+    if (destination && goTo && companionDestinationAllowed(destination)) { setPanelOpen(false); goTo(destination); }
   }
   function toggleVoice() {
     if (living.voiceEnabled) { stopVoice(); updateLiving({ voiceEnabled: false }); return; }
@@ -343,7 +347,7 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
         <div><span className="companion3b-presence"><i aria-hidden="true" /> {voice.speaking ? 'IL TE PARLE' : online ? 'À TES CÔTÉS' : 'PRÉSENT HORS LIGNE'}</span><strong>{label}</strong></div>
       </div>
       <p className="companion3b-response" role="status" aria-live="polite">{interaction?.message || lastReply?.message || guidance.message}</p>
-      <CompanionStudio living={living} onLivingChange={chooseLiving} onAction={performAction} onSubmit={submitMessage} reply={lastReply} history={history} voice={voice} onVoiceToggle={toggleVoice} onVoiceSample={sampleVoice} onVoiceStop={stopVoice} focused={focusMode} onResume={() => { setFocusMode(false); performAction('hello'); }} requestedTab={requestedTab}
+      <CompanionStudio key={accountId} page={page} goTo={target=>{if(companionDestinationAllowed(target)){stopVoice();setPanelOpen(false);goTo?.(target);}}} living={living} onLivingChange={chooseLiving} onAction={performAction} onSubmit={submitMessage} reply={lastReply} history={history} voice={voice} onVoiceToggle={toggleVoice} onVoiceSample={sampleVoice} onVoiceStop={stopVoice} focused={focusMode} onResume={() => { setFocusMode(false); performAction('hello'); }} requestedTab={requestedTab}
       shortcuts={<details className="companion3b-world-links">
       <summary><span>Avec toi dans 3B</span><ChevronDown size={16} aria-hidden="true" /></summary>
       {goTo&&<div className="companion3b-equipment" role="group" aria-label="Objets du compagnon">

@@ -1,0 +1,12 @@
+export const PUBLIC_SERVICE_RESEARCH_DATE='2026-10-18';
+export const PUBLIC_SERVICES=Object.freeze({
+ taxes:{name:'Impôts / DGFiP',url:'https://www.impots.gouv.fr/particulier',status:'not_connected',note:'Ouvre ton espace officiel pour tes demandes. Les API fiscales exigent un cadre d’éligibilité et une habilitation ; ce coffre grand public n’en bénéficie pas automatiquement.'},
+ 'france-travail':{name:'France Travail',url:'https://candidat.francetravail.fr/espacepersonnel/',status:'not_connected',note:'France Travail Connect et les API de données personnelles demandent un accès autorisé et un consentement adapté. Aucune donnée n’est consultée ici.'},
+ franceconnect:{name:'FranceConnect',url:'https://franceconnect.gouv.fr/',status:'not_connected',note:'FranceConnect est un moyen de connexion pour des services habilités, pas un accès automatique à tes dossiers ou documents.'},
+ 'api-particulier':{name:'API Particulier',url:'https://particulier.api.gouv.fr/',status:'not_connected',note:'Service destiné aux acteurs publics et à leurs prestataires dans un cadre habilité. L’import manuel dans ton coffre ne crée pas cet accès.'},
+ other:{name:'Autre organisme',url:'https://www.service-public.gouv.fr/',status:'not_connected',note:'Retrouve l’organisme officiel puis effectue toi-même la demande. Aucun envoi n’est réalisé depuis ce coffre.'}
+});
+export const REQUEST_CHECKLIST=Object.freeze(['Vérifier la démarche et les délais sur le site officiel','Choisir uniquement les pièces nécessaires','Relire les informations avant un éventuel envoi personnel']);
+export function publicServiceCapabilities(serviceId){if(!Object.hasOwn(PUBLIC_SERVICES,serviceId))throw Error('Organisme inconnu.');return {serviceId,status:'not_connected',canRead:false,canSend:false,consentConfigured:false,officialUrl:PUBLIC_SERVICES[serviceId].url};}
+export function preparePublicServiceRequest(serviceId,draft){const capabilities=publicServiceCapabilities(serviceId);return {...capabilities,operation:'user-preparation-only',documentCount:Array.isArray(draft?.documentIds)?draft.documentIds.length:0,requiredBeforeConnection:['Éligibilité et habilitation du service','Contrat et périmètre des données','Consentement et information spécifiques','Backend authentifié, quotas, audit et recette'],payload:null};}
+export async function submitPublicServiceRequest(){throw Error('Intégration à connecter : aucun envoi ni lecture de dossier officiel n’est disponible. Utilise le lien officiel.');}

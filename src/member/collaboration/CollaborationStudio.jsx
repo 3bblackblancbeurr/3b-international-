@@ -4,6 +4,7 @@ import {Button} from '../../design-system/index.jsx';
 import {CONTACT_EMAIL} from '../memberSources.js';
 import {COLLABORATION_SPACES,COLLABORATION_STATUSES,addCollaborationNote,collaborationDue,collaborationMail,collaborationReadiness,collaborationText,createCollaborationDraft,deleteCollaborationDraft,filterCollaborationDrafts,mergeCollaborationBackup,parseCollaborationBackup,readCollaborationState,saveCollaborationDraft,saveCollaborationState,setCollaborationStatus} from './collaboration-model.js';
 import './collaboration.css';
+import AssociationOperations from './AssociationOperations.jsx';
 
 const ICONS={association:HeartHandshake,partners:Handshake,join:UsersRound};
 const dates=value=>new Date(value).toLocaleString('fr-FR',{dateStyle:'medium',timeStyle:'short'});
@@ -61,6 +62,8 @@ function CollaborationWorkspace({space,ownerId}){
  async function copyBrief(){try{if(!navigator.clipboard?.writeText)throw Error();await navigator.clipboard.writeText(mail.body);setNotice('Le brief est copié. Aucun message n’a été envoyé.');}catch{setNotice('La copie est indisponible dans ce navigateur. Tu peux exporter le texte du dossier.');}}
  async function readImport(event){const file=event.target.files?.[0];event.target.value='';if(!file)return;try{if(file.size>8000000)throw Error('Le fichier dépasse 8 Mo.');const source=await file.text(),preview=mergeCollaborationBackup(current.current,source);setImportPreview({source,added:preview.added,updated:preview.updated});}catch(error){setNotice('Import impossible : '+error.message);}}
  return <section className={'col3b-studio is-'+space} aria-label={config.label}>
+  {space==='association'&&<AssociationOperations ownerId={ownerId}/>}
+
   <header className="col3b-hero"><div className="col3b-hero-copy"><span className="col3b-eyebrow">{config.eyebrow}</span><h3>{config.title}</h3><p>{config.description}</p><div className="col3b-hero-actions"><Button size="sm" onClick={()=>create()}><Plus size={16}/> Préparer {space==='association'?'une initiative':space==='partners'?'une collaboration':'ma candidature'}</Button><span><ShieldCheck size={14}/> Personnel · sauvegarde locale</span></div></div><div className="col3b-hero-art" aria-hidden="true"><span className="col3b-art-orbit"/><span className="col3b-art-node a"/><span className="col3b-art-node b"/><span className="col3b-art-node c"/><span className="col3b-art-core"><Icon size={44} strokeWidth={1.2}/></span><small>3B · ENSEMBLE</small></div></header>
   <div className="col3b-process" aria-label="Comment préparer une proposition"><div><b>01</b><span>Une intention<strong>Décris le projet et ton apport.</strong></span></div><div><b>02</b><span>Un brief clair<strong>Précise les moyens et la suite.</strong></span></div><div><b>03</b><span>À ton rythme<strong>Relis, exporte ou contacte toi-même.</strong></span></div></div>
   <div className="col3b-section-title"><div><span className="col3b-eyebrow">DES POINTS DE DÉPART</span><h4>Choisis une piste. Fais-la tienne.</h4></div><Sparkles size={20}/></div>

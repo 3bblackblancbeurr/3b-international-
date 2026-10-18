@@ -8,4 +8,11 @@ export const GAME_CATALOG=[
   {id:'key-race',number:'06',title:'La course des clés',genre:'LA PREMIÈRE AVENTURE',time:'Accès libre',text:'Retrouve l’aventure originale de la course des clés.',href:KEY_RACE_URL},
   {id:'dada3b',number:'07',title:'DADA 3B — Le Cercle des 8 Portes',genre:'STRATÉGIE · PLATEAU',time:'2–8 joueurs',text:'Le jeu de dada réinventé pour les huit pays 3B : écuries, dé serveur, Sanctuaires, Boucliers et course jusqu’au Nexus.',control:'Appuie sur le dé. Un 6 ouvre l’écurie et donne un nouveau lancer. Quand plusieurs Totems peuvent bouger, choisis celui qui brille.',action:'Lancer le dé'},
   {id:'power3b',number:'08',title:'Power 3B',genre:'STRATÉGIE · CONQUÊTE',time:'8 nations · 45–90 min',text:'Programme cinq ordres, commande terre, mer et air, augmente ton Power et conquiers les sept QG adverses.',control:'Sélectionne tes unités, programme jusqu’à cinq ordres puis exécute la manche. Les huit commandements jouent simultanément.',action:'Exécuter'},
-];
+].map(game=>({...game,cover:`/games/covers/${game.id}-premium.webp`}));
+
+// Connected titles inherit the same illustration collection and cover format.
+// This is catalogue artwork, never an assertion about the game's renderer.
+export function remoteGameCover(visual){
+  const game={pitch:'penalty-rush',guardian:'arena',runner:'key-race',underground:'maze',district:'city3b',forge:'power3b',portal:'tower'}[visual]||'tower';
+  return `/games/covers/${game}-premium.webp`;
+}

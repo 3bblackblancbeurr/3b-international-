@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowUpRight, CalendarDays, Check, CheckCheck, ClipboardList, Download, FileCheck2, FolderOpen, ListChecks, Pencil, Plus, Search, ShieldCheck, Trash2, Upload, X } from 'lucide-react';
 import { Button, Progress } from '../../design-system/index.jsx';
+import PrivateDocumentsVault from '../../documents-private/PrivateDocumentsVault.jsx';
 import {
   ADMIN_CATEGORIES, ADMIN_JOURNEY_KEY, ADMIN_LIMITS, ADMIN_STAGES,
   addAdminCase, addAdminTask, adminCaseProgress, adminDeadline, adminToday,
@@ -164,7 +165,7 @@ export default function AdminJourney({ storage: injectedStorage } = {}) {
       <div><Button variant="health" onClick={exportData}><Download size={16} aria-hidden="true"/> Exporter</Button><Button variant="health" onClick={() => importRef.current?.click()}><Upload size={16} aria-hidden="true"/> Importer</Button></div>
       <input ref={importRef} className="aj-file-input" type="file" accept="application/json,.json" onChange={readImport} aria-label="Importer un export administratif 3B" tabIndex={-1}/>
     </div>
-    <p className="aj-privacy"><ShieldCheck size={17} aria-hidden="true"/><span>Intitulés et étapes sur cet appareil uniquement. N’ajoute ni numéro de dossier, ni identifiant, ni pièce personnelle. Aucune démarche n’est transmise à un organisme.</span></p>
+    <p className="aj-privacy"><ShieldCheck size={17} aria-hidden="true"/><span>Ce carnet contient les intitulés et étapes sur cet appareil. Pour tes vraies pièces privées, utilise le coffre chiffré membre ci-dessous. Ne mets ni identifiants sensibles ni documents dans les intitulés du carnet. Aucune démarche n’est transmise à un organisme.</span></p>
     {storageMessage && <div className="aj-notice" role="alert"><p>{storageMessage}</p>{blocked && <div className="aj-inline-actions"><Button variant="health" onClick={exportOriginal}>Exporter la sauvegarde originale</Button><Button variant="health" onClick={() => setReplaceStorage(true)}>Remplacer la sauvegarde</Button></div>}{conflict && <div className="aj-inline-actions"><Button variant="health" onClick={exportData}>Exporter mes changements</Button><Button variant="health" onClick={() => setReloadConfirm(true)}>Recharger le suivi enregistré</Button></div>}</div>}
     {reloadConfirm && <div className="aj-confirm" role="alert"><strong>Recharger le suivi enregistré ?</strong><p>Les changements présents uniquement dans cette page seront remplacés. Exporte-les avant de continuer si tu veux les conserver.</p><div className="aj-inline-actions"><Button onClick={reloadSaved}>Confirmer le rechargement</Button><Button variant="health" onClick={() => setReloadConfirm(false)}>Annuler</Button></div></div>}
     {replaceStorage && <div className="aj-confirm" role="alert"><strong>Remplacer la sauvegarde illisible ?</strong><p>Le suivi actuellement affiché prendra sa place. Exporte l’original si tu veux le conserver.</p><div className="aj-inline-actions"><Button onClick={replaceBrokenStorage}>Confirmer le remplacement</Button><Button variant="health" onClick={() => setReplaceStorage(false)}>Annuler</Button></div></div>}
@@ -199,5 +200,6 @@ export default function AdminJourney({ storage: injectedStorage } = {}) {
       </div>}
     </>}
     <p className="aj-footnote">Ton carnet est indépendant des sites administratifs. Les coches et l’état « Terminée » reflètent ton suivi personnel ; seul l’organisme confirme l’aboutissement d’une démarche.</p>
+    <PrivateDocumentsVault cases={state.cases.map(({id,title})=>({id,title}))}/>
   </section>;
 }

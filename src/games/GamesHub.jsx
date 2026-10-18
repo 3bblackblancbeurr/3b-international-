@@ -20,7 +20,8 @@ import {createGameAudio} from './audio.js';
 import './games.css';
 import './premium.css';
 import './labyrinth.css';
-import {GAME_CATALOG} from './catalog.js';
+import {GAME_CATALOG,remoteGameCover} from './catalog.js';
+import './covers.css';
 const NexusCityGateway = React.lazy(() => import('../components/NexusCityGateway.jsx'));
 import {MazeCampaign,MazeResult} from './MazeCampaign.jsx';
 import Dada3B from './Dada3B.jsx';
@@ -85,7 +86,7 @@ export default function GamesHub({goTo,goToGame}){
    {GAME_LIST.map(g=>{
     const Card=g.href?'a':'button';
     return <Card className="premium-game-card" data-game={g.id} key={g.id} {...(g.href?{href:g.href,target:'_blank',rel:'noopener noreferrer'}:{disabled:loading,onClick:()=>{if(g.id==='penalty-rush'){goToGame?.('penalty-rush');return;}if(g.id==='city3b'){setCityOpen(true);return;}setSelection(g.id);setActive(g);}})}>
-     <span className="premium-card-art" aria-hidden="true"><span className="premium-card-number">{g.number}</span><span className="premium-card-sprite"/></span>
+     <span className="premium-card-art" aria-hidden="true"><img className="premium-cover-image" src={g.cover} alt="" loading={Number(g.number)<=2?'eager':'lazy'} decoding="async" width="960" height="640"/><span className="premium-card-number">{g.number}</span></span>
      <span className="premium-card-copy">
       <span className="premium-card-genre">{g.genre} · {g.time}</span>
       <strong>{g.title}</strong>
@@ -108,7 +109,7 @@ export default function GamesHub({goTo,goToGame}){
      key={'remote-'+g.slug}
      onClick={()=>goToGame?.(g.slug)}
     >
-     <span className="premium-card-art" aria-hidden="true"><span className="premium-card-number">{number}</span><span className="premium-card-sprite" data-symbol={visual.symbol}/></span>
+     <span className="premium-card-art" aria-hidden="true"><img className="premium-cover-image" src={remoteGameCover(visual.id)} alt="" loading="lazy" decoding="async" width="960" height="640"/><span className="premium-card-number">{number}</span></span>
      <span className="premium-card-copy">
       <span className="premium-card-genre">{g.category||'JEU 3B'} · {g.badge||'EN LIGNE'}</span>
       <strong>{g.title}</strong>

@@ -1,3 +1,4 @@
+import {isPrivateAnalyticsContext,readAnalyticsConsent} from './privacy-preferences.js';
 const DEFAULT_POSTHOG_PROJECT_TOKEN = "phc_rMapCkE5ZQoM6TTAefPrc6DDPcSAQ7MsLfY2UicghUNE";
 const DEFAULT_POSTHOG_HOST = "https://eu.i.posthog.com";
 
@@ -7,7 +8,6 @@ const ingestionHost = String(import.meta.env.VITE_POSTHOG_HOST || DEFAULT_POSTHO
 const ALLOWED_EVENTS = new Set(["3b_app_open", "3b_route_view"]);
 // Privacy-by-default : aucune télémétrie tierce sans activation volontaire ET accord du membre.
 const OPTIONAL_ANALYTICS_ENABLED = import.meta.env?.VITE_POSTHOG_ENABLED === 'true';
-const ANALYTICS_CONSENT_KEY = '3b_analytics_optin_v1';
 const SENSITIVE_PROPERTY_PATTERN = /(^|[_-])(email|e-mail|name|full_name|first_name|last_name|user_id|member_id|account_id|handle|username|password|passcode|token|secret|phone|address|birth|dob|ip)([_-]|$)/i;
 
 let sessionDistinctId = "";
@@ -21,8 +21,8 @@ function privacySignalEnabled() {
 }
 
 function externalAnalyticsAllowed() {
-  if (!OPTIONAL_ANALYTICS_ENABLED || typeof window === 'undefined' || !window.localStorage) return false;
-  try { return window.localStorage.getItem(ANALYTICS_CONSENT_KEY) === 'yes'; }
+  if (!OPTIONAL_ANALYTICS_ENABLED || typeof window === 'undefined') return false;
+  try { return readAnalyticsConsent(window.localStorage); }
   catch { return false; }
 }
 
@@ -65,7 +65,7 @@ function cleanProperties(properties) {
 
 export function capture3BEvent(event, properties = {}) {
   const normalizedEvent = String(event || "").trim();
-  if (typeof window === "undefined" || !externalAnalyticsAllowed() || window.location.hash === "#sante" || properties.page === "health" || !projectToken || privacySignalEnabled() || !ALLOWED_EVENTS.has(normalizedEvent)) return false;
+  if (typeof window === "undefined" || !externalAnalyticsAllowed() || window.location.hash === "#sante" || properties.page === "health" || isPrivateAnalyticsContext(properties.page,window.location.hash) || !projectToken || privacySignalEnabled() || !ALLOWED_EVENTS.has(normalizedEvent)) return false;
 
   const payload = {
     api_key: projectToken,

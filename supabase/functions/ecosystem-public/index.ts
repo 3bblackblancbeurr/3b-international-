@@ -1,6 +1,7 @@
 import {createClient} from 'npm:@supabase/supabase-js@2.116.0';
 import {fetchSports} from './sports.js';
 import {aiCapabilities} from './ai-capabilities.js';
+import {createNewsService,NewsFailure} from './news.js';
 
 const BASE=Deno.env.get('SUPABASE_URL')!;
 const SERVICE=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -11,13 +12,16 @@ const ORIGINS=new Set([
  'http://localhost:5173',
  'http://127.0.0.1:5173',
  'http://localhost:5174',
- 'http://127.0.0.1:5174'
+ 'http://127.0.0.1:5174',
+ 'http://localhost:5183',
+ 'http://127.0.0.1:5183'
 ]);
 const admin=createClient(BASE,SERVICE,{auth:{persistSession:false,autoRefreshToken:false}});
 class Failure extends Error{constructor(public status:number,message:string){super(message);}}
 const env=(key:string)=>Deno.env.get(key)||'';
 const hash=async(value:string)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value))),b=>b.toString(16).padStart(2,'0')).join('');
 const capability=()=>aiCapabilities(env);
+const news=createNewsService();
 async function rate(req:Request,action:string,limit:number,window=60){
  const forwarded=(req.headers.get('x-forwarded-for')||'unknown').split(',').at(-1)!.trim();
  const key=await hash('ecosystem-public:'+action+':'+forwarded);
@@ -145,6 +149,7 @@ Deno.serve(async req=>{
   const section=new URL(req.url).searchParams.get('section');
   if(section==='capabilities'){await rate(req,'capabilities',60,60);return reply(capability());}
   if(section==='sports'){await rate(req,'sports',30,60);return reply(await sportsFeed());}
+  if(section==='news'){await rate(req,'news',20,60);return reply(await news.get({country:new URL(req.url).searchParams.get('country')||'FR'}));}
   if(section==='games'){await rate(req,'games',60,60);return reply(await gamesCatalog());}
   if(section==='game-health'){
    await rate(req,'game-health',30,60);
@@ -152,6 +157,7 @@ Deno.serve(async req=>{
   }
   throw new Failure(404,'Service introuvable.');
  }catch(error){
-  return reply({error:error instanceof Failure?error.message:'Service momentanément indisponible.'},error instanceof Failure?error.status:503);
+  const known=error instanceof Failure||error instanceof NewsFailure;
+  return reply({error:known?error.message:'Service momentanément indisponible.'},known?error.status:503);
  }
 });

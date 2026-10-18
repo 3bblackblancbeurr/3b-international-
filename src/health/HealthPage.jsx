@@ -12,6 +12,7 @@ import { EnergyCheckIn, HealthHistory, HealthReminders, NativeStepsPanel } from 
 import { NutritionAtlas, NutritionDetail } from './NutritionAtlas.jsx';
 import Kitchen3B, { KitchenRecipeDetail } from './Kitchen3B.jsx';
 import BodyExplorer from './BodyExplorer.jsx';
+import WearablePanel from './wearable/WearablePanel.jsx';
 import FoodScanner from './FoodScanner.jsx';
 import { DailyRoutines, MobilitySessions } from './WellnessTools.jsx';
 import { useNativeSteps } from './useNativeSteps.js';
@@ -144,6 +145,7 @@ export default function HealthPage({initialTab='today'}={}) {
     {tab==='rest'&&<><div className="h-section-heading h-section-intro"><div><span className="h-eyebrow">RALENTIR AUSSI, C’EST AVANCER</span><h2>Un peu d’espace pour toi.</h2></div><Wind size={27}/></div><div className="h-rest-layout"><Breathing/><SleepJournal key={date} date={date} day={day} updateDay={health.updateDay}/></div><div className="h-guides"><h2>Retrouver des repères</h2>{guides.map(item=><HealthButton variant="health" key={item.id} onClick={()=>open(item,'guide')}><Moon size={22}/><span><strong>{item.name}</strong><small>{item.summary}</small></span><ChevronRight size={19}/></HealthButton>)}</div></>}
     {tab==='body'&&<>
       <BodyExplorer onOpenFood={item=>open(item,'food')}/>
+      <WearablePanel/>
       <details className="h-body-routines"><summary><Sparkles size={17}/> Mes routines peau & corps <ChevronRight size={16}/></summary>
         <div className="h-guides">{guides.map(item=><HealthButton variant="health" key={item.id} onClick={()=>open(item,'guide')}><Heart size={20}/><span><strong>{item.name}</strong><small>{item.summary}</small></span><ChevronRight size={17}/></HealthButton>)}</div>
         <p className="h-caption">Un problème persistant mérite un avis professionnel.</p>

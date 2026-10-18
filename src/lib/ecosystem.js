@@ -4,6 +4,12 @@ export const ECOSYSTEM_PUBLIC_URL=SUPABASE_URL+'/functions/v1/ecosystem-public';
 
 export async function ecosystemPublic(section,options={}){
  const url=new URL(ECOSYSTEM_PUBLIC_URL);url.searchParams.set('section',section);
+ if(options.params){
+  if(section!=='news'||Object.keys(options.params).some(key=>key!=='country'))throw Error('Paramètres de service invalides.');
+  const country=String(options.params.country||'FR').toUpperCase();
+  if(!/^(?:[A-Z]{2}|WORLD)$/.test(country))throw Error('Pays invalide.');
+  url.searchParams.set('country',country);
+ }
  const r=await fetch(url,{headers:{apikey:PUBLIC_KEY},signal:options.signal||AbortSignal.timeout(20000)});
  const data=await r.json().catch(()=>({}));
  if(!r.ok)throw Error(data.error||'Le service est momentanément indisponible. Réessaie.');

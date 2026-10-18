@@ -7,7 +7,7 @@ import {
 import {authClient,memberRequest} from './client.js';
 import {useLoyalty} from './LoyaltyContext.jsx';
 import BoutiqueCard from './BoutiqueCard.jsx';
-import MemberExperiences from '../member/MemberExperiences.jsx';
+import MemberHub from '../member/MemberHub.jsx';
 import PublicIdentityBadge from '../components/PublicIdentityBadge.jsx';
 import PassportAppearanceSettings from '../passport/PassportAppearance.jsx';
 import './boutique-loyalty.css';
@@ -156,7 +156,7 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
  return <section className="loyalty-page account-page">
   <header className="loyalty-intro">
    <span className="loyalty-eyebrow">3B INTERNATIONAL / MON COMPTE</span>
-   <button onClick={()=>goTo('loyalty')}>Mes cartes <ArrowUpRight size={16}/></button>
+   <Button variant="ghost" onClick={()=>openApplicationMenu()}>Menu 3B <ArrowUpRight size={16}/></Button>
   </header>
 
   <h1>{profile?'Bienvenue, '+profile.name+'.':'Entre dans le Cercle.'}</h1>
@@ -188,6 +188,7 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
    {(()=>{try{return sessionStorage.getItem('3b-community-intent')==='chat';}catch{return false;}})()&&
     <button className="surface-button account-community-return" onClick={()=>{try{sessionStorage.removeItem('3b-auth-intent');}catch{}goTo('community');}}>Continuer vers la communauté <ArrowUpRight size={17}/></button>}
 
+   <MemberHub goTo={goTo} profile={profile}/>
    <div className="account-dashboard">
     <div><BoutiqueCard profile={profile}/><p className="account-boutique-label">Ta carte de fidélité boutique · vêtements et accessoires</p><RewardStats profile={profile}/></div>
     <article className="account-summary">
@@ -217,7 +218,6 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
     </article>
    </div>
 
-   <MemberExperiences goTo={goTo} profile={profile}/>
 
    {!account.identityClaimsComplete&&<section className="account-command-center" aria-labelledby="identity-claim-title">
     <div className="account-command-heading">

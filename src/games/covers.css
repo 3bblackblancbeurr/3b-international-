@@ -1,0 +1,51 @@
+/* One art direction, one ratio, and the same readable framing for every game. */
+.premium-library .premium-game-card[data-game]{
+ --accent:var(--3b-champagne-highlight);
+ grid-template-rows:auto minmax(0,1fr);
+ border-color:var(--3b-border);
+ border-radius:var(--3b-radius-card);
+ background:var(--3b-carbon);
+ box-shadow:var(--3b-shadow-contact);
+}
+.premium-library .premium-game-card[data-game] .premium-card-art{
+ display:block;
+ height:auto;
+ min-height:0;
+ width:100%;
+ aspect-ratio:3/2;
+ background:var(--3b-obsidian)!important;
+ background-blend-mode:normal!important;
+ filter:none;
+ perspective:none;
+}
+.premium-library .premium-game-card[data-game] .premium-card-art::before,
+.premium-library .premium-game-card[data-game] .premium-card-art::after{display:none}
+.premium-library .premium-cover-image{
+ display:block;
+ width:100%;
+ height:100%;
+ object-fit:cover;
+ object-position:center;
+ transition:transform var(--3b-motion-card) var(--3b-ease-standard);
+}
+.premium-library .premium-card-number{
+ color:var(--3b-champagne-highlight);
+ border-color:var(--3b-border-strong);
+ border-radius:var(--3b-radius-pill);
+ background:var(--3b-scrim-medium);
+}
+.premium-library .premium-card-genre{color:var(--3b-champagne)}
+.premium-library .premium-card-copy{background:var(--3b-carbon);padding-top:20px}
+.premium-library .premium-card-bottom{border-top-color:var(--3b-border)}
+.premium-library .premium-card-play{min-height:44px;border-radius:var(--3b-radius-field)}
+@media(hover:hover) and (pointer:fine){
+ .premium-library .premium-game-card:hover .premium-cover-image{transform:scale(1.025)}
+}
+@media(max-width:720px){
+ .premium-library .premium-game-card[data-game]{grid-template-columns:1fr;grid-template-rows:auto auto;min-height:0}
+ .premium-library .premium-card-copy{padding-top:16px}
+}
+@media(prefers-reduced-motion:reduce){
+ .premium-library .premium-cover-image{transition:none}
+ .premium-library .premium-game-card:hover .premium-cover-image{transform:none}
+}

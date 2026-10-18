@@ -22,7 +22,7 @@ test('home hides technical status cards and keeps the ecosystem guide at the bot
  assert.match(immersive,/atlas3b-dock/);
  assert.doesNotMatch(home,/secondaryGroups\.map|universe-grid|WorldPortalCard/);
  assert.deepEqual(NAV_GROUPS.find(group=>group.title==='Identité & progression').ids,['passport','member']);
- assert.ok(account.includes('<MemberExperiences goTo={goTo} profile={profile}/>'));
+ assert.ok(account.includes('<MemberHub goTo={goTo} profile={profile}/>'));
  assert.match(app,/page === "loyalty" && <LoyaltyPage/);
  assert.deepEqual(NAV_GROUPS.find(group=>group.title==='Univers 3B').ids,['world3b','invisible','secret']);
  assert.doesNotMatch(home,/<InstallCards|dashboard-footer/);
