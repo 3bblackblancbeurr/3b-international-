@@ -1,5 +1,6 @@
 {
   "snapshot_date": "2026-10-03",
+  "last_partial_update": "2026-10-18",
   "note": "Passport entries verified against production after recognition deployment on 2026-10-02. Other entries retain their previous recorded metadata; this file is the source-tracked deployment inventory, not a complete current inventory of legacy functions. City 3B v15 verified after Matrix municipal buildings, networks and material exchanges deployment on 2026-10-03. City 3B v16 verified after fixed road models and player-placed traffic lights deployment. City 3B v17 verified after four saved starting landscapes and expanded city terrain deployment. City 3B v18 verified after three independent save slots and stale-save protection deployment.",
   "functions": [
     {
@@ -53,15 +54,21 @@
     },
     {
       "slug": "ecosystem-private",
-      "version": 6,
+      "version": 8,
       "verify_jwt": true,
-      "status": "ACTIVE"
+      "status": "ACTIVE",
+      "source_verified_at": "2026-10-18",
+      "bundle_sha256": "513d3adf5ecedbfe50ac28d36ae1d97169e3cbbbc32ba374c588843dbc400651",
+      "deployment_note": "Version 8 preserves the live six-file version 7 bundle and adds only the exact local preview origins http://127.0.0.1:5183 and http://localhost:5183. All six deployed source files match the tracked ecosystem-private directory. Platform JWT verification remains enabled."
     },
     {
       "slug": "ecosystem-public",
-      "version": 3,
+      "version": 10,
       "verify_jwt": false,
-      "status": "ACTIVE"
+      "status": "ACTIVE",
+      "source_verified_at": "2026-10-18",
+      "bundle_sha256": "7676bb79ebfbce27b18acee8f2994e8b184618002d29b01dac84ca8f29bc5a93",
+      "deployment_note": "Version 10 adds the fixed-publisher news route, typed news error handling and the two exact local preview origins. Existing games, sports and AI capabilities logic is preserved. All four deployed source files match the tracked ecosystem-public directory. Twelve live probes passed, including unchanged capabilities/games, news France, invalid country, method/origin rejection and private authentication."
     },
     {
       "slug": "marketplace-3b",

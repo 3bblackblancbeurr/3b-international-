@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Hand, Music2, Sparkles, Move, Orbit, ArrowDownToLine, Moon, MessageCircle, Send, Zap, Heart, Focus, Volume2, VolumeX, X, Check, ChevronDown } from 'lucide-react';
 import { Button } from '../design-system/index.jsx';
 import { COMPANION_PERSONALITIES } from './companion-personality.js';
+import {COMPANION_EXPLORER} from './companion-application.js';
+import './companion-explorer.css';
 
 const ACTIONS = [
   { id: 'dance', label: 'Danse', hint: 'Le rythme dans les jambes', icon: Music2 },
@@ -18,11 +20,11 @@ const ACTIONS = [
   { id: 'rest', label: 'Une pause', hint: 'Souffler un peu', icon: Moon },
 ];
 const FEATURED_ACTIONS = ['walk', 'highfive', 'dance', 'hologram'];
-const TABS = [['play', 'Jouer'], ['talk', 'Discuter'], ['character', 'Réglages']];
+const TABS = [['explore','Explorer 3B'],['play', 'Jouer'], ['talk', 'Discuter'], ['character', 'Réglages']];
 
 /** The console contains choices; animation and speech remain owned by the layer. */
-export default function CompanionStudio({ living, onLivingChange, onAction, onSubmit, reply, history, voice, onVoiceToggle, onVoiceSample, onVoiceStop, focused, onResume, requestedTab, shortcuts, presenceSettings }) {
-  const [tab, setTab] = useState('play');
+export default function CompanionStudio({ living, onLivingChange, onAction, onSubmit, reply, history, voice, onVoiceToggle, onVoiceSample, onVoiceStop, focused, onResume, requestedTab, shortcuts, presenceSettings,goTo,page }) {
+  const [tab, setTab] = useState('explore');
   const [draft, setDraft] = useState('');
   const logRef = useRef(null);
   const personality = COMPANION_PERSONALITIES.find(item => item.id === living.personality) || COMPANION_PERSONALITIES[0];
@@ -62,12 +64,18 @@ export default function CompanionStudio({ living, onLivingChange, onAction, onSu
           if (event.key === 'ArrowRight') target = ids[(ids.indexOf(id) + 1) % ids.length];
           if (event.key === 'ArrowLeft') target = ids[(ids.indexOf(id) + ids.length - 1) % ids.length];
           if (event.key === 'Home') target = ids[0];
-          if (event.key === 'End') target = ids[2];
+          if (event.key === 'End') target = ids.at(-1);
           if (target) { event.preventDefault(); setTab(target); document.getElementById(`companion-tab-${target}`)?.focus(); }
         }}>{label}</Button>)}
     </div>
 
     {focused && <div className="companion3b-focus-notice" role="status"><Focus size={16} aria-hidden="true" /><span>Je te laisse te concentrer.</span><Button type="button" variant="ghost" onClick={onResume}>Reprendre</Button></div>}
+
+    <div id="companion-content-explore" role="tabpanel" aria-labelledby="companion-tab-explore" hidden={tab!=='explore'}>
+      <div className="companion3b-explorer-intro"><span>LE COMPAGNON / NOUVEAUX REPÈRES</span><h3>Une présence.<br/>Tout un monde à explorer.</h3><p>Je t’aide à choisir un espace. Tu gardes la main sur tes comptes, tes documents et chaque action.</p></div>
+      <div className="companion3b-explorer-grid">{COMPANION_EXPLORER.filter(item=>item.page!==page).map(item=><Button key={item.page} variant="ghost" onClick={()=>goTo?.(item.page)}><span><strong>{item.label}</strong><small>{item.hint}</small></span><span aria-hidden="true">↗</span></Button>)}</div>
+      <p className="companion3b-explorer-privacy">Repères locaux · Aucun accès à ton coffre ou à tes mesures de santé. Pour une conversation IA, ouvre Albert ; sa disponibilité y est vérifiée.</p>
+    </div>
 
     <div id="companion-content-play" role="tabpanel" aria-labelledby="companion-tab-play" hidden={tab !== 'play'}>
       <div className="companion3b-action-grid" role="group" aria-label="Tes envies du moment">
@@ -85,7 +93,7 @@ export default function CompanionStudio({ living, onLivingChange, onAction, onSu
 
     <div id="companion-content-talk" role="tabpanel" aria-labelledby="companion-tab-talk" hidden={tab !== 'talk'}>
       <div ref={logRef} className="companion3b-chat-log" role="log" aria-label="Votre discussion" aria-live="polite" aria-relevant="additions">
-        {history.length ? history.map(entry => <p key={entry.id} data-speaker={entry.sender}><small>{entry.sender === 'user' ? 'Toi' : 'Compagnon 3B'}</small>{entry.message}</p>) : <p data-speaker="companion"><small>Compagnon 3B</small>Une danse, une blague, une devinette ? Dis-moi ce qui te ferait plaisir.</p>}
+        {history.length ? history.map(entry => <p key={entry.id} data-speaker={entry.sender}><small>{entry.sender === 'user' ? 'Toi' : 'Compagnon 3B'}</small>{entry.message}</p>) : <p data-speaker="companion"><small>Compagnon 3B · repères locaux</small>Tu cherches ta fidélité, tes papiers, les actualités ou un projet ? Je peux te guider. Une danse ou une devinette restent aussi possibles.</p>}
       </div>
       {!!reply?.choices?.length && <div className="companion3b-reply-choices" aria-label="Répondre au compagnon">{reply.choices.map((choice, index) => <Button variant="ghost" key={`${choice.label}-${index}`} onClick={() => choose(choice)}>{choice.label}</Button>)}</div>}
       <form className="companion3b-chat-form" onSubmit={submit}>

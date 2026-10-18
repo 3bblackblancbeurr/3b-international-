@@ -6,7 +6,7 @@ import path from 'node:path';
 import {WORLD_MODULES} from '../src/components/world-living-data.js';
 import {PAGE_HASHES} from '../src/lib/navigation.js';
 const {chromium}=await import(process.env.PLAYWRIGHT_MODULE||'playwright');
-const server=await createServer({server:{host:'127.0.0.1',port:5353,strictPort:true}});
+const server=await createServer({cacheDir:'node_modules/.vite-world-living-ui',server:{host:'127.0.0.1',port:5353,strictPort:true}});
 await server.listen();
 const browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{}),
  args:['--no-sandbox','--disable-dev-shm-usage','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
@@ -62,14 +62,14 @@ try{
    const r=el.getBoundingClientRect();return r.height>innerHeight&&document.documentElement.scrollHeight>innerHeight&&el.scrollHeight<=r.height+2;
   }));
   check('Eight canonical realms in image rail '+width,await home.locator('.atlas3b-realm').count()===8);
-  check('All 22 real modules linked '+width,await home.locator('.atlas3b-module-link').count()===22);
+  check('All 22 real modules linked '+width,await home.locator('.atlas3b-module-link').count()===WORLD_MODULES.length);
   check('Map and favorite controls have 44 pixel touch targets '+width,await home.locator('.atlas3b-map-pin,.atlas3b-favorite').evaluateAll(elements=>elements.every(el=>{const r=el.getBoundingClientRect();return r.width>=44&&r.height>=44;})));
   check('Atlas search avoids automatic iPhone zoom '+width,await home.locator('input[type=search]').evaluateAll(elements=>elements.every(el=>parseFloat(getComputedStyle(el).fontSize)>=16)));
   check('Only the selected exploration arc animates '+width,await home.locator('.atlas3b-flight-line').count()===1&&await home.locator('.atlas3b-flight-line.is-active').count()===1);
   const expectedHashes=WORLD_MODULES.map(item=>'#'+PAGE_HASHES[item.id]).sort();
   const moduleHrefs=await home.locator('.atlas3b-module-link').evaluateAll(links=>links.map(link=>link.href));
-  check('All 22 module links use unique canonical local routes '+width,
-   new Set(moduleHrefs).size===22&&moduleHrefs.every(href=>new URL(href).origin===origin)&&
+  check('All main module links use unique canonical local routes '+width,
+   new Set(moduleHrefs).size===WORLD_MODULES.length&&moduleHrefs.every(href=>new URL(href).origin===origin)&&
    JSON.stringify(moduleHrefs.map(href=>new URL(href).hash).sort())===JSON.stringify(expectedHashes));
   check('All universes use a responsive grid '+width,await home.locator('.atlas3b-module-grid,.atlas3b-module-rail').first().evaluate(el=>{
    const style=getComputedStyle(el);return style.display==='grid'&&style.gridTemplateColumns.split(' ').length>=2&&el.scrollWidth<=el.clientWidth+2;
@@ -93,7 +93,7 @@ try{
   }));
   check('Mobile navigation does not obscure the atlas '+width,await page.locator('.mobile-navigation').isHidden());
   check('Hero controls and navigation remain clickable after scroll '+width,await reachableControls(home.locator('.atlas3b-header button:visible,.atlas3b-header a:visible,.atlas3b-find input,.atlas3b-tabs [role="tab"],.atlas3b-map-pin,.atlas3b-dock a,.atlas3b-dock button')));
-  check('All 22 module controls remain reachable after scroll '+width,await reachableControls(home.locator('.atlas3b-module-link')));
+  check('All main module controls remain reachable after scroll '+width,await reachableControls(home.locator('.atlas3b-module-link')));
   await home.getByRole('button',{name:'Explorer Afrique du Nord dans les royaumes 3B'}).click();
   check('Map pin selects the Moroccan narrative realm '+width,await home.locator('.atlas3b-map-caption').innerText().then(s=>s.includes('Maroc')));
   await home.scrollIntoViewIfNeeded();await page.evaluate(()=>scrollTo(0,0));
@@ -116,7 +116,7 @@ try{
   await search.press('Escape');
   check('Escape clears search without navigating '+width,await search.inputValue()===''&&new URL(page.url()).hash==='#accueil');
   await search.fill('scanner alimentaire');
-  check('Home search still includes real services beyond 22 modules '+width,await home.locator('.atlas3b-search-results').getByRole('button',{name:'Scanner alimentaire',exact:true}).isVisible());
+  check('Home search still includes real services beyond the main spaces '+width,await home.locator('.atlas3b-search-results').getByRole('button',{name:'Scanner alimentaire',exact:true}).isVisible());
   await search.fill('scanner code barre');
   check('Compound search matches terms across service aliases '+width,await home.locator('.atlas3b-search-results').getByRole('button',{name:'Scanner alimentaire',exact:true}).isVisible());
   await search.press('Escape');
@@ -131,7 +131,7 @@ try{
   check('Module search exposes an accessible empty state '+width,await modules.locator('.atlas3b-module-link').count()===0&&await modules.locator('.atlas3b-empty').isVisible());
   await moduleSearch.fill('');
   const favorite=modules.getByRole('button',{name:'Ajouter aux favoris : 3B Bons Plans',exact:true});
-  check('Each universe has a labelled favorite control '+width,await modules.getByRole('button',{name:/^Ajouter aux favoris : .+$/}).count()===22);
+  check('Each universe has a labelled favorite control '+width,await modules.getByRole('button',{name:/^Ajouter aux favoris : .+$/}).count()===WORLD_MODULES.length);
   check('Favorite controls are not covered by the dock '+width,await reachableControls(modules.getByRole('button',{name:/^Ajouter aux favoris : .+$/})));
   await favorite.click();
   check('Favorite exposes its pressed state '+width,await modules.getByRole('button',{name:'Retirer des favoris : 3B Bons Plans',exact:true}).getAttribute('aria-pressed')==='true');
@@ -145,7 +145,7 @@ try{
   await modules.getByRole('button',{name:'Retirer des favoris : 3B Bons Plans',exact:true}).click();
   check('Empty favorites provide feedback '+width,await modules.locator('.atlas3b-module-link').count()===0&&await modules.locator('.atlas3b-empty').isVisible()&&await modules.locator('.atlas3b-empty p').innerText().then(s=>s.trim().length>0));
   await filters.getByRole('button',{name:/^Tous?$|^Tout$/}).click();
-  check('All modules return after clearing the favorite filter '+width,await modules.locator('.atlas3b-module-link').count()===22);
+  check('All modules return after clearing the favorite filter '+width,await modules.locator('.atlas3b-module-link').count()===WORLD_MODULES.length);
   await page.waitForFunction(()=>!JSON.parse(localStorage.getItem('3b_atlas_preferences_v1')||'null')?.favorites?.includes('deals'));
   const passion=filters.getByRole('button',{name:/Passions|Jeux & passions/});
   await passion.click();
@@ -173,7 +173,7 @@ try{
   check('Text search combines with the module category '+width,await modules.locator('.atlas3b-module-link').count()===1&&await modules.locator('.atlas3b-module-link').getAttribute('href').then(h=>h.endsWith('#jeux')));
   await home.getByRole('button',{name:'Afficher tous les espaces 3B'}).click();
   const directory=home.locator('.atlas3b-directory');await directory.waitFor({state:'visible'});
-  check('All modules appear in accessible directory '+width,await directory.locator('.atlas3b-directory-grid a').count()===22);
+  check('All modules appear in accessible directory '+width,await directory.locator('.atlas3b-directory-grid a').count()===WORLD_MODULES.length);
   check('Opening all universes resets previous grid filters '+width,await moduleSearch.inputValue()===''&&await filters.getByRole('button',{name:'Tous',exact:true}).getAttribute('aria-pressed')==='true');
   await directory.getByRole('button',{name:'Fermer les espaces'}).click();
   await directory.waitFor({state:'hidden'});
